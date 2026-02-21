@@ -55,33 +55,33 @@ def create_app(config_class="config.DevConfig"):
         if request.endpoint and request.endpoint.startswith("static"):
             return
 
-        # Allow login itself
+        # Allow auth endpoints
         if request.endpoint in ("auth.login", "auth.logout"):
             return
 
         # Allow one-time setup URL even when not logged in
-        # (works whether or not the auth blueprint has a prefix)
         if request.path.startswith("/setup/") or request.path.startswith("/auth/setup/"):
             return
 
-    # Everything else requires authentication
+        # Everything else requires authentication
         if not current_user.is_authenticated:
             return redirect(url_for("auth.login"))
-            # If factory isn't selected yet, select the first factory.
-    # If no factories exist, create a default one (admin only).
-    if "factory_id" not in session:
-        from .models import Factory  # local import to avoid circular issues
 
-        first_factory = Factory.query.first()
-        if first_factory:
-            session["factory_id"] = first_factory.id
-        else:
-            # Create default factory only for admin users
-            if getattr(current_user, "role", None) == "admin":
-                default_factory = Factory(name="Mini Moda Factory")
-                db.session.add(default_factory)
-                db.session.commit()
-                session["factory_id"] = default_factory.id
+        # ✅ ONLY runs when there is a real request + logged-in user
+        # Auto-select a factory if none selected yet (fresh database on Render)
+        if "factory_id" not in session:
+            from .models import Factory  # local import avoids circular imports
+
+            first_factory = Factory.query.first()
+            if first_factory:
+                session["factory_id"] = first_factory.id
+            else:
+                # Create a default factory ONLY for admin users
+                if getattr(current_user, "role", None) == "admin":
+                    default_factory = Factory(name="Mini Moda Factory")
+                    db.session.add(default_factory)
+                    db.session.commit()
+                    session["factory_id"] = default_factory.id
     
     # -------------------------
     # CLI: Create Superadmin
