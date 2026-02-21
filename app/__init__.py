@@ -51,26 +51,22 @@ def create_app(config_class="config.DevConfig"):
     # -------------------------
     @app.before_request
     def require_login():
-        allowed_routes = [
-            "auth.login",
-            "auth.setup_superadmin",
-            "static",
-        ]
-
-        if request.endpoint is None:
+        # Allow static assets
+        if request.endpoint and request.endpoint.startswith("static"):
             return
 
-        if request.endpoint in allowed_routes:
+        # Allow login itself
+        if request.endpoint in ("auth.login", "auth.logout"):
             return
 
-        if request.endpoint.startswith("static"):
-            return
-
-        if not current_user.is_authenticated:
-            return redirect(url_for("auth.login"))
+        # Allow one-time setup URL even when not logged in
+        # (works whether or not the auth blueprint has a prefix)
         if request.path.startswith("/setup/") or request.path.startswith("/auth/setup/"):
             return
 
+    # Everything else requires authentication
+        if not current_user.is_authenticated:
+            return redirect(url_for("auth.login"))
     # -------------------------
     # CLI: Create Superadmin
     # -------------------------
