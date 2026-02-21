@@ -6,11 +6,16 @@ venv/
 __pycache__/
 *.pyc
 
+# Editor / tool history
+.history/
+
 # Environment variables
 .env
 
-# Local database
+# Local database / runtime files
 *.db
 
-# Uploads
+# Uploads & imports (generated files)
 app/static/uploads/
+app/static/uploads/excel_imports/
+
