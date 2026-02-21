@@ -5,7 +5,7 @@ from ..extensions import db
 import os
 from flask import abort
 auth_bp = Blueprint("auth", __name__)
-
+from flask_login import current_user
 
 # =========================
 # LOGIN
@@ -117,3 +117,28 @@ def setup_superadmin(token):
     <b>IMPORTANT:</b> Log in immediately and change the password.<br>
     Then REMOVE this setup route.
     """
+    
+@auth_bp.route("/setup/<token>")
+def setup_superadmin(token):
+    # 1) must match env var token
+    expected = os.environ.get("SETUP_TOKEN")
+    if not expected or token != expected:
+        abort(404)
+
+    # 2) only works if NO admin user exists yet
+    existing_admin = User.query.filter_by(role="admin").first()
+    if existing_admin:
+        return "Setup already completed. Admin exists."
+
+    # 3) Read credentials from env (no hardcoding)
+    username = os.environ.get("SETUP_ADMIN_USERNAME", "admin")
+    password = os.environ.get("SETUP_ADMIN_PASSWORD")
+    if not password:
+        return "Missing SETUP_ADMIN_PASSWORD env var."
+
+    user = User(username=username, role="admin")
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+
+    return "Superadmin created. Go to /login and sign in. Then remove SETUP_TOKEN env var."

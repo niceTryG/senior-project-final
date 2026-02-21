@@ -53,6 +53,7 @@ def create_app(config_class="config.DevConfig"):
     def require_login():
         allowed_routes = [
             "auth.login",
+            "auth.setup_superadmin",
             "static",
         ]
 
@@ -67,6 +68,8 @@ def create_app(config_class="config.DevConfig"):
 
         if not current_user.is_authenticated:
             return redirect(url_for("auth.login"))
+        if request.path.startswith("/setup/") or request.path.startswith("/auth/setup/"):
+            return
 
     # -------------------------
     # CLI: Create Superadmin
