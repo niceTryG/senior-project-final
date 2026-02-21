@@ -67,6 +67,22 @@ def create_app(config_class="config.DevConfig"):
     # Everything else requires authentication
         if not current_user.is_authenticated:
             return redirect(url_for("auth.login"))
+            # If factory isn't selected yet, select the first factory.
+    # If no factories exist, create a default one (admin only).
+    if "factory_id" not in session:
+        from .models import Factory  # local import to avoid circular issues
+
+        first_factory = Factory.query.first()
+        if first_factory:
+            session["factory_id"] = first_factory.id
+        else:
+            # Create default factory only for admin users
+            if getattr(current_user, "role", None) == "admin":
+                default_factory = Factory(name="Mini Moda Factory")
+                db.session.add(default_factory)
+                db.session.commit()
+                session["factory_id"] = default_factory.id
+    
     # -------------------------
     # CLI: Create Superadmin
     # -------------------------
