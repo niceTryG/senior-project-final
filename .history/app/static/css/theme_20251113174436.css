@@ -1,0 +1,52 @@
+:root {
+  --bg-body: #f8f9fa;
+  --text-color: #212529;
+  --card-bg: #ffffff;
+  --card-border: #dee2e6;
+  --navbar-bg: #343a40;
+  --navbar-text: #ffffff;
+  --table-bg: #ffffff;
+  --table-border: #dee2e6;
+}
+
+html[data-theme='dark'] {
+  --bg-body: #121212;
+  --text-color: #e9ecef;
+  --card-bg: #1e1e1e;
+  --card-border: #333;
+  --navbar-bg: #000000;
+  --navbar-text: #f8f9fa;
+  --table-bg: #1e1e1e;
+  --table-border: #333;
+}
+
+/* apply variables */
+
+body {
+  background-color: var(--bg-body);
+  color: var(--text-color);
+}
+
+.navbar {
+  background-color: var(--navbar-bg) !important;
+}
+
+.navbar .navbar-brand,
+.navbar .nav-link,
+.navbar .navbar-text {
+  color: var(--navbar-text) !important;
+}
+
+.card {
+  background-color: var(--card-bg);
+  border-color: var(--card-border);
+}
+
+.table {
+  background-color: var(--table-bg);
+}
+
+.table td,
+.table th {
+  border-color: var(--table-border);
+}

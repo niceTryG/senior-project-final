@@ -1,0 +1,8 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+qrcode[pil]
+xhtml2pdf
+requests 
+pandas
+openpyxl

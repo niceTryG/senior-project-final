@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# =========================================================
+  Dad-friendly Factory Dashboard (Manager) — NEO version
+  - Action-first: Production + Transfer + Products
+  - No selling actions (uncle sells)
+  - Same logic, same links, just cleaner UI
+========================================================= #}
+
+{% macro getv(obj, key, default=0) -%}
+  {%- if obj is mapping -%}
+    {{- obj.get(key, default) -}}
+  {%- else -%}
+    {{- (obj|attr(key)) if (obj is not none and (obj|attr(key)) is not none) else default -}}
+  {%- endif -%}
+{%- endmacro %}
+
+{% set s = stats or {} %}
+{% set pending = shop_orders_pending|default(0) %}
+{% set ready = shop_orders_ready|default(0) %}
+
+{% set total_stock_uzs = (factory_uzs|default(0)) + (shop_uzs|default(0)) %}
+{% set factory_pct = ((factory_uzs|default(0)) * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
+{% set shop_pct = ((shop_uzs|default(0)) * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
+{% set fabric_low = (getv(s,'fabric_low_stock_count',0) | int) %}
+{% set produced_today = getv(s,'produced_today',0) %}
+{% set produced_total = getv(s,'produced_total',0) %}
+
+<style>
+  /* ===== NEO Dashboard helpers ===== */
+  .mm-dash { padding-top: 10px; padding-bottom: 96px; }
+  .mm-card { border-radius: 18px; }
+  .mm-pill { border-radius: 999px; font-weight: 800; }
+  .mm-btn-neo { border-radius: 16px; font-weight: 800; padding: .85rem 1rem; }
+  .mm-btn-neo-sm { border-radius: 14px; font-weight: 800; padding: .60rem .75rem; }
+  .mm-muted { color: #6c757d; }
+  .mm-mini { font-size: .85rem; }
+  .mm-kpi-title { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: #6c757d; }
+  .mm-kpi-value { font-weight: 800; font-size: 1.05rem; }
+  .mm-chip {
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius: 999px;
+    padding: .45rem .75rem;
+    border: 1px solid rgba(0,0,0,.10);
+    background: #fff;
+    font-size: .85rem;
+    font-weight: 700;
+    color: #111;
+    text-decoration: none;
+    width: 100%;
+  }
+  .mm-rowline {
+    display:flex; justify-content:space-between; gap:.75rem;
+    padding:.35rem 0; border-bottom: 1px dashed rgba(0,0,0,.10);
+  }
+  .mm-rowline:last-child { border-bottom: 0; }
+  .mm-total { font-weight: 900; font-size: 1.35rem; }
+  .mm-topitem { border: 1px solid rgba(0,0,0,.08); border-radius: 14px; padding: .45rem .65rem; background:#fff; }
+  .mm-progress { height: 9px; border-radius: 999px; overflow:hidden; }
+  .mm-progress .progress-bar { border-radius: 999px; }
+</style>
+
+<div class="container-fluid mm-dash dad-padding">
+
+  {# ===== HEADER ===== #}
+  {% set uname = current_user.username|lower %}
+  {% if 'muzaffar' in uname %}
+    {% set display_name = "Muzaffar" %}
+  {% elif 'rano' in uname or "ra'no" in uname %}
+    {% set display_name = "Ra'no" %}
+  {% elif 'ibro' in uname or 'ibrahim' in uname %}
+    {% set display_name = "Ibrokhim" %}
+  {% elif 'doniyor' in uname %}
+    {% set display_name = "Doniyor" %}
+  {% else %}
+    {% set display_name = current_user.username %}
+  {% endif %}
+
+  <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+    <div style="min-width:0;">
+      <div class="h5 fw-semibold mb-0 text-truncate" style="min-width:0;">
+        السلام عليكم, {{ display_name }} 👋
+      </div>
+      <div class="mm-mini mm-muted">Главная панель фабрики</div>
+    </div>
+
+    <span class="badge bg-primary mm-pill" style="white-space:nowrap;">
+      {{ current_date }}
+    </span>
+  </div>
+
+  {# ===== QUICK ACTIONS (super clear) ===== #}
+  <div class="card shadow-sm border-0 mb-3 mm-card">
+    <div class="card-body py-2">
+      <div class="mm-kpi-title mb-2">Главные действия</div>
+
+      <div class="row g-2">
+       
+        <div class="col-12 col-md-6">
+          <a href="{{ url_for('shop.transfer_to_shop') }}"
+             class="btn btn-warning w-100 mm-btn-neo">
+            🚚 Передать в магазин
+          </a>
+        </div>
+        <div class="col-12 col-md-6">
+          <a href="{{ url_for('products.list_products') }}"
+             class="btn btn-outline-primary w-100 mm-btn-neo">
+            ➕ Новый товар
+          </a>
+        </div>
+        
+      </div>
+
+      <div class="mm-mini mm-muted mt-2">
+        Порядок дня: <span class="fw-semibold">Производство</span> → <span class="fw-semibold">Передача</span>.
+      </div>
+    </div>
+  </div>
+
+  {# ===== SHOP ORDERS (only if needed) ===== #}
+  {% if pending or ready %}
+    <div class="card shadow-sm border-0 mb-3 mm-card">
+      <div class="card-body py-2">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <div class="fw-semibold">📦 Заказы магазина</div>
+          <span class="badge bg-danger mm-pill">нужно действие</span>
+        </div>
+
+        <div class="row g-2 mt-1">
+          <div class="col-6">
+            <div class="mm-chip">
+              ⏳ Ожидают: <span class="ms-1 fw-bold">{{ pending }}</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mm-chip">
+              ✅ Готовы: <span class="ms-1 fw-bold">{{ ready }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-grid mt-2">
+          <a href="{{ url_for('shop.factory_pending_orders') }}"
+             class="btn btn-outline-danger mm-btn-neo-sm w-100">
+            Открыть заказы
+          </a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {# ===== PRODUCTION TODAY SUMMARY (NEO) ===== #}
+  <div class="card shadow-sm border-0 mb-3 mm-card">
+    <div class="card-body py-2">
+
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <div class="fw-semibold">🏭 Производство сегодня</div>
+        <span class="mm-mini mm-muted">итоги</span>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-end">
+        <div class="mm-mini mm-muted">
+          Моделей: <span class="fw-semibold">{{ produced_today_models|default(0) }}</span>
+        </div>
+        <div class="mm-total">
+          {{ produced_today_total|default(0) }} <span class="mm-mini fw-semibold">шт</span>
+        </div>
+      </div>
+
+      {% if prod_today_rows and prod_today_rows|length %}
+        <div class="mt-2">
+          <div class="mm-mini mm-muted mb-1">Топ сегодня</div>
+          <div class="d-grid gap-2">
+            {% for name, qty in prod_today_rows[:4] %}
+              <div class="d-flex justify-content-between align-items-center mm-topitem">
+                <div class="text-truncate" style="min-width:0;">{{ name }}</div>
+                <div class="fw-bold">{{ qty }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <div class="mm-mini mm-muted mt-2">Сегодня пока не записано производство.</div>
+      {% endif %}
+
+      <div class="d-grid mt-2">
+        <a href="{{ url_for('factory.produce_today') }}" class="btn btn-primary mm-btn-neo-sm w-100">
+          ➕ Записать производство
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  {# ===== KPI GRID (clean + clickable) ===== #}
+  <div class="row g-2 g-md-3 mb-3">
+
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('sales.list_sales') }}" class="text-decoration-none text-reset">
+        <div class="card shadow-sm border-0 h-100 mm-card">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="mm-kpi-title">{{ t('dashboard_manager_card_yesterday_sales') }}</span>
+              <i class="bi bi-cash-stack text-muted"></i>
+            </div>
+            <div class="mm-kpi-value">
+              {{ format_money(getv(s,'yesterday_sales_uzs',0), 'UZS') }}
+            </div>
+            <div class="mm-mini mm-muted">только просмотр</div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('sales.list_sales') }}" class="text-decoration-none text-reset">
+        <div class="card shadow-sm border-0 h-100 mm-card">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="mm-kpi-title">{{ t('dashboard_manager_card_week_sales') }}</span>
+              <i class="bi bi-calendar-week text-muted"></i>
+            </div>
+            <div class="mm-kpi-value">
+              {{ format_money(getv(s,'week_sales_uzs',0), 'UZS') }}
+            </div>
+            <div class="mm-mini mm-muted">{{ t('dashboard_manager_card_week_sales_hint') }}</div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('cash.list_cash') }}" class="text-decoration-none text-reset">
+        <div class="card shadow-sm border-0 h-100 mm-card">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="mm-kpi-title">{{ t('dashboard_manager_card_cash') }}</span>
+              <i class="bi bi-wallet2 text-muted"></i>
+            </div>
+            <div class="mm-kpi-value">
+              {{ format_money(getv(s,'cash_total_uzs',0), 'UZS') }}
+            </div>
+            <div class="mm-mini mm-muted">
+              USD: {{ format_money(getv(s,'cash_total_usd',0), 'USD') }}
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('products.list_products') }}" class="text-decoration-none text-reset">
+        <div class="card shadow-sm border-0 h-100 mm-card">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="mm-kpi-title">{{ t('dashboard_manager_card_products_total') }}</span>
+              <i class="bi bi-box-seam text-muted"></i>
+            </div>
+            <div class="mm-kpi-value">
+              {{ format_money(total_uzs|default(0), 'UZS') }}
+            </div>
+            <div class="mm-mini mm-muted">{{ t('dashboard_manager_card_products_total_hint') }}</div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+  </div>
+
+  {# ===== STOCK + WARNINGS ===== #}
+  <div class="row g-2 g-md-3 mb-3">
+
+    <div class="col-md-6">
+      <a href="{{ url_for('products.factory_stock') }}" class="text-decoration-none text-reset">
+        <div class="card shadow-sm border-0 h-100 mm-card">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="mm-kpi-title">{{ t('dashboard_manager_stock_split_title') }}</span>
+              <span class="mm-mini mm-muted">{{ t('dashboard_manager_stock_split_open_report') }}</span>
+            </div>
+
+            <div class="mt-2">
+              <div class="mm-rowline">
+                <div class="mm-mini mm-muted">{{ t('dashboard_manager_stock_factory') }}</div>
+                <div class="fw-bold">{{ format_money(factory_uzs|default(0), 'UZS') }}</div>
+              </div>
+              <div class="mm-rowline">
+                <div class="mm-mini mm-muted">{{ t('dashboard_manager_stock_shop') }}</div>
+                <div class="fw-bold">{{ format_money(shop_uzs|default(0), 'UZS') }}</div>
+              </div>
+            </div>
+
+            {% if total_stock_uzs %}
+              <div class="progress mt-2 mm-progress">
+                <div class="progress-bar" role="progressbar"
+                     style="width: {{ factory_pct }}%;"
+                     aria-valuenow="{{ factory_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar bg-warning" role="progressbar"
+                     style="width: {{ shop_pct }}%;"
+                     aria-valuenow="{{ shop_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+              <div class="mm-mini mm-muted mt-1">
+                {{ t('dashboard_manager_stock_factory') }}: {{ factory_pct }}% •
+                {{ t('dashboard_manager_stock_shop') }}: {{ shop_pct }}%
+              </div>
+            {% else %}
+              <div class="mm-mini mm-muted mt-2">{{ t('dashboard_manager_stock_no_data') }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('fabrics.list') }}" class="text-decoration-none text-reset">
+        <div class="card shadow-sm border-0 h-100 mm-card">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="mm-kpi-title">{{ t('dashboard_manager_fabrics_low_stock_title') }}</span>
+              <i class="bi bi-exclamation-triangle text-muted"></i>
+            </div>
+            <div class="mm-kpi-value {% if fabric_low > 0 %}text-danger{% else %}text-success{% endif %}">
+              {{ fabric_low }}
+            </div>
+            <div class="mm-mini mm-muted">{{ t('dashboard_manager_fabrics_low_stock_hint') }}</div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('products.list_products') }}" class="text-decoration-none text-reset">
+        <div class="card shadow-sm border-0 h-100 mm-card">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="mm-kpi-title">{{ t('dashboard_manager_production_title') }}</span>
+              <i class="bi bi-activity text-muted"></i>
+            </div>
+            <div class="d-flex justify-content-between align-items-end">
+              <div>
+                <div class="mm-mini mm-muted">{{ t('dashboard_manager_production_today') }}</div>
+                <div class="fw-bold">{{ produced_today }}</div>
+              </div>
+              <div class="text-end">
+                <div class="mm-mini mm-muted">{{ t('dashboard_manager_production_total') }}</div>
+                <div class="fw-bold">{{ produced_total }}</div>
+              </div>
+            </div>
+            <div class="mm-mini mm-muted mt-1">{{ t('dashboard_manager_production_hint') }}</div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+  </div>
+
+  {# ===== COST CALCULATOR (clean) ===== #}
+  <div class="card shadow-sm border-0 mb-3 mm-card">
+    <div class="card-body py-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+      <div>
+        <div class="fw-semibold">🧮 Расчёт себестоимости</div>
+        <div class="mm-mini mm-muted">Если нужно посчитать цену изделия</div>
+      </div>
+      <div class="d-grid d-md-block">
+        <a href="{{ url_for('cost.accountant_dashboard') }}"
+           class="btn btn-warning mm-btn-neo-sm px-3 w-100">
+          Открыть калькулятор
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {# ===== REPORTS (neo collapse) ===== #}
+  <div class="card shadow-sm border-0 mb-3 mm-card">
+    <div class="card-body py-2">
+      <button class="btn btn-outline-dark mm-btn-neo-sm w-100"
+              type="button" data-bs-toggle="collapse" data-bs-target="#reportsCollapse"
+              aria-expanded="false" aria-controls="reportsCollapse">
+        📄 Отчёты и документы (открыть / скрыть)
+      </button>
+
+      <div class="collapse mt-2" id="reportsCollapse">
+        <div class="row g-2">
+          <div class="col-12 col-md-6">
+            <a href="{{ url_for('manager_report.manager_report') }}" class="mm-chip">📄 {{ t('reports_manager_main') }}</a>
+          </div>
+          <div class="col-12 col-md-6">
+            <a href="{{ url_for('manager_report.manager_report_pdf') }}" class="mm-chip">⬇️ {{ t('reports_manager_pdf') }}</a>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <a href="{{ url_for('shop_report.weekly_report') }}" class="mm-chip">📅 {{ t('reports_shop_weekly') }}</a>
+          </div>
+          <div class="col-12 col-md-6">
+            <a href="{{ url_for('shop_monthly.monthly_report') }}" class="mm-chip">📅 {{ t('reports_shop_monthly') }}</a>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <a href="{{ url_for('fabric_report.usage_report') }}" class="mm-chip">📊 {{ t('reports_fabric_usage') }}</a>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <a href="{{ url_for('shop.list_shop_orders') }}" class="mm-chip">🧾 {{ t('dashboard_manager_action_shop_orders') }}</a>
+          </div>
+
+          <div class="col-12">
+            <a href="{{ url_for('shop.factory_pending_orders') }}" class="btn btn-outline-danger mm-btn-neo-sm w-100">
+              📦 {{ t('dashboard_manager_action_factory_orders') }} ({{ pending }})
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

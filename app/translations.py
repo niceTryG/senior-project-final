@@ -1,0 +1,656 @@
+translations = {
+    "ru": {
+        "app_title": "Mini Moda — склад и магазин",
+
+        # Main menu
+        "menu_dashboard": "Главная",
+        "menu_fabrics": "Ткани",
+        "menu_products": "Товары",
+        "menu_sales": "Продажи",
+        "menu_cash": "Касса",
+        "menu_shop": "Магазин",
+        "menu_logout": "Выйти",
+
+        "menu_reports": "Отчёты",
+        "reports_shop_history": "История склада",
+        "reports_shop_weekly": "Недельный отчёт (магазин)",
+        "reports_shop_monthly": "Месячный отчёт (магазин)",
+        "reports_fabric_usage": "Использование ткани",
+        "reports_manager_main": "Отчёт руководителя",
+        "reports_manager_pdf": "Скачать PDF отчёт",
+
+        "lang_ru": "RU",
+        "lang_uz": "UZ",
+
+        # Login
+        "login_title": "Вход",
+        "login_username": "Логин",
+        "login_password": "Пароль",
+        "login_button": "Войти",
+        "login_default_user": "Стандартный пользователь: admin / admin123",
+        "error_wrong_credentials": "Неверный логин или пароль.",
+
+        # Dashboards
+        "dashboard_title": "Главная",
+        "dashboard_welcome": "Добро пожаловать! Здесь будут удобные отчёты по складу и магазину.",
+
+        # Header info
+        "header_usd_rate_title": "Курс доллара (ЦБ РУз)",
+        "header_usd_rate_value": "1 USD = {rate} сум",
+
+        # Footer
+        "footer_internal_system": "внутренняя система",
+
+        # Fabrics page
+        "fabrics_title": "Ткани",
+        "current_fabrics": "Текущие ткани",
+        "table_id": "ID",
+        "table_name": "Название",
+        "table_color": "Цвет",
+        "table_unit": "Ед. изм.",
+        "table_quantity": "Количество",
+        "table_price_per_unit": "Цена за единицу",
+        "table_currency": "Валюта",
+        "table_category": "Категория",
+        "table_actions": "Действия",
+
+        "add_fabric": "Добавить ткань",
+        "add_name": "Название",
+        "add_color": "Цвет",
+        "add_unit": "Ед. изм. (kg или m)",
+        "add_quantity": "Количество",
+        "add_price_per_unit": "Цена за 1 единицу",
+        "add_price_currency": "Валюта",
+        "add_category": "Категория (например, хлопок, подкладка)",
+        "add_button": "Сохранить ткань",
+
+        "cut_button": "Списать ткань",
+        "cut_placeholder": "Сколько списать",
+
+        "last_cuts": "Последние списания",
+        "last_cuts_date": "Дата",
+        "last_cuts_fabric": "Ткань",
+        "last_cuts_used_amount": "Списанное количество",
+
+        "search_placeholder": "Поиск по названию или цвету",
+        "sort_label": "Сортировать",
+        "sort_name": "По названию",
+        "sort_quantity": "По количеству",
+        "sort_price": "По цене",
+
+        "low_stock_warning": "Внимание: есть ткани с маленьким остатком",
+        "low_stock_badge": "Мало",
+
+        # merge / AI-like
+        "merge_title": "Похоже, такая ткань уже есть",
+        "merge_found_similar": "Найдена похожая ткань. Объединить количество или создать новую запись?",
+        "merge_existing_fabric": "Существующая ткань",
+        "merge_new_fabric": "Новая ткань (вы ввели)",
+        "merge_button_yes": "Да, объединить",
+        "merge_button_no_new": "Создать как новую",
+
+        # Generic buttons / labels
+        "btn_save": "Сохранить",
+        "btn_cancel": "Отмена",
+        "btn_back": "Назад",
+        "btn_export_csv": "Экспорт в CSV",
+        "btn_export_excel": "Экспорт в Excel",
+
+        # Shop / products
+        "shop_title": "Магазин",
+        "shop_stock": "Товары в магазине",
+        "shop_transfer": "Передача в магазин",
+        "shop_totals": "Итого по магазину",
+        "shop_no_items": "В магазине пока нет товаров.",
+        "shop_form_quantity": "Количество для передачи",
+        "shop_form_price": "Цена продажи (за единицу)",
+        "shop_form_submit": "Передать в магазин",
+
+        # Filters / search (generic)
+        "filter_search": "Поиск",
+        "filter_category": "Категория",
+        "filter_status": "Статус",
+
+        # ===== Shop: sell (big form) =====
+        "shop_sell_title": "Продажа из магазина / большой заказ",
+        "shop_sell_subtitle": "Здесь можно оформить обычную продажу из магазина или крупный заказ.",
+        "shop_sell_product_label": "Товар",
+        "shop_sell_select_placeholder": "— выберите товар —",
+        "shop_sell_quantity_label": "Количество (шт.)",
+        "shop_sell_customer_name_label": "Имя клиента (необязательно)",
+        "shop_sell_customer_phone_label": "Телефон клиента (необязательно)",
+        "shop_sell_note_label": "Комментарий (необязательно)",
+        "shop_sell_note_placeholder": "Например: заберёт завтра, постоянный клиент и т.п.",
+        "shop_sell_allow_partial_label": "Если товара мало — продать, сколько есть, остальное оформить как заказ.",
+        "shop_sell_submit": "Сохранить продажу",
+        "shop_sell_back": "Назад на панель",
+
+        # ===== Shop: sell one product =====
+        "shop_product_sale_title": "Продажа из магазина",
+        "shop_product_sale_subtitle": "Продажа товара клиенту. Если в магазине не хватит количества, система создаст заказ на оставшуюся часть.",
+        "shop_product_sale_back": "Назад к складу магазина",
+        "shop_product_info_category": "Категория",
+        "shop_product_info_stock": "Остаток в магазине",
+        "shop_product_info_price": "Цена продажи",
+        "shop_product_form_title": "Оформить продажу",
+        "shop_product_form_quantity_label": "Количество (шт.)",
+        "shop_product_form_quantity_help": "В наличии сейчас",
+        "shop_product_form_customer_name_label": "Имя клиента (необязательно)",
+        "shop_product_form_customer_phone_label": "Телефон клиента (необязательно)",
+        "shop_product_form_note_label": "Заметка (необязательно)",
+        "shop_product_form_note_placeholder": "Например: постоянный клиент, оплатит завтра и т.п.",
+        "shop_product_form_allow_partial_label": "Если товара не хватает — продать, сколько есть, а на остальное создать заказ.",
+        "shop_product_form_cancel": "Отмена",
+        "shop_product_form_submit": "Продать",
+
+        # ===== Shop orders list & cards =====
+        "shop_orders_title": "Мои заказы",
+        "shop_orders_back": "Назад",
+        "shop_orders_no_orders": "Пока нет заказов",
+        "shop_orders_customer_label": "Клиент",
+        "shop_orders_phone_label": "Телефон",
+        "shop_orders_status_pending": "⏳ Ждёт производство",
+        "shop_orders_status_ready": "✅ Готов к выдаче",
+        "shop_orders_status_completed": "✔ Заказ выдан",
+        "shop_orders_status_cancelled": "✖ Заказ отменён",
+
+        "shop_order_big_title": "Оформить крупный заказ",
+        "shop_order_big_subtitle": "Если нужного количества нет в магазине, создастся заказ фабрике.",
+        "shop_order_big_product_label": "Товар",
+        "shop_order_big_quantity_label": "Количество",
+        "shop_order_big_customer_label": "Клиент (необязательно)",
+        "shop_order_big_submit": "ОК",
+
+        "shop_order_card_customer_label": "Клиент",
+        "shop_order_card_phone_label": "Телефон",
+
+        # ===== Manager dashboard =====
+        "dashboard_manager_subtitle": "Быстрый обзор: продажи, касса, склад фабрики и магазина, ткани и производство.",
+        "dashboard_manager_shop_orders_title": "Заказы магазина",
+        "dashboard_manager_shop_orders_pending": "Ждут производство",
+        "dashboard_manager_shop_orders_ready": "Готовы",
+        "dashboard_manager_shop_orders_open_factory": "Открыть заказы на производство",
+
+        "dashboard_manager_card_yesterday_sales": "Продажи вчера",
+        "dashboard_manager_card_week_sales": "Продажи (7 дней)",
+        "dashboard_manager_card_week_sales_hint": "UZS за прошлую неделю",
+        "dashboard_manager_card_cash": "Касса",
+        "dashboard_manager_card_products_total": "Товар (все)",
+        "dashboard_manager_card_products_total_hint": "Фабрика + магазин",
+
+        "dashboard_manager_stock_split_title": "Склад фабрики и магазина",
+        "dashboard_manager_stock_split_open_report": "открыть отчёт →",
+        "dashboard_manager_stock_factory": "Фабрика",
+        "dashboard_manager_stock_shop": "Магазин",
+        "dashboard_manager_stock_no_data": "Нет данных по товару.",
+
+        "dashboard_manager_fabrics_low_stock_title": "Ткани: малый остаток",
+        "dashboard_manager_fabrics_low_stock_hint": "Нажмите, чтобы открыть список тканей",
+
+        "dashboard_manager_production_title": "Производство",
+        "dashboard_manager_production_today": "Сегодня",
+        "dashboard_manager_production_total": "Всего",
+        "dashboard_manager_production_hint": "шт. по всем моделям",
+
+        "dashboard_manager_daily_actions_title": "Ежедневные действия",
+        "dashboard_manager_action_products_ready": "Готовая продукция",
+        "dashboard_manager_action_factory_stock": "Склад фабрики",
+        "dashboard_manager_action_shop_stock": "Склад магазина",
+        "dashboard_manager_action_fabrics": "Ткани",
+        "dashboard_manager_action_sales": "Продажи",
+        "dashboard_manager_action_cash": "Касса",
+        "dashboard_manager_action_new_fabric": "Новая ткань",
+
+        "dashboard_manager_reports_title": "Отчёты",
+        "dashboard_manager_action_shop_orders": "Заказы магазина",
+        "dashboard_manager_action_factory_orders": "Заказы на производство",
+        "dashboard_shop_title": "Панель магазина",
+        "dashboard_shop_subtitle": "Коротко: продажи магазина, остатки и главные действия на сегодня.",
+
+        "dashboard_shop_card_yesterday_hint": "Продажи магазина, вчера",
+        "dashboard_shop_card_stock_shop_title": "Товар в магазине",
+        "dashboard_shop_card_stock_shop_hint": "по цене продажи",
+
+        "dashboard_shop_tips_title": "Подсказки для работы",
+        "dashboard_shop_tip_1": "Если товара мало — написать на фабрику, попросить привезти.",
+        "dashboard_shop_tip_2": "Смотреть, какие модели хорошо продаются за 7 дней.",
+        "dashboard_shop_tip_3": "Если модель долго лежит, можно сделать скидку.",
+
+        "dashboard_shop_action_stock_btn": "Остатки в магазине",
+        "dashboard_shop_action_transfer_btn": "Принять товар из фабрики",
+        "dashboard_shop_action_sell_btn": "Продать / заказ",
+        "dashboard_shop_action_export_btn": "Скачать остатки (CSV)",
+
+        "dashboard_shop_reports_title": "Отчёты по магазину",
+        "dashboard_shop_orders_summary_label": "Заказы:",
+        "dashboard_shop_orders_summary_pending": "ожидают",
+        "dashboard_shop_orders_summary_ready": "готовы",
+
+        "shop_low_stock_alert": "⚠ Мало товара в магазине! Попросите завоз с фабрики.",
+        "products_page_title": "Готовая продукция — Mini Moda",
+        "products_page_header": "Товары (готовая продукция)",
+        "products_page_subtitle": "Нажмите на строку товара, чтобы открыть действия: передать в магазин, продать, данные клиента. «Всего» = фабрика + магазин, «Фабрика» = на фабрике, «Магазин» = в магазине.",
+
+        "products_button_add": "Добавить товар",
+        "products_button_import_excel": "Импорт из Excel",
+        "products_button_sales_history": "История продаж",
+
+        "products_filter_search_label": "Поиск",
+        "products_filter_search_placeholder": "Название модели или категория",
+        "products_filter_category_label": "Категория",
+        "products_filter_category_all": "Все категории",
+
+        "products_table_col_code": "Код",
+        "products_table_col_model": "Модель",
+        "products_table_col_category": "Категория",
+        "products_table_col_total": "Всего",
+        "products_table_col_factory": "Фабрика",
+        "products_table_col_in_shop": "Магазин",
+        "products_table_col_split": "Разделение",
+        "products_table_col_cost_per_unit": "Себестоимость / 1",
+        "products_table_col_sell_per_unit": "Продажа / 1",
+
+        "products_badge_no_stock": "нет остатков",
+        "products_badge_low_stock": "мало",
+        "products_badge_only_shop": "только магазин",
+        "products_badge_only_factory": "только фабрика",
+        "products_no_category": "без категории",
+
+        "products_split_factory_short": "Ф",
+        "products_split_shop_short": "М",
+        "products_split_no_data": "Нет остатков",
+
+        "products_details_title_info": "Информация по товару",
+        "products_details_code": "Код",
+        "products_details_model": "Модель",
+        "products_details_category": "Категория",
+        "products_details_total_qty": "Всего",
+        "products_details_factory_qty": "На фабрике",
+        "products_details_shop_qty": "В магазине",
+        "products_details_currency": "Валюта",
+        "products_details_cost_per_unit": "Себестоимость / 1",
+        "products_details_sell_per_unit": "Продажа / 1",
+        "products_details_total_cost_factory": "Себестоимость (фабр. остаток)",
+        "products_details_total_sell_factory": "Продажная сумма (фабр. остаток)",
+
+        "products_details_move_to_shop_title": "Передать товар в магазин",
+        "products_details_move_to_shop_qty_label": "Количество в магазин",
+        "products_details_move_to_shop_qty_placeholder": "Сколько отправить",
+        "products_details_move_to_shop_button": "→ Передать в магазин",
+
+        "products_details_sell_from_factory_title": "Продажа с фабрики",
+        "products_details_sell_qty_label": "Количество",
+        "products_details_sell_qty_placeholder": "Сколько продать",
+        "products_details_sell_price_per_unit_label": "Цена / 1 (опц.)",
+        "products_details_sell_price_per_unit_placeholder": "Если пусто — по стандартной цене",
+        "products_details_customer_name_label": "Имя клиента",
+        "products_details_customer_name_placeholder": "Например: Ali, Murod ...",
+        "products_details_customer_phone_label": "Телефон клиента",
+        "products_details_customer_phone_placeholder": "+998 ...",
+        "products_details_sell_button": "Продать",
+
+        "products_import_title": "Импорт товаров из Excel",
+        "products_import_button": "Импорт",
+        "products_import_hint": "Ожидаемые колонки: название/модель, количество, опционально: категория, себестоимость, цена продажи, валюта (UZS/USD).",
+
+        "products_modal_title": "Добавить новый товар",
+        "products_modal_model_label": "Модель",
+        "products_modal_category_label": "Категория",
+        "products_modal_category_placeholder": "Например: костюм",
+        "products_modal_quantity_label": "Количество (на фабрике)",
+        "products_modal_cost_label": "Себестоимость / 1",
+        "products_modal_sell_label": "Цена продажи / 1",
+        "products_modal_currency_label": "Валюта",
+        "products_modal_cancel_button": "Отмена",
+        "products_modal_save_button": "Сохранить товар",
+
+
+    },
+
+    "uz": {
+        "app_title": "Mini Moda — ombor va do‘kon",
+
+        # Main menu
+        "menu_dashboard": "Asosiy",
+        "menu_fabrics": "Matolar",
+        "menu_products": "Mahsulotlar",
+        "menu_sales": "Sotuvlar",
+        "menu_cash": "Kassa",
+        "menu_shop": "Do‘kon",
+        "menu_logout": "Chiqish",
+
+        "menu_reports": "Hisobotlar",
+        "reports_shop_history": "Ombor tarixi",
+        "reports_shop_weekly": "Haftalik hisobot (do‘kon)",
+        "reports_shop_monthly": "Oylik hisobot (do‘kon)",
+        "reports_fabric_usage": "Mato ishlatilishi",
+        "reports_manager_main": "Rahbar hisoboti",
+        "reports_manager_pdf": "PDF hisobot yuklash",
+
+        "lang_ru": "RU",
+        "lang_uz": "UZ",
+
+        # Login
+        "login_title": "Kirish",
+        "login_username": "Login",
+        "login_password": "Parol",
+        "login_button": "Kirish",
+        "login_default_user": "Standart foydalanuvchi: admin / admin123",
+        "error_wrong_credentials": "Login yoki parol noto‘g‘ri.",
+
+        # Dashboards
+        "dashboard_title": "Bosh sahifa",
+        "dashboard_welcome": "Xush kelibsiz! Bu yerda ombor va do‘kon bo‘yicha qulay hisobotlar bo‘ladi.",
+
+        # Header info
+        "header_usd_rate_title": "Dollar kursi (MB RUz)",
+        "header_usd_rate_value": "1 USD = {rate} so‘m",
+
+        # Footer
+        "footer_internal_system": "ichki tizim",
+
+        # Fabrics page
+        "fabrics_title": "Matolar",
+        "current_fabrics": "Joriy matolar",
+        "table_id": "ID",
+        "table_name": "Nomi",
+        "table_color": "Rangi",
+        "table_unit": "O‘lchov birligi",
+        "table_quantity": "Miqdori",
+        "table_price_per_unit": "Bir birlik narxi",
+        "table_currency": "Valyuta",
+        "table_category": "Kategoriya",
+        "table_actions": "Amallar",
+
+        "add_fabric": "Yangi mato qo‘shish",
+        "add_name": "Nomi",
+        "add_color": "Rangi",
+        "add_unit": "O‘lchov birligi (kg yoki m)",
+        "add_quantity": "Miqdori",
+        "add_price_per_unit": "1 birlik narxi",
+        "add_price_currency": "Valyuta",
+        "add_category": "Kategoriya (masalan, paxta, podkladka)",
+        "add_button": "Matoni saqlash",
+
+        "cut_button": "Kesish / ishlatish",
+        "cut_placeholder": "Qancha ishlatamiz",
+
+        "last_cuts": "Oxirgi kesishlar",
+        "last_cuts_date": "Sana",
+        "last_cuts_fabric": "Mato",
+        "last_cuts_used_amount": "Ishlatilgan miqdor",
+
+        "search_placeholder": "Nomi yoki rangi bo‘yicha qidirish",
+        "sort_label": "Saralash",
+        "sort_name": "Nom bo‘yicha",
+        "sort_quantity": "Miqdor bo‘yicha",
+        "sort_price": "Narx bo‘yicha",
+
+        "low_stock_warning": "Diqqat: ba’zi matolarda qoldiq kam",
+        "low_stock_badge": "Kam",
+
+        # merge / AI-like
+        "merge_title": "O‘xshash mato topildi",
+        "merge_found_similar": "O‘xshash mato topildi. Miqdorni qo‘shib yuboramizmi yoki yangi yozuv yaratamizmi?",
+        "merge_existing_fabric": "Mavjud mato",
+        "merge_new_fabric": "Yangi mato (siz kiritdingiz)",
+        "merge_button_yes": "Ha, qo‘shib yuborish",
+        "merge_button_no_new": "Yangi yozuv yaratish",
+
+        # Generic buttons / labels
+        "btn_save": "Saqlash",
+        "btn_cancel": "Bekor qilish",
+        "btn_back": "Orqaga",
+        "btn_export_csv": "CSV eksport",
+        "btn_export_excel": "Excel eksport",
+
+        # Shop / products
+        "shop_title": "Do‘kon",
+        "shop_stock": "Do‘kondagi mahsulotlar",
+        "shop_transfer": "Do‘konga topshirish",
+        "shop_totals": "Do‘kon bo‘yicha jami",
+        "shop_no_items": "Do‘konda hozircha mahsulot yo‘q.",
+        "shop_form_quantity": "Topshiriladigan miqdor",
+        "shop_form_price": "Sotuv narxi (bir dona uchun)",
+        "shop_form_submit": "Do‘konga topshirish",
+
+        # Filters / search (generic)
+        "filter_search": "Qidirish",
+        "filter_category": "Kategoriya",
+        "filter_status": "Status",
+
+        # ===== Shop: sell (big form) =====
+        "shop_sell_title": "Do‘kondan savdo / katta buyurtma",
+        "shop_sell_subtitle": "Bu yerda do‘kondan oddiy savdo yoki katta buyurtma qilish mumkin.",
+        "shop_sell_product_label": "Mahsulot",
+        "shop_sell_select_placeholder": "— Mahsulot tanlang —",
+        "shop_sell_quantity_label": "Soni (dona)",
+        "shop_sell_customer_name_label": "Mijoz ismi (ixtiyoriy)",
+        "shop_sell_customer_phone_label": "Mijoz telefoni (ixtiyoriy)",
+        "shop_sell_note_label": "Izoh (ixtiyoriy)",
+        "shop_sell_note_placeholder": "Masalan: ertaga olib ketadi, doimiy mijoz va hokazo.",
+        "shop_sell_allow_partial_label": "Agar mahsulot yetarli bo‘lmasa — borini sotasiz, qolganiga buyurtma yaratiladi.",
+        "shop_sell_submit": "Savdoni saqlash",
+        "shop_sell_back": "Panelga qaytish",
+
+        # ===== Shop: sell one product =====
+        "shop_product_sale_title": "Do‘kondan savdo",
+        "shop_product_sale_subtitle": "Mijozga mahsulot sotish. Agar do‘konda yetarli bo‘lmasa, qolgan qismi uchun buyurtma yaratiladi.",
+        "shop_product_sale_back": "Do‘kon omboriga qaytish",
+        "shop_product_info_category": "Kategoriya",
+        "shop_product_info_stock": "Do‘kondagi qoldiq",
+        "shop_product_info_price": "Sotuv narxi",
+        "shop_product_form_title": "Savdoni rasmiylashtirish",
+        "shop_product_form_quantity_label": "Soni (dona)",
+        "shop_product_form_quantity_help": "Hozir do‘konda",
+        "shop_product_form_customer_name_label": "Mijoz ismi (ixtiyoriy)",
+        "shop_product_form_customer_phone_label": "Mijoz telefoni (ixtiyoriy)",
+        "shop_product_form_note_label": "Izoh (ixtiyoriy)",
+        "shop_product_form_note_placeholder": "Masalan: doimiy mijoz, ertaga to‘laydi va hokazo.",
+        "shop_product_form_allow_partial_label": "Agar mahsulot yetarli bo‘lmasa — borini sotasiz, qolganiga buyurtma yaratiladi.",
+        "shop_product_form_cancel": "Bekor qilish",
+        "shop_product_form_submit": "Sotish",
+
+        # ===== Shop orders list & cards =====
+        "shop_orders_title": "Mening buyurtmalarim",
+        "shop_orders_back": "Orqaga",
+        "shop_orders_no_orders": "Hozircha buyurtmalar yo‘q",
+        "shop_orders_customer_label": "Mijoz",
+        "shop_orders_phone_label": "Telefon",
+        "shop_orders_status_pending": "⏳ Ishlab chiqarishni kutmoqda",
+        "shop_orders_status_ready": "✅ Tayyor, olib ketishga",
+        "shop_orders_status_completed": "✔ Buyurtma berilgan",
+        "shop_orders_status_cancelled": "✖ Buyurtma bekor qilingan",
+
+        "shop_order_big_title": "Katta buyurtma qilish",
+        "shop_order_big_subtitle": "Agar do‘konda yetarli miqdor bo‘lmasa, fabrikaga buyurtma yaratiladi.",
+        "shop_order_big_product_label": "Mahsulot",
+        "shop_order_big_quantity_label": "Miqdor",
+        "shop_order_big_customer_label": "Mijoz (ixtiyoriy)",
+        "shop_order_big_submit": "OK",
+
+        "shop_order_card_customer_label": "Mijoz",
+        "shop_order_card_phone_label": "Telefon",
+
+        # ===== Manager dashboard =====
+        "dashboard_manager_subtitle": "Qisqa ko‘rinish: savdo, kassa, fabrika va do‘kon ombori, matolar va ishlab chiqarish.",
+        "dashboard_manager_shop_orders_title": "Do‘kon buyurtmalari",
+        "dashboard_manager_shop_orders_pending": "Ishlab chiqarishni kutyapti",
+        "dashboard_manager_shop_orders_ready": "Tayyor",
+        "dashboard_manager_shop_orders_open_factory": "Fabrika buyurtmalarini ochish",
+
+        "dashboard_manager_card_yesterday_sales": "Kecha savdo",
+        "dashboard_manager_card_week_sales": "7 kunlik savdo",
+        "dashboard_manager_card_week_sales_hint": "O‘tgan hafta UZS bo‘yicha",
+        "dashboard_manager_card_cash": "Kassa",
+        "dashboard_manager_card_products_total": "Tovar (hammasi)",
+        "dashboard_manager_card_products_total_hint": "Fabrika + do‘kon",
+
+        "dashboard_manager_stock_split_title": "Fabrika va do‘kon ombori",
+        "dashboard_manager_stock_split_open_report": "hisobotni ochish →",
+        "dashboard_manager_stock_factory": "Fabrika",
+        "dashboard_manager_stock_shop": "Do‘kon",
+        "dashboard_manager_stock_no_data": "Tovar bo‘yicha ma’lumot yo‘q.",
+
+        "dashboard_manager_fabrics_low_stock_title": "Matolar: qoldiq kam",
+        "dashboard_manager_fabrics_low_stock_hint": "Matolar ro‘yxatini ochish uchun bosing",
+
+        "dashboard_manager_production_title": "Ishlab chiqarish",
+        "dashboard_manager_production_today": "Bugun",
+        "dashboard_manager_production_total": "Jami",
+        "dashboard_manager_production_hint": "barcha modellarda dona hisobida",
+
+        "dashboard_manager_daily_actions_title": "Kundalik harakatlar",
+        "dashboard_manager_action_products_ready": "Tayyor mahsulotlar",
+        "dashboard_manager_action_factory_stock": "Fabrika ombori",
+        "dashboard_manager_action_shop_stock": "Do‘kon ombori",
+        "dashboard_manager_action_fabrics": "Matolar",
+        "dashboard_manager_action_sales": "Savdolar",
+        "dashboard_manager_action_cash": "Kassa",
+        "dashboard_manager_action_new_fabric": "Yangi mato",
+
+        "dashboard_manager_reports_title": "Hisobotlar",
+        "dashboard_manager_action_shop_orders": "Do‘kon buyurtmalari",
+        "dashboard_manager_action_factory_orders": "Ishlab chiqarish buyurtmalari",
+        "dashboard_shop_title": "Do‘kon paneli",
+        "dashboard_shop_subtitle": "Qisqacha: do‘kon savdosi, qoldiq va bugungi asosiy ishlar.",
+
+        "dashboard_shop_card_yesterday_hint": "Kecha do‘kon savdosi",
+        "dashboard_shop_card_stock_shop_title": "Do‘kondagi tovar",
+        "dashboard_shop_card_stock_shop_hint": "sotuv narxida",
+
+        "dashboard_shop_tips_title": "Ish bo‘yicha maslahatlar",
+        "dashboard_shop_tip_1": "Mahsulot kam bo‘lsa — fabrikaga yozib, olib kelishni so‘rash.",
+        "dashboard_shop_tip_2": "Qaysi modelllar 7 kunda yaxshi sotilganini ko‘rish.",
+        "dashboard_shop_tip_3": "Model uzoq turib qolsa, chegirma qilish mumkin.",
+
+        "dashboard_shop_action_stock_btn": "Do‘kondagi qoldiq",
+        "dashboard_shop_action_transfer_btn": "Fabrikadan tovar qabul qilish",
+        "dashboard_shop_action_sell_btn": "Sotish / buyurtma",
+        "dashboard_shop_action_export_btn": "Qoldiqni yuklash (CSV)",
+
+        "dashboard_shop_reports_title": "Do‘kon hisobotlari",
+        "dashboard_shop_orders_summary_label": "Buyurtmalar:",
+        "dashboard_shop_orders_summary_pending": "kutyapti",
+        "dashboard_shop_orders_summary_ready": "tayyor",
+
+        "shop_low_stock_alert": "⚠ Do‘konda mahsulot kam! Fabrikadan olib kelishni so‘rang.",
+            "products_page_title": "Tayyor mahsulotlar — Mini Moda",
+        "products_page_header": "Mahsulotlar (tayyor mahsulot)",
+        "products_page_subtitle": "Mahsulot qatoriga bosib, harakatlarni oching: do‘konga berish, sotish, mijoz ma’lumoti. “Jami” = fabrika + do‘kon, “Fabrika” = fabrikada, “Do‘kon” = do‘konda.",
+
+        "products_button_add": "Yangi mahsulot qo‘shish",
+        "products_button_import_excel": "Excel dan import",
+        "products_button_sales_history": "Sotuvlar tarixi",
+
+        "products_filter_search_label": "Qidirish",
+        "products_filter_search_placeholder": "Model nomi yoki kategoriya",
+        "products_filter_category_label": "Kategoriya",
+        "products_filter_category_all": "Barcha kategoriyalar",
+
+        "products_table_col_code": "Kod",
+        "products_table_col_model": "Model",
+        "products_table_col_category": "Kategoriya",
+        "products_table_col_total": "Jami",
+        "products_table_col_factory": "Fabrika",
+        "products_table_col_in_shop": "Do‘kon",
+        "products_table_col_split": "Bo‘linish",
+        "products_table_col_cost_per_unit": "Tannarx / 1",
+        "products_table_col_sell_per_unit": "Sotuv narxi / 1",
+
+        "products_badge_no_stock": "qoldiq yo‘q",
+        "products_badge_low_stock": "kam",
+        "products_badge_only_shop": "faqat do‘kon",
+        "products_badge_only_factory": "faqat fabrika",
+        "products_no_category": "kategoriya yo‘q",
+
+        "products_split_factory_short": "F",
+        "products_split_shop_short": "D",
+        "products_split_no_data": "Qoldiq yo‘q",
+
+        "products_details_title_info": "Mahsulot haqida ma’lumot",
+        "products_details_code": "Kod",
+        "products_details_model": "Model",
+        "products_details_category": "Kategoriya",
+        "products_details_total_qty": "Jami",
+        "products_details_factory_qty": "Fabrikada",
+        "products_details_shop_qty": "Do‘konda",
+        "products_details_currency": "Valyuta",
+        "products_details_cost_per_unit": "Tannarx / 1",
+        "products_details_sell_per_unit": "Sotuv narxi / 1",
+        "products_details_total_cost_factory": "Tannarx (fabrika qoldig‘i)",
+        "products_details_total_sell_factory": "Sotuv summasi (fabrika qoldig‘i)",
+
+        "products_details_move_to_shop_title": "Mahsulotni do‘konga berish",
+        "products_details_move_to_shop_qty_label": "Do‘konga beriladigan miqdor",
+        "products_details_move_to_shop_qty_placeholder": "Qancha beramiz",
+        "products_details_move_to_shop_button": "→ Do‘konga berish",
+
+        "products_details_sell_from_factory_title": "Fabrikadan sotish",
+        "products_details_sell_qty_label": "Miqdor",
+        "products_details_sell_qty_placeholder": "Qancha sotamiz",
+        "products_details_sell_price_per_unit_label": "Narx / 1 (ixtiyoriy)",
+        "products_details_sell_price_per_unit_placeholder": "Bo‘sh bo‘lsa — standart narx",
+        "products_details_customer_name_label": "Mijoz ismi",
+        "products_details_customer_name_placeholder": "Masalan: Ali, Murod ...",
+        "products_details_customer_phone_label": "Mijoz telefoni",
+        "products_details_customer_phone_placeholder": "+998 ...",
+        "products_details_sell_button": "Sotish",
+
+        "products_import_title": "Mahsulotlarni Excel dan import qilish",
+        "products_import_button": "Import",
+        "products_import_hint": "Kutiladigan ustunlar: nom/model, miqdor, ixtiyoriy: kategoriya, tannarx, sotuv narxi, valyuta (UZS/USD).",
+
+        "products_modal_title": "Yangi mahsulot qo‘shish",
+        "products_modal_model_label": "Model",
+        "products_modal_category_label": "Kategoriya",
+        "products_modal_category_placeholder": "Masalan: kostyum",
+        "products_modal_quantity_label": "Miqdor (fabrikada)",
+        "products_modal_cost_label": "Tannarx / 1",
+        "products_modal_sell_label": "Sotuv narxi / 1",
+        "products_modal_currency_label": "Valyuta",
+        "products_modal_cancel_button": "Bekor qilish",
+        "products_modal_save_button": "Mahsulotni saqlash",
+
+
+    },
+}
+
+
+# Helper to detect language from Flask session if available
+try:
+    from flask import session
+except Exception:  # when running without Flask context
+    session = None
+
+
+def _get_current_language(default: str = "ru") -> str:
+    """
+    Try to get language from Flask session.
+    If not available (CLI / scripts), fallback to default.
+    """
+    if session is not None:
+        try:
+            lang = session.get("language", default)
+            if lang in translations:
+                return lang
+        except Exception:
+            pass
+    return default
+
+
+def t(key: str, lang: str | None = None) -> str:
+    """
+    Simple translation helper.
+
+    - If lang is None, use language from session (or 'ru' by default)
+    - If key not found in selected language, fallback to Russian
+    - If still not found, return the key itself (so you see missing keys)
+    """
+    if lang is None:
+        lang = _get_current_language()
+
+    if lang not in translations:
+        lang = "ru"
+
+    return translations[lang].get(key, translations["ru"].get(key, key))

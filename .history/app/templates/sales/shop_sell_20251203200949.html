@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container py-3 py-md-4">
+  <h1 class="h5 mb-3">
+    Продажа из магазина / Katta buyurtma (do‘kon)
+  </h1>
+
+  <p class="small text-muted">
+    Здесь можно оформить обычную продажу из магазина или большой заказ.
+    <br>
+    Bu yerda do‘kondan oddiy savdo yoki katta buyurtma qilish mumkin.
+  </p>
+
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">
+        Товар / Mahsulot
+      </label>
+      <select name="product_id" class="form-select" required>
+        <option value="">— выберите товар / Mahsulot tanlang —</option>
+        {% for p in products %}
+          <option value="{{ p.id }}">
+            {{ p.name }} — {{ p.sell_price_per_item or 0 }} UZS
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">
+        Количество (шт.) / Soni (dona)
+      </label>
+      <input type="number" name="quantity" class="form-control" min="1" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">
+        Имя клиента (необязательно) / Mijoz ismi (ixtiyoriy)
+      </label>
+      <input type="text"
+             name="customer_name"
+             class="form-control"
+             placeholder="Например / Masalan: Ali, Saida ...">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">
+        Телефон клиента (необязательно) / Mijoz telefoni (ixtiyoriy)
+      </label>
+      <input type="text"
+             name="customer_phone"
+             class="form-control"
+             placeholder="+998 ..">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">
+        Комментарий (необязательно) / Izoh (ixtiyoriy)
+      </label>
+      <textarea name="note"
+                class="form-control"
+                rows="2"
+                placeholder="Например: заберёт завтра / Masalan: ertaga olib ketadi ..."></textarea>
+    </div>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input"
+             type="checkbox"
+             value="1"
+             id="allow_partial"
+             name="allow_partial"
+             checked>
+      <label class="form-check-label" for="allow_partial">
+        Если товара мало — продать, сколько есть, остальное оформить как заказ.
+        <br>
+        Agar mahsulot yetarli bo‘lmasa — borini sotasiz, qolganiga buyurtma yaratiladi.
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+      💸 Сохранить продажу / Savdoni saqlash
+    </button>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-sm ms-2">
+      ← Назад на панель / Orqaga
+    </a>
+  </form>
+</div>
+
+{% endblock %}

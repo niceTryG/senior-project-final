@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}История движения товара — Mini Moda{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4 mm-page-movement-history">
+
+  {# ===== HEADER ===== #}
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h5 mb-1">📜 История движения товара</h1>
+      <p class="small text-muted mb-0">
+        Фабрика → Магазин → Клиент. Можно отфильтровать по товару, заказу, типу движения и дате.
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('shop.list_shop_orders') }}" class="btn btn-sm btn-outline-info">
+        🧾 Заказы магазина
+      </a>
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+        ⬅ На дашборд
+      </a>
+    </div>
+  </div>
+
+  {# ===== LEGEND ===== #}
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body py-2">
+      <div class="small text-muted">
+        <span class="badge bg-info text-dark me-1">factory_to_shop</span> приход в магазин с фабрики ·
+        <span class="badge bg-primary me-1">factory_to_shop_for_order</span> приход под конкретный заказ ·
+        <span class="badge bg-success me-1">shop_sale</span> продажа клиенту ·
+        <span class="badge bg-secondary me-1">adjustment</span> ручная корректировка
+      </div>
+    </div>
+  </div>
+
+  {# ===== ФОРМА ФИЛЬТРОВ ===== #}
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end mb-0">
+        <div class="col-12 col-md-3">
+          <label class="form-label small mb-1">Товар</label>
+          <select name="product_id" class="form-select form-select-sm">
+            <option value="">Все товары</option>
+            {% for p in products %}
+              <option value="{{ p.id }}"
+                      {% if filter_product_id and filter_product_id == p.id %}selected{% endif %}>
+                {{ p.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label small mb-1">ID заказа</label>
+          <input
+            type="number"
+            name="order_id"
+            class="form-control form-control-sm"
+            value="{{ filter_order_id or '' }}">
+        </div>
+
+        <div class="col-6 col-md-3">
+          <label class="form-label small mb-1">Тип движения</label>
+          <select name="type" class="form-select form-select-sm">
+            <option value="">Все типы</option>
+            <option value="factory_to_shop"
+              {% if filter_type == 'factory_to_shop' %}selected{% endif %}>
+              Фабрика → Магазин (обычный приход)
+            </option>
+            <option value="factory_to_shop_for_order"
+              {% if filter_type == 'factory_to_shop_for_order' %}selected{% endif %}>
+              Фабрика → Магазин (под заказ)
+            </option>
+            <option value="shop_sale"
+              {% if filter_type == 'shop_sale' %}selected{% endif %}>
+              Продажа из магазина
+            </option>
+            <option value="adjustment"
+              {% if filter_type == 'adjustment' %}selected{% endif %}>
+              Корректировка
+            </option>
+          </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label small mb-1">С даты</label>
+          <input
+            type="date"
+            name="from"
+            class="form-control form-control-sm"
+            value="{{ filter_from or '' }}">
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label small mb-1">По дату</label>
+          <input
+            type="date"
+            name="to"
+            class="form-control form-control-sm"
+            value="{{ filter_to or '' }}">
+        </div>
+
+        <div class="col-12 mt-2 d-flex flex-wrap gap-2">
+          <button type="submit" class="btn btn-sm btn-primary">
+            🔎 Применить фильтр
+          </button>
+          <a href="{{ url_for('shop.movement_history') }}" class="btn btn-sm btn-outline-secondary">
+            ✖ Очистить
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ===== ТАБЛИЦА ДВИЖЕНИЙ ===== #}
+  {% if movements %}
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="text-nowrap">Дата / время</th>
+                <th class="text-nowrap">Товар</th>
+                <th class="text-end text-nowrap">Кол-во</th>
+                <th class="text-nowrap">Откуда → Куда</th>
+                <th class="text-nowrap">Тип</th>
+                <th class="text-nowrap">Заказ</th>
+                <th>Комментарий</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for mv in movements %}
+              <tr>
+                <td class="small text-nowrap">
+                  {{ mv.timestamp.strftime("%Y-%m-%d %H:%M") if mv.timestamp }}
+                </td>
+
+                <td class="small">
+                  {{ mv.product.name if mv.product else "—" }}
+                </td>
+
+                <td class="text-end small">
+                  {% if mv.qty_change > 0 %}
+                    <span class="text-success">+{{ mv.qty_change }}</span>
+                  {% elif mv.qty_change < 0 %}
+                    <span class="text-danger">{{ mv.qty_change }}</span>
+                  {% else %}
+                    {{ mv.qty_change }}
+                  {% endif %}
+                </td>
+
+                <td class="small">
+                  {{ mv.source or "—" }} → {{ mv.destination or "—" }}
+                </td>
+
+                <td class="small">
+                  {% if mv.movement_type == 'factory_to_shop' %}
+                    <span class="badge bg-info text-dark">factory_to_shop</span>
+                  {% elif mv.movement_type == 'factory_to_shop_for_order' %}
+                    <span class="badge bg-primary">factory_to_shop_for_order</span>
+                  {% elif mv.movement_type == 'shop_sale' %}
+                    <span class="badge bg-success">shop_sale</span>
+                  {% elif mv.movement_type == 'adjustment' %}
+                    <span class="badge bg-secondary">adjustment</span>
+                  {% else %}
+                    <span class="badge bg-light text-dark">
+                      {{ mv.movement_type or "—" }}
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td class="small">
+                  {% if mv.order_id %}
+                    <a href="{{ url_for('shop.history_by_order', order_id=mv.order_id) }}">
+                      #{{ mv.order_id }}
+                    </a>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
+                <td class="small">
+                  {{ mv.comment or "" }}
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-light border small mb-0">
+      Нет движений по выбранным фильтрам.
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

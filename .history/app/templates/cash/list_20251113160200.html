@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-3">Касса</h1>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-3">
+    <label class="form-label">От даты</label>
+    <input type="date" name="from" class="form-control" value="{{ date_from }}">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">До даты</label>
+    <input type="date" name="to" class="form-control" value="{{ date_to }}">
+  </div>
+  <div class="col-md-3 d-flex align-items-end">
+    <button type="submit" class="btn btn-secondary w-100">Фильтр</button>
+  </div>
+  <div class="col-md-3 d-flex align-items-end">
+    <div class="w-100 text-end">
+      <div><strong>Итого (UZS):</strong> {{ format_money(total_uzs, 'UZS') }}</div>
+      <div><strong>Итого (USD):</strong> {{ format_money(total_usd, 'USD') }}</div>
+    </div>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-sm table-bordered align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>ID</th>
+        <th>Дата</th>
+        <th>Сумма</th>
+        <th>Валюта</th>
+        <th>Комментарий</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in records %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.date }}</td>
+        <td>{{ format_money(r.amount, r.currency) }}</td>
+        <td>{{ r.currency }}</td>
+        <td>{{ r.note or "" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-1">Панель бухгалтера / учёта производства</h1>
+    <p class="text-muted mb-0">
+      Материалы, себестоимость и объёмы пошива для Mini Moda.
+    </p>
+  </div>
+</div>
+
+<!-- SECTION 1: Материалы (ткани) -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body text-center">
+        <div class="small text-muted mb-1">Всего видов ткани</div>
+        <div class="fs-4 fw-bold">{{ stats.fabric_total_fabrics }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body text-center">
+        <div class="small text-muted mb-1">Стоимость тканей (UZS)</div>
+        <div class="fs-6 fw-bold">
+          {{ format_money(stats.fabric_total_value_uzs, 'UZS') }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body text-center">
+        <div class="small text-muted mb-1">Стоимость тканей (USD)</div>
+        <div class="fs-6 fw-bold">
+          {{ format_money(stats.fabric_total_value_usd, 'USD') }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body text-center">
+        <div class="small text-muted mb-1">Позиции с низким остатком ткани</div>
+        <div class="fs-4 fw-bold text-danger">
+          {{ stats.fabric_low_stock_count }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: Производство -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body text-center">
+        <div class="small text-muted mb-1">Произведено сегодня (шт)</div>
+        <div class="fs-3 fw-bold">
+          {{ stats.produced_today }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body text-center">
+        <div class="small text-muted mb-1">Всего произведено (шт)</div>
+        <div class="fs-3 fw-bold">
+          {{ stats.produced_total }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: Информация и подсказки -->
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <h5 class="card-title mb-2">Для чего эта панель</h5>
+    <p class="mb-1">
+      <strong>Мама</strong> здесь видит:
+    </p>
+    <ul class="mb-1">
+      <li>Общую стоимость тканей — для контроля закупок.</li>
+      <li>Сколько ткани осталось и где уже мало (нужно докупить).</li>
+      <li>Сколько изделий шьётся сегодня и сколько уже сшито всего.</li>
+    </ul>
+    <p class="mb-0 text-muted">
+      Позже сюда можно добавить отчёт по зарплатам швей и расходу фурнитуры (armatura).
+    </p>
+  </div>
+</div>
+
+<!-- SECTION 4: Быстрые действия -->
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h5 class="card-title mb-3">Быстрые действия</h5>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('fabrics.list') }}" class="btn btn-sm btn-outline-primary">
+        🧵 Список тканей
+      </a>
+      <a href="{{ url_for('fabric_report.usage_report') }}" class="btn btn-sm btn-outline-secondary">
+        📊 Отчёт по использованию ткани
+      </a>
+      <a href="{{ url_for('products.list_products') }}" class="btn btn-sm btn-outline-primary">
+        👕 Готовая продукция
+      </a>
+      <a href="{{ url_for('cash.list_cash') }}" class="btn btn-sm btn-outline-success">
+        💰 Касса / движения денег
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

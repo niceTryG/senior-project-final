@@ -1,0 +1,606 @@
+{% extends "base.html" %}
+
+{% block title %}Склад магазина — Mini Moda{% endblock %}
+
+{% block content %}
+<style>
+  /* =========================
+     Mini Moda — Shop Stock (Super Neo)
+     Scoped: .mm-page-shop-stock
+     ========================= */
+  .mm-page-shop-stock{
+    --mm-cardA: rgba(255,255,255,.78);
+    --mm-cardB: rgba(255,255,255,.92);
+    --mm-line: rgba(0,0,0,.08);
+    --mm-muted: rgba(0,0,0,.50);
+    --mm-soft: rgba(0,0,0,.68);
+    --mm-shadow: 0 14px 36px rgba(0,0,0,.12);
+    --mm-shadow-soft: 0 10px 22px rgba(0,0,0,.07);
+    --mm-glow: 0 0 0 .22rem rgba(13,110,253,.14);
+    --mm-radius: 18px;
+    position: relative;
+  }
+  .mm-page-shop-stock::before{
+    content:"";
+    position:absolute;
+    inset:-18px -12px -18px -12px;
+    pointer-events:none;
+    background:
+      radial-gradient(circle at 14% 12%, rgba(13,110,253,.12), transparent 34%),
+      radial-gradient(circle at 86% 18%, rgba(111,66,193,.10), transparent 36%),
+      radial-gradient(circle at 28% 90%, rgba(32,201,151,.10), transparent 38%),
+      linear-gradient(to bottom, rgba(0,0,0,.03), transparent 40%);
+    opacity:.95;
+  }
+  .mm-page-shop-stock > *{ position: relative; z-index: 1; }
+
+  .mm-neo-shell{
+    border:1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: linear-gradient(180deg, var(--mm-cardA), var(--mm-cardB));
+    box-shadow: var(--mm-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow:hidden;
+  }
+
+  .mm-neo-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    padding:.33rem .7rem;
+    border-radius:999px;
+    border:1px solid var(--mm-line);
+    background: rgba(255,255,255,.72);
+    font-size:.78rem;
+    color: var(--mm-soft);
+    white-space: nowrap;
+  }
+  .mm-neo-pillbtn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:.45rem;
+    padding:.55rem .85rem;
+    border-radius: 999px;
+    border: 1px solid var(--mm-line);
+    background: rgba(255,255,255,.76);
+    box-shadow: 0 10px 18px rgba(0,0,0,.06);
+    font-weight: 800;
+    font-size: .86rem;
+    color: rgba(0,0,0,.72);
+    text-decoration: none;
+  }
+  .mm-neo-pillbtn:active{ transform: translateY(1px); }
+  .mm-neo-pillbtn-primary{
+    background: rgba(13,110,253,.10);
+    border-color: rgba(13,110,253,.25);
+  }
+  .mm-neo-pillbtn-success{
+    background: rgba(32,201,151,.10);
+    border-color: rgba(32,201,151,.25);
+  }
+  .mm-neo-pillbtn-danger{
+    background: rgba(220,53,69,.10);
+    border-color: rgba(220,53,69,.22);
+  }
+  .mm-neo-pillbtn-dark{
+    background: rgba(0,0,0,.06);
+    border-color: rgba(0,0,0,.10);
+  }
+
+  .mm-neo-title{
+    font-weight: 900;
+    letter-spacing: .2px;
+    margin: 0;
+  }
+  .mm-neo-sub{
+    margin: 0;
+    color: var(--mm-muted);
+  }
+
+  /* Mobile sticky search bar */
+  .mm-stock-sticky{
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .mm-stock-sticky .mm-neo-shell{
+    box-shadow: 0 14px 34px rgba(0,0,0,.10);
+  }
+
+  .mm-neo-input:focus,
+  .mm-page-shop-stock .form-select:focus{
+    box-shadow: var(--mm-glow);
+    border-color: rgba(13,110,253,.35);
+  }
+
+  /* KPI tiles */
+  .mm-kpi-tile{
+    border:1px solid var(--mm-line);
+    border-radius: 18px;
+    background: rgba(255,255,255,.76);
+    box-shadow: var(--mm-shadow-soft);
+  }
+  .mm-kpi-top{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .mm-kpi-label{
+    font-size: .74rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--mm-muted);
+    font-weight: 800;
+  }
+  .mm-kpi-value{
+    font-weight: 900;
+    font-size: 1.4rem;
+    color: rgba(0,0,0,.78);
+    line-height: 1.1;
+  }
+  .mm-kpi-foot{
+    font-size: .8rem;
+    color: var(--mm-muted);
+  }
+
+  /* Mobile product cards */
+  .mm-stock-card{
+    border: 1px solid var(--mm-line);
+    border-radius: 18px;
+    background: rgba(255,255,255,.78);
+    box-shadow: var(--mm-shadow-soft);
+    overflow: hidden;
+  }
+  .mm-stock-card.mm-empty{
+    background: rgba(255,255,255,.72);
+    border-color: rgba(0,0,0,.10);
+    opacity: .92;
+  }
+  .mm-stock-card.mm-low{
+    border-color: rgba(220,53,69,.25);
+    box-shadow: 0 12px 26px rgba(220,53,69,.08);
+  }
+  .mm-stock-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .mm-stock-code{
+    font-size: .78rem;
+    color: var(--mm-muted);
+  }
+  .mm-stock-name{
+    font-weight: 900;
+    font-size: 1.02rem;
+    line-height: 1.15;
+    margin-top: 2px;
+  }
+  .mm-stock-meta{
+    font-size: .82rem;
+    color: var(--mm-muted);
+    margin-top: 3px;
+  }
+  .mm-stock-qtybox{
+    text-align: right;
+  }
+  .mm-stock-qty{
+    font-weight: 950;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: rgba(0,0,0,.78);
+  }
+
+  .mm-metric-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .mm-metric{
+    border:1px solid var(--mm-line);
+    border-radius: 14px;
+    background: rgba(255,255,255,.62);
+    padding: 8px 10px;
+  }
+  .mm-metric .k{
+    font-size: .72rem;
+    color: var(--mm-muted);
+    margin-bottom: 1px;
+  }
+  .mm-metric .v{
+    font-weight: 900;
+    font-size: .9rem;
+    color: rgba(0,0,0,.76);
+  }
+
+  .mm-action-btn{
+    border-radius: 999px !important;
+    font-weight: 900 !important;
+    height: 44px;
+  }
+
+  /* Keep your original helper classes used in template */
+  .mm-shop-stock-card-empty{ }
+  .mm-shop-stock-card-low{ }
+</style>
+
+<div class="container-fluid py-3 py-md-4 mm-page-shop-stock">
+
+  {# ===== HEADER ===== #}
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="mm-neo-chip">🏪 <span>Shop</span></span>
+        <span class="mm-neo-chip">📦 <span>Stock</span></span>
+      </div>
+      <h1 class="h4 mb-1 mm-neo-title">Склад магазина</h1>
+      <p class="small mm-neo-sub">
+        Остатки товаров в магазине: сколько штук, на какую сумму и что готово к продаже.
+      </p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mm-shop-header-actions">
+      <a href="{{ url_for('shop.export_shop') }}?report=daily&format=xlsx"class="btn btn-sm btn-outline-success" style="border-radius:999px;font-weight:800;">
+        <i class="bi bi-download me-1"></i> Скачать CSV
+      </a>
+      <a href="{{ url_for('products.list_products') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:999px;font-weight:800;">
+        ← К готовой продукции
+      </a>
+    </div>
+  </div>
+
+  {# ===== KPI ROW ===== #}
+  <div class="row g-2 g-md-3 mb-3">
+    <div class="col-6 col-md-4">
+      <div class="mm-kpi-tile h-100">
+        <div class="p-3 py-3 text-center">
+          <div class="mm-kpi-top justify-content-center">
+            <div class="mm-kpi-label">Моделей</div>
+          </div>
+          <div class="mm-kpi-value">{{ items|length }}</div>
+          <div class="mm-kpi-foot">Уникальные позиции</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-4">
+      <div class="mm-kpi-tile h-100">
+        <div class="p-3 py-3 text-center">
+          <div class="mm-kpi-top justify-content-center">
+            <div class="mm-kpi-label">Всего (шт.)</div>
+          </div>
+          <div class="mm-kpi-value">{{ total_qty }}</div>
+          <div class="mm-kpi-foot">Сумма всех остатков</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="mm-kpi-tile h-100">
+        <div class="p-3 py-3 text-center">
+          <div class="mm-kpi-top justify-content-center">
+            <div class="mm-kpi-label">Сумма (UZS)</div>
+          </div>
+          <div class="mm-kpi-value" style="font-size:1.2rem;">
+            {{ format_money(total_value_uzs or 0, 'UZS') }}
+          </div>
+          <div class="mm-kpi-foot">По розничной цене</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ===== QUICK ACTIONS ===== #}
+  <div class="mm-neo-shell mb-3">
+    <div class="p-3">
+      <div class="mm-kpi-label text-center mb-2" style="letter-spacing:.14em;">Быстрые действия</div>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+
+        <a href="{{ url_for('shop.transfer_to_shop') }}" class="mm-neo-pillbtn mm-neo-pillbtn-primary">
+          → Передать в магазин
+        </a>
+
+        <a href="{{ url_for('sales.list_sales') }}" class="mm-neo-pillbtn mm-neo-pillbtn-success">
+          💸 Продажи
+        </a>
+
+        <a href="{{ url_for('cash.list_cash') }}" class="mm-neo-pillbtn">
+          💰 Касса
+        </a>
+
+        {% if current_user.is_manager or current_user.is_admin %}
+          <a href="{{ url_for('shop.movement_history') }}" class="mm-neo-pillbtn mm-neo-pillbtn-dark">
+            📜 История движений
+          </a>
+
+          <a href="{{ url_for('shop.factory_pending_orders') }}" class="mm-neo-pillbtn mm-neo-pillbtn-danger">
+            🏭 Заказы на производство
+          </a>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  {# ===== SEARCH / SORT ===== #}
+  <div class="mb-3 {% if not request.args %}{% endif %}">
+    <div class="mm-stock-sticky d-md-none">
+      <div class="mm-neo-shell">
+        <div class="p-3">
+          <form method="get" class="row g-2 align-items-end">
+            <div class="col-12">
+              <label class="form-label small mb-1">Поиск</label>
+              <input
+                  type="text"
+                  class="form-control mm-neo-input"
+                  name="q"
+                  placeholder="Название модели или категория"
+                  value="{{ q }}">
+            </div>
+            <div class="col-12 d-grid">
+              <button type="submit" class="btn btn-primary mm-action-btn">
+                🔎 Найти
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="mm-neo-shell d-none d-md-block">
+      <div class="p-3">
+        <form method="get" class="row g-2 align-items-end">
+
+          <div class="col-12 col-md-8">
+            <label class="form-label small mb-1">Поиск</label>
+            <input
+                type="text"
+                class="form-control form-control-sm mm-neo-input"
+                name="q"
+                placeholder="Название модели или категория"
+                value="{{ q }}">
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1">Сортировка</label>
+            <select class="form-select form-select-sm" name="sort">
+              <option value="name" {% if sort == 'name' %}selected{% endif %}>
+                По названию
+              </option>
+              <option value="category" {% if sort == 'category' %}selected{% endif %}>
+                По категории
+              </option>
+              <option value="qty_desc" {% if sort == 'qty_desc' %}selected{% endif %}>
+                Количество: больше → меньше
+              </option>
+              <option value="qty_asc" {% if sort == 'qty_asc' %}selected{% endif %}>
+                Количество: меньше → больше
+              </option>
+            </select>
+          </div>
+
+          <div class="col-6 col-md-1 d-flex justify-content-end">
+            <button
+                type="submit"
+                class="btn btn-secondary btn-sm px-3 d-flex align-items-center gap-1"
+                style="border-radius:999px;font-weight:800;">
+              <i class="bi bi-funnel"></i>
+              <span>Фильтр</span>
+            </button>
+          </div>
+        </form>
+
+        {% if q or sort != 'name' %}
+          <div class="small text-muted d-none d-md-flex flex-wrap gap-1 mt-3">
+            <span class="me-1">Фильтры:</span>
+            {% if q %}
+              <span class="badge bg-light text-dark border">
+                Поиск: “{{ q }}”
+              </span>
+            {% endif %}
+            {% if sort != 'name' %}
+              <span class="badge bg-light text-dark border">
+                Сортировка:
+                {% if sort == 'category' %}
+                  Категория
+                {% elif sort == 'qty_desc' %}
+                  Количество: больше → меньше
+                {% elif sort == 'qty_asc' %}
+                  Количество: меньше → больше
+                {% else %}
+                  Название
+                {% endif %}
+              </span>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ===== MOBILE LIST (CARDS) ===== #}
+  <div class="d-md-none mb-3">
+    {% if not items %}
+      <div class="mm-neo-shell">
+        <div class="p-3 small text-muted">
+          В магазине нет товаров.
+        </div>
+      </div>
+    {% endif %}
+
+    {% for item in items %}
+      {% set p = item.product %}
+      {% set qty = item.quantity or 0 %}
+      {% set total_val = item.total_value or 0 %}
+      {% set low = qty > 0 and qty < 5 %}
+
+      <div
+        class="mm-stock-card mb-2
+               {% if qty == 0 %}mm-empty{% elif low %}mm-low{% endif %}">
+        <div class="p-3">
+          <div class="mm-stock-head">
+            <div>
+              <div class="mm-stock-code">MM-{{ "%05d"|format(p.id) }}</div>
+              <div class="mm-stock-name">{{ p.name }}</div>
+              <div class="mm-stock-meta">
+                {{ p.category or 'Без категории' }} · {{ p.currency }}
+              </div>
+              <div class="d-flex flex-wrap gap-2 mt-2">
+                {% if qty == 0 %}
+                  <span class="mm-neo-chip">⛔ нет</span>
+                {% elif low %}
+                  <span class="mm-neo-chip" style="border-color:rgba(220,53,69,.22);background:rgba(220,53,69,.08);">⚠️ мало</span>
+                {% else %}
+                  <span class="mm-neo-chip">✅ в наличии</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="mm-stock-qtybox">
+              <div class="mm-neo-chip">в магазине</div>
+              <div class="mm-stock-qty">{{ qty }}</div>
+            </div>
+          </div>
+
+          <div class="mm-metric-grid">
+            <div class="mm-metric">
+              <div class="k">Цена / 1</div>
+              <div class="v">{{ format_money(p.sell_price_per_item or 0, p.currency) }}</div>
+            </div>
+            <div class="mm-metric">
+              <div class="k">Сумма (UZS)</div>
+              <div class="v">{{ format_money(total_val, 'UZS') }}</div>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            {% if qty > 0 %}
+              <a
+                href="{{ url_for('shop.sell_product', product_id=p.id) }}"
+                class="btn btn-outline-success w-100 mm-action-btn">
+                💸 Продать
+              </a>
+            {% else %}
+              <button class="btn btn-outline-secondary w-100 mm-action-btn" type="button" disabled>
+                Нет в наличии
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ===== DESKTOP TABLE (MANAGER VIEW) ===== #}
+  <div class="card shadow-sm border-0 mb-3 d-none d-md-block">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="text-nowrap">Код</th>
+              <th class="text-nowrap">Модель</th>
+              <th class="text-nowrap d-none d-md-table-cell">Категория</th>
+              <th class="text-nowrap text-end">Кол-во в магазине</th>
+              <th class="text-nowrap text-end">Цена за 1</th>
+              <th class="text-nowrap text-end">Сумма (UZS)</th>
+              <th class="text-nowrap text-center">Действия</th>
+            </tr>
+          </thead>
+
+          <tbody>
+          {% for item in items %}
+            {% set p = item.product %}
+            {% set qty = item.quantity or 0 %}
+            {% set total_val = item.total_value or 0 %}
+            {% set low = qty > 0 and qty < 5 %}
+
+            <tr
+              class="{% if qty == 0 %}table-secondary
+                      {% elif low %}table-warning
+                      {% endif %}">
+              <td>
+                <span class="badge bg-secondary">
+                  MM-{{ "%05d"|format(p.id) }}
+                </span>
+              </td>
+
+              <td>
+                <div class="d-flex flex-column">
+                  <div class="small fw-semibold">
+                    {{ p.name }}
+                    {% if qty == 0 %}
+                      <span class="badge bg-secondary ms-1">нет остатков</span>
+                    {% elif low %}
+                      <span class="badge bg-danger ms-1">мало</span>
+                    {% endif %}
+                  </div>
+                  <span class="text-muted small d-md-none">
+                    {{ p.category or 'Без категории' }} · {{ p.currency }}
+                  </span>
+                </div>
+              </td>
+
+              <td class="small d-none d-md-table-cell">
+                {{ p.category or '—' }}
+              </td>
+
+              <td class="text-end small fw-semibold">
+                {{ qty }}
+              </td>
+
+              <td class="text-end small">
+                {{ format_money(p.sell_price_per_item or 0, p.currency) }}
+              </td>
+
+              <td class="text-end small fw-semibold">
+                {{ format_money(total_val, 'UZS') }}
+              </td>
+
+              <td class="text-center">
+                {% if qty > 0 %}
+                  <a
+                      href="{{ url_for('shop.sell_product', product_id=p.id) }}"
+                      class="btn btn-sm btn-outline-success px-2 py-1">
+                    💸 Продать
+                  </a>
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-3">
+                В магазине нет товаров.
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+
+          {% if items %}
+          <tfoot>
+            <tr class="table-light fw-semibold">
+              <td colspan="3" class="text-end">Итого:</td>
+              <td class="text-end">{{ total_qty }}</td>
+              <td></td>
+              <td class="text-end">
+                {{ format_money(total_value_uzs or 0, 'UZS') }}
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

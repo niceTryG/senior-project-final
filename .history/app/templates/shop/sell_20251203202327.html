@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}{{ t('shop_product_sale_title') }} — {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h5 mb-1">{{ t('shop_product_sale_title') }}</h1>
+      <p class="small text-muted mb-0">
+        {{ t('shop_product_sale_subtitle') }}
+      </p>
+    </div>
+    <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-secondary">
+      ← {{ t('shop_product_sale_back') }}
+    </a>
+  </div>
+
+  <div class="row g-3">
+    <!-- Информация о товаре -->
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-2">{{ product.name }}</h5>
+          <p class="small text-muted mb-2">
+            {{ t('shop_product_info_category') }}: {{ product.category or "—" }}
+          </p>
+          <p class="mb-1 small">
+            {{ t('shop_product_info_stock') }}:
+            <span class="fw-semibold">
+              {{ stock_qty }} шт.
+            </span>
+          </p>
+          <p class="mb-0 small">
+            {{ t('shop_product_info_price') }}:
+            <span class="fw-semibold">
+              {{ format_money(product.sell_price_per_item or 0, product.currency) }}
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Форма продажи -->
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h6 class="card-title mb-2">{{ t('shop_product_form_title') }}</h6>
+
+          <form method="post">
+            <div class="mb-2">
+              <label class="form-label small mb-1">
+                {{ t('shop_product_form_quantity_label') }}
+              </label>
+              <input type="number"
+                     name="quantity"
+                     class="form-control form-control-sm"
+                     min="1"
+                     max="9999"
+                     required>
+              <div class="form-text small">
+                {{ t('shop_product_form_quantity_help') }}: {{ stock_qty }} шт.
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small mb-1">
+                {{ t('shop_product_form_customer_name_label') }}
+              </label>
+              <input type="text"
+                     name="customer_name"
+                     class="form-control form-control-sm">
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small mb-1">
+                {{ t('shop_product_form_customer_phone_label') }}
+              </label>
+              <input type="text"
+                     name="customer_phone"
+                     class="form-control form-control-sm">
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small mb-1">
+                {{ t('shop_product_form_note_label') }}
+              </label>
+              <textarea name="note"
+                        rows="2"
+                        class="form-control form-control-sm"
+                        placeholder="{{ t('shop_product_form_note_placeholder') }}"></textarea>
+            </div>
+
+            <div class="form-check mb-3">
+              <input class="form-check-input"
+                     type="checkbox"
+                     name="allow_partial_sale"
+                     id="allow_partial_sale"
+                     checked>
+              <label class="form-check-label small" for="allow_partial_sale">
+                {{ t('shop_product_form_allow_partial_label') }}
+              </label>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <a href="{{ url_for('shop.list_shop') }}"
+                 class="btn btn-sm btn-outline-secondary">
+                {{ t('shop_product_form_cancel') }}
+              </a>
+              <button type="submit" class="btn btn-sm btn-success">
+                💸 {{ t('shop_product_form_submit') }}
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

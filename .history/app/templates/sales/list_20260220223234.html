@@ -1,0 +1,827 @@
+{% extends "base.html" %}
+
+{% block title %}История продаж{% endblock %}
+
+{% block content %}
+<style>
+  /* =========================
+     Mini Moda — Sales History Neo (mobile-first)
+     Scoped: .mm-page-sales-history
+     ========================= */
+  .mm-page-sales-history{
+    --mm-cardA: rgba(255,255,255,.78);
+    --mm-cardB: rgba(255,255,255,.92);
+    --mm-line: rgba(0,0,0,.08);
+    --mm-muted: rgba(0,0,0,.50);
+    --mm-soft: rgba(0,0,0,.65);
+    --mm-shadow: 0 14px 36px rgba(0,0,0,.12);
+    --mm-glow: 0 0 0 .22rem rgba(13,110,253,.14);
+    --mm-radius: 18px;
+
+    /* IMPORTANT:
+       height of your fixed bottom tab bar (so the sheet buttons won't be hidden)
+       tweak if needed: 64-92px */
+    --mm-bottom-nav-offset: 74px;
+
+    position: relative;
+  }
+  .mm-page-sales-history::before{
+    content:"";
+    position:absolute;
+    inset:-16px -12px -16px -12px;
+    pointer-events:none;
+    background:
+      radial-gradient(circle at 12% 12%, rgba(13,110,253,.12), transparent 34%),
+      radial-gradient(circle at 88% 22%, rgba(111,66,193,.10), transparent 36%),
+      radial-gradient(circle at 30% 90%, rgba(32,201,151,.10), transparent 38%),
+      linear-gradient(to bottom, rgba(0,0,0,.03), transparent 40%);
+    opacity:.9;
+  }
+  .mm-page-sales-history > *{ position:relative; z-index:1; }
+
+  .mm-neo-shell{
+    border:1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: linear-gradient(180deg, var(--mm-cardA), var(--mm-cardB));
+    box-shadow: var(--mm-shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow:hidden;
+  }
+
+  .mm-neo-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    padding:.35rem .7rem;
+    border-radius:999px;
+    border:1px solid var(--mm-line);
+    background: rgba(255,255,255,.75);
+    font-size:.78rem;
+    color: var(--mm-soft);
+    white-space: nowrap;
+  }
+
+  .mm-neo-pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:.22rem .55rem;
+    border-radius: 999px;
+    border:1px solid var(--mm-line);
+    background: rgba(255,255,255,.75);
+    font-size:.72rem;
+    color: var(--mm-soft);
+    white-space: nowrap;
+  }
+
+  .mm-neo-title{ font-weight: 800; letter-spacing:.2px; margin:0; }
+  .mm-neo-sub{ margin:0; color: var(--mm-muted); }
+
+  .mm-neo-input:focus,
+  .mm-page-sales-history .form-select:focus{
+    box-shadow: var(--mm-glow);
+    border-color: rgba(13,110,253,.35);
+  }
+
+  /* ===== Mobile sticky header actions ===== */
+  .mm-mob-actions{
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(255,255,255,.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--mm-line);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 10px 22px rgba(0,0,0,.08);
+  }
+  .mm-mob-actions .btn{
+    border-radius: 999px;
+    height: 42px;
+    font-weight: 700;
+  }
+  .mm-mob-actions .btn-outline-secondary{
+    background: rgba(255,255,255,.75);
+  }
+
+  /* ===== Totals: neo tiles ===== */
+  .mm-totals-row{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  @media (min-width: 768px){
+    .mm-totals-row{ grid-template-columns: repeat(3, 1fr); }
+  }
+  .mm-total-tile{
+    border: 1px solid var(--mm-line);
+    border-radius: 18px;
+    background: rgba(255,255,255,.72);
+    padding: 12px;
+    box-shadow: 0 10px 22px rgba(0,0,0,.06);
+  }
+  .mm-total-kv{
+    display:flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: .84rem;
+    color: var(--mm-muted);
+    margin-top: .25rem;
+  }
+  .mm-total-kv b{
+    color: rgba(0,0,0,.75);
+    font-weight: 800;
+  }
+
+  /* ===== Mobile sale feed cards ===== */
+  .mm-sale-feed-card{
+    border: 1px solid var(--mm-line);
+    border-radius: 18px;
+    background: rgba(255,255,255,.78);
+    box-shadow: 0 10px 22px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+  .mm-sale-feed-card.mm-profit{
+    box-shadow: 0 10px 24px rgba(32,201,151,.10);
+    border-color: rgba(32,201,151,.25);
+  }
+  .mm-sale-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 12px 8px 12px;
+  }
+  .mm-sale-date{
+    font-size: .78rem;
+    color: var(--mm-muted);
+  }
+  .mm-sale-title{
+    font-weight: 800;
+    font-size: 1.02rem;
+    line-height: 1.15;
+    margin-top: 2px;
+  }
+  .mm-sale-sub{
+    color: var(--mm-muted);
+    font-size: .82rem;
+    margin-top: 2px;
+  }
+  .mm-sale-qty{
+    display:flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .mm-sale-qty .mm-neo-chip{
+    font-weight: 800;
+    padding: .35rem .65rem;
+  }
+
+  .mm-sale-meta{
+    padding: 0 12px 12px 12px;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mm-sale-metric{
+    border: 1px solid var(--mm-line);
+    border-radius: 14px;
+    background: rgba(255,255,255,.65);
+    padding: 8px 10px;
+  }
+  .mm-sale-metric .k{
+    font-size: .74rem;
+    color: var(--mm-muted);
+    margin-bottom: 1px;
+  }
+  .mm-sale-metric .v{
+    font-weight: 800;
+    font-size: .9rem;
+    color: rgba(0,0,0,.78);
+  }
+  .mm-sale-metric.muted .v{
+    font-weight: 700;
+    color: rgba(0,0,0,.62);
+  }
+
+  /* ===== Mobile filter bottom sheet ===== */
+  .mm-sheet-backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    display: none;
+    z-index: 50;
+  }
+
+  .mm-sheet{
+    position: fixed;
+    left: 0; right: 0;
+
+    /* KEY FIX: lift the sheet above your fixed bottom navigation */
+    bottom: calc(var(--mm-bottom-nav-offset) + env(safe-area-inset-bottom));
+
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+    border: 1px solid var(--mm-line);
+    box-shadow: 0 -18px 42px rgba(0,0,0,.18);
+    transform: translateY(110%);
+    transition: transform .18s ease;
+    z-index: 60;
+
+    /* make it fit nicely even after lifting */
+    max-height: calc(85vh - var(--mm-bottom-nav-offset));
+    overflow: auto;
+
+    /* extra safety padding so content never touches the very bottom */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* On desktop we don't need the offset lifting */
+  @media (min-width: 768px){
+    .mm-sheet{
+      bottom: env(safe-area-inset-bottom);
+      max-height: 85vh;
+    }
+  }
+
+  .mm-sheet.open{ transform: translateY(0); }
+  .mm-sheet-backdrop.open{ display: block; }
+
+  .mm-sheet-head{
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--mm-line);
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .mm-sheet-title{
+    margin:0;
+    font-weight: 900;
+    letter-spacing:.2px;
+    font-size: 1rem;
+  }
+  .mm-sheet-body{
+    padding: 14px;
+  }
+  .mm-sheet-body .form-control,
+  .mm-sheet-body .form-select{
+    border-radius: 14px;
+  }
+
+  .mm-sheet-actions{
+    position: sticky;
+    bottom: 0;
+    padding: 10px 14px;
+
+    /* KEY FIX: safe-area padding for iPhone home indicator */
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+
+    background: rgba(255,255,255,.9);
+    border-top: 1px solid var(--mm-line);
+    display:flex;
+    gap: 10px;
+  }
+  .mm-sheet-actions .btn{
+    border-radius: 999px;
+    height: 44px;
+    font-weight: 800;
+  }
+
+  /* keep your existing desktop parts unchanged */
+  .mm-sale-card-title{ font-weight: 700; }
+  .mm-sale-card-qty{ font-weight: 800; }
+</style>
+
+<div class="container-fluid py-2 py-md-3 mm-page-sales-history">
+
+  {# ===== HEADER ===== #}
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="mm-neo-chip">🧾 <span>Sales</span></span>
+        {% if q or date_from or date_to or selected_currency or (selected_category is defined and selected_category) or (sort and sort != 'date_desc') %}
+          <span class="mm-neo-pill">фильтры активны</span>
+        {% endif %}
+      </div>
+      <h1 class="h4 mb-1 mm-neo-title">История продаж</h1>
+      <p class="mb-0 small mm-neo-sub">
+        Продажи по дням, моделям и клиентам.
+      </p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end d-none d-md-flex">
+      <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-primary" style="border-radius:999px;font-weight:700;">
+        + Продажа (из магазина)
+      </a>
+      {% if sales_export_url is defined %}
+        <a href="{{ sales_export_url }}" class="btn btn-sm btn-outline-success" style="border-radius:999px;font-weight:700;">
+          ⬇️ Экспорт CSV
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ===== MOBILE ACTION BAR ===== #}
+  <div class="d-md-none mb-3 mm-mob-actions">
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary w-50" id="mm-open-filters">
+        ⚙️ Фильтр
+      </button>
+      <a href="{{ url_for('shop.list_shop') }}" class="btn btn-primary w-50">
+        + Продажа
+      </a>
+    </div>
+    {% if sales_export_url is defined %}
+      <div class="mt-2">
+        <a href="{{ sales_export_url }}" class="btn btn-outline-success w-100">
+          ⬇️ Экспорт CSV
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  {# ===== FILTERS: DESKTOP (md+) ===== #}
+  <div class="mm-neo-shell mb-3 border-0 d-none d-md-block">
+    <div class="p-3">
+      <form method="get" class="row g-2 align-items-end">
+
+        <div class="col-md-4">
+          <label class="form-label mb-1 small">Поиск</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text">🔍</span>
+            <input
+              type="text"
+              class="form-control mm-neo-input"
+              name="q"
+              placeholder="Имя, телефон, модель, категория"
+              value="{{ q }}"
+            >
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label mb-1 small">От даты</label>
+          <input
+            type="date"
+            class="form-control form-control-sm mm-neo-input"
+            name="from"
+            value="{{ date_from }}"
+          >
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label mb-1 small">До даты</label>
+          <input
+            type="date"
+            class="form-control form-control-sm mm-neo-input"
+            name="to"
+            value="{{ date_to }}"
+          >
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label mb-1 small">Валюта</label>
+          {% if sales_currencies is defined and sales_currencies %}
+            <select name="currency" class="form-select form-select-sm">
+              <option value="">Все</option>
+              {% for cur in sales_currencies %}
+                <option value="{{ cur }}" {% if selected_currency == cur %}selected{% endif %}>
+                  {{ cur }}
+                </option>
+              {% endfor %}
+            </select>
+          {% else %}
+            <select name="currency" class="form-select form-select-sm">
+              <option value="">Все</option>
+              <option value="UZS" {% if selected_currency == 'UZS' %}selected{% endif %}>UZS</option>
+              <option value="USD" {% if selected_currency == 'USD' %}selected{% endif %}>USD</option>
+            </select>
+          {% endif %}
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label mb-1 small">Сортировка</label>
+          <select name="sort" class="form-select form-select-sm">
+            <option value="date_desc" {% if sort == 'date_desc' or not sort %}selected{% endif %}>
+              По дате (новые сверху)
+            </option>
+            <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>
+              По дате (старые сверху)
+            </option>
+            <option value="amount_desc" {% if sort == 'amount_desc' %}selected{% endif %}>
+              По сумме (по убыванию)
+            </option>
+            <option value="amount_asc" {% if sort == 'amount_asc' %}selected{% endif %}>
+              По сумме (по возрастанию)
+            </option>
+            <option value="profit_desc" {% if sort == 'profit_desc' %}selected{% endif %}>
+              По прибыли (по убыванию)
+            </option>
+          </select>
+        </div>
+
+        {% if sales_categories is defined and sales_categories %}
+          <div class="col-md-3">
+            <label class="form-label mb-1 small">Категория</label>
+            <select name="category" class="form-select form-select-sm">
+              <option value="">Все</option>
+              {% for cat in sales_categories %}
+                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>
+                  {{ cat }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        {% endif %}
+
+        <div class="col-md-2 d-grid gap-1">
+          <button type="submit" class="btn btn-sm btn-outline-primary" style="border-radius:999px;font-weight:700;">
+            Фильтр
+          </button>
+        </div>
+
+        <div class="col-md-2 d-grid gap-1">
+          <a href="{{ url_for('sales.list_sales') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:999px;font-weight:700;">
+            Сбросить
+          </a>
+        </div>
+      </form>
+
+      {% if q or date_from or date_to or selected_currency or (selected_category is defined and selected_category) or (sort and sort != 'date_desc') %}
+        <div class="small text-muted d-flex flex-wrap gap-1 mt-3">
+          <span class="me-1">Активные фильтры:</span>
+
+          {% if q %}
+            <span class="badge bg-light text-dark border">Поиск: “{{ q }}”</span>
+          {% endif %}
+          {% if date_from %}
+            <span class="badge bg-light text-dark border">От: {{ date_from }}</span>
+          {% endif %}
+          {% if date_to %}
+            <span class="badge bg-light text-dark border">До: {{ date_to }}</span>
+          {% endif %}
+          {% if selected_currency %}
+            <span class="badge bg-light text-dark border">Валюта: {{ selected_currency }}</span>
+          {% endif %}
+          {% if selected_category is defined and selected_category %}
+            <span class="badge bg-light text-dark border">Категория: {{ selected_category }}</span>
+          {% endif %}
+          {% if sort and sort != 'date_desc' %}
+            <span class="badge bg-light text-dark border">
+              Сортировка:
+              {% if sort == 'date_asc' %}Дата ↑
+              {% elif sort == 'amount_desc' %}Сумма ↓
+              {% elif sort == 'amount_asc' %}Сумма ↑
+              {% elif sort == 'profit_desc' %}Прибыль ↓
+              {% endif %}
+            </span>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ===== TOTALS ===== #}
+  {% if totals %}
+    <div class="mm-totals-row mb-3">
+      {% for cur, t in totals.items() %}
+        <div class="mm-total-tile">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="mm-neo-chip">📌 <span>Итого</span></div>
+            <span class="mm-neo-pill">{{ cur }}</span>
+          </div>
+          <div class="mm-total-kv">
+            <span>Выручка</span>
+            <b>{{ format_money(t.sell|default(0), cur) }}</b>
+          </div>
+          <div class="mm-total-kv">
+            <span>Себестоимость</span>
+            <b>{{ format_money(t.cost|default(0), cur) }}</b>
+          </div>
+          <div class="mm-total-kv">
+            <span>Прибыль</span>
+            <b>{{ format_money(t.profit|default(0), cur) }}</b>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# ===== MOBILE SALES FEED ===== #}
+  <div class="d-md-none mb-3">
+    {% if sales|length == 0 %}
+      <div class="mm-neo-shell">
+        <div class="p-3 small text-muted">
+          Нет продаж для выбранного периода.
+        </div>
+      </div>
+    {% endif %}
+
+    {% for s in sales %}
+      {% set high_profit = s.profit is not none and s.profit > 0 %}
+      <div class="mm-sale-feed-card mb-2 {% if high_profit %}mm-profit{% endif %}">
+        <div class="mm-sale-head">
+          <div>
+            <div class="mm-sale-date">{{ s.date }}</div>
+            <div class="mm-sale-title">{{ s.product.name }}</div>
+            {% if s.product.category %}
+              <div class="mm-sale-sub">{{ s.product.category }}</div>
+            {% endif %}
+            {% if s.customer_name or s.customer_phone %}
+              <div class="mm-sale-sub mt-1">
+                {% if s.customer_name %}{{ s.customer_name }}{% endif %}
+                {% if s.customer_phone %} · {{ s.customer_phone }}{% endif %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="mm-sale-qty">
+            <span class="mm-neo-chip">x {{ s.quantity }}</span>
+            <span class="mm-neo-pill">{{ s.currency }}</span>
+          </div>
+        </div>
+
+        <div class="mm-sale-meta">
+          <div class="mm-sale-metric">
+            <div class="k">Цена / 1</div>
+            <div class="v">{{ format_money(s.sell_price_per_item, s.currency) }}</div>
+          </div>
+          <div class="mm-sale-metric">
+            <div class="k">Сумма</div>
+            <div class="v">{{ format_money(s.total_sell, s.currency) }}</div>
+          </div>
+          <div class="mm-sale-metric muted">
+            <div class="k">Себестоимость</div>
+            <div class="v">{{ format_money(s.total_cost, s.currency) }}</div>
+          </div>
+          <div class="mm-sale-metric {% if high_profit %}{% else %}muted{% endif %}">
+            <div class="k">Прибыль</div>
+            <div class="v">{{ format_money(s.profit, s.currency) }}</div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ===== DESKTOP TABLE ===== #}
+  <div class="card shadow-sm d-none d-md-block">
+    <div class="card-body p-0">
+      <div class="table-responsive mb-0">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="d-none d-md-table-cell">ID</th>
+              <th>Дата</th>
+              <th>Модель / покупатель</th>
+              <th class="d-none d-lg-table-cell">Категория</th>
+              <th class="text-end text-nowrap">Кол-во</th>
+              <th class="text-end d-none d-md-table-cell text-nowrap">Цена / 1</th>
+              <th class="text-end text-nowrap">Сумма</th>
+              <th class="text-end d-none d-lg-table-cell text-nowrap">Себестоимость</th>
+              <th class="text-end d-none d-lg-table-cell text-nowrap">Прибыль</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% if sales|length == 0 %}
+            <tr>
+              <td colspan="9" class="text-center small text-muted py-3">
+                Нет продаж для выбранных фильтров.
+              </td>
+            </tr>
+          {% endif %}
+
+          {% for s in sales %}
+            {% set high_profit = s.profit is not none and s.profit > 0 %}
+            <tr class="{% if high_profit %}table-success{% endif %}">
+              <td class="d-none d-md-table-cell text-muted small">
+                {{ s.id }}
+              </td>
+              <td class="text-nowrap small text-muted">
+                {{ s.date }}
+              </td>
+              <td>
+                <div class="fw-semibold small">
+                  {{ s.product.name }}
+                </div>
+                <div class="small text-muted">
+                  {% if s.product.category %}{{ s.product.category }} · {% endif %}
+                  {% if s.customer_name %}{{ s.customer_name }}{% endif %}
+                  {% if s.customer_phone %} · {{ s.customer_phone }}{% endif %}
+                </div>
+              </td>
+              <td class="d-none d-lg-table-cell small">
+                {{ s.product.category or "" }}
+              </td>
+              <td class="text-end text-nowrap small">
+                {{ s.quantity }}
+              </td>
+              <td class="text-end d-none d-md-table-cell text-nowrap small">
+                {{ format_money(s.sell_price_per_item, s.currency) }}
+              </td>
+              <td class="text-end text-nowrap small fw-semibold">
+                {{ format_money(s.total_sell, s.currency) }}
+              </td>
+              <td class="text-end d-none d-lg-table-cell text-nowrap small">
+                {{ format_money(s.total_cost, s.currency) }}
+              </td>
+              <td class="text-end d-none d-lg-table-cell text-nowrap small">
+                {{ format_money(s.profit, s.currency) }}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ===== PAGINATION ===== #}
+  {% if pagination is defined and pagination %}
+    <nav aria-label="Sales pagination" class="mt-2">
+      <ul class="pagination pagination-sm justify-content-center">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+          <a class="page-link"
+             href="{% if pagination.has_prev %}{{ url_for('sales.list_sales',
+                                                         page=pagination.prev_num,
+                                                         q=q,
+                                                         from=date_from,
+                                                         to=date_to,
+                                                         currency=selected_currency,
+                                                         category=selected_category,
+                                                         sort=sort) }}{% else %}#{% endif %}">
+            ‹
+          </a>
+        </li>
+
+        {% for p in pagination.iter_pages(left_edge=1, right_edge=1,
+                                          left_current=1, right_current=1) %}
+          {% if p %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+              <a class="page-link"
+                 href="{{ url_for('sales.list_sales',
+                                  page=p,
+                                  q=q,
+                                  from=date_from,
+                                  to=date_to,
+                                  currency=selected_currency,
+                                  category=selected_category,
+                                  sort=sort) }}">
+                {{ p }}
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">…</span>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+          <a class="page-link"
+             href="{% if pagination.has_next %}{{ url_for('sales.list_sales',
+                                                         page=pagination.next_num,
+                                                         q=q,
+                                                         from=date_from,
+                                                         to=date_to,
+                                                         currency=selected_currency,
+                                                         category=selected_category,
+                                                         sort=sort) }}{% else %}#{% endif %}">
+            ›
+          </a>
+        </li>
+      </ul>
+    </nav>
+  {% endif %}
+
+</div>
+
+{# ===== MOBILE FILTER SHEET ===== #}
+<div class="mm-sheet-backdrop" id="mm-sheet-backdrop" aria-hidden="true"></div>
+
+<div class="mm-sheet" id="mm-filter-sheet" role="dialog" aria-modal="true" aria-label="Фильтры продаж">
+  <div class="mm-sheet-head">
+    <h2 class="mm-sheet-title">Фильтр продаж</h2>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="mm-close-filters" style="border-radius:999px;">
+      ✕
+    </button>
+  </div>
+
+  <form method="get">
+    <div class="mm-sheet-body">
+
+      <div class="mb-3">
+        <label class="form-label small mb-1">Поиск</label>
+        <input
+          type="text"
+          class="form-control mm-neo-input"
+          name="q"
+          placeholder="Имя, телефон, модель, категория"
+          value="{{ q }}"
+        >
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <label class="form-label small mb-1">От даты</label>
+          <input type="date" class="form-control mm-neo-input" name="from" value="{{ date_from }}">
+        </div>
+        <div class="col-6">
+          <label class="form-label small mb-1">До даты</label>
+          <input type="date" class="form-control mm-neo-input" name="to" value="{{ date_to }}">
+        </div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <label class="form-label small mb-1">Валюта</label>
+          {% if sales_currencies is defined and sales_currencies %}
+            <select name="currency" class="form-select">
+              <option value="">Все</option>
+              {% for cur in sales_currencies %}
+                <option value="{{ cur }}" {% if selected_currency == cur %}selected{% endif %}>{{ cur }}</option>
+              {% endfor %}
+            </select>
+          {% else %}
+            <select name="currency" class="form-select">
+              <option value="">Все</option>
+              <option value="UZS" {% if selected_currency == 'UZS' %}selected{% endif %}>UZS</option>
+              <option value="USD" {% if selected_currency == 'USD' %}selected{% endif %}>USD</option>
+            </select>
+          {% endif %}
+        </div>
+
+        <div class="col-6">
+          <label class="form-label small mb-1">Сортировка</label>
+          <select name="sort" class="form-select">
+            <option value="date_desc" {% if sort == 'date_desc' or not sort %}selected{% endif %}>Дата ↓</option>
+            <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>Дата ↑</option>
+            <option value="amount_desc" {% if sort == 'amount_desc' %}selected{% endif %}>Сумма ↓</option>
+            <option value="amount_asc" {% if sort == 'amount_asc' %}selected{% endif %}>Сумма ↑</option>
+            <option value="profit_desc" {% if sort == 'profit_desc' %}selected{% endif %}>Прибыль ↓</option>
+          </select>
+        </div>
+      </div>
+
+      {% if sales_categories is defined and sales_categories %}
+        <div class="mb-3">
+          <label class="form-label small mb-1">Категория</label>
+          <select name="category" class="form-select">
+            <option value="">Все</option>
+            {% for cat in sales_categories %}
+              <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+
+    </div>
+
+    <div class="mm-sheet-actions">
+      <a href="{{ url_for('sales.list_sales') }}" class="btn btn-outline-secondary w-50">
+        Сбросить
+      </a>
+      <button type="submit" class="btn btn-primary w-50">
+        Применить
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const openBtn = document.getElementById('mm-open-filters');
+  const closeBtn = document.getElementById('mm-close-filters');
+  const sheet = document.getElementById('mm-filter-sheet');
+  const backdrop = document.getElementById('mm-sheet-backdrop');
+
+  function openSheet(){
+    if (!sheet || !backdrop) return;
+    backdrop.classList.add('open');
+    sheet.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSheet(){
+    if (!sheet || !backdrop) return;
+    backdrop.classList.remove('open');
+    sheet.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  if (openBtn) openBtn.addEventListener('click', openSheet);
+  if (closeBtn) closeBtn.addEventListener('click', closeSheet);
+  if (backdrop) backdrop.addEventListener('click', closeSheet);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeSheet();
+  });
+});
+</script>
+{% endblock %}

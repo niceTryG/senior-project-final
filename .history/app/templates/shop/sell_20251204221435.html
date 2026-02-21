@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}{{ t('shop_product_sale_title') }} — {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4 mm-page-shop-sale">
+
+  {# ===== HEADER ===== #}
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h5 mb-1">{{ t('shop_product_sale_title') }}</h1>
+      <p class="small text-muted mb-0">
+        {{ t('shop_product_sale_subtitle') }}
+      </p>
+    </div>
+    <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-secondary">
+      ← {{ t('shop_product_sale_back') }}
+    </a>
+  </div>
+
+  {% set unit_price = product.sell_price_per_item or 0 %}
+  {% set currency = product.currency %}
+  {% set can_sell = stock_qty > 0 %}
+
+  <div class="row g-3">
+    {# ===== PRODUCT INFO CARD ===== #}
+    <div class="col-12 col-md-5 col-lg-4">
+      <div class="card shadow-sm border-0 h-100 mm-sale-product-card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h5 class="card-title mb-1">{{ product.name }}</h5>
+              <p class="small text-muted mb-1">
+                {{ t('shop_product_info_category') }}:
+                <span class="fw-semibold">
+                  {{ product.category or "—" }}
+                </span>
+              </p>
+            </div>
+            {% if product.id %}
+              <span class="badge bg-secondary small">
+                MM-{{ "%05d"|format(product.id) }}
+              </span>
+            {% endif %}
+          </div>
+
+          <div class="mb-1 small">
+            {{ t('shop_product_info_stock') }}:
+            <span class="fw-semibold">
+              {{ stock_qty }} шт.
+            </span>
+            {% if stock_qty == 0 %}
+              <span class="badge bg-secondary ms-1">нет в магазине</span>
+            {% elif stock_qty < 5 %}
+              <span class="badge bg-danger ms-1">мало</span>
+            {% elif stock_qty <= 10 %}
+              <span class="badge bg-warning text-dark ms-1">средне</span>
+            {% else %}
+              <span class="badge bg-success ms-1">достаточно</span>
+            {% endif %}
+          </div>
+
+          <div class="mb-2 small">
+            {{ t('shop_product_info_price') }}:
+            <span class="fw-semibold">
+              {{ format_money(unit_price, currency) }}
+            </span>
+          </div>
+
+          <hr class="my-2">
+
+          <div class="small text-muted mb-1">
+            Если продать весь остаток:
+          </div>
+          <div class="fw-semibold mb-2">
+            {{ format_money(unit_price * stock_qty, currency) }}
+          </div>
+
+          {% if not can_sell %}
+            <div class="alert alert-warning py-2 small mb-0">
+              В магазине нет остатков этой модели. Продажа невозможна, пока не передадите товар в магазин.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# ===== SALE FORM CARD ===== #}
+    <div class="col-12 col-md-7 col-lg-8">
+      <div class="card shadow-sm border-0 h-100 mm-sale-form-card">
+        <div class="card-body">
+          <h6 class="card-title mb-2">{{ t('shop_product_form_title') }}</h6>
+
+          {% if not can_sell %}
+            <p class="small text-muted mb-2">
+              Здесь будет форма, когда товар появится на складе магазина.
+            </p>
+            <a href="{{ url_for('shop.list_shop') }}"
+               class="btn btn-sm btn-outline-secondary">
+              {{ t('shop_product_form_cancel') }}
+            </a>
+          {% else %}
+            <form method="post" id="shop-sale-form">
+              {# QUANTITY + TOTAL #}
+              <div class="mb-3">
+                <label class="form-label small mb-1">
+                  {{ t('shop_product_form_quantity_label') }}
+                </label>
+
+                <div class="input-group input-group-sm mb-1">
+                  <button class="btn btn-outline-secondary"
+                          type="button"
+                          id="qty-minus">
+                    −
+                  </button>
+                  <input type="number"
+                         name="quantity"
+                         id="quantity"
+                         class="form-control text-center"
+                         min="1"
+                         max="{{ stock_qty }}"
+                         value="1"
+                         required>
+                  <button class="btn btn-outline-secondary"
+                          type="button"
+                          id="qty-plus">
+                    +
+                  </button>
+                  <button class="btn btn-outline-secondary"
+                          type="button"
+                          id="qty-max">
+                    max
+                  </button>
+                </div>
+
+                <div class="d-flex justify-content-between small text-muted">
+                  <div>
+                    {{ t('shop_product_form_quantity_help') }}: {{ stock_qty }} шт.
+                  </div>
+                  <div id="sale-total" class="fw-semibold">
+                    Итого: {{ format_money(unit_price, currency) }}
+                  </div>
+                </div>
+              </div>
+
+              {# CUSTOMER INFO #}
+              <div class="mb-2">
+                <div class="small text-muted mb-1">
+                  Информация о покупателе (необязательно)
+                </div>
+                <div class="row g-2">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label small mb-1">
+                      {{ t('shop_product_form_customer_name_label') }}
+                    </label>
+                    <input type="text"
+                           name="customer_name"
+                           class="form-control form-control-sm">
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <label class="form-label small mb-1">
+                      {{ t('shop_product_form_customer_phone_label') }}
+                    </label>
+                    <input type="text"
+                           name="customer_phone"
+                           class="form-control form-control-sm">
+                  </div>
+                </div>
+              </div>
+
+              {# NOTE #}
+              <div class="mb-2">
+                <label class="form-label small mb-1">
+                  {{ t('shop_product_form_note_label') }}
+                </label>
+                <textarea name="note"
+                          rows="2"
+                          class="form-control form-control-sm"
+                          placeholder="{{ t('shop_product_form_note_placeholder') }}"></textarea>
+              </div>
+
+              {# PARTIAL SALE OPTION #}
+              <div class="form-check mb-3">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="allow_partial_sale"
+                       id="allow_partial_sale"
+                       checked>
+                <label class="form-check-label small" for="allow_partial_sale">
+                  {{ t('shop_product_form_allow_partial_label') }}
+                </label>
+              </div>
+
+              {# ACTIONS #}
+              <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('shop.list_shop') }}"
+                   class="btn btn-sm btn-outline-secondary">
+                  {{ t('shop_product_form_cancel') }}
+                </a>
+                <button type="submit" class="btn btn-sm btn-success">
+                  💸 {{ t('shop_product_form_submit') }}
+                </button>
+              </div>
+
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% if can_sell %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const qtyInput = document.getElementById('quantity');
+  const minusBtn = document.getElementById('qty-minus');
+  const plusBtn = document.getElementById('qty-plus');
+  const maxBtn = document.getElementById('qty-max');
+  const totalEl = document.getElementById('sale-total');
+
+  if (!qtyInput || !totalEl) return;
+
+  const unitPrice = {{ unit_price|float }};
+  const currency = "{{ currency }}";
+  const maxQty = {{ stock_qty|int }};
+
+  function clampQty(value) {
+    value = parseInt(value || 0, 10);
+    if (isNaN(value) || value < 1) value = 1;
+    if (value > maxQty) value = maxQty;
+    return value;
+  }
+
+  function formatMoney(amount) {
+    // simple client-side formatting; сервер всё равно считает точно
+    return new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount) + ' ' + currency;
+  }
+
+  function updateTotal() {
+    const q = clampQty(qtyInput.value);
+    qtyInput.value = q;
+    const total = q * unitPrice;
+    totalEl.textContent = 'Итого: ' + formatMoney(total);
+  }
+
+  minusBtn.addEventListener('click', function () {
+    qtyInput.value = clampQty((qtyInput.value || 1) - 1);
+    updateTotal();
+  });
+
+  plusBtn.addEventListener('click', function () {
+    qtyInput.value = clampQty((parseInt(qtyInput.value || 0, 10) || 0) + 1);
+    updateTotal();
+  });
+
+  maxBtn.addEventListener('click', function () {
+    qtyInput.value = maxQty;
+    updateTotal();
+  });
+
+  qtyInput.addEventListener('input', updateTotal);
+
+  // init
+  updateTotal();
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-3">📊 Еженедельный отчёт магазина</h2>
+<p class="text-muted">
+    Период: <b>{{ monday }}</b> — <b>{{ sunday }}</b>
+</p>
+
+<div class="table-responsive mb-4">
+    <table class="table table-striped table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Товар</th>
+                <th>Передано в магазин</th>
+                <th>Продано</th>
+                <th>Остаток</th>
+                <th>Стоимость остатка</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>{{ row.product.name }}</td>
+                <td>{{ row.sent }}</td>
+                <td class="text-danger">{{ row.sold }}</td>
+                <td class="text-success">{{ row.remaining }}</td>
+                <td>{{ format_money(row.total_value, 'UZS') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- TOTALS -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="mb-3">Итоги недели</h5>
+
+        <p>Передано: <b>{{ format_money(total_sent, 'UZS') }}</b></p>
+        <p>Продано: <b>{{ format_money(total_sold, 'UZS') }}</b></p>
+        <p>Остаток в магазине: <b>{{ format_money(total_remaining, 'UZS') }}</b></p>
+
+        <hr>
+
+        <p class="fs-5">
+            Прибыль недели: <b class="text-success">{{ format_money(weekly_profit, 'UZS') }}</b>
+        </p>
+    </div>
+</div>
+
+{% endblock %}

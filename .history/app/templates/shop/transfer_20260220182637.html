@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('shop_transfer') }} — Mini Moda{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4 mm-page-shop-transfer">
+
+  {# ===== HEADER ===== #}
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h4 mb-1">{{ t('shop_transfer') }}</h1>
+      <p class="text-muted small mb-0">
+        Передача готовой продукции со склада фабрики на склад магазина.
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-secondary">
+        {{ t('btn_back') }}
+      </a>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <form method="post" id="shop-transfer-form">
+        <div class="row g-3">
+
+          {# ===== PRODUCT SELECT ===== #}
+          <div class="col-md-6">
+            <label for="product_id" class="form-label small mb-1">
+              Товар (модель)
+            </label>
+            <select
+              name="product_id"
+              id="product_id"
+              class="form-select form-select-sm"
+              required>
+              <option value="">Выберите товар...</option>
+              {% for p in products %}
+                <option
+                  value="{{ p.id }}"
+                  data-qty="{{ p.quantity or 0 }}"
+                  data-price="{{ p.sell_price_per_item or 0 }}"
+                  data-currency="{{ p.currency or 'UZS' }}"
+                >
+                  #{{ p.id }} — {{ p.name }}{% if p.category %} ({{ p.category }}){% endif %}
+                  — Остаток на фабрике: {{ p.quantity or 0 }}
+                </option>
+              {% endfor %}
+            </select>
+
+            <div class="mt-2 small text-muted" id="product-info">
+              Выберите модель, чтобы увидеть остаток и текущую цену.
+            </div>
+          </div>
+
+          {# ===== QUANTITY ===== #}
+          <div class="col-md-3 col-6">
+            <label for="quantity" class="form-label small mb-1">
+              {{ t('shop_form_quantity') }}
+            </label>
+
+            <div class="input-group input-group-sm">
+              <button
+                class="btn btn-outline-secondary"
+                type="button"
+                id="qty-minus">
+                −
+              </button>
+              <input
+                type="number"
+                name="quantity"
+                id="quantity"
+                class="form-control text-center"
+                min="1"
+                required>
+              <button
+                class="btn btn-outline-secondary"
+                type="button"
+                id="qty-plus">
+                +
+              </button>
+              <button
+                class="btn btn-outline-secondary"
+                type="button"
+                id="qty-max">
+                max
+              </button>
+            </div>
+
+            <div class="small mt-1" id="qty-hint"></div>
+          </div>
+
+          {# ===== SELL PRICE (OPTIONAL) ===== #}
+          <div class="col-md-3 col-6">
+            <label for="sell_price_per_item" class="form-label small mb-1">
+              {{ t('shop_form_price') }}
+              <small class="text-muted">(опционально)</small>
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              name="sell_price_per_item"
+              id="sell_price_per_item"
+              class="form-control form-control-sm"
+              placeholder="Оставьте пустым, если цена не меняется">
+            <div class="small text-muted mt-1" id="price-hint">
+              Текущая цена подтянется после выбора модели (если задана).
+            </div>
+          </div>
+
+        </div>
+
+        <div class="mt-4 d-flex gap-2 justify-content-end">
+          <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-secondary">
+            {{ t('btn_cancel') }}
+          </a>
+          <button type="submit" class="btn btn-sm btn-primary">
+            {{ t('shop_form_submit') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const productSelect = document.getElementById('product_id');
+  const qtyInput = document.getElementById('quantity');
+  const minusBtn = document.getElementById('qty-minus');
+  const plusBtn = document.getElementById('qty-plus');
+  const maxBtn = document.getElementById('qty-max');
+
+  const productInfoEl = document.getElementById('product-info');
+  const qtyHintEl = document.getElementById('qty-hint');
+  const priceInput = document.getElementById('sell_price_per_item');
+  const priceHintEl = document.getElementById('price-hint');
+
+  let currentMaxQty = 0;
+  let currentCurrency = 'UZS';
+  let currentPrice = 0;
+
+  function formatMoney(amount, currency) {
+    return new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount) + ' ' + (currency || '');
+  }
+
+  function updateProductInfo() {
+    const option = productSelect.options[productSelect.selectedIndex];
+    if (!option || !option.value) {
+      productInfoEl.textContent = 'Выберите модель, чтобы увидеть остаток и текущую цену.';
+      productInfoEl.className = 'mt-2 small text-muted';
+      currentMaxQty = 0;
+      currentCurrency = 'UZS';
+      currentPrice = 0;
+      qtyInput.value = '';
+      qtyHintEl.textContent = '';
+      if (priceHintEl) {
+        priceHintEl.textContent = 'Текущая цена подтянется после выбора модели (если задана).';
+      }
+      return;
+    }
+
+    const qty = parseInt(option.dataset.qty || '0', 10) || 0;
+    const price = parseFloat(option.dataset.price || '0') || 0;
+    const currency = option.dataset.currency || 'UZS';
+
+    currentMaxQty = qty;
+    currentCurrency = currency;
+    currentPrice = price;
+
+    productInfoEl.textContent =
+      'Остаток на фабрике: ' + qty + ' шт.' +
+      (price > 0
+        ? ' · Текущая розничная цена: ' + formatMoney(price, currency)
+        : '');
+
+    productInfoEl.className = 'mt-2 small text-muted';
+
+    // Если количество ещё не введено, ставим 1
+    if (!qtyInput.value) {
+      qtyInput.value = qty > 0 ? 1 : '';
+    }
+    updateQtyHint();
+
+    if (priceHintEl) {
+      if (price > 0) {
+        priceHintEl.textContent =
+          'Текущая цена: ' + formatMoney(price, currency) +
+          '. Можно изменить, если хотите поменять розничную цену в магазине.';
+      } else {
+        priceHintEl.textContent =
+          'Для этой модели цена пока не задана или равна 0. Можно указать новую.';
+      }
+    }
+  }
+
+  function clampMin(value) {
+    let v = parseInt(value || 0, 10);
+    if (isNaN(v) || v < 1) v = 1;
+    return v;
+  }
+
+  function updateQtyHint() {
+    const raw = qtyInput.value;
+    if (!raw) {
+      qtyHintEl.textContent = '';
+      qtyHintEl.className = 'small';
+      return;
+    }
+
+    const requested = clampMin(raw);
+
+    if (!currentMaxQty && productSelect.value) {
+      qtyHintEl.textContent =
+        'Для выбранной модели не указан остаток на фабрике. Проверьте данные.';
+      qtyHintEl.className = 'small text-warning';
+      return;
+    }
+
+    if (requested > currentMaxQty) {
+      qtyHintEl.textContent =
+        'На фабрике сейчас всего ' + currentMaxQty +
+        ' шт. Передать больше нельзя — появится ошибка. Уменьшите количество.';
+      qtyHintEl.className = 'small text-danger';
+    } else {
+      qtyHintEl.textContent =
+        'На фабрике доступно: ' + currentMaxQty + ' шт. Можно передать до этого количества.';
+      qtyHintEl.className = 'small text-muted';
+    }
+  }
+
+  if (productSelect) {
+    productSelect.addEventListener('change', updateProductInfo);
+    updateProductInfo();
+  }
+
+  if (minusBtn) {
+    minusBtn.addEventListener('click', function () {
+      if (!qtyInput.value) {
+        qtyInput.value = currentMaxQty > 0 ? 1 : '';
+      } else {
+        qtyInput.value = clampMin((qtyInput.value || 1) - 1);
+      }
+      updateQtyHint();
+    });
+  }
+
+  if (plusBtn) {
+    plusBtn.addEventListener('click', function () {
+      if (!qtyInput.value) {
+        qtyInput.value = currentMaxQty > 0 ? 1 : 1;
+      } else {
+        const current = parseInt(qtyInput.value || 0, 10) || 0;
+        qtyInput.value = clampMin(current + 1);
+      }
+      updateQtyHint();
+    });
+  }
+
+  if (maxBtn) {
+    maxBtn.addEventListener('click', function () {
+      if (currentMaxQty > 0) {
+        qtyInput.value = currentMaxQty;
+        updateQtyHint();
+      }
+    });
+  }
+
+  if (qtyInput) {
+    qtyInput.addEventListener('input', updateQtyHint);
+  }
+});
+</script>
+{% endblock %}

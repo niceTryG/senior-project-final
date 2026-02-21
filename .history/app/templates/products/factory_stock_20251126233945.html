@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mt-1 mb-3">
+  <h1 class="h4 mb-0">Склад фабрики</h1>
+  <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    ← На дашборд
+  </a>
+</div>
+
+{# Summary #}
+{% set total_all = products | sum(attribute='qty_total') %}
+{% set total_factory = products | sum(attribute='qty_factory') %}
+{% set total_shop = products | sum(attribute='qty_shop') %}
+
+<div class="row g-2 g-md-3 mb-3">
+  <div class="col-4">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body py-2 text-center">
+        <div class="small text-muted mb-1">Всего (шт.)</div>
+        <div class="fs-5 fw-semibold">{{ total_all }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body py-2 text-center">
+        <div class="small text-muted mb-1">На фабрике (шт.)</div>
+        <div class="fs-5 fw-semibold">{{ total_factory }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body py-2 text-center">
+        <div class="small text-muted mb-1">В магазине (шт.)</div>
+        <div class="fs-5 fw-semibold">{{ total_shop }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Pie chart #}
+<div class="card shadow-sm border-0 mb-3">
+  <div class="card-body">
+    <h6 class="mb-3 text-center">Распределение товаров на фабрике</h6>
+    <canvas id="factoryPie" height="140"></canvas>
+  </div>
+</div>
+
+{# Таблица #}
+<div class="card shadow-sm border-0">
+  <div class="card-body p-2 p-md-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Товары на складе фабрики</h6>
+      <small class="text-muted">Позиции: {{ products|length }}</small>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Товар</th>
+            <th class="text-end">Всего</th>
+            <th class="text-end">На фабрике</th>
+            <th class="text-end">В магазине</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in products %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td class="text-end fw-semibold">{{ p.qty_total }}</td>
+              <td class="text-end">{{ p.qty_factory }}</td>
+              <td class="text-end text-muted">{{ p.qty_shop }}</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" class="text-center text-muted py-3">
+                На складе фабрики нет товаров.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const labels = {{ chart_labels|tojson }};
+const data = {{ chart_values|tojson }};
+
+if (labels.length > 0) {
+  new Chart(document.getElementById('factoryPie'), {
+    type: 'pie',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+      }]
+    }
+  });
+}
+</script>
+
+{% endblock %}

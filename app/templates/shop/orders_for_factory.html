@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Pending orders for production — Mini Moda{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4 mm-page-factory-orders">
+
+  {# ===== HEADER ===== #}
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h5 mb-1">📦 Pending orders for production</h1>
+      <p class="small text-muted mb-0">
+        Здесь показываются заказы, где в магазине не хватило товара.
+        Папа видит, что нужно дошить / произвести и в каком количестве.
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('shop.movement_history') }}" class="btn btn-sm btn-outline-info">
+        📜 История движений
+      </a>
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+        ⬅ На дашборд
+      </a>
+    </div>
+  </div>
+
+  {% if orders %}
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="text-nowrap">ID</th>
+                <th class="text-nowrap">Создан</th>
+                <th class="text-nowrap">Клиент</th>
+                <th class="text-nowrap">Телефон</th>
+                <th style="min-width: 380px;">Товары по заказу</th>
+                <th class="text-nowrap">Статус</th>
+                <th class="text-nowrap">История</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for order in orders %}
+              <tr>
+                <td class="text-nowrap">
+                  #{{ order.id }}
+                </td>
+
+                <td class="small text-muted text-nowrap">
+                  {{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at }}
+                </td>
+
+                <td class="small">
+                  {{ order.customer_name or '-' }}
+                </td>
+
+                <td class="small">
+                  {{ order.customer_phone or '-' }}
+                </td>
+
+                <td>
+                  <ul class="small mb-0 ps-3">
+                    {% for item in order.items %}
+                      <li class="mb-2">
+                        <div class="fw-semibold">
+                          {{ item.product.name }}
+                        </div>
+                        <div class="text-muted">
+                          заказано: {{ item.qty_requested }},
+                          выдано сразу: {{ item.qty_from_shop_now }},
+                          осталось сделать:
+                          <span class="{% if item.qty_remaining > 0 %}text-danger fw-bold{% else %}text-success fw-semibold{% endif %}">
+                            {{ item.qty_remaining }}
+                          </span>
+                        </div>
+
+                        {# Форма: отправить часть/всё в магазин #}
+                        {% if item.qty_remaining > 0 %}
+                          <form
+                            method="post"
+                            action="{{ url_for('shop.ship_order_item', item_id=item.id) }}"
+                            class="d-inline-flex align-items-center mt-1 flex-wrap gap-1"
+                          >
+                            <input
+                              type="number"
+                              name="ship_qty"
+                              class="form-control form-control-sm"
+                              style="width: 90px;"
+                              min="1"
+                              max="{{ item.qty_remaining }}"
+                              value="{{ item.qty_remaining }}"
+                            >
+                            <button
+                              type="submit"
+                              class="btn btn-sm btn-outline-primary"
+                            >
+                              Отправить
+                            </button>
+                          </form>
+                        {% else %}
+                          <span class="badge bg-success ms-1 mt-1">закрыто</span>
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </td>
+
+                <td>
+                  <span class="badge
+                    {% if order.status == 'pending' %} bg-warning text-dark
+                    {% elif order.status == 'ready' %} bg-info text-dark
+                    {% elif order.status == 'completed' %} bg-success
+                    {% elif order.status == 'cancelled' %} bg-secondary
+                    {% endif %}
+                  ">
+                    {{ order.status }}
+                  </span>
+                </td>
+
+                <td>
+                  <a
+                    href="{{ url_for('shop.history_by_order', order_id=order.id) }}"
+                    class="btn btn-sm btn-outline-secondary"
+                  >
+                    📜 История
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-light border small mb-0">
+      Сейчас нет заказов, ожидающих производство.
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

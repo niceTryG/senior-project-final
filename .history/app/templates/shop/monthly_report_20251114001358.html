@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-3">📅 Месячный отчёт (магазин)</h2>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <div class="small text-muted">Выручка за месяц</div>
+                <div class="fs-4 fw-bold">{{ format_money(total_revenue, 'UZS') }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <div class="small text-muted">Себестоимость</div>
+                <div class="fs-4 fw-bold">{{ format_money(total_cost, 'UZS') }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <div class="small text-muted">Прибыль</div>
+                <div class="fs-4 fw-bold text-success">{{ format_money(profit, 'UZS') }}</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<h4>📈 Продажи по дням</h4>
+<table class="table table-sm table-striped">
+    <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Сумма продаж</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in daily_totals %}
+        <tr>
+            <td>{{ row.date }}</td>
+            <td>{{ format_money(row.total, 'UZS') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4 class="mt-4">🏆 Топ-10 товаров</h4>
+<table class="table table-sm table-bordered">
+    <thead>
+        <tr>
+            <th>Товар</th>
+            <th>Продано</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in top_products %}
+        <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.qty }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

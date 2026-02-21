@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container py-3">
+  <div class="d-flex justify-content-between flex-wrap align-items-center mb-3">
+    <h1 class="h5">Мои заказы (Shop Manager)</h1>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">⬅ Назад</a>
+  </div>
+
+  {% if orders %}
+    {% for order in orders %}
+      <div class="card shadow-sm border-0 mb-2">
+        <div class="card-body py-2 small">
+          <div class="mb-1 fw-bold">Заказ #{{ order.id }} — {{ order.status }}</div>
+          <div class="text-muted mb-1">{{ order.created_at }}</div>
+          <div><b>Клиент:</b> {{ order.customer_name }}</div>
+          <div><b>Телефон:</b> {{ order.customer_phone }}</div>
+
+          <ul class="mt-2 ps-3 mb-1">
+            {% for item in order.items %}
+              <li>{{ item.product.name }} → {{ item.qty_requested }} шт.</li>
+            {% endfor %}
+          </ul>
+
+          {% if order.status == "pending" %}
+            <span class="badge bg-warning text-dark">⏳ Ждёт производство</span>
+          {% elif order.status == "ready" %}
+            <span class="badge bg-info text-dark">✅ Готов к выдаче</span>
+          {% elif order.status == "completed" %}
+            <span class="badge bg-success">✔ Заказ выдан</span>
+          {% elif order.status == "cancelled" %}
+            <span class="badge bg-secondary">✖ Заказ отменён</span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted small">Пока нет заказов</p>
+  {% endif %}
+</div>
+
+{% endblock %}

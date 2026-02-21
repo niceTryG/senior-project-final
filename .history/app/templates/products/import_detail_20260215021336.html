@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-3">
+
+  <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h4 class="mb-1">Импорт #{{ batch.id }}</h4>
+      <div class="text-muted small">
+        Файл: <span class="fw-semibold">{{ batch.filename }}</span><br>
+        Статус: <span class="fw-semibold">{{ batch.status }}</span><br>
+        Загружен: {{ batch.uploaded_at }}<br>
+        Импорт: {{ batch.imported_at or '—' }}
+      </div>
+      {% if batch.error %}
+        <div class="alert alert-danger mt-2 small mb-0">
+          Ошибка: {{ batch.error }}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="text-end">
+      <a class="btn btn-outline-primary btn-sm"
+         href="{{ url_for('products.import_batch_download', batch_id=batch.id) }}">
+        ⬇️ Скачать Excel
+      </a>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-6 col-md-3">
+          <div class="small text-muted">Цены обновлены</div>
+          <div class="fw-semibold">{{ stats.get('prices_updated', 0) }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="small text-muted">Продажи добавлены</div>
+          <div class="fw-semibold">{{ stats.get('sales_added', 0) }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="small text-muted">Касса добавлена</div>
+          <div class="fw-semibold">{{ stats.get('cash_added', 0) }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="small text-muted">Новые модели</div>
+          <div class="fw-semibold">{{ stats.get('products_created', 0) }}</div>
+        </div>
+      </div>
+
+      {% if sheets %}
+        <div class="mt-3 small text-muted">
+          Листы: <span class="fw-semibold">{{ sheets|join(', ') }}</span>
+        </div>
+      {% endif %}
+
+      {% if stats.get('warnings') %}
+        <div class="alert alert-warning mt-3 small mb-0">
+          <div class="fw-semibold mb-1">Предупреждения:</div>
+          <ul class="mb-0">
+            {% for w in stats.get('warnings') %}
+              <li>{{ w }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <a href="{{ url_for('products.import_wizard') }}" class="btn btn-outline-secondary">
+    ⬅️ Назад в Wizard
+  </a>
+
+</div>
+{% endblock %}

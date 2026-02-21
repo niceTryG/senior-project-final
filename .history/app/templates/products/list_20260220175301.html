@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('products_page_title') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Prevent fixed bottom nav from covering page content */
+  .mm-page-products { padding-bottom: 96px; padding-top: 10px; }
+
+  /* Neo actions */
+  .mm-actions .btn { border-radius: 14px; font-weight: 700; }
+  .mm-actions .btn-sm { padding: .60rem .75rem; }
+  .mm-chip {
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius: 999px;
+    padding: .45rem .75rem;
+    border: 1px solid rgba(0,0,0,.10);
+    background: #fff;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #111;
+    text-decoration: none;
+    width: 100%;
+  }
+
+  /* Filters collapse button */
+  .mm-filter-btn {
+    border-radius: 14px;
+    font-weight: 700;
+    padding: .60rem .75rem;
+  }
+
+  /* Mobile product card polish */
+  .mm-product-card { border-radius: 18px; }
+  .mm-product-card-title { line-height: 1.15; }
+
+  /* Total badge */
+  .mm-total-pill {
+    border-radius: 14px;
+    padding: .55rem .75rem;
+    font-weight: 800;
+    font-size: 1.05rem;
+    min-width: 56px;
+    text-align: center;
+  }
+
+  /* Key rows inside cards */
+  .mm-kv {
+    display: flex;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .35rem 0;
+    border-bottom: 1px dashed rgba(0,0,0,.10);
+  }
+  .mm-kv:last-child { border-bottom: 0; }
+  .mm-k { color: #6c757d; font-size: .82rem; }
+  .mm-v { font-weight: 700; text-align: right; }
+
+  /* Compact action buttons inside card */
+  .mm-card-btn {
+    border-radius: 14px;
+    padding: .60rem .75rem;
+    font-weight: 700;
+  }
+
+  /* Accordion compact */
+  .mm-acc-btn { padding: .55rem .75rem; border-radius: 14px; }
+  .accordion-item { border-radius: 14px; }
+
+  /* Make forms feel less heavy */
+  .form-control, .form-select { border-radius: 12px; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mm-page-products">
+
+  <!-- HEADER + ACTIONS (NEO) -->
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h1 class="h5 fw-semibold mb-0">{{ t('products_page_header') }}</h1>
+  </div>
+
+  <div class="mm-actions mb-2">
+    <div class="row g-2">
+      <div class="col-6">
+        <button type="button"
+                class="btn btn-primary btn-sm w-100"
+                data-bs-toggle="modal"
+                data-bs-target="#addProductModal">
+          ➕ {{ t('products_button_add') }}
+        </button>
+      </div>
+
+      <div class="col-6">
+        <button type="button"
+                class="btn btn-outline-primary btn-sm w-100"
+                data-bs-toggle="modal"
+                data-bs-target="#importExcelModal">
+          📄 {{ t('products_button_import_excel') }}
+        </button>
+      </div>
+
+      <div class="col-12 d-md-none">
+        <a href="{{ url_for('sales.list_sales') }}" class="mm-chip">
+          🧾 {{ t('products_button_sales_history') }}
+        </a>
+      </div>
+
+      <div class="col-12 d-none d-md-block">
+        <a href="{{ url_for('sales.list_sales') }}" class="btn btn-outline-secondary btn-sm">
+          🧾 {{ t('products_button_sales_history') }}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTERS (COLLAPSE ON MOBILE) -->
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body p-2 p-md-3">
+
+      <!-- Mobile toggle -->
+      <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mm-filter-btn"
+              type="button" data-bs-toggle="collapse" data-bs-target="#mmFilters"
+              aria-expanded="false" aria-controls="mmFilters">
+        🔎 Поиск / фильтр
+      </button>
+
+      <div class="collapse d-md-block mt-2 mt-md-0" id="mmFilters">
+        <form method="get" class="row g-2 align-items-end">
+          <div class="col-12 col-md-7">
+            <label class="form-label small mb-1">{{ t('products_filter_search_label') }}</label>
+            <input type="text"
+                   class="form-control form-control-sm"
+                   name="q"
+                   placeholder="{{ t('products_filter_search_placeholder') }}"
+                   value="{{ q }}">
+          </div>
+
+          <div class="col-12 col-md-4">
+            <label class="form-label small mb-1">{{ t('products_filter_category_label') }}</label>
+            <select class="form-select form-select-sm" name="category">
+              <option value="">{{ t('products_filter_category_all') }}</option>
+              {% for cat in categories %}
+                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>
+                  {{ cat }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-12 col-md-1">
+            <button type="submit" class="btn btn-secondary btn-sm w-100">
+              ✅
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  {# ================= MOBILE CARDS (NEO EASY) ================= #}
+  <div class="d-md-none mb-3">
+    {% if not products %}
+      <div class="alert alert-light border small mb-0">
+        {{ t('products_empty_state') if t else 'Пока нет товаров.' }}
+      </div>
+    {% endif %}
+
+    {% for row in products %}
+      {% set p = row.p %}
+      {% set factory_qty = row.qty_factory or 0 %}
+      {% set shop_qty = row.qty_shop or 0 %}
+      {% set total_qty = row.qty_total or 0 %}
+      {% set fpct = (factory_qty * 100 // total_qty) if total_qty else 0 %}
+      {% set spct = (shop_qty * 100 // total_qty) if total_qty else 0 %}
+      {% set low_total = total_qty > 0 and total_qty < 10 %}
+
+      {% set acc_id = "m-acc-" ~ p.id %}
+      {% set toshop_id = "m-toshop-" ~ p.id %}
+      {% set sell_id = "m-sell-" ~ p.id %}
+
+      <div class="card shadow-sm border-0 mb-2 mm-product-card">
+        <div class="card-body">
+
+          <!-- Top row -->
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div class="flex-grow-1" style="min-width:0;">
+              <div class="small text-muted">MM-{{ "%05d"|format(p.id) }}</div>
+              <div class="fw-semibold mm-product-card-title text-truncate">{{ p.name }}</div>
+              <div class="text-muted small">
+                {{ p.category or t('products_no_category') }} · {{ p.currency }}
+              </div>
+
+              <div class="mt-2">
+                {% if total_qty == 0 %}
+                  <span class="badge bg-secondary me-1">{{ t('products_badge_no_stock') }}</span>
+                {% elif low_total %}
+                  <span class="badge bg-danger me-1">{{ t('products_badge_low_stock') }}</span>
+                {% endif %}
+
+                {% if factory_qty == 0 and shop_qty > 0 %}
+                  <span class="badge bg-warning text-dark me-1">{{ t('products_badge_only_shop') }}</span>
+                {% elif factory_qty > 0 and shop_qty == 0 %}
+                  <span class="badge bg-primary me-1">{{ t('products_badge_only_factory') }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="text-end">
+              <div class="small text-muted">{{ t('products_table_col_total') }}</div>
+              <div class="mm-total-pill text-bg-dark">{{ total_qty }}</div>
+            </div>
+          </div>
+
+          <!-- Quick info -->
+          <div class="mt-3">
+            <div class="mm-kv">
+              <div class="mm-k">Фабрика</div>
+              <div class="mm-v">{{ factory_qty }}</div>
+            </div>
+            <div class="mm-kv">
+              <div class="mm-k">Магазин</div>
+              <div class="mm-v">{{ shop_qty }}</div>
+            </div>
+            <div class="mm-kv">
+              <div class="mm-k">{{ t('products_table_col_cost_per_unit') }}</div>
+              <div class="mm-v">{{ format_money(p.cost_price_per_item, p.currency) }}</div>
+            </div>
+            <div class="mm-kv">
+              <div class="mm-k">{{ t('products_table_col_sell_per_unit') }}</div>
+              <div class="mm-v">{{ format_money(p.sell_price_per_item, p.currency) }}</div>
+            </div>
+          </div>
+
+          <!-- Split -->
+          <div class="mt-3">
+            {% if total_qty %}
+              <div class="progress" style="height: 8px; border-radius: 999px;">
+                <div class="progress-bar" role="progressbar"
+                     style="width: {{ fpct }}%;"
+                     aria-valuenow="{{ fpct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                {% if spct > 0 %}
+                  <div class="progress-bar bg-warning" role="progressbar"
+                       style="width: {{ spct }}%;"
+                       aria-valuenow="{{ spct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                {% endif %}
+              </div>
+              <div class="small text-muted mt-1">
+                Ф: {{ fpct }}% • М: {{ spct }}%
+              </div>
+            {% else %}
+              <div class="small text-muted">{{ t('products_split_no_data') }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Main actions (simple) -->
+          <div class="row g-2 mt-3">
+            <div class="col-6">
+              <button class="btn btn-outline-secondary w-100 mm-card-btn"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#{{ toshop_id }}"
+                      aria-expanded="false"
+                      aria-controls="{{ toshop_id }}">
+                🚚 В магазин
+              </button>
+            </div>
+            <div class="col-6">
+              <button class="btn btn-outline-primary w-100 mm-card-btn"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#{{ sell_id }}"
+                      aria-expanded="false"
+                      aria-controls="{{ sell_id }}">
+                💸 Продать
+              </button>
+            </div>
+            <div class="col-12">
+              <a href="{{ url_for('products.product_cost', product_id=p.id) }}"
+                 class="btn btn-outline-warning w-100 mm-card-btn">
+                🧮 Себестоимость
+              </a>
+            </div>
+          </div>
+
+          <!-- Hidden forms -->
+          <div class="mt-2">
+            <div class="collapse" id="{{ toshop_id }}">
+              <div class="border rounded-3 p-2 bg-white mt-2">
+                <form method="post"
+                      action="{{ url_for('products.to_shop', product_id=p.id) }}"
+                      class="d-flex flex-column gap-2">
+                  <div>
+                    <label class="form-label small mb-1">{{ t('products_details_move_to_shop_qty_label') }}</label>
+                    <input type="number"
+                           name="quantity"
+                           class="form-control form-control-sm text-end"
+                           min="1"
+                           max="{{ factory_qty }}"
+                           required>
+                    <div class="form-text small">{{ t('products_table_col_factory') }}: {{ factory_qty }}</div>
+                  </div>
+                  <button type="submit" class="btn btn-secondary btn-sm w-100 mm-card-btn">
+                    ✅ Передать
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <div class="collapse" id="{{ sell_id }}">
+              <div class="border rounded-3 p-2 bg-white mt-2">
+                <form method="post"
+                      action="{{ url_for('products.sell', product_id=p.id) }}"
+                      class="d-flex flex-column gap-2">
+
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label small mb-1">{{ t('products_details_sell_qty_label') }}</label>
+                      <input type="number"
+                             name="quantity"
+                             class="form-control form-control-sm text-end"
+                             min="1"
+                             max="{{ factory_qty }}"
+                             required>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small mb-1">{{ t('products_details_sell_price_per_unit_label') }}</label>
+                      <input type="number"
+                             step="0.01"
+                             name="sell_price_per_item"
+                             class="form-control form-control-sm">
+                    </div>
+                  </div>
+
+                  <input type="text"
+                         name="customer_name"
+                         class="form-control form-control-sm"
+                         placeholder="{{ t('products_details_customer_name_placeholder') }}">
+
+                  <input type="text"
+                         name="customer_phone"
+                         class="form-control form-control-sm"
+                         placeholder="{{ t('products_details_customer_phone_placeholder') }}">
+
+                  <button type="submit" class="btn btn-primary btn-sm w-100 mm-card-btn">
+                    ✅ Продать
+                  </button>
+                </form>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ================= DESKTOP TABLE (KEEP AS IS) ================= #}
+<tr class="collapse bg-light" id="{{ details_id }}">
+  <td colspan="10">
+    {{ super() }}
+  </td>
+</tr>
+
+</div>
+
+<!-- IMPORT EXCEL MODAL (UNCHANGED) -->
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title fs-6" id="importExcelLabel">{{ t('products_import_title') }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form method="post"
+            action="{{ url_for('products.import_upload') }}"
+            enctype="multipart/form-data">
+
+        <div class="modal-body p-2 p-md-3">
+          <div class="mb-2">
+            <label class="form-label small mb-1">{{ t('products_import_title') }}</label>
+            <input type="file"
+                   name="file"
+                   accept=".xlsx,.xls"
+                   class="form-control form-control-sm"
+                   required>
+          </div>
+
+          <div class="small text-muted">
+            {{ t('products_import_hint') }}
+          </div>
+        </div>
+
+        <div class="modal-footer py-2">
+          <button type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  data-bs-dismiss="modal">
+            {{ t('products_modal_cancel_button') }}
+          </button>
+
+          <button type="submit" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-upload me-1"></i> {{ t('products_import_button') }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PRODUCT MODAL (UNCHANGED) -->
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title fs-6" id="addProductLabel">{{ t('products_modal_title') }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form method="post"
+            action="{{ url_for('products.add_product') }}"
+            enctype="multipart/form-data">
+
+        <div class="modal-body p-2 p-md-3">
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1">Фото товара</label>
+              <input type="file" name="image" accept="image/*" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small mb-1">{{ t('products_modal_model_label') }}</label>
+              <input type="text" name="name" class="form-control form-control-sm" required>
+            </div>
+
+            <div class="col-6">
+              <label class="form-label small mb-1">{{ t('products_modal_category_label') }}</label>
+              <input type="text" name="category" class="form-control form-control-sm"
+                     placeholder="{{ t('products_modal_category_placeholder') }}">
+            </div>
+
+            <div class="col-6">
+              <label class="form-label small mb-1">{{ t('products_modal_quantity_label') }}</label>
+              <input type="number" name="quantity" class="form-control form-control-sm" min="0" value="0" required>
+            </div>
+
+            <div class="col-6">
+              <label class="form-label small mb-1">{{ t('products_modal_cost_label') }}</label>
+              <input type="number" name="cost_price_per_item" step="0.01" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-6">
+              <label class="form-label small mb-1">{{ t('products_modal_sell_label') }}</label>
+              <input type="number" name="sell_price_per_item" step="0.01" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-6">
+              <label class="form-label small mb-1">{{ t('products_modal_currency_label') }}</label>
+              <select name="currency" class="form-select form-select-sm">
+                <option value="UZS">UZS</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+            {{ t('products_modal_cancel_button') }}
+          </button>
+
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-save me-1"></i> {{ t('products_modal_save_button') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">Отчёт по использованию тканей</h2>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Ткань</th>
+            <th>Закуплено</th>
+            <th>Использовано</th>
+            <th>Осталось</th>
+            <th>Стоимость использованного</th>
+            <th>Стоимость остатка</th>
+            <th>Всего стоимость</th>
+            <th>Эффективность (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in report %}
+        <tr>
+            <td>{{ row.fabric.name }} ({{ row.fabric.color }})</td>
+            <td>{{ row.bought }}</td>
+            <td class="text-danger fw-bold">{{ row.used }}</td>
+            <td>{{ row.remaining }}</td>
+            <td>{{ format_money(row.cost_used, row.fabric.price_currency) }}</td>
+            <td>{{ format_money(row.cost_remaining, row.fabric.price_currency) }}</td>
+            <td>{{ format_money(row.cost_total, row.fabric.price_currency) }}</td>
+            <td>{{ row.efficiency }}%</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

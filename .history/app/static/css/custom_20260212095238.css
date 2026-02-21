@@ -1,0 +1,584 @@
+/* --- Brand colors --- */
+:root {
+  --mini-red: #e60023;
+  --mini-blue: #1D1B69;
+  --mm-body-bg: #f5f6fa;
+}
+
+html[data-theme="dark"] {
+  --mm-body-bg: #020617; /* very dark slate */
+}
+
+/* Body background reacts to theme */
+body {
+  background-color: var(--mm-body-bg);
+}
+
+/* Navbar brand */
+.navbar-brand .brand-logo {
+  height: 34px;
+  width: auto;
+}
+
+.navbar-brand .brand-text {
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+/* Footer brand */
+.footer-brand {
+  color: var(--mini-blue);
+  font-weight: 600;
+}
+
+/* Cards and tables */
+.card {
+  border-radius: 0.75rem;
+}
+
+.card.shadow-sm {
+  box-shadow: 0 0.25rem 0.5rem rgba(15, 23, 42, 0.08);
+}
+
+.table td,
+.table th {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+/* Dashboard / section titles */
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.section-subtitle {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Buttons themed for Mini Moda */
+.btn-primary {
+  background-color: var(--mini-blue);
+  border-color: var(--mini-blue);
+}
+
+.btn-primary:hover {
+  background-color: #151347;
+  border-color: #151347;
+}
+
+.btn-outline-primary {
+  color: var(--mini-blue);
+  border-color: var(--mini-blue);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--mini-blue);
+  color: #fff;
+}
+
+/* Quick link buttons on dashboard */
+.mm-quick-link {
+  text-transform: none;
+  font-weight: 500;
+}
+
+/* Language links in navbar */
+.nav-language a {
+  opacity: 0.9;
+}
+
+.nav-language a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* For dark theme, soften card backgrounds a bit if your theme.css uses variables */
+html[data-theme="dark"] .card {
+  background-color: rgba(15, 23, 42, 0.9);
+}
+
+.login-page {
+    height: 100vh;
+    background-image: url('/static/img/background_login.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Shahada banner (dashboard header) */
+.shahada-banner {
+    margin-left: calc(-50vw + 50%);
+    background: #000;
+    padding-top: 20px;    /* more space ABOVE */
+    padding-bottom: 4px;  /* less space BELOW */
+    text-align: center;
+    margin-bottom: -2px;
+}
+
+/* Shahada text */
+.shahada-text {
+    display: inline-block;
+    line-height: 1;       /* keep text tight to its own box */
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #d4af37;       /* gold */
+    letter-spacing: 1px;
+    font-family: 'Scheherazade', 'Amiri', serif;
+}
+
+/* Optional: a bit bigger on larger screens */
+@media (min-width: 768px) {
+    .shahada-text {
+        font-size: 1.4rem;
+    }
+}
+
+/* Cards: smooth hover lift everywhere */
+.card {
+  border-radius: 0.75rem;               /* you already set this, safe duplicate */
+  transition: transform 0.08s ease-out,
+              box-shadow 0.08s ease-out;
+}
+
+.card.shadow-sm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0.5rem 1.2rem rgba(15, 23, 42, 0.16);
+}
+
+/* Tables: make them a bit cleaner and denser */
+.table-sm th,
+.table-sm td {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Sticky table headers helper for long tables */
+.table-sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #ffffff;
+}
+
+/* Simple utility for clickable rows (products page, etc.) */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* === Dark theme extras (use the same data-theme) === */
+
+html[data-theme="dark"] body {
+  color: #e5e7eb; /* slate-200 */
+}
+
+html[data-theme="dark"] .card {
+  background-color: #020617; /* almost black slate */
+  border-color: #111827;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.7);
+}
+
+html[data-theme="dark"] .card.shadow-sm {
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.75);
+}
+
+html[data-theme="dark"] .table {
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] .table thead th {
+  background-color: #020617;
+  border-color: #111827;
+}
+
+html[data-theme="dark"] .table tbody tr {
+  border-color: #111827;
+}
+
+html[data-theme="dark"] .table-hover tbody tr:hover {
+  background-color: #020617;
+}
+
+html[data-theme="dark"] .navbar,
+html[data-theme="dark"] .navbar .dropdown-menu {
+  background-color: #020617 !important;
+}
+
+html[data-theme="dark"] .navbar a,
+html[data-theme="dark"] .navbar-brand,
+html[data-theme="dark"] .navbar-nav .nav-link {
+  color: #e5e7eb !important;
+}
+
+/* theme toggle button look */
+.mm-theme-toggle {
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mm-theme-toggle i {
+  font-size: 1rem;
+}
+
+/* different bg on dark */
+html[data-theme="dark"] .mm-theme-toggle {
+  background-color: #111827;
+  color: #e5e7eb;
+}
+
+.btn-primary.btn-sm {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary.btn-sm::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.25) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  transform: skewX(-20deg);
+  transition: left 0.4s ease;
+}
+
+.btn-primary.btn-sm:hover::after {
+  left: 120%;
+}
+
+/* === Dad-friendly mobile tweaks (iPhone etc.) === */
+@media (max-width: 576px) {
+
+  .dad-padding {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .dad-card-title {
+    font-size: 0.85rem;
+  }
+
+  .dad-card-value {
+    font-size: 1.25rem;
+  }
+
+  .dad-badge {
+    font-size: 0.9rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.75rem;
+  }
+
+  .dad-section-title {
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+  }
+
+  /* Quick actions & reports: 2 buttons per row, big tap targets */
+  .dad-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .dad-btn-group span {
+    flex: 0 0 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  .dad-btn-group .btn {
+    flex: 1 0 48%;
+    font-size: 0.9rem;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+    border-radius: 0.75rem;
+    text-align: center;
+  }
+}
+
+/* ================= Products page: parent-friendly mobile layout ================= */
+
+.mm-page-products {
+  /* можно что-то общее, если нужно */
+}
+
+/* до ~планшета включительно (iPhone 16 Pro, Samsung A51/71 в портретной ориентации) */
+@media (max-width: 768px) {
+
+  /* Шапка: кнопки одна под другой, на всю ширину */
+  .mm-page-products .mm-products-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mm-page-products .mm-products-header-actions .btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.95rem;
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+    border-radius: 0.75rem;
+  }
+
+  /* Карточки продукта */
+  .mm-page-products .mm-product-card .card-body {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .mm-page-products .mm-product-card-title {
+    font-size: 1rem;
+  }
+
+  .mm-page-products .mm-product-card-sub {
+    font-size: 0.8rem;
+  }
+
+  .mm-page-products .mm-product-card-qty,
+  .mm-page-products .mm-product-card-qty-row {
+    font-size: 0.85rem;
+  }
+
+  .mm-page-products .mm-product-card-toggle {
+    font-size: 0.9rem;
+  }
+
+  .mm-page-products .mm-product-card-actions .btn {
+    font-size: 0.9rem;
+  }
+
+  /* Чуть крупнее инпуты на этой странице, чтобы родителям было удобнее нажимать */
+  .mm-page-products .form-control-sm,
+  .mm-page-products .form-select-sm {
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* ============ Fabrics page ============ */
+
+.mm-page-fabrics {
+  /* optional global tweaks for this page */
+}
+
+/* Mobile-first: parent-friendly view (iPhone, Samsung A-series) */
+@media (max-width: 768px) {
+
+  .mm-page-fabrics .mm-fabric-card .card-body {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .mm-page-fabrics .mm-fabric-card-title {
+    font-size: 1rem;
+  }
+
+  .mm-page-fabrics .mm-fabric-card-meta {
+    font-size: 0.8rem;
+  }
+
+  .mm-page-fabrics .mm-fabric-card-qty {
+    font-size: 0.95rem;
+  }
+
+  .mm-page-fabrics .mm-fabric-card-low {
+    border-left: 4px solid #dc2626; /* red stripe for low stock */
+  }
+
+  .mm-page-fabrics .mm-fabric-card-cut .form-control-sm {
+    font-size: 0.95rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .mm-page-fabrics .mm-fabric-card-cut .btn {
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+}
+
+/* ============ SHOP: склад магазина (list) ============ */
+
+.mm-page-shop-stock {
+  /* space already handled by container, but here if needed later */
+}
+
+/* Header actions on mobile: stack buttons full-width */
+@media (max-width: 768px) {
+  .mm-page-shop-stock .mm-shop-header-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .mm-page-shop-stock .mm-shop-header-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Shop stock cards (mobile) */
+.mm-shop-stock-card .card-body {
+  padding: 0.75rem 0.85rem;
+}
+
+.mm-shop-stock-title {
+  font-size: 0.95rem;
+}
+
+.mm-shop-stock-qty {
+  font-size: 1.1rem;
+}
+
+/* Colors for states */
+.mm-shop-stock-card-empty {
+  border-left: 4px solid #6b7280; /* gray */
+  opacity: 0.9;
+}
+
+.mm-shop-stock-card-low {
+  border-left: 4px solid #dc2626; /* red */
+}
+
+/* ============ SHOP: продажа из магазина (sell) ============ */
+
+.mm-page-shop-sale {
+  /* page-level hook if needed later */
+}
+
+/* Product info + form cards: keep them tight on mobile */
+@media (max-width: 768px) {
+  .mm-page-shop-sale .mm-sale-product-card .card-body,
+  .mm-page-shop-sale .mm-sale-form-card .card-body {
+    padding: 0.75rem 0.9rem;
+  }
+
+  .mm-page-shop-sale h5.card-title {
+    font-size: 1rem;
+  }
+}
+
+/* Quantity & total hint styling */
+.mm-page-shop-sale #sale-total {
+  font-size: 0.9rem;
+}
+
+.mm-page-shop-sale #qty-hint {
+  font-size: 0.8rem;
+}
+
+/* ============ SHOP: передача в магазин (transfer) ============ */
+
+.mm-page-shop-transfer {
+  /* page hook */
+}
+
+@media (max-width: 768px) {
+  .mm-page-shop-transfer .card-body {
+    padding: 0.9rem;
+  }
+
+  .mm-page-shop-transfer .form-control-sm,
+  .mm-page-shop-transfer .form-select-sm {
+    font-size: 0.95rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+}
+
+.mm-page-shop-transfer #product-info {
+  font-size: 0.8rem;
+}
+
+.mm-page-shop-transfer #qty-hint,
+.mm-page-shop-transfer #price-hint {
+  font-size: 0.8rem;
+}
+
+/* ============ SHOP: pending orders for factory ============ */
+
+.mm-page-factory-orders {
+  /* page hook */
+}
+
+@media (max-width: 768px) {
+  .mm-page-factory-orders .card-body {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .mm-page-factory-orders table.table-sm td,
+  .mm-page-factory-orders table.table-sm th {
+    font-size: 0.8rem;
+  }
+
+  .mm-page-factory-orders .btn-sm {
+    font-size: 0.8rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+}
+
+/* ============ SHOP: movement history (all movements) ============ */
+
+.mm-page-movement-history {
+  /* page hook */
+}
+
+/* Make long history tables easier to read */
+.mm-page-movement-history table.table-sm td,
+.mm-page-movement-history table.table-sm th {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .mm-page-movement-history .card-body {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .mm-page-movement-history .btn-sm {
+    font-size: 0.8rem;
+  }
+}
+
+/* ============ SHOP: per-order movement history ============ */
+
+.mm-page-order-history {
+  /* page hook */
+}
+
+@media (max-width: 768px) {
+  .mm-page-order-history .card-body {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .mm-page-order-history table.table-sm td,
+  .mm-page-order-history table.table-sm th {
+    font-size: 0.8rem;
+  }
+}
+
+/* ============ Dark theme tweaks for shop pages ============ */
+
+html[data-theme="dark"] .mm-shop-stock-card-empty {
+  border-left-color: #6b7280;
+}
+
+html[data-theme="dark"] .mm-shop-stock-card-low {
+  border-left-color: #f97316; /* warm orange-red in dark mode */
+}
+
+html[data-theme="dark"] .mm-page-movement-history .table-hover tbody tr:hover,
+html[data-theme="dark"] .mm-page-order-history .table-hover tbody tr:hover {
+  background-color: #020617;
+}

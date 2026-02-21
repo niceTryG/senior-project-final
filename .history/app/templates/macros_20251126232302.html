@@ -1,0 +1,32 @@
+{# templates/macros.html #}
+
+{# Карточка-метрика (может быть кликаемой) #}
+{% macro metric_card(title, value, subtitle='', href=None, value_class='', card_class='') %}
+  {%- if href -%}
+    <a href="{{ href }}" class="text-decoration-none text-reset">
+  {%- endif -%}
+
+    <div class="card shadow-sm border-0 h-100 {{ card_class }}">
+      <div class="card-body py-2 text-center">
+        <div class="small text-muted mb-1">{{ title }}</div>
+        <div class="fw-semibold {{ value_class }}">
+          {{ value }}
+        </div>
+        {%- if subtitle %}
+          <div class="small text-muted">{{ subtitle }}</div>
+        {%- endif %}
+      </div>
+    </div>
+
+  {%- if href -%}
+    </a>
+  {%- endif -%}
+{% endmacro %}
+
+
+{# Кнопка в блоке "Быстрые действия" #}
+{% macro quick_btn(label, href, btn_class='btn-outline-primary') %}
+  <a href="{{ href }}" class="btn btn-sm {{ btn_class }}">
+    {{ label }}
+  </a>
+{% endmacro %}

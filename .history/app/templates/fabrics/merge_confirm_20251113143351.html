@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-3">{{ t('merge_title') }}</h1>
+<p>{{ t('merge_found_similar') }}</p>
+
+<div class="row">
+  <div class="col-md-6">
+    <h3>{{ t('merge_existing_fabric') }}</h3>
+    <table class="table table-sm table-bordered">
+      <tr><th>{{ t('table_name') }}</th><td>{{ existing.name }}</td></tr>
+      <tr><th>{{ t('table_color') }}</th><td>{{ existing.color or "" }}</td></tr>
+      <tr><th>{{ t('table_unit') }}</th><td>{{ existing.unit }}</td></tr>
+      <tr><th>{{ t('table_quantity') }}</th><td>{{ "%.2f"|format(existing.quantity) }}</td></tr>
+      <tr><th>{{ t('table_price_per_unit') }}</th><td>{{ format_money(existing.price_per_unit, existing.price_currency) }}</td></tr>
+      <tr><th>{{ t('table_currency') }}</th><td>{{ existing.price_currency }}</td></tr>
+      <tr><th>{{ t('table_category') }}</th><td>{{ existing.category or "" }}</td></tr>
+    </table>
+  </div>
+
+  <div class="col-md-6">
+    <h3>{{ t('merge_new_fabric') }}</h3>
+    <table class="table table-sm table-bordered">
+      <tr><th>{{ t('table_name') }}</th><td>{{ new.name }}</td></tr>
+      <tr><th>{{ t('table_color') }}</th><td>{{ new.color or "" }}</td></tr>
+      <tr><th>{{ t('table_unit') }}</th><td>{{ new.unit }}</td></tr>
+      <tr><th>{{ t('table_quantity') }}</th><td>{{ "%.2f"|format(new.quantity) }}</td></tr>
+      <tr><th>{{ t('table_price_per_unit') }}</th><td>{{ format_money(new.price_per_unit, new.price_currency) }}</td></tr>
+      <tr><th>{{ t('table_currency') }}</th><td>{{ new.price_currency }}</td></tr>
+      <tr><th>{{ t('table_category') }}</th><td>{{ new.category or "" }}</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="mt-3 d-flex gap-2">
+  <form method="post" action="{{ url_for('fabrics.merge') }}">
+    <input type="hidden" name="existing_id" value="{{ existing.id }}">
+    <input type="hidden" name="name" value="{{ new.name }}">
+    <input type="hidden" name="color" value="{{ new.color }}">
+    <input type="hidden" name="unit" value="{{ new.unit }}">
+    <input type="hidden" name="quantity" value="{{ new.quantity }}">
+    <input type="hidden" name="price_per_unit" value="{{ new.price_per_unit }}">
+    <input type="hidden" name="price_currency" value="{{ new.price_currency }}">
+    <input type="hidden" name="category" value="{{ new.category }}">
+    <button type="submit" class="btn btn-primary">{{ t('merge_button_yes') }}</button>
+  </form>
+
+  <form method="post" action="{{ url_for('fabrics.create_new') }}">
+    <input type="hidden" name="name" value="{{ new.name }}">
+    <input type="hidden" name="color" value="{{ new.color }}">
+    <input type="hidden" name="unit" value="{{ new.unit }}">
+    <input type="hidden" name="quantity" value="{{ new.quantity }}">
+    <input type="hidden" name="price_per_unit" value="{{ new.price_per_unit }}">
+    <input type="hidden" name="price_currency" value="{{ new.price_currency }}">
+    <input type="hidden" name="category" value="{{ new.category }}">
+    <button type="submit" class="btn btn-secondary">{{ t('merge_button_no_new') }}</button>
+  </form>
+</div>
+{% endblock %}

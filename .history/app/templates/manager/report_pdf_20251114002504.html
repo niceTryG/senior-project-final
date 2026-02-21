@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-3">📊 Финансовый отчёт руководителя</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5>Общая информация</h5>
+        <p><strong>Инвестиции (фабрика):</strong> {{ format_money(report.factory_cost_uzs, 'UZS') }}</p>
+        <p><strong>Стоимость на складе магазина:</strong> {{ format_money(report.shop_sell_uzs, 'UZS') }}</p>
+        <p><strong>Потенциальная прибыль:</strong> {{ format_money(report.unrealized_profit, 'UZS') }}</p>
+        <p><strong>Полученная прибыль (продажи):</strong> {{ format_money(report.realized_profit, 'UZS') }}</p>
+
+        <a href="{{ url_for('manager_report.manager_report_pdf') }}" class="btn btn-danger mt-2">
+            📄 Скачать PDF
+        </a>
+    </div>
+</div>
+
+<h4 class="mt-4">Детали по каждому товару</h4>
+
+<div class="table-responsive">
+<table class="table table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Название</th>
+            <th>Фабрика (шт)</th>
+            <th>Магазин (шт)</th>
+            <th>Себестоимость</th>
+            <th>Цена продажи</th>
+            <th>Потенциальная прибыль</th>
+            <th>Продано (шт)</th>
+            <th>Прибыль полученная</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in report.products %}
+        <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.factory_qty }}</td>
+            <td>{{ p.shop_qty }}</td>
+            <td>{{ format_money(p.cost_price, 'UZS') }}</td>
+            <td>{{ format_money(p.sell_price, 'UZS') }}</td>
+            <td>{{ format_money(p.potential_profit, 'UZS') }}</td>
+            <td>{{ p.sold_units }}</td>
+            <td>{{ format_money(p.realized_profit, 'UZS') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% endblock %}

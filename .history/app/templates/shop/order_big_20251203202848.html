@@ -1,0 +1,53 @@
+<div class="card shadow-sm border-0 mb-3">
+  <div class="card-body">
+    <h5 class="mb-1">{{ t('shop_order_big_title') }}</h5>
+    <p class="text-muted small mb-2">
+      {{ t('shop_order_big_subtitle') }}
+    </p>
+
+    <form method="post">
+      <div class="row g-2">
+        <input type="hidden" name="allow_partial" value="1">
+
+        <div class="col-md-4">
+          <label class="form-label small">
+            {{ t('shop_order_big_product_label') }}
+          </label>
+          <select name="product_id" class="form-select form-select-sm">
+            {% for p in products %}
+              <option value="{{ p.id }}">
+                {{ p.name }} ({{ t('shop_product_info_stock') }}: {{ p.shop_stock.quantity if p.shop_stock else 0 }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label small">
+            {{ t('shop_order_big_quantity_label') }}
+          </label>
+          <input name="quantity"
+                 type="number"
+                 class="form-control form-control-sm"
+                 min="1"
+                 required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label small">
+            {{ t('shop_order_big_customer_label') }}
+          </label>
+          <input name="customer_name"
+                 class="form-control form-control-sm">
+        </div>
+
+        <div class="col-md-2">
+          <button class="btn btn-sm btn-warning text-dark mt-3 w-100">
+            {{ t('shop_order_big_submit') }}
+          </button>
+        </div>
+      </div>
+    </form>
+
+  </div>
+</div>

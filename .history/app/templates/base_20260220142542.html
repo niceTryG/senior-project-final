@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ t('app_title') }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Theme variables (light/dark) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+
+  <!-- Bootstrap CSS (CDN) -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body class="mm-body">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mm-topbar">
+  <div class="container-fluid">
+
+    <!-- Brand with logo -->
+    <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('main.dashboard') }}">
+      <img
+        src="{{ url_for('static', filename='img/minimoda_logo.png') }}"
+        alt="Mini Moda"
+        class="me-2 brand-logo"
+        onerror="this.style.display='none';"
+      >
+      <span class="brand-text">Mini Moda</span>
+    </a>
+
+    <!-- Hamburger -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarMain">
+
+      <!-- LEFT MENU -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        {% if current_user.is_authenticated %}
+
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.dashboard') }}">{{ t('menu_dashboard') }}</a>
+          </li>
+
+          {% if current_user.role in ['manager', 'admin', 'accountant'] %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('fabrics.list') }}">{{ t('menu_fabrics') }}</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('products.list_products') }}">{{ t('menu_products') }}</a>
+            </li>
+          {% endif %}
+
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('sales.list_sales') }}">{{ t('menu_sales') }}</a>
+          </li>
+
+          {% if current_user.role in ['manager','admin','accountant'] %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('cash.list_cash') }}">{{ t('menu_cash') }}</a>
+            </li>
+          {% endif %}
+
+          {% if current_user.role in ['manager','admin','shop'] %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('shop.list_shop') }}">{{ t('menu_shop') }}</a>
+            </li>
+          {% endif %}
+
+          <!-- Reports dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+              📊 {{ t('menu_reports') }}
+            </a>
+
+            <ul class="dropdown-menu">
+
+              {% if current_user.role in ['manager','admin','shop'] %}
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('shop.movement_history') }}">
+                    <span class="me-1">📜</span>{{ t('reports_shop_history') }}
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('shop_report.weekly_report') }}">
+                    <span class="me-1">📅</span>{{ t('reports_shop_weekly') }}
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('shop_monthly.monthly_report') }}">
+                    <span class="me-1">📅</span>{{ t('reports_shop_monthly') }}
+                  </a>
+                </li>
+              {% endif %}
+
+              {% if current_user.role in ['manager','admin','accountant'] %}
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('fabric_report.usage_report') }}">
+                    <span class="me-1">🧵</span>{{ t('reports_fabric_usage') }}
+                  </a>
+                </li>
+              {% endif %}
+
+              {% if current_user.role in ['manager','admin'] %}
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('manager_report.manager_report') }}">
+                    <span class="me-1">📄</span>{{ t('reports_manager_main') }}
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('manager_report.manager_report_pdf') }}">
+                    <span class="me-1">📄</span>{{ t('reports_manager_pdf') }}
+                  </a>
+                </li>
+              {% endif %}
+
+            </ul>
+          </li>
+
+        {% endif %}
+      </ul>
+
+      <!-- RIGHT SIDE -->
+      <div class="d-flex align-items-center gap-3 flex-wrap justify-content-end mm-topbar-right">
+
+        <!-- USD → UZS rate -->
+        <div class="text-light small text-end lh-sm d-none d-md-block">
+          <div>{{ t('header_usd_rate_title') }}</div>
+          <div>
+            1 USD =
+            {% if usd_uzs_rate %}
+              {{ usd_uzs_rate | round(2) }}
+            {% else %}
+              —
+            {% endif %}
+            so‘m
+          </div>
+        </div>
+
+        <!-- Theme toggle -->
+        <button id="theme-toggle" type="button" class="btn btn-sm btn-outline-light">
+          🌙
+        </button>
+
+        <!-- Language -->
+        <div class="small text-light">
+          <a href="{{ url_for('switch_language', lang_code='ru') }}" class="text-light text-decoration-none">
+            {{ t('lang_ru') }}
+          </a>
+          |
+          <a href="{{ url_for('switch_language', lang_code='uz') }}" class="text-light text-decoration-none">
+            {{ t('lang_uz') }}
+          </a>
+        </div>
+
+        <!-- User -->
+        {% if current_user.is_authenticated %}
+          <span class="text-light small d-none d-md-inline">{{ current_user.username }}</span>
+          <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">
+            {{ t('menu_logout') }}
+          </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+
+
+<!-- MAIN -->
+<main class="mm-main">
+  <div class="container-fluid mm-page-wrap">
+    <div class="container-lg">
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-3">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show">
+                {{ message }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="mt-4 py-3 text-center small text-muted d-none d-lg-block">
+  Mini Moda © 2020–{{ current_date }} · {{ t('footer_internal_system') }}
+</footer>
+
+<!-- MOBILE BOTTOM BAR -->
+{% if current_user.is_authenticated %}
+<div class="d-lg-none fixed-bottom mm-bottom-nav bg-dark text-light">
+  <div class="d-flex justify-content-around small">
+
+    {% if current_user.role in ['manager','admin'] %}
+      <a href="{{ url_for('main.dashboard') }}"
+         class="mm-nav-link text-center text-decoration-none">
+        <div class="mm-nav-ico">🏠</div>
+        <div class="mm-nav-txt">{{ t('menu_dashboard') }}</div>
+      </a>
+
+      <a href="{{ url_for('fabrics.list') }}"
+         class="mm-nav-link text-center text-decoration-none">
+        <div class="mm-nav-ico">🧵</div>
+        <div class="mm-nav-txt">{{ t('menu_fabrics') }}</div>
+      </a>
+
+      <a href="{{ url_for('products.list_products') }}"
+         class="mm-nav-link text-center text-decoration-none">
+        <div class="mm-nav-ico">👕</div>
+        <div class="mm-nav-txt">{{ t('menu_products') }}</div>
+      </a>
+
+      <a href="{{ url_for('shop.list_shop') }}"
+         class="mm-nav-link text-center text-decoration-none">
+        <div class="mm-nav-ico">🏬</div>
+        <div class="mm-nav-txt">{{ t('menu_shop') }}</div>
+      </a>
+
+      <a href="{{ url_for('sales.list_sales') }}"
+         class="mm-nav-link text-center text-decoration-none">
+        <div class="mm-nav-ico">💸</div>
+        <div class="mm-nav-txt">{{ t('menu_sales') }}</div>
+      </a>
+
+      <a href="{{ url_for('shop.movement_history') }}"
+         class="mm-nav-link text-center text-decoration-none">
+        <div class="mm-nav-ico">📊</div>
+        <div class="mm-nav-txt">{{ t('reports_shop_history') }}</div>
+      </a>
+    {% endif %}
+
+  </div>
+</div>
+{% endif %}
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<!-- Theme toggle -->
+<script>
+(function () {
+  const root = document.documentElement;
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') {
+    root.setAttribute('data-theme','dark');
+    btn.textContent='☀️';
+  }
+
+  btn.addEventListener('click', function () {
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    btn.textContent = next === 'dark' ? '☀️' : '🌙';
+  });
+})();
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

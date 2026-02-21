@@ -1,0 +1,7 @@
+<div class="card shadow-sm border-0 mb-2 small">
+  <div class="card-body py-2">
+    <div class="fw-bold">Заказ #{{ order.id }} — <span class="text-{{'warning' if order.status=='pending' else 'success'}}">{{order.status}}</span></div>
+    <div class="text-muted">{{ order.created_at }}</div>
+    <p class="mb-0"><b>Клиент:</b> {{order.customer_name or '-'}} · <b>Тел:</b> {{order.customer_phone or '-'}}</p>
+  </div>
+</div>

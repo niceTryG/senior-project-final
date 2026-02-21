@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Продажа из магазина — {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h5 mb-1">Продажа из магазина</h1>
+      <p class="small text-muted mb-0">
+        Здесь дядя продаёт товар клиенту. Если в магазине не хватит количества,
+        система автоматически создаст заказ на оставшуюся часть.
+      </p>
+    </div>
+    <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-secondary">
+      ← Назад к складу магазина
+    </a>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-2">{{ product.name }}</h5>
+          <p class="small text-muted mb-2">
+            Категория: {{ product.category or "—" }}
+          </p>
+          <p class="mb-1 small">
+            Остаток в магазине:
+            <span class="fw-semibold">
+              {{ stock_qty }} шт.
+            </span>
+          </p>
+          <p class="mb-0 small">
+            Цена продажи: 
+            <span class="fw-semibold">
+              {{ format_money(product.sell_price_per_item or 0, product.currency) }}
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h6 class="card-title mb-2">Оформить продажу</h6>
+
+          <form method="post">
+            <div class="mb-2">
+              <label class="form-label small mb-1">Количество (шт.)</label>
+              <input type="number"
+                     name="quantity"
+                     class="form-control form-control-sm"
+                     min="1"
+                     max="9999"
+                     required>
+              <div class="form-text small">
+                В наличии сейчас: {{ stock_qty }} шт.
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small mb-1">Имя клиента (опционально)</label>
+              <input type="text"
+                     name="customer_name"
+                     class="form-control form-control-sm"
+                     placeholder="Например: Ali, Murod ...">
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small mb-1">Телефон клиента (опционально)</label>
+              <input type="text"
+                     name="customer_phone"
+                     class="form-control form-control-sm"
+                     placeholder="+998 ..">
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small mb-1">Заметка (опционально)</label>
+              <textarea name="note"
+                        rows="2"
+                        class="form-control form-control-sm"
+                        placeholder="Например: постоянный клиент, оплата налом и т.п."></textarea>
+            </div>
+
+            <div class="form-check mb-3">
+              <input class="form-check-input"
+                     type="checkbox"
+                     name="allow_partial_sale"
+                     id="allow_partial_sale"
+                     checked>
+              <label class="form-check-label small" for="allow_partial_sale">
+                Если не хватает товара — продать то, что есть, а на остальное создать заказ.
+              </label>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <a href="{{ url_for('shop.list_shop') }}"
+                 class="btn btn-sm btn-outline-secondary">
+                Отмена
+              </a>
+              <button type="submit" class="btn btn-sm btn-success">
+                💸 Продать
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

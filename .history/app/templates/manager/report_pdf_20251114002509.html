@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body { font-family: DejaVu Sans, sans-serif; font-size: 11pt; }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+th, td { border: 1px solid #444; padding: 6px; }
+th { background: #eee; }
+h2 { text-align: center; }
+</style>
+</head>
+<body>
+
+<h2>Финансовый отчёт Mini Moda</h2>
+<p><strong>Дата:</strong> {{ current_year }}</p>
+
+<h3>Сводка</h3>
+<p>Инвестиции (фабрика): {{ format_money(report.factory_cost_uzs, 'UZS') }}</p>
+<p>Стоимость в магазине: {{ format_money(report.shop_sell_uzs, 'UZS') }}</p>
+<p>Потенциальная прибыль: {{ format_money(report.unrealized_profit, 'UZS') }}</p>
+<p>Полученная прибыль: {{ format_money(report.realized_profit, 'UZS') }}</p>
+
+<h3>Детали товаров</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Товар</th>
+            <th>Фабрика</th>
+            <th>Магазин</th>
+            <th>Себестоимость</th>
+            <th>Продажа</th>
+            <th>Потенц. прибыль</th>
+            <th>Продано</th>
+            <th>Получено</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in report.products %}
+        <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.factory_qty }}</td>
+            <td>{{ p.shop_qty }}</td>
+            <td>{{ p.cost_price }}</td>
+            <td>{{ p.sell_price }}</td>
+            <td>{{ p.potential_profit }}</td>
+            <td>{{ p.sold_units }}</td>
+            <td>{{ p.realized_profit }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<br><br>
+<p>______________  Подпись руководителя</p>
+
+</body>
+</html>
