@@ -2,7 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, current_user, login_required
 from ..models import User
 from ..extensions import db
-
+import os
+from flask import abort
 auth_bp = Blueprint("auth", __name__)
 
 
@@ -92,3 +93,27 @@ def create_user():
         return redirect(url_for("auth.list_users"))
 
     return render_template("admin/create_user.html")
+@auth_bp.route("/setup/<token>")
+def setup_superadmin(token):
+    # Token must match env var
+    expected = os.environ.get("SETUP_TOKEN")
+    if not expected or token != expected:
+        abort(404)
+
+    # Only allow if no admin exists
+    existing_admin = User.query.filter_by(role="admin").first()
+    if existing_admin:
+        return "Admin already exists. Setup disabled."
+
+    # Create superadmin
+    user = User(username="ibrohim", role="admin")
+    user.set_password("CHANGE_ME_NOW")
+
+    db.session.add(user)
+    db.session.commit()
+
+    return """
+    Superadmin created.<br>
+    <b>IMPORTANT:</b> Log in immediately and change the password.<br>
+    Then REMOVE this setup route.
+    """
