@@ -65,13 +65,43 @@ def _to_float(value, default=None):
         return default
 
 
+from flask import session
+
 def _ensure_factory_bound():
+    """
+    Returns the factory_id that actions should apply to.
+
+    - Normal users (admin/manager) must have current_user.factory_id set.
+    - Superadmin may have factory_id = None, so they must select a factory via session.
+    - If no factory is selected yet, we auto-select the first one (or create a default for admin).
+    """
+    # 1) If user is already bound to a factory, use it
+    user_factory_id = getattr(current_user, "factory_id", None)
+    if user_factory_id is not None:
+        return user_factory_id
+
+    # 2) Superadmin without a bound factory: use session selection
     if getattr(current_user, "is_superadmin", False):
-        return current_user.factory_id  # may be None
-    if current_user.factory_id is None:
-        flash("У пользователя не привязан цех (factory). Обратитесь к администратору.", "danger")
-        return None
-    return current_user.factory_id
+        selected = session.get("factory_id")
+        if selected is not None:
+            return selected
+
+        # Auto-select first factory if it exists
+        first = Factory.query.first()
+        if first:
+            session["factory_id"] = first.id
+            return first.id
+
+        # No factories exist: create one (superadmin/admin only)
+        default_factory = Factory(name="Mini Moda Factory")
+        db.session.add(default_factory)
+        db.session.commit()
+        session["factory_id"] = default_factory.id
+        return default_factory.id
+
+    # 3) Non-superadmin with no factory: block
+    flash("У пользователя не привязан цех (factory). Обратитесь к администратору.", "danger")
+    return None
 
 
 def _sha256_bytes(b: bytes) -> str:
@@ -431,7 +461,7 @@ def import_upload():
         sheet_info.append({"name": sheet, "tags": tags})
 
     return render_template("products/import_choose_sheets.html", batch=batch, sheet_info=sheet_info)
-
+ 
 @products_bp.route("/import/confirm", methods=["POST"])
 @login_required
 @roles_required("admin", "manager")
