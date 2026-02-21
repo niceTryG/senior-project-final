@@ -126,10 +126,36 @@ def create_app(config_class="config.DevConfig"):
         def current_lang() -> str:
             return session.get("lang", "ru")
 
+        def format_money(value, currency="UZS"):
+            """
+            Simple safe money formatter for templates.
+            - handles None / strings
+            - uses thousands separators
+            """
+            try:
+                if value is None:
+                    value = 0
+                # allow values like "12345.67"
+                num = float(value)
+            except (TypeError, ValueError):
+                num = 0.0
+
+            # If it's basically an integer, show no decimals
+            if abs(num - int(num)) < 1e-9:
+                formatted = f"{int(num):,}"
+            else:
+                formatted = f"{num:,.2f}"
+
+            # Use spaces instead of commas if you prefer:
+            formatted = formatted.replace(",", " ")
+
+            return f"{formatted} {currency}".strip()
+
         return {
             "t": _t,
             "current_lang": current_lang,
             "current_year": datetime.utcnow().year,
+            "format_money": format_money,  # ✅ add this
         }
 
     # -------------------------
