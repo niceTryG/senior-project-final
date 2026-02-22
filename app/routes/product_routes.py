@@ -490,13 +490,14 @@ def import_confirm():
         flash("Выберите что импортировать (реализация/касса/цены).", "warning")
         return redirect(url_for("products.import_batch_detail", batch_id=batch.id))
 
+
     try:
-        with open(batch.stored_path, "rb") as f:
+        abs_path = os.path.join(current_app.root_path, "static", batch.stored_path)
+        with open(abs_path, "rb") as f:
             raw_bytes = f.read()
     except Exception as e:
         flash(f"Не могу открыть файл на сервере: {e}", "danger")
         return redirect(url_for("products.import_wizard"))
-
     bio = BytesIO(raw_bytes)
     try:
         xls = pd.ExcelFile(bio)
