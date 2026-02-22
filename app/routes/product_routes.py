@@ -7,7 +7,9 @@ import json
 import hashlib
 from io import BytesIO
 from datetime import datetime, date
-
+from flask import session
+from ..models import Factory
+from ..extensions import db
 import pandas as pd
 from werkzeug.utils import secure_filename
 from flask import (
@@ -68,40 +70,38 @@ def _to_float(value, default=None):
 from flask import session
 
 def _ensure_factory_bound():
-    """
-    Returns the factory_id that actions should apply to.
-
-    - Normal users (admin/manager) must have current_user.factory_id set.
-    - Superadmin may have factory_id = None, so they must select a factory via session.
-    - If no factory is selected yet, we auto-select the first one (or create a default for admin).
-    """
-    # 1) If user is already bound to a factory, use it
-    user_factory_id = getattr(current_user, "factory_id", None)
-    if user_factory_id is not None:
-        return user_factory_id
-
-    # 2) Superadmin without a bound factory: use session selection
+    # 1) Superadmin: может быть без привязки, тогда используем выбранный factory из session
     if getattr(current_user, "is_superadmin", False):
+        if current_user.factory_id is not None:
+            return current_user.factory_id
+
         selected = session.get("factory_id")
         if selected is not None:
             return selected
 
-        # Auto-select first factory if it exists
+        # Если superadmin и ничего не выбрано — попробуем auto-pick первый factory
         first = Factory.query.first()
         if first:
             session["factory_id"] = first.id
             return first.id
 
-        # No factories exist: create one (superadmin/admin only)
-        default_factory = Factory(name="Mini Moda Factory")
-        db.session.add(default_factory)
-        db.session.commit()
-        session["factory_id"] = default_factory.id
-        return default_factory.id
+        flash("В системе нет ни одного цеха (factory). Создайте factory.", "danger")
+        return None
 
-    # 3) Non-superadmin with no factory: block
-    flash("У пользователя не привязан цех (factory). Обратитесь к администратору.", "danger")
-    return None
+    # 2) Обычный admin/manager: должен иметь factory_id
+    if current_user.factory_id is None:
+        # ✅ AUTO-BIND если в базе только один factory
+        factories = Factory.query.with_entities(Factory.id).all()
+        if len(factories) == 1:
+            only_id = factories[0][0]
+            current_user.factory_id = only_id
+            db.session.commit()
+            return only_id
+
+        flash("У пользователя не привязан цех (factory). Обратитесь к администратору.", "danger")
+        return None
+
+    return current_user.factory_id
 
 
 def _sha256_bytes(b: bytes) -> str:
