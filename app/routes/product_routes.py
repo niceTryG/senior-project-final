@@ -492,7 +492,7 @@ def import_confirm():
 
 
     try:
-        abs_path = os.path.join(current_app.root_path, "static", batch.stored_path)
+        abs_path = os.path.join(current_app.static_folder, batch.stored_path)
         with open(abs_path, "rb") as f:
             raw_bytes = f.read()
     except Exception as e:
