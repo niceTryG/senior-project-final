@@ -70,7 +70,7 @@ def _to_float(value, default=None):
 from flask import session
 
 def _ensure_factory_bound():
-    # 1) Superadmin: может быть без привязки, тогда используем выбранный factory из session
+    # Superadmin: может работать без привязки, тогда используем session выбор
     if getattr(current_user, "is_superadmin", False):
         if current_user.factory_id is not None:
             return current_user.factory_id
@@ -79,7 +79,6 @@ def _ensure_factory_bound():
         if selected is not None:
             return selected
 
-        # Если superadmin и ничего не выбрано — попробуем auto-pick первый factory
         first = Factory.query.first()
         if first:
             session["factory_id"] = first.id
@@ -88,9 +87,8 @@ def _ensure_factory_bound():
         flash("В системе нет ни одного цеха (factory). Создайте factory.", "danger")
         return None
 
-    # 2) Обычный admin/manager: должен иметь factory_id
+    # Manager/admin: должен иметь factory_id, но если в базе 1 цех — привяжем автоматически
     if current_user.factory_id is None:
-        # ✅ AUTO-BIND если в базе только один factory
         factories = Factory.query.with_entities(Factory.id).all()
         if len(factories) == 1:
             only_id = factories[0][0]
