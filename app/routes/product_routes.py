@@ -167,7 +167,9 @@ def list_products():
     sort = request.args.get("sort", "name")
     selected_category = (request.args.get("category") or "").strip() or None
 
-    factory_id = current_user.factory_id
+    factory_id = _ensure_factory_bound()
+    if factory_id is None:
+        return redirect(url_for("auth.login"))
 
     query = (
         db.session.query(
