@@ -9,6 +9,7 @@ from flask import (
     flash,
     Response,
     jsonify,
+    session,
 )
 from flask_login import login_required, current_user
 
@@ -24,6 +25,8 @@ from ..models import (
     ShopOrderItem,
     Movement,
     StockMovement,
+    # Sale is needed for dashboard stats. If your model name differs, tell me.
+    Sale,
 )
 from ..services.shop_service import ShopService
 
@@ -32,8 +35,231 @@ shop_bp = Blueprint("shop", __name__, url_prefix="/shop")
 shop_service = ShopService()
 
 
-# ---------- 1. СКЛАД МАГАЗИНА (ЛИСТ) ----------
+# =========================
+# Helpers (Shop dashboard)
+# =========================
 
+RU_MONTHS = {
+    "January": "января",
+    "February": "февраля",
+    "March": "марта",
+    "April": "апреля",
+    "May": "мая",
+    "June": "июня",
+    "July": "июля",
+    "August": "августа",
+    "September": "сентября",
+    "October": "октября",
+    "November": "ноября",
+    "December": "декабря",
+}
+
+UZ_MONTHS = {
+    "January": "yanvar",
+    "February": "fevral",
+    "March": "mart",
+    "April": "aprel",
+    "May": "may",
+    "June": "iyun",
+    "July": "iyul",
+    "August": "avgust",
+    "September": "sentabr",
+    "October": "oktyabr",
+    "November": "noyabr",
+    "December": "dekabr",
+}
+
+
+def _get_current_date_for_lang():
+    now = datetime.now()
+    day = now.strftime("%d")
+    year = now.strftime("%Y")
+    eng_month = now.strftime("%B")
+
+    lang = session.get("lang_code", "ru")
+
+    if lang == "ru":
+        month = RU_MONTHS.get(eng_month, eng_month)
+    elif lang == "uz":
+        month = UZ_MONTHS.get(eng_month, eng_month)
+    else:
+        month = eng_month
+
+    return f"{day} {month} {year}"
+
+
+def _sum_shop_stock_value_uzs(factory_id: int) -> float:
+    """
+    Sums shop stock value using product.sell_price_per_item (assumed UZS).
+    """
+    rows = (
+        db.session.query(ShopStock.quantity, Product.sell_price_per_item)
+        .join(Product, Product.id == ShopStock.product_id)
+        .filter(Product.factory_id == factory_id)
+        .all()
+    )
+    total = 0.0
+    for qty, price in rows:
+        total += float(qty or 0) * float(price or 0)
+    return total
+
+
+def _sum_factory_stock_value_uzs(factory_id: int) -> float:
+    """
+    Sums factory stock value using Product.quantity * Product.sell_price_per_item (assumed UZS).
+    """
+    rows = (
+        db.session.query(Product.quantity, Product.sell_price_per_item)
+        .filter(Product.factory_id == factory_id)
+        .all()
+    )
+    total = 0.0
+    for qty, price in rows:
+        total += float(qty or 0) * float(price or 0)
+    return total
+
+
+def _sale_amount_uzs(sale, product) -> float:
+    """
+    Robust: uses Sale.total_sell if present, otherwise quantity * sell_price_per_item.
+    Treats as UZS for dashboard totals.
+    """
+    if hasattr(sale, "total_sell") and sale.total_sell is not None:
+        try:
+            return float(sale.total_sell or 0)
+        except Exception:
+            return 0.0
+
+    qty = getattr(sale, "quantity", 0) or 0
+    price = getattr(sale, "sell_price_per_item", None)
+    if price is None:
+        price = getattr(product, "sell_price_per_item", 0) or 0
+
+    try:
+        return float(qty) * float(price)
+    except Exception:
+        return 0.0
+
+
+def _get_sales_totals(factory_id: int):
+    """
+    Returns:
+      yesterday_sales_uzs
+      week_sales_uzs (last 7 days including today)
+    Tries to filter by factory_id using:
+      - Sale.factory_id if exists
+      - else join Sale.product_id -> Product.factory_id
+    Date uses:
+      - Sale.date if exists
+      - else Sale.created_at if exists
+      - else falls back to 0
+    """
+    today = date.today()
+    y = today - timedelta(days=1)
+    week_start = today - timedelta(days=6)
+
+    # Build base query
+    q = db.session.query(Sale, Product).join(Product, Product.id == Sale.product_id)
+
+    # Filter by factory
+    if hasattr(Sale, "factory_id"):
+        q = q.filter(Sale.factory_id == factory_id)
+    else:
+        q = q.filter(Product.factory_id == factory_id)
+
+    sales = q.all()
+
+    yesterday_total = 0.0
+    week_total = 0.0
+
+    for sale, product in sales:
+        # Determine sale date
+        s_date = None
+        if hasattr(sale, "date") and sale.date:
+            s_date = sale.date
+        elif hasattr(sale, "created_at") and sale.created_at:
+            try:
+                s_date = sale.created_at.date()
+            except Exception:
+                s_date = None
+
+        if not s_date:
+            continue
+
+        amt = _sale_amount_uzs(sale, product)
+
+        if s_date == y:
+            yesterday_total += amt
+
+        if week_start <= s_date <= today:
+            week_total += amt
+
+    return yesterday_total, week_total
+
+
+# =========================
+# 0. SHOP DASHBOARD (HOME)
+# =========================
+
+@shop_bp.route("/dashboard", methods=["GET"])
+@login_required
+@roles_required("shop", "manager", "admin")
+def dashboard_shop():
+    factory_id = current_user.factory_id
+    current_date = _get_current_date_for_lang()
+
+    # Sales stats (UZS)
+    try:
+        yesterday_sales_uzs, week_sales_uzs = _get_sales_totals(factory_id=factory_id)
+    except Exception:
+        yesterday_sales_uzs, week_sales_uzs = 0.0, 0.0
+
+    # Stock values (UZS)
+    try:
+        shop_uzs = _sum_shop_stock_value_uzs(factory_id=factory_id)
+    except Exception:
+        shop_uzs = 0.0
+
+    try:
+        factory_uzs = _sum_factory_stock_value_uzs(factory_id=factory_id)
+    except Exception:
+        factory_uzs = 0.0
+
+    total_uzs = float(factory_uzs or 0) + float(shop_uzs or 0)
+
+    # Orders summary
+    shop_orders_pending = (
+        ShopOrder.query
+        .filter_by(factory_id=factory_id, status="pending")
+        .count()
+    )
+    shop_orders_ready = (
+        ShopOrder.query
+        .filter_by(factory_id=factory_id, status="ready")
+        .count()
+    )
+
+    # stats object for template compatibility
+    class _Stats:
+        def __init__(self, y, w):
+            self.yesterday_sales_uzs = y
+            self.week_sales_uzs = w
+
+    stats = _Stats(yesterday_sales_uzs, week_sales_uzs)
+
+    return render_template(
+        "shop/dashboard_shop.html",
+        stats=stats,
+        shop_uzs=shop_uzs,
+        factory_uzs=factory_uzs,
+        total_uzs=total_uzs,
+        shop_orders_pending=shop_orders_pending,
+        shop_orders_ready=shop_orders_ready,
+        current_date=current_date,
+    )
+
+
+# ---------- 1. СКЛАД МАГАЗИНА (ЛИСТ) ----------
 
 @shop_bp.route("/", methods=["GET"])
 @login_required
@@ -59,7 +285,6 @@ def list_shop():
 
 
 # ---------- 2. ПЕРЕДАЧА С ФАБРИКИ В МАГАЗИН ----------
-
 
 @shop_bp.route("/transfer", methods=["GET", "POST"])
 @login_required
@@ -171,7 +396,6 @@ def transfer_to_shop():
 
 # ---------- 3. ЭКСПОРТ СКЛАДА МАГАЗИНА (XLSX) ----------
 
-
 @shop_bp.route("/export", methods=["GET"])
 @login_required
 def export_shop():
@@ -188,8 +412,9 @@ def export_shop():
             "Content-Disposition": "attachment; filename=mini_moda_report.xlsx"
         },
     )
-# ---------- 4. ЗАКАЗЫ МАГАЗИНА (СПИСОК) ----------
 
+
+# ---------- 4. ЗАКАЗЫ МАГАЗИНА (СПИСОК) ----------
 
 @shop_bp.route("/orders", methods=["GET"])
 @login_required
