@@ -492,37 +492,42 @@ class Movement(db.Model):
 #   ✅ EXCEL IMPORT HISTORY
 # ==========================
 
+# models.py (or wherever ExcelImportBatch is defined)
+
 class ExcelImportBatch(db.Model):
     __tablename__ = "excel_import_batches"
 
     id = db.Column(db.Integer, primary_key=True)
 
-    factory_id = db.Column(db.Integer, db.ForeignKey("factories.id"), nullable=False)
+    factory_id = db.Column(db.Integer, nullable=False, index=True)
 
     filename = db.Column(db.String(255), nullable=False)
-    stored_path = db.Column(db.String(500), nullable=False)  # filesystem path (server)
-    file_hash = db.Column(db.String(64), nullable=False)     # sha256 hex of bytes
+    file_hash = db.Column(db.String(64), nullable=False, index=True)
 
-    uploaded_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    uploaded_by = db.relationship("User")
+    # ✅ Store Excel bytes in DB (Render-safe)
+    # IMPORTANT: make nullable=True for smooth migration on existing rows.
+    # After migration + backfill you can change to nullable=False if you want.
+    file_bytes = db.Column(db.LargeBinary, nullable=True)
+    file_size = db.Column(db.Integer, nullable=False, default=0)
 
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    imported_at = db.Column(db.DateTime)
+    # Legacy disk path (optional)
+    stored_path = db.Column(db.String(512), nullable=True)
 
-    status = db.Column(db.String(32), default="uploaded", nullable=False)  # uploaded/imported/failed
+    uploaded_by_id = db.Column(db.Integer, nullable=True)
 
-    sheets_selected = db.Column(db.Text)  # JSON list of sheet names
-    stats_json = db.Column(db.Text)       # JSON dict: counts, warnings, etc.
-    error = db.Column(db.Text)
+    status = db.Column(db.String(32), nullable=False, default="uploaded")  # uploaded/imported/failed
+    error = db.Column(db.Text, nullable=True)
+
+    # What user selected + result stats
+    sheets_selected = db.Column(db.Text, nullable=True)  # json list
+    stats_json = db.Column(db.Text, nullable=True)       # json dict
+
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    imported_at = db.Column(db.DateTime, nullable=True)
 
     __table_args__ = (
-        db.UniqueConstraint("factory_id", "file_hash", name="uq_excel_import_batch_filehash"),
+        db.UniqueConstraint("factory_id", "file_hash", name="uq_excel_batch_factory_hash"),
     )
-
-    def __repr__(self) -> str:
-        return f"<ExcelImportBatch id={self.id} factory_id={self.factory_id} filename={self.filename!r} status={self.status!r}>"
-
-
 class ExcelImportRow(db.Model):
     """
     Small dedupe table: remembers imported rows by hash.

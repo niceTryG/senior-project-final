@@ -3,16 +3,18 @@ from flask_login import login_user, logout_user, current_user, login_required
 from ..models import User
 from ..extensions import db
 import os
-from flask import abort
+
 auth_bp = Blueprint("auth", __name__)
-from flask_login import current_user
 
 # =========================
 # LOGIN
 # =========================
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    # If already logged in, send them to correct landing by role
     if current_user.is_authenticated:
+        if getattr(current_user, "role", None) == "shop":
+            return redirect(url_for("shop.dashboard_shop"))
         return redirect(url_for("main.dashboard"))
 
     error_key = None
@@ -25,8 +27,18 @@ def login():
 
         if user and user.check_password(password):
             login_user(user)
+
+            # Respect ?next= if present (e.g., user tried to open a protected page)
             next_page = request.args.get("next")
-            return redirect(next_page or url_for("main.dashboard"))
+            if next_page:
+                return redirect(next_page)
+
+            # ROLE-BASED LANDING
+            if user.role == "shop":
+                return redirect(url_for("shop.dashboard_shop"))
+
+            return redirect(url_for("main.dashboard"))
+
         else:
             error_key = "error_wrong_credentials"
 
@@ -94,7 +106,10 @@ def create_user():
 
     return render_template("admin/create_user.html")
 
-    
+
+# =========================
+# ONE-TIME SETUP SUPERADMIN (Render)
+# =========================
 @auth_bp.route("/setup/<token>")
 def setup_superadmin(token):
     # 1) must match env var token

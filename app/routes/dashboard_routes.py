@@ -1,6 +1,6 @@
 from datetime import datetime, date, timedelta
 
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, session, redirect, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import func
 
@@ -121,8 +121,6 @@ def _get_yesterday_transfer_total(factory_id: int):
     Yesterday factory ➜ shop transfer total pcs.
     Uses legacy Movement (you already log it in multiple places).
     """
-    # yesterday range in UTC (same as your Movement.timestamp usage)
-    # If you use local time, we can adjust later. For now this matches your logs.
     y = date.today() - timedelta(days=1)
     start = datetime(y.year, y.month, y.day, 0, 0, 0)
     end = start + timedelta(days=1)
@@ -184,8 +182,18 @@ def _build_manager_dashboard(factory_id: int):
 @main_bp.route("/")
 @login_required
 def dashboard():
-    factory_id = current_user.factory_id
+    # ✅ SAFETY NET: shop users must never see manager dashboard
+    role = getattr(current_user, "role", "manager")
+    if role == "shop" or getattr(current_user, "is_shop", False):
+        return redirect(url_for("shop.dashboard_shop"))
+
+    factory_id = getattr(current_user, "factory_id", None)
     current_date = _get_current_date_for_lang()
+
+    # If for some reason factory_id is missing, still render something safe
+    if not factory_id:
+        # You can later flash a message here if you want
+        return render_template("dashboard.html", current_date=current_date)
 
     data = _build_manager_dashboard(factory_id=factory_id)
     data["current_date"] = current_date
@@ -193,8 +201,6 @@ def dashboard():
     # Keep your existing templates logic:
     # - manager uses dashboard_manager.html
     # - others can still fallback to dashboard.html (same data)
-    role = getattr(current_user, "role", "manager")
-
     if role == "manager" or getattr(current_user, "is_manager", False):
         return render_template("dashboard_manager.html", **data)
 

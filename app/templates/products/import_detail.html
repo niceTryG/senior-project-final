@@ -3,22 +3,25 @@
 <div class="container py-3">
 
   <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-    <div>
-      <h4 class="mb-1">Импорт #{{ batch.id }}</h4>
+    <div style="min-width:0;">
+      <h4 class="mb-1 text-truncate">Импорт #{{ batch.id }}</h4>
+
       <div class="text-muted small">
         Файл: <span class="fw-semibold">{{ batch.filename }}</span><br>
         Статус: <span class="fw-semibold">{{ batch.status }}</span><br>
-        Загружен: {{ batch.uploaded_at }}<br>
+        Загружен: {{ batch.created_at or '—' }}<br>
         Импорт: {{ batch.imported_at or '—' }}
       </div>
+
       {% if batch.error %}
         <div class="alert alert-danger mt-2 small mb-0">
-          Ошибка: {{ batch.error }}
+          <div class="fw-semibold mb-1">Ошибка</div>
+          <div>{{ batch.error }}</div>
         </div>
       {% endif %}
     </div>
 
-    <div class="text-end">
+    <div class="text-end flex-shrink-0">
       <a class="btn btn-outline-primary btn-sm"
          href="{{ url_for('products.import_batch_download', batch_id=batch.id) }}">
         ⬇️ Скачать Excel
@@ -28,22 +31,22 @@
 
   <div class="card shadow-sm border-0 mb-3">
     <div class="card-body">
-      <div class="row g-2">
+      <div class="row g-2 text-center text-md-start">
         <div class="col-6 col-md-3">
           <div class="small text-muted">Цены обновлены</div>
-          <div class="fw-semibold">{{ stats.get('prices_updated', 0) }}</div>
+          <div class="fw-semibold fs-5">{{ stats.get('prices_updated', 0) }}</div>
         </div>
         <div class="col-6 col-md-3">
           <div class="small text-muted">Продажи добавлены</div>
-          <div class="fw-semibold">{{ stats.get('sales_added', 0) }}</div>
+          <div class="fw-semibold fs-5">{{ stats.get('sales_added', 0) }}</div>
         </div>
         <div class="col-6 col-md-3">
           <div class="small text-muted">Касса добавлена</div>
-          <div class="fw-semibold">{{ stats.get('cash_added', 0) }}</div>
+          <div class="fw-semibold fs-5">{{ stats.get('cash_added', 0) }}</div>
         </div>
         <div class="col-6 col-md-3">
           <div class="small text-muted">Новые модели</div>
-          <div class="fw-semibold">{{ stats.get('products_created', 0) }}</div>
+          <div class="fw-semibold fs-5">{{ stats.get('products_created', 0) }}</div>
         </div>
       </div>
 
@@ -66,9 +69,14 @@
     </div>
   </div>
 
-  <a href="{{ url_for('products.import_wizard') }}" class="btn btn-outline-secondary">
-    ⬅️ Назад в Wizard
-  </a>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('products.import_wizard') }}" class="btn btn-outline-secondary">
+      ⬅️ Назад в Wizard
+    </a>
+    <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-primary">
+      📦 К товарам
+    </a>
+  </div>
 
 </div>
 {% endblock %}

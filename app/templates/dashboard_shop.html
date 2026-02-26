@@ -1,11 +1,13 @@
 {% extends "base.html" %}
-{% block content %}
 
-<div class="container-fluid py-3 py-md-4">
+{% block title %}{{ t('dashboard_shop_title') }} — Mini Moda{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4 mm-page-shop-dashboard">
 
   {# ===== HEADER (магазин) ===== #}
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
-    <div>
+    <div style="min-width:0;">
       {% set uname = current_user.username|lower %}
       {% if 'muzaffar' in uname %}
         {% set display_name = "Muzaffar" %}
@@ -19,104 +21,82 @@
         {% set display_name = current_user.username %}
       {% endif %}
 
-      <h1 class="h4 mb-1">
-        {{ t('dashboard_shop_title') }} — السلام عليكم, {{ display_name }}
+      <h1 class="h5 mb-1 text-truncate">
+        🏬 {{ t('dashboard_shop_title') }} — {{ t('hello')|default('السلام عليكم') }}, {{ display_name }}
       </h1>
-      <p class="small text-muted mb-0">
+      <p class="small text-muted mb-0 text-truncate">
         {{ t('dashboard_shop_subtitle') }}
       </p>
     </div>
+
     <div class="text-md-end">
-      <span class="badge bg-warning text-dark fs-6">{{ t('shop_title') }}</span>
-      <span class="badge bg-primary fs-6 ms-1">{{ current_date }}</span>
+      <span class="badge bg-warning text-dark">{{ t('shop_title') }}</span>
+      <span class="badge bg-primary ms-1">{{ current_date }}</span>
     </div>
   </div>
 
-  {# ===== ROW 1: ОСНОВНЫЕ ЦИФРЫ ДЛЯ МАГАЗИНА ===== #}
+  {# ===== ROW 1: MAIN SHOP NUMBERS ===== #}
   <div class="row g-2 g-md-3 mb-3">
 
-    {# Продажи вчера (магазин) #}
     <div class="col-6 col-md-3">
       <a href="{{ url_for('sales.list_sales') }}" class="text-decoration-none text-reset">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="small text-muted text-uppercase">
-                {{ t('dashboard_manager_card_yesterday_sales') }}
-              </span>
+              <span class="small text-muted text-uppercase">{{ t('dashboard_manager_card_yesterday_sales') }}</span>
               <i class="bi bi-cash-stack text-muted"></i>
             </div>
-            <div class="fw-semibold">
-              {{ format_money(stats.yesterday_sales_uzs or 0, 'UZS') }}
-            </div>
-            <div class="small text-muted">
-              {{ t('dashboard_shop_card_yesterday_hint') }}
-            </div>
+            <div class="fw-semibold">{{ format_money(stats.yesterday_sales_uzs or 0, 'UZS') }}</div>
+            <div class="small text-muted">{{ t('dashboard_shop_card_yesterday_hint') }}</div>
           </div>
         </div>
       </a>
     </div>
 
-    {# Продажи за 7 дней #}
     <div class="col-6 col-md-3">
       <a href="{{ url_for('sales.list_sales') }}" class="text-decoration-none text-reset">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="small text-muted text-uppercase">
-                {{ t('dashboard_manager_card_week_sales') }}
-              </span>
+              <span class="small text-muted text-uppercase">{{ t('dashboard_manager_card_week_sales') }}</span>
               <i class="bi bi-calendar-week text-muted"></i>
             </div>
-            <div class="fw-semibold">
-              {{ format_money(stats.week_sales_uzs or 0, 'UZS') }}
-            </div>
-            <div class="small text-muted">
-              {{ t('dashboard_manager_card_week_sales_hint') }}
-            </div>
+            <div class="fw-semibold">{{ format_money(stats.week_sales_uzs or 0, 'UZS') }}</div>
+            <div class="small text-muted">{{ t('dashboard_manager_card_week_sales_hint') }}</div>
           </div>
         </div>
       </a>
     </div>
 
-    {# Товар в магазине (по цене продажи) #}
     <div class="col-6 col-md-3">
       <a href="{{ url_for('shop.list_shop') }}" class="text-decoration-none text-reset">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="small text-muted text-uppercase">
-                {{ t('dashboard_shop_card_stock_shop_title') }}
-              </span>
+              <span class="small text-muted text-uppercase">{{ t('dashboard_shop_card_stock_shop_title') }}</span>
               <i class="bi bi-shop text-muted"></i>
             </div>
-            <div class="fw-semibold">
-              {{ format_money(shop_uzs or 0, 'UZS') }}
-            </div>
-            <div class="small text-muted">
-              {{ t('dashboard_shop_card_stock_shop_hint') }}
-            </div>
+            <div class="fw-semibold">{{ format_money(shop_uzs or 0, 'UZS') }}</div>
+            <div class="small text-muted">{{ t('dashboard_shop_card_stock_shop_hint') }}</div>
           </div>
         </div>
       </a>
     </div>
 
-    {# Всего товар (фабрика + магазин) #}
+    {# Replace "factory+shop total" with orders summary for shop #}
     <div class="col-6 col-md-3">
-      <a href="{{ url_for('products.factory_stock') }}" class="text-decoration-none text-reset">
+      <a href="{{ url_for('shop.list_shop_orders') }}" class="text-decoration-none text-reset">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="small text-muted text-uppercase">
-                {{ t('dashboard_manager_card_products_total') }}
-              </span>
-              <i class="bi bi-box-seam text-muted"></i>
+              <span class="small text-muted text-uppercase">{{ t('shop_orders_title') }}</span>
+              <i class="bi bi-bag-check text-muted"></i>
             </div>
             <div class="fw-semibold">
-              {{ format_money(total_uzs or 0, 'UZS') }}
+              {{ t('dashboard_shop_orders_summary_pending') }}: {{ shop_orders_pending|default(0) }}
             </div>
             <div class="small text-muted">
-              {{ t('dashboard_manager_card_products_total_hint') }}
+              {{ t('dashboard_shop_orders_summary_ready') }}: {{ shop_orders_ready|default(0) }}
             </div>
           </div>
         </div>
@@ -125,146 +105,74 @@
 
   </div>
 
-  {# ===== ROW 2: РАЗДЕЛЕНИЕ ФАБРИКА / МАГАЗИН ===== #}
-  {% set total_stock_uzs = (factory_uzs or 0) + (shop_uzs or 0) %}
-  {% set factory_pct = (factory_uzs * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
-  {% set shop_pct = (shop_uzs * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
-
-  <div class="row g-2 g-md-3 mb-3">
-
-    <div class="col-md-6">
-      <a href="{{ url_for('products.factory_stock') }}" class="text-decoration-none text-reset">
-        <div class="card shadow-sm border-0 h-100">
-          <div class="card-body py-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="small text-muted text-uppercase">
-                {{ t('dashboard_manager_stock_split_title') }}
-              </span>
-              <span class="small text-muted">
-                {{ t('dashboard_manager_stock_split_open_report') }}
-              </span>
-            </div>
-            <div class="row g-2 align-items-center">
-              <div class="col-6">
-                <div class="small text-muted mb-1">
-                  {{ t('dashboard_manager_stock_factory') }}
-                </div>
-                <div class="fw-semibold small">
-                  {{ format_money(factory_uzs or 0, 'UZS') }}
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="small text-muted mb-1">
-                  {{ t('dashboard_manager_stock_shop') }}
-                </div>
-                <div class="fw-semibold small">
-                  {{ format_money(shop_uzs or 0, 'UZS') }}
-                </div>
-              </div>
-            </div>
-            {% if total_stock_uzs %}
-              <div class="progress mt-2" style="height: 6px;">
-                <div class="progress-bar" role="progressbar"
-                     style="width: {{ factory_pct }}%;"
-                     aria-valuenow="{{ factory_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                <div class="progress-bar bg-warning" role="progressbar"
-                     style="width: {{ shop_pct }}%;"
-                     aria-valuenow="{{ shop_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-              <div class="small text-muted mt-1">
-                {{ t('dashboard_manager_stock_factory') }}: {{ factory_pct }}% •
-                {{ t('dashboard_manager_stock_shop') }}: {{ shop_pct }}%
-              </div>
-            {% else %}
-              <div class="small text-muted mt-2">
-                {{ t('dashboard_manager_stock_no_data') }}
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <div class="col-md-6">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body py-2">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="small text-muted text-uppercase">
-              {{ t('dashboard_shop_tips_title') }}
-            </span>
-          </div>
-          <ul class="small mb-0 ps-3">
-            <li>{{ t('dashboard_shop_tip_1') }}</li>
-            <li>{{ t('dashboard_shop_tip_2') }}</li>
-            <li>{{ t('dashboard_shop_tip_3') }}</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  {# ===== ROW 3: БЫСТРЫЕ ДЕЙСТВИЯ ===== #}
+  {# ===== QUICK ACTIONS ===== #}
   <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-2">
-      <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
-        <span class="small text-muted text-uppercase me-2">
-          {{ t('dashboard_manager_daily_actions_title') }}
-        </span>
+      <div class="small text-muted text-uppercase mb-2">
+        {{ t('dashboard_manager_daily_actions_title') }}
+      </div>
 
-        <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-warning">
-          🏬 {{ t('dashboard_shop_action_stock_btn') }}
-        </a>
-        <a href="{{ url_for('shop.transfer_to_shop') }}" class="btn btn-sm btn-outline-primary">
-          ⬆️ {{ t('dashboard_shop_action_transfer_btn') }}
-        </a>
-        <a href="{{ url_for('sales.shop_sell') }}" class="btn btn-sm btn-outline-success">
+      <div class="d-grid gap-2 d-md-flex flex-wrap">
+        <a href="{{ url_for('sales.shop_sell') }}" class="btn btn-outline-success">
           🧾 {{ t('dashboard_shop_action_sell_btn') }}
         </a>
-        <a href="{{ url_for('shop.export_shop') }}" class="btn btn-sm btn-outline-secondary">
+
+        <a href="{{ url_for('shop.list_shop') }}" class="btn btn-outline-warning">
+          🏬 {{ t('dashboard_shop_action_stock_btn') }}
+        </a>
+
+        <a href="{{ url_for('sales.list_sales') }}" class="btn btn-outline-primary">
+          💸 {{ t('menu_sales') }}
+        </a>
+
+        <a href="{{ url_for('cash.list_cash') }}" class="btn btn-outline-secondary">
+          💰 {{ t('menu_cash') }}
+        </a>
+
+        <a href="{{ url_for('shop.export_shop') }}" class="btn btn-outline-dark">
           ⬇️ {{ t('dashboard_shop_action_export_btn') }}
         </a>
       </div>
 
-      <hr class="my-2">
+      <hr class="my-3">
 
-      <div class="d-flex flex-wrap gap-2 align-items-center">
-        <span class="small text-muted text-uppercase me-2">
-          {{ t('dashboard_shop_reports_title') }}
-        </span>
+      <div class="small text-muted text-uppercase mb-2">
+        {{ t('dashboard_shop_reports_title') }}
+      </div>
 
-        <a href="{{ url_for('shop_report.weekly_report') }}" class="btn btn-sm btn-outline-info">
+      <div class="d-grid gap-2 d-md-flex flex-wrap">
+        <a href="{{ url_for('shop_report.weekly_report') }}" class="btn btn-outline-info">
           📅 {{ t('reports_shop_weekly') }}
         </a>
-        <a href="{{ url_for('shop_monthly.monthly_report') }}" class="btn btn-sm btn-outline-info">
+        <a href="{{ url_for('shop_monthly.monthly_report') }}" class="btn btn-outline-info">
           📅 {{ t('reports_shop_monthly') }}
         </a>
+        <a href="{{ url_for('shop.list_shop_orders') }}" class="btn btn-outline-info">
+          🛒 {{ t('shop_orders_title') }}
+        </a>
+      </div>
 
-        {% if current_user.is_shop or current_user.is_manager or current_user.is_admin %}
-          <a href="{{ url_for('shop.list_shop_orders') }}" class="btn btn-sm btn-outline-info">
-            🛒 {{ t('shop_orders_title') }}
-          </a>
-        {% endif %}
-        <p class="small text-muted mb-0">
-          {{ t('dashboard_shop_orders_summary_label') }}
-          {{ t('dashboard_shop_orders_summary_pending') }} — {{ shop_orders_pending|default(0) }},
-          {{ t('dashboard_shop_orders_summary_ready') }} — {{ shop_orders_ready|default(0) }}.
-        </p>
-
+      <div class="small text-muted mt-2">
+        {{ t('dashboard_shop_orders_summary_label') }}
+        {{ t('dashboard_shop_orders_summary_pending') }} — {{ shop_orders_pending|default(0) }},
+        {{ t('dashboard_shop_orders_summary_ready') }} — {{ shop_orders_ready|default(0) }}.
       </div>
     </div>
   </div>
 
 </div>
-
 {% endblock %}
 
+{% block extra_js %}
 <script>
-fetch("{{ url_for('shop.shop_stock_low') }}")
-  .then(r => r.json())
-  .then(data => {
-    if (data.low_stock && data.low_stock.length) {
-      alert("{{ t('shop_low_stock_alert') }}");
-    }
-  });
+  // Soft notification: don't use alert() (annoying). We can show a bootstrap toast later.
+  fetch("{{ url_for('shop.shop_stock_low') }}")
+    .then(r => r.json())
+    .then(data => {
+      if (data.low_stock && data.low_stock.length) {
+        console.log("Low stock:", data.low_stock);
+      }
+    })
+    .catch(() => {});
 </script>
+{% endblock %}

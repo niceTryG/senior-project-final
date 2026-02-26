@@ -1,5 +1,6 @@
 # ==== app/routes/product_routes.py (REPLACE FULL FILE) ====
 from flask import render_template
+
 from ..models import Product
 
 import os
@@ -383,6 +384,10 @@ def import_wizard():
     return render_template("products/import_wizard.html", batches=batches)
 
 
+MAX_IMPORT_MB = 15  # adjust if you want
+MAX_IMPORT_BYTES = MAX_IMPORT_MB * 1024 * 1024
+
+
 @products_bp.route("/import/upload", methods=["POST"])
 @login_required
 @roles_required("admin", "manager")
@@ -402,6 +407,10 @@ def import_upload():
         flash("Пустой файл.", "danger")
         return redirect(url_for("products.import_wizard"))
 
+    if len(raw_bytes) > MAX_IMPORT_BYTES:
+        flash(f"Файл слишком большой. Максимум {MAX_IMPORT_MB} MB.", "danger")
+        return redirect(url_for("products.import_wizard"))
+
     filename = secure_filename(file.filename)
     file_hash = _sha256_bytes(raw_bytes)
 
@@ -410,29 +419,21 @@ def import_upload():
         flash("Этот Excel уже был загружен раньше. Открыл существующий импорт.", "info")
         return redirect(url_for("products.import_batch_detail", batch_id=existing.id))
 
-    # ✅ FIX: save inside /static/uploads/... and store RELATIVE path in DB
-    rel_dir, abs_dir = _import_folder(factory_id)  # must return (rel_dir, abs_dir)
-
-    stamped = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    stored_name = f"{stamped}__{filename}"
-
-    abs_path = os.path.join(abs_dir, stored_name)
-    with open(abs_path, "wb") as f:
-        f.write(raw_bytes)
-
-    rel_path = os.path.join(rel_dir, stored_name).replace("\\", "/")
-
     batch = ExcelImportBatch(
         factory_id=factory_id,
         filename=filename,
-        stored_path=rel_path,  # ✅ RELATIVE path only!
+        stored_path=None,          # ✅ don't rely on disk
         file_hash=file_hash,
+        file_bytes=raw_bytes,      # ✅ store bytes in DB
+        file_size=len(raw_bytes),
         uploaded_by_id=current_user.id,
         status="uploaded",
+        error=None,
     )
     db.session.add(batch)
     db.session.commit()
 
+    # Preview sheets from in-memory bytes
     bio = BytesIO(raw_bytes)
     try:
         xls = pd.ExcelFile(bio)
@@ -490,14 +491,23 @@ def import_confirm():
         flash("Выберите что импортировать (реализация/касса/цены).", "warning")
         return redirect(url_for("products.import_batch_detail", batch_id=batch.id))
 
+    # ✅ Read bytes from DB first (Render-safe)
+    raw_bytes = batch.file_bytes if getattr(batch, "file_bytes", None) else None
 
-    try:
-        abs_path = os.path.join(current_app.static_folder, batch.stored_path)
-        with open(abs_path, "rb") as f:
-            raw_bytes = f.read()
-    except Exception as e:
-        flash(f"Не могу открыть файл на сервере: {e}", "danger")
-        return redirect(url_for("products.import_wizard"))
+    # Optional legacy fallback (only if you still have old batches saved to disk)
+    if not raw_bytes:
+        try:
+            if not batch.stored_path:
+                raise FileNotFoundError("No file_bytes in DB and stored_path is empty")
+
+            abs_path = os.path.join(current_app.static_folder, batch.stored_path)
+            with open(abs_path, "rb") as f:
+                raw_bytes = f.read()
+        except Exception as e:
+            flash(f"Не могу открыть файл: {e}", "danger")
+            return redirect(url_for("products.import_wizard"))
+
+    # Parse Excel
     bio = BytesIO(raw_bytes)
     try:
         xls = pd.ExcelFile(bio)
@@ -534,16 +544,17 @@ def import_confirm():
                     update_prices=update_prices,
                 )
                 for k in ("prices_updated", "products_created", "sales_added"):
-                    stats[k] += s1.get(k, 0)
-                stats["warnings"].extend(s1.get("warnings", []))
+                    stats[k] += int(s1.get(k, 0) or 0)
+                stats["warnings"].extend(s1.get("warnings", []) or [])
 
             if do_cash:
                 s2 = _import_sheet_cash(raw=raw, factory_id=factory_id, sheet_name=sheet)
-                stats["cash_added"] += s2.get("cash_added", 0)
-                stats["warnings"].extend(s2.get("warnings", []))
+                stats["cash_added"] += int(s2.get("cash_added", 0) or 0)
+                stats["warnings"].extend(s2.get("warnings", []) or [])
 
         batch.status = "imported"
-        batch.imported_at = datetime.utcnow()
+        if hasattr(batch, "imported_at"):
+            batch.imported_at = datetime.utcnow()
         batch.sheets_selected = json.dumps(selected_sheets, ensure_ascii=False)
         batch.stats_json = json.dumps(stats, ensure_ascii=False)
         batch.error = None
@@ -565,7 +576,6 @@ def import_confirm():
         db.session.commit()
         flash(f"Excel import failed: {e}", "danger")
         return redirect(url_for("products.import_batch_detail", batch_id=batch.id))
-
 
 @products_bp.route("/imports/<int:batch_id>")
 @login_required
@@ -601,20 +611,41 @@ import os
 @login_required
 @roles_required("admin", "manager")
 def import_batch_download(batch_id):
-    batch = ExcelImportBatch.query.get_or_404(batch_id)
-
-    stored = batch.stored_path or ""
-    stored = stored.replace("/", os.sep).replace("\\", os.sep)
-
-    # ✅ if stored_path is relative, make it absolute from project root
-    if not os.path.isabs(stored):
-        stored = os.path.join(current_app.root_path, stored)
-
-    if not os.path.exists(stored):
-        flash(f"File not found on disk: {stored}", "danger")
+    factory_id = _ensure_factory_bound()
+    if factory_id is None:
         return redirect(url_for("products.import_wizard"))
 
-    return send_file(stored, as_attachment=True, download_name=batch.filename)
+    batch = ExcelImportBatch.query.filter_by(id=batch_id, factory_id=factory_id).first_or_404()
+
+    raw_bytes = batch.file_bytes if getattr(batch, "file_bytes", None) else None
+
+    # Optional legacy fallback
+    if not raw_bytes and batch.stored_path:
+        stored = (batch.stored_path or "").replace("/", os.sep).replace("\\", os.sep)
+        if not os.path.isabs(stored):
+            # if you used static folder storage before:
+            stored = os.path.join(current_app.static_folder, stored)
+
+        if os.path.exists(stored):
+            with open(stored, "rb") as f:
+                raw_bytes = f.read()
+
+    if not raw_bytes:
+        flash("File not found (no bytes in DB).", "danger")
+        return redirect(url_for("products.import_batch_detail", batch_id=batch.id))
+
+    bio = BytesIO(raw_bytes)
+    bio.seek(0)
+
+    # Excel MIME type
+    mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+    return send_file(
+        bio,
+        as_attachment=True,
+        download_name=batch.filename or "import.xlsx",
+        mimetype=mimetype,
+    )
 
 # =========================================================
 #   INTERNAL: sheet parsers
