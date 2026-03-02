@@ -7,7 +7,7 @@ import click
 from .extensions import db, login_manager
 from .translations import t as translate
 from .models import User, Factory
-
+from .db_patch import apply_db_patches
 
 def create_app(config_class="config.DevConfig"):
     app = Flask(__name__)
