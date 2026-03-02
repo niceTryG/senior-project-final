@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, date
-
+import io
 from flask import (
     Blueprint,
     render_template,
@@ -10,6 +10,7 @@ from flask import (
     Response,
     jsonify,
     session,
+    send_file
 )
 from flask_login import login_required, current_user
 
@@ -25,6 +26,7 @@ from ..models import (
     ShopOrderItem,
     Movement,
     StockMovement,
+    CashRecord,
     # Sale is needed for dashboard stats. If your model name differs, tell me.
     Sale,
 )
@@ -395,24 +397,29 @@ def transfer_to_shop():
 
 
 # ---------- 3. ЭКСПОРТ СКЛАДА МАГАЗИНА (XLSX) ----------
-
 @shop_bp.route("/export", methods=["GET"])
 @login_required
 def export_shop():
-    xlsx = shop_service.export_full_report_xlsx(
+    xlsx_bytes = shop_service.export_full_report_xlsx(
         factory_id=current_user.factory_id,
         q=request.args.get("q"),
         sort=request.args.get("sort", "name"),
     )
 
-    return Response(
-        xlsx,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": "attachment; filename=mini_moda_report.xlsx"
-        },
-    )
+    # Ensure bytes-like
+    if isinstance(xlsx_bytes, str):
+        xlsx_bytes = xlsx_bytes.encode("utf-8")
 
+    buf = io.BytesIO(xlsx_bytes)
+    buf.seek(0)
+
+    return send_file(
+        buf,
+        as_attachment=True,
+        download_name="mini_moda_report.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        max_age=0,
+    )
 
 # ---------- 4. ЗАКАЗЫ МАГАЗИНА (СПИСОК) ----------
 
@@ -752,33 +759,62 @@ def sell_product(product_id: int):
         sold_now = result["sold_now"]
 
         if sale:
+            qty = sale.quantity or 0
+            currency = getattr(sale, "currency", None) or getattr(product, "currency", "UZS")
+
+            # total_sell robust
+            if getattr(sale, "total_sell", None) is not None:
+                total_sell = sale.total_sell
+            else:
+                price = getattr(sale, "sell_price_per_item", None)
+                if price is None:
+                    price = getattr(product, "sell_price_per_item", 0) or 0
+                total_sell = qty * price
+
+            # 1) Stock movement
             mv = StockMovement(
                 factory_id=factory_id,
                 product_id=product.id,
-                qty_change=-sale.quantity,
+                qty_change=-qty,
                 source="shop",
                 destination="customer",
                 movement_type="shop_sale",
                 order_id=order.id if order else None,
-                comment=f"Продажа {sale.quantity} шт. клиенту {customer_name or ''}".strip(),
+                comment=f"Продажа {qty} шт. клиенту {customer_name or ''}".strip(),
             )
             db.session.add(mv)
+
+            # 2) ✅ CashRecord so it appears in /cash/
+            sale_date = getattr(sale, "date", None) or date.today()
+
+            cash_note = f"Продажа (магазин) #{sale.id}: {product.name} x{qty}"
+            if customer_name:
+                cash_note += f" — {customer_name}"
+            if note:
+                cash_note += f" ({note})"
+
+            # duplicate protection (double submit)
+            existing_cash = (
+                CashRecord.query
+                .filter_by(factory_id=factory_id, currency=currency)
+                .filter(CashRecord.date == sale_date)
+                .filter(CashRecord.amount == total_sell)
+                .filter(CashRecord.note.ilike(f"%#{sale.id}%"))
+                .first()
+            )
+            if not existing_cash:
+                db.session.add(CashRecord(
+                    factory_id=factory_id,
+                    date=sale_date,
+                    amount=total_sell,   # + = приход
+                    currency=currency,
+                    note=cash_note,
+                ))
+
             db.session.commit()
 
+            # Telegram notify
             try:
-                qty = sale.quantity
-                currency = getattr(sale, "currency", None) or getattr(product, "currency", "UZS")
-
-                if hasattr(sale, "total_sell") and sale.total_sell is not None:
-                    total_sell = sale.total_sell
-                else:
-                    price = getattr(
-                        sale,
-                        "sell_price_per_item",
-                        product.sell_price_per_item or 0,
-                    )
-                    total_sell = (qty or 0) * (price or 0)
-
                 msg = (
                     "💸 <b>Новая продажа (магазин)</b>\n"
                     f"Модель: <b>{product.name}</b>\n"

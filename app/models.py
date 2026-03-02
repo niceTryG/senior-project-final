@@ -143,6 +143,11 @@ class Fabric(db.Model):
     # factory owner of this fabric
     factory_id = db.Column(db.Integer, db.ForeignKey("factories.id"), nullable=False)
     factory = db.relationship("Factory", back_populates="fabrics")
+    consumptions = db.relationship(
+        "FabricConsumption",
+        back_populates="fabric",
+        cascade="all, delete-orphan",
+    )
 
     # public-facing unique code for QR, UI, etc.
     public_id = db.Column(
@@ -221,6 +226,9 @@ class Product(db.Model):
     quantity = db.Column(db.Integer, nullable=False, default=0)
     currency = db.Column(db.String(3), default="UZS")
     image_path = db.Column(db.String(255), nullable=True)
+    # PUBLIC SIDE
+    is_published = db.Column(db.Boolean, default=False)
+    public_description = db.Column(db.Text)
 
     sales = db.relationship(
         "Sale",
@@ -287,7 +295,9 @@ class Sale(db.Model):
         return self.total_sell - self.total_cost
 
     def __repr__(self) -> str:
-        return f"<Sale id={self.id} product_id={self.product_id} quantity={self.quantity}>"
+        return (
+            f"<Sale id={self.id} product_id={self.product_id} quantity={self.quantity}>"
+        )
 
 
 class Production(db.Model):
@@ -302,6 +312,11 @@ class Production(db.Model):
     note = db.Column(db.String(255))
 
     product = db.relationship("Product", back_populates="productions")
+    consumptions = db.relationship(
+    "FabricConsumption",
+    back_populates="production",
+    cascade="all, delete-orphan",
+)
 
     def __repr__(self) -> str:
         return f"<Production id={self.id} product_id={self.product_id} quantity={self.quantity}>"
@@ -494,6 +509,7 @@ class Movement(db.Model):
 
 # models.py (or wherever ExcelImportBatch is defined)
 
+
 class ExcelImportBatch(db.Model):
     __tablename__ = "excel_import_batches"
 
@@ -515,37 +531,177 @@ class ExcelImportBatch(db.Model):
 
     uploaded_by_id = db.Column(db.Integer, nullable=True)
 
-    status = db.Column(db.String(32), nullable=False, default="uploaded")  # uploaded/imported/failed
+    status = db.Column(
+        db.String(32), nullable=False, default="uploaded"
+    )  # uploaded/imported/failed
     error = db.Column(db.Text, nullable=True)
 
     # What user selected + result stats
     sheets_selected = db.Column(db.Text, nullable=True)  # json list
-    stats_json = db.Column(db.Text, nullable=True)       # json dict
+    stats_json = db.Column(db.Text, nullable=True)  # json dict
 
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     imported_at = db.Column(db.DateTime, nullable=True)
 
     __table_args__ = (
-        db.UniqueConstraint("factory_id", "file_hash", name="uq_excel_batch_factory_hash"),
+        db.UniqueConstraint(
+            "factory_id", "file_hash", name="uq_excel_batch_factory_hash"
+        ),
     )
+
+
 class ExcelImportRow(db.Model):
     """
     Small dedupe table: remembers imported rows by hash.
     Prevents importing the same sale/cash line twice.
     """
+
     __tablename__ = "excel_import_rows"
 
     id = db.Column(db.Integer, primary_key=True)
     factory_id = db.Column(db.Integer, db.ForeignKey("factories.id"), nullable=False)
 
-    kind = db.Column(db.String(32), nullable=False)   # "sale" / "cash"
+    kind = db.Column(db.String(32), nullable=False)  # "sale" / "cash"
     row_hash = db.Column(db.String(64), nullable=False)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        db.UniqueConstraint("factory_id", "kind", "row_hash", name="uq_excel_import_row"),
+        db.UniqueConstraint(
+            "factory_id", "kind", "row_hash", name="uq_excel_import_row"
+        ),
     )
 
     def __repr__(self) -> str:
         return f"<ExcelImportRow id={self.id} factory_id={self.factory_id} kind={self.kind!r}>"
+
+
+# ==========================
+#   🛒 PUBLIC CUSTOMER ORDERS
+# ==========================
+
+
+class CustomerOrder(db.Model):
+    __tablename__ = "customer_orders"
+
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    customer_name = db.Column(db.String(128), nullable=False)
+    customer_phone = db.Column(db.String(64), nullable=False)
+    customer_city = db.Column(db.String(64), nullable=True)
+
+    note = db.Column(db.String(255), nullable=True)
+    status = db.Column(
+        db.String(16), default="new", nullable=False
+    )  # new/confirmed/done/cancelled
+
+    items = db.relationship(
+        "CustomerOrderItem",
+        back_populates="order",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<CustomerOrder id={self.id} status={self.status!r}>"
+
+
+class CustomerOrderItem(db.Model):
+    __tablename__ = "customer_order_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    order_id = db.Column(
+        db.Integer, db.ForeignKey("customer_orders.id"), nullable=False
+    )
+    order = db.relationship("CustomerOrder", back_populates="items")
+
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    product = db.relationship("Product")
+
+    qty = db.Column(db.Integer, nullable=False, default=1)
+
+    # snapshot (so history doesn't break if product name changes)
+    product_name = db.Column(db.String(128), nullable=False)
+    price = db.Column(db.Float, nullable=False, default=0.0)
+    currency = db.Column(db.String(3), default="UZS")
+
+    def __repr__(self) -> str:
+        return f"<CustomerOrderItem id={self.id} order_id={self.order_id} product_id={self.product_id} qty={self.qty}>"
+
+
+class FabricConsumption(db.Model):
+    __tablename__ = "fabric_consumptions"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # keep factory_id for strict tenant correctness + easy reporting
+    factory_id = db.Column(
+        db.Integer, db.ForeignKey("factories.id"), nullable=False, index=True
+    )
+
+    fabric_id = db.Column(
+        db.Integer, db.ForeignKey("fabrics.id"), nullable=False, index=True
+    )
+    production_id = db.Column(
+        db.Integer, db.ForeignKey("productions.id"), nullable=False, index=True
+    )
+
+    used_amount = db.Column(db.Float, nullable=False, default=0.0)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # relationships
+    fabric = db.relationship("Fabric", back_populates="consumptions")
+    production = db.relationship("Production", back_populates="consumptions")
+
+    def __repr__(self) -> str:
+        return (
+            f"<FabricConsumption id={self.id} factory_id={self.factory_id} "
+            f"fabric_id={self.fabric_id} production_id={self.production_id} used_amount={self.used_amount}>"
+        )
+from datetime import datetime, timedelta
+import secrets
+
+# -------------------------------------------------------------------------
+# Telegram linking
+# -------------------------------------------------------------------------
+
+class TelegramLink(db.Model):
+    __tablename__ = "telegram_links"
+
+    id = db.Column(db.Integer, primary_key=True)
+    telegram_chat_id = db.Column(db.BigInteger, unique=True, nullable=False, index=True)
+
+    # if your user table name is different, change "users.id"
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+
+    factory_id = db.Column(db.Integer, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class TelegramLinkCode(db.Model):
+    __tablename__ = "telegram_link_codes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(12), unique=True, nullable=False, index=True)
+
+    # if your user table name is different, change "users.id"
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+
+    factory_id = db.Column(db.Integer, nullable=False, index=True)
+
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used_at = db.Column(db.DateTime, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    @staticmethod
+    def generate(user_id: int, factory_id: int, minutes: int = 10) -> "TelegramLinkCode":
+        code = secrets.token_hex(3).upper()  # 6 chars like 'A1B2C3'
+        return TelegramLinkCode(
+            code=code,
+            user_id=user_id,
+            factory_id=factory_id,
+            expires_at=datetime.utcnow() + timedelta(minutes=minutes),
+        )

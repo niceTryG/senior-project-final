@@ -1,10 +1,20 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    abort,
+    session,
+)
 from flask_login import login_user, logout_user, current_user, login_required
 from ..models import User
 from ..extensions import db
 import os
 
 auth_bp = Blueprint("auth", __name__)
+
 
 # =========================
 # LOGIN
@@ -22,15 +32,17 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
+        remember = request.form.get("remember") == "1"
 
         user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
-            login_user(user)
+            login_user(user, remember=remember)
+            session.permanent = True  # ensures session respects config lifetime
 
-            # Respect ?next= if present (e.g., user tried to open a protected page)
+            # Safe redirect (prevent open redirect)
             next_page = request.args.get("next")
-            if next_page:
+            if next_page and next_page.startswith("/"):
                 return redirect(next_page)
 
             # ROLE-BASED LANDING
@@ -112,17 +124,14 @@ def create_user():
 # =========================
 @auth_bp.route("/setup/<token>")
 def setup_superadmin(token):
-    # 1) must match env var token
     expected = os.environ.get("SETUP_TOKEN")
     if not expected or token != expected:
         abort(404)
 
-    # 2) only works if NO admin user exists yet
     existing_admin = User.query.filter_by(role="admin").first()
     if existing_admin:
         return "Setup already completed. Admin exists."
 
-    # 3) Read credentials from env (no hardcoding)
     username = os.environ.get("SETUP_ADMIN_USERNAME", "admin")
     password = os.environ.get("SETUP_ADMIN_PASSWORD")
     if not password:

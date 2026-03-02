@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-3">
+
+  <!-- Hero -->
+  <div class="p-3 p-md-4 rounded-4 border bg-light mb-3">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+      <div>
+        <div class="h3 fw-bold mb-1">Mini Moda</div>
+        <div class="text-muted">
+          {{ t('public_tagline') if t else 'Kids clothing. View models and order in Telegram.' }}
+        </div>
+      </div>
+      <div class="d-grid d-md-block">
+        <a href="{{ url_for('public.catalog') }}" class="btn btn-dark">
+          {{ t('public_view_catalog') if t else 'View catalog' }}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Latest -->
+  <div class="d-flex justify-content-between align-items-end mb-2">
+    <div>
+      <div class="h5 fw-semibold mb-0">{{ t('public_latest_products') if t else 'Latest products' }}</div>
+      <div class="text-muted small">
+        {{ t('public_latest_hint') if t else 'Tap a product to see details.' }}
+      </div>
+    </div>
+    <a class="small text-decoration-none" href="{{ url_for('public.catalog') }}">
+      {{ t('public_all') if t else 'All →' }}
+    </a>
+  </div>
+
+  <div class="row g-3">
+    {% for p in products %}
+      {% set in_stock = (p.quantity or 0) > 0 %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+
+          {% if p.image_path %}
+            <img src="{{ url_for('static', filename=p.image_path) }}"
+                 class="card-img-top"
+                 style="object-fit:cover; aspect-ratio: 4/3;"
+                 alt="{{ p.name }}">
+          {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center"
+                 style="aspect-ratio: 4/3;">
+              <span class="text-muted small">{{ t('public_no_image') if t else 'No image' }}</span>
+            </div>
+          {% endif %}
+
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div style="min-width:0;">
+                <div class="fw-semibold text-truncate">{{ p.name }}</div>
+                <div class="small text-muted text-truncate">
+                  {{ p.category or (t('products_no_category') if t else 'No category') }}
+                </div>
+              </div>
+
+              {% if in_stock %}
+                <span class="badge text-bg-success">{{ t('public_in_stock') if t else 'In stock' }}</span>
+              {% else %}
+                <span class="badge text-bg-secondary">{{ t('public_out_stock') if t else 'Out' }}</span>
+              {% endif %}
+            </div>
+
+            <div class="mt-2 small text-muted">
+              {{ t('public_code') if t else 'Code' }}:
+              <strong>MM-{{ "%05d"|format(p.id) }}</strong>
+            </div>
+
+            <div class="mt-auto d-grid gap-2 pt-2">
+              <a href="{{ url_for('public.product_detail', product_id=p.id) }}"
+                 class="btn btn-dark btn-sm rounded-3">
+                {{ t('public_view') if t else 'View' }}
+              </a>
+
+              {% if in_stock %}
+                <a href="{{ tg_order_link(p) }}" target="_blank" rel="noopener"
+                   class="btn btn-outline-success btn-sm rounded-3">
+                  {{ t('public_order_tg') if t else 'Order in Telegram' }}
+                </a>
+              {% else %}
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-3" disabled>
+                  {{ t('public_out_stock') if t else 'Out of stock' }}
+                </button>
+              {% endif %}
+
+              <div class="small text-muted">
+                {{ t('public_order_hint_short') if t else 'Send code + qty + phone to the bot.' }}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

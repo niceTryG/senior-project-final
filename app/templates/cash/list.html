@@ -1,124 +1,176 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-  <div>
-    <h1 class="h4 mb-1">Касса</h1>
-    <p class="text-muted mb-0 small">
-      Продажи и движение денег. Последние 7 дней + история.
-    </p>
+<style>
+  .mm-neo-card{
+    background:#fff;
+    border:1px solid rgba(0,0,0,0.06);
+    border-radius:18px;
+    box-shadow: 0 14px 32px rgba(17,17,17,0.08), inset 0 1px 0 rgba(255,255,255,0.65);
+  }
+  .mm-neo-hero{
+    background:#f6f7fb;
+    border:1px solid rgba(0,0,0,0.06);
+    border-radius:20px;
+    box-shadow: 0 14px 32px rgba(17,17,17,0.08), inset 0 1px 0 rgba(255,255,255,0.65);
+  }
+  .mm-kpi{
+    background:#fff;
+    border:1px solid rgba(0,0,0,0.06);
+    border-radius:18px;
+    box-shadow: 0 12px 26px rgba(17,17,17,0.08), inset 0 1px 0 rgba(255,255,255,0.65);
+  }
+  .mm-kpi .label{
+    font-size:.82rem;
+    color:rgba(17,17,17,.65);
+    font-weight:800;
+  }
+  .mm-kpi .value{
+    font-size:1.05rem;
+    font-weight:900;
+    color:#111;
+    letter-spacing:-0.01em;
+  }
+  .mm-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    padding:.35rem .7rem;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,0.10);
+    background:#fff;
+    font-size:.85rem;
+    font-weight:900;
+    color:#111;
+    white-space:nowrap;
+  }
+  .mm-table thead th{
+    background: rgba(246,247,251,.95) !important;
+    border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+  }
+</style>
+
+{# ===== HERO ===== #}
+<div class="mm-neo-hero p-3 p-md-4 mb-3">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+    <div>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <span class="mm-chip">💰 Касса</span>
+        <span class="mm-chip" style="background:rgba(255,255,255,.7); color:rgba(17,17,17,.72);">
+          📅 Последние 7 дней
+        </span>
+      </div>
+      <h1 class="h4 mb-1" style="font-weight:900;">Касса</h1>
+      <p class="mb-0" style="color:rgba(17,17,17,.68);">
+        Продажи и движение денег. Последние 7 дней + история.
+      </p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+      <span class="mm-chip" style="background:rgba(255,255,255,.7); color:rgba(17,17,17,.72);">
+        📦 Шт за 7д: <strong>{{ weekly_items_sold }}</strong>
+      </span>
+      <span class="mm-chip" style="background:rgba(255,255,255,.7); color:rgba(17,17,17,.72);">
+        🟢 Итог UZS: <strong>{{ format_money(weekly_cash_net_uzs or 0, 'UZS') }}</strong>
+      </span>
+      <span class="mm-chip" style="background:rgba(255,255,255,.7); color:rgba(17,17,17,.72);">
+        🔵 Итог USD: <strong>{{ format_money(weekly_cash_net_usd or 0, 'USD') }}</strong>
+      </span>
+    </div>
   </div>
 </div>
 
-{# WEEKLY SUMMARY CARDS #}
-<div class="row g-2 mb-3">
-
-  {# 1) Items sold in last 7 days #}
+{# ===== KPI ROW ===== #}
+<div class="row g-2 g-md-3 mb-3">
   <div class="col-6 col-md-3">
-    <div class="card shadow-sm border-0 h-100 text-center">
-      <div class="card-body py-2">
-        <div class="small text-muted mb-1">Продано за 7 дней (шт.)</div>
-        <div class="fs-5 fw-semibold">{{ weekly_items_sold }}</div>
+    <div class="mm-kpi h-100">
+      <div class="p-3 text-center">
+        <div class="label mb-1">Продано за 7 дней (шт.)</div>
+        <div class="value">{{ weekly_items_sold }}</div>
       </div>
     </div>
   </div>
 
-  {# 2) Sales amount in UZS #}
   <div class="col-6 col-md-3">
-    <div class="card shadow-sm border-0 h-100 text-center">
-      <div class="card-body py-2">
-        <div class="small text-muted mb-1">Продажи за 7 дней (UZS)</div>
-        <div class="fs-6 fw-semibold">
-          {{ format_money(weekly_sales_uzs, 'UZS') }}
-        </div>
+    <div class="mm-kpi h-100">
+      <div class="p-3 text-center">
+        <div class="label mb-1">Продажи за 7 дней (UZS)</div>
+        <div class="value">{{ format_money(weekly_sales_uzs or 0, 'UZS') }}</div>
       </div>
     </div>
   </div>
 
-  {# 3) Cash IN (UZS) #}
-  <div class="col-4 col-md-2">
-    <div class="card shadow-sm border-0 h-100 text-center">
-      <div class="card-body py-2">
-        <div class="small text-muted mb-1">Приход (7 дн., UZS)</div>
-        <div class="fs-6 fw-semibold text-success">
-          {{ format_money(weekly_cash_in_uzs, 'UZS') }}
-        </div>
+  <div class="col-6 col-md-3">
+    <div class="mm-kpi h-100">
+      <div class="p-3 text-center">
+        <div class="label mb-1">Продажи за 7 дней (USD)</div>
+        <div class="value">{{ format_money(weekly_sales_usd or 0, 'USD') }}</div>
       </div>
     </div>
   </div>
 
-  {# 4) Cash OUT (UZS) #}
-  <div class="col-4 col-md-2">
-    <div class="card shadow-sm border-0 h-100 text-center">
-      <div class="card-body py-2">
-        <div class="small text-muted mb-1">Расход (7 дн., UZS)</div>
-        <div class="fs-6 fw-semibold text-danger">
-          {{ format_money(weekly_cash_out_uzs, 'UZS') }}
+  <div class="col-6 col-md-3">
+    <div class="mm-kpi h-100">
+      <div class="p-3 text-center">
+        <div class="label mb-1">Итог cash за 7 дней</div>
+        <div class="value">
+          <span class="{% if (weekly_cash_net_uzs or 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ format_money(weekly_cash_net_uzs or 0, 'UZS') }}
+          </span>
+          <span class="text-muted" style="font-weight:800;"> / </span>
+          <span class="{% if (weekly_cash_net_usd or 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ format_money(weekly_cash_net_usd or 0, 'USD') }}
+          </span>
         </div>
       </div>
     </div>
   </div>
-
-  {# 5) NET (UZS) #}
-  <div class="col-4 col-md-2">
-    <div class="card shadow-sm border-0 h-100 text-center">
-      <div class="card-body py-2">
-        <div class="small text-muted mb-1">Итог за 7 дней (UZS)</div>
-        <div class="fs-6 fw-semibold
-                    {% if weekly_cash_net_uzs >= 0 %}text-success{% else %}text-danger{% endif %}">
-          {{ format_money(weekly_cash_net_uzs, 'UZS') }}
-        </div>
-      </div>
-    </div>
-  </div>
-
 </div>
 
-{# FILTERS + PERIOD TOTALS #}
-<div class="card shadow-sm mb-3 border-0">
-  <div class="card-body py-2">
+{# ===== FILTERS + PERIOD TOTALS ===== #}
+<div class="mm-neo-card mb-3">
+  <div class="p-3">
     <form method="get" class="row g-2 align-items-end">
       <div class="col-6 col-md-3">
-        <label class="form-label mb-1 small">От даты</label>
-        <input type="date"
-               name="from"
-               class="form-control form-control-sm"
-               value="{{ date_from }}">
-      </div>
-      <div class="col-6 col-md-3">
-        <label class="form-label mb-1 small">До даты</label>
-        <input type="date"
-               name="to"
-               class="form-control form-control-sm"
-               value="{{ date_to }}">
+        <label class="form-label mb-1 small text-muted">От даты</label>
+        <input type="date" name="from" class="form-control form-control-sm" value="{{ date_from }}">
       </div>
 
-      <div class="col-12 col-md-3">
-        <button type="submit" class="btn btn-secondary btn-sm w-100 mt-2 mt-md-0">
-          Фильтр
+      <div class="col-6 col-md-3">
+        <label class="form-label mb-1 small text-muted">До даты</label>
+        <input type="date" name="to" class="form-control form-control-sm" value="{{ date_to }}">
+      </div>
+
+      <div class="col-12 col-md-3 d-grid">
+        <button type="submit" class="btn btn-dark btn-sm" style="border-radius:999px;font-weight:900;">
+          <i class="bi bi-funnel me-1"></i> Фильтр
         </button>
       </div>
 
-      <div class="col-12 col-md-3 mt-2 mt-md-0">
-        <div class="small text-muted text-md-end">
-          <div>Итого по фильтру (UZS):
-            <strong>{{ format_money(total_uzs, 'UZS') }}</strong>
+      <div class="col-12 col-md-3">
+        <div class="small text-md-end" style="color:rgba(17,17,17,.70);">
+          <div>Итого по фильтру (UZS): <strong>{{ format_money(total_uzs or 0, 'UZS') }}</strong></div>
+          <div>Итого по фильтру (USD): <strong>{{ format_money(total_usd or 0, 'USD') }}</strong></div>
+
+          {% if date_from or date_to %}
+          <div class="mt-1">
+            <a class="small text-decoration-none" href="{{ url_for('cash.list_cash') }}" style="color:rgba(17,17,17,.70);">
+              ✖ Сбросить фильтр
+            </a>
           </div>
-          <div>Итого по фильтру (USD):
-            <strong>{{ format_money(total_usd, 'USD') }}</strong>
-          </div>
+          {% endif %}
         </div>
       </div>
     </form>
   </div>
 </div>
 
-{# HISTORY TABLE (unchanged idea, just styled for phone) #}
-<div class="card shadow-sm">
-  <div class="card-body p-0">
+{# ===== HISTORY TABLE ===== #}
+<div class="mm-neo-card">
+  <div class="p-0">
     <div class="table-responsive mb-0">
-      <table class="table table-sm table-hover align-middle mb-0">
-        <thead class="table-light">
+      <table class="table table-sm table-hover align-middle mb-0 mm-table">
+        <thead>
           <tr>
             <th class="d-none d-md-table-cell text-nowrap">ID</th>
             <th class="text-nowrap">Дата</th>
@@ -130,12 +182,8 @@
         <tbody>
         {% for r in records %}
           <tr>
-            <td class="d-none d-md-table-cell text-muted small">
-              {{ r.id }}
-            </td>
-            <td class="text-nowrap">
-              {{ r.date }}
-            </td>
+            <td class="d-none d-md-table-cell text-muted small">{{ r.id }}</td>
+            <td class="text-nowrap">{{ r.date }}</td>
             <td>
               {% if r.note %}
                 <div class="small">{{ r.note }}</div>
@@ -145,20 +193,18 @@
             </td>
             <td class="text-end text-nowrap">
               {% if r.amount >= 0 %}
-                <span class="text-success">
-                  + {{ format_money(r.amount, r.currency) }}
-                </span>
+                <span class="text-success">+ {{ format_money(r.amount, r.currency) }}</span>
               {% else %}
-                <span class="text-danger">
-                  {{ format_money(r.amount, r.currency) }}
-                </span>
+                <span class="text-danger">{{ format_money(r.amount, r.currency) }}</span>
               {% endif %}
-              <span class="d-inline d-lg-none text-muted small ms-1">
-                {{ r.currency }}
-              </span>
+              <span class="d-inline d-lg-none text-muted small ms-1">{{ r.currency }}</span>
             </td>
-            <td class="d-none d-lg-table-cell">
-              {{ r.currency }}
+            <td class="d-none d-lg-table-cell">{{ r.currency }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">
+              Нет записей
             </td>
           </tr>
         {% endfor %}

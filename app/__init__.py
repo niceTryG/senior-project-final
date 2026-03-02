@@ -58,6 +58,10 @@ def create_app(config_class="config.DevConfig"):
         # Allow auth endpoints
         if request.endpoint in ("auth.login", "auth.logout"):
             return
+        
+        # Allow PUBLIC routes (no login required)
+        if request.endpoint and request.endpoint.startswith("public."):
+            return
 
         # Allow one-time setup URL even when not logged in
         if request.path.startswith("/setup/") or request.path.startswith("/auth/setup/"):
@@ -171,6 +175,7 @@ def create_app(config_class="config.DevConfig"):
             "t": _t,
             "current_lang": current_lang,
             "current_year": datetime.utcnow().year,
+            "current_date": datetime.utcnow().year,
             "format_money": format_money,  # ✅ add this
         }
 
@@ -210,7 +215,9 @@ def create_app(config_class="config.DevConfig"):
     from .routes.history_routes import history_bp
     from app.cost.routes import bp as cost_bp
     from .routes.factory_routes import factory_bp
-
+    from .routes.public_routes import public_bp
+    
+    app.register_blueprint(public_bp)
     app.register_blueprint(factory_bp)
     app.register_blueprint(cost_bp)
     app.register_blueprint(auth_bp)

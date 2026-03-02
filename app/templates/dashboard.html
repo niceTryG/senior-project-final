@@ -1,9 +1,8 @@
 {% extends "base.html" %}
-{% block content %}
 
-{# --- MINIMAL SAFETY PATCH: stats may be dict + missing keys --- #}
-{% set s = stats or {} %}
-
+{# =========================
+   TOP BANNER (ONLY ONCE)
+   ========================= #}
 {% block top_banner %}
   <div class="mm-top-banner">
     <div class="container-fluid">
@@ -11,236 +10,244 @@
         <div class="d-flex justify-content-between align-items-center">
 
           {% set display_names = {
-              "Muzaffar": "Muzaffar",
-              "Ra'no": "Ra'no",
-              "Ibrokhim": "Ibrokhim",
-              "Doniyor": "Doniyor"
+            "Muzaffar": "Muzaffar",
+            "Ra'no": "Ra'no",
+            "Ibrokhim": "Ibrokhim",
+            "Doniyor": "Doniyor"
           } %}
 
           {% set display_name = display_names.get(current_user.username, current_user.username) %}
 
           <div class="mm-top-banner-greet">
-             السلام عليكم , {{ display_name }} 👋
+            السلام عليكم , {{ display_name }} 👋
           </div>
 
-         
         </div>
       </div>
     </div>
   </div>
 {% endblock %}
 
-<!-- SECTION 1: HIGH LEVEL OVERVIEW -->
-<div class="row g-3 mb-4">
-  <div class="col-md-3 col-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-body text-center">
-        <div class="small text-muted mb-1">Все ткани</div>
-        <div class="fs-3 fw-semibold">{{ s.get('fabric_total_fabrics', 0) }}</div>
-      </div>
-    </div>
-  </div>
 
-  <div class="col-md-3 col-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-body text-center">
-        <div class="small text-muted mb-1">Стоимость тканей (UZS)</div>
-        <div class="fs-6 fw-semibold">
-          {{ format_money(s.get('fabric_total_value_uzs', 0), 'UZS') }}
+{# =========================
+   MAIN CONTENT
+   ========================= #}
+{% block content %}
+
+  {# --- MINIMAL SAFETY PATCH: stats may be dict + missing keys --- #}
+  {% set s = stats or {} %}
+
+  <!-- SECTION 1: HIGH LEVEL OVERVIEW -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="small text-muted mb-1">Все ткани</div>
+          <div class="fs-3 fw-semibold">{{ s.get('fabric_total_fabrics', 0) }}</div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="col-md-3 col-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-body text-center">
-        <div class="small text-muted mb-1">Все товары (UZS)</div>
-        <div class="fs-6 fw-semibold">
-          {{ format_money(total_uzs|default(0), 'UZS') }}
-        </div>
-        <div class="small text-muted">Фабрика + магазин</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-3 col-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-body text-center">
-        <div class="small text-muted mb-1">Продажи сегодня (UZS)</div>
-        <div class="fs-6 fw-semibold">
-          {{ format_money(s.get('today_sales_uzs', 0), 'UZS') }}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- SECTION 2: INVENTORY BREAKDOWN -->
-<div class="row g-3 mb-4">
-  <div class="col-md-3 col-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-body text-center">
-        <div class="small text-muted mb-1">Мало ткани на складе</div>
-        <div class="fs-3 fw-semibold">{{ s.get('fabric_low_stock_count', 0) }}</div>
-        <div class="small text-muted">Позиций с низким остатком</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-3 col-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-body text-center">
-        <div class="small text-muted mb-1">Произведено сегодня (шт)</div>
-        <div class="fs-3 fw-semibold">{{ s.get('produced_today', 0) }}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-3 col-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-body text-center">
-        <div class="small text-muted mb-1">Всего произведено (шт)</div>
-        <div class="fs-3 fw-semibold">{{ s.get('produced_total', 0) }}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-3 col-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-body text-center">
-        <div class="small text-muted mb-1">Продажи за месяц (UZS)</div>
-        <div class="fs-6 fw-semibold">
-          {{ format_money(s.get('month_sales_uzs', 0), 'UZS') }}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- SECTION 3: FACTORY VS SHOP -->
-<div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="card shadow-sm h-100 text-center">
-      <div class="card-body">
-        <div class="small text-muted mb-1">Фабрика (готовые товары)</div>
-        <div class="fs-6 fw-semibold mb-1">
-          {{ format_money(factory_uzs|default(0), 'UZS') }}
-        </div>
-        <div class="small text-muted">Товар ещё на фабрике</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="card shadow-sm h-100 text-center">
-      <div class="card-body">
-        <div class="small text-muted mb-1">Магазин</div>
-        <div class="fs-6 fw-semibold mb-1">
-          {{ format_money(shop_uzs|default(0), 'UZS') }}
-        </div>
-        <div class="small text-muted">Передано в магазин, ещё не продано</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="card shadow-sm h-100 text-center">
-      <div class="card-body">
-        <div class="small text-muted mb-1">Готовая продукция (UZS)</div>
-        <div class="fs-6 fw-semibold mb-1">
-          {{ format_money(s.get('product_total_value_uzs', 0), 'UZS') }}
-        </div>
-        <div class="small text-muted">По учётной цене</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- SECTION 4: WARNINGS / LOW STOCK PRODUCTS -->
-<div class="row g-3 mb-4">
-  <div class="col-md-8">
-    {% if low_stock_products %}
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="card-title mb-0">Товары с низким остатком</h5>
-            <small class="text-muted">
-              Порог: {{ LOW_STOCK_THRESHOLD if LOW_STOCK_THRESHOLD is defined else 5 }} шт
-            </small>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th scope="col">ID</th>
-                  <th scope="col">Модель</th>
-                  <th scope="col">Остаток</th>
-                  <th scope="col" class="text-end">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-              {% for p in low_stock_products %}
-                <tr class="table-warning">
-                  <td>#{{ p.id }}</td>
-                  <td>{{ p.name }}</td>
-                  <td>{{ p.quantity }}</td>
-                  <td class="text-end">
-                    <a href="{{ url_for('products.list_products', q=p.name) }}"
-                       class="btn btn-sm btn-outline-secondary">
-                      Открыть
-                    </a>
-                  </td>
-                </tr>
-              {% endfor %}
-              </tbody>
-            </table>
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="small text-muted mb-1">Стоимость тканей (UZS)</div>
+          <div class="fs-6 fw-semibold">
+            {{ format_money(s.get('fabric_total_value_uzs', 0), 'UZS') }}
           </div>
         </div>
       </div>
-    {% else %}
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title mb-1">Товары с низким остатком</h5>
-          <p class="mb-0 text-success">Все остатки в норме 🎉</p>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="small text-muted mb-1">Все товары (UZS)</div>
+          <div class="fs-6 fw-semibold">
+            {{ format_money(total_uzs|default(0), 'UZS') }}
+          </div>
+          <div class="small text-muted">Фабрика + магазин</div>
         </div>
       </div>
-    {% endif %}
-  </div>
+    </div>
 
-  <!-- empty right column reserved for future charts / analytics -->
-  <div class="col-md-4">
-    <div class="card shadow-sm h-100">
-      <div class="card-body d-flex flex-column justify-content-center text-center text-muted">
-        <p class="mb-1">Здесь позже можно добавить</p>
-        <p class="mb-0">графики продаж или производства</p>
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="small text-muted mb-1">Продажи сегодня (UZS)</div>
+          <div class="fs-6 fw-semibold">
+            {{ format_money(s.get('today_sales_uzs', 0), 'UZS') }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- SECTION 5: QUICK LINKS -->
-<div class="card shadow-sm">
-  <div class="card-body">
-    <h6 class="card-title mb-3">Быстрый доступ</h6>
-    <div class="d-flex flex-wrap gap-2">
-      <a href="{{ url_for('fabrics.list') }}" class="btn btn-sm btn-outline-primary">
-        {{ t('menu_fabrics') }}
-      </a>
-      <a href="{{ url_for('products.list_products') }}" class="btn btn-sm btn-outline-primary">
-        {{ t('menu_products') }}
-      </a>
-      <a href="{{ url_for('sales.list_sales') }}" class="btn btn-sm btn-outline-success">
-        {{ t('menu_sales') }}
-      </a>
-      <a href="{{ url_for('cash.list_cash') }}" class="btn btn-sm btn-outline-secondary">
-        {{ t('menu_cash') }}
-      </a>
-      <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-warning">
-        Товары в магазине
-      </a>
+  <!-- SECTION 2: INVENTORY BREAKDOWN -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="small text-muted mb-1">Мало ткани на складе</div>
+          <div class="fs-3 fw-semibold">{{ s.get('fabric_low_stock_count', 0) }}</div>
+          <div class="small text-muted">Позиций с низким остатком</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="small text-muted mb-1">Произведено сегодня (шт)</div>
+          <div class="fs-3 fw-semibold">{{ s.get('produced_today', 0) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="small text-muted mb-1">Всего произведено (шт)</div>
+          <div class="fs-3 fw-semibold">{{ s.get('produced_total', 0) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="small text-muted mb-1">Продажи за месяц (UZS)</div>
+          <div class="fs-6 fw-semibold">
+            {{ format_money(s.get('month_sales_uzs', 0), 'UZS') }}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
+
+  <!-- SECTION 3: FACTORY VS SHOP -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100 text-center">
+        <div class="card-body">
+          <div class="small text-muted mb-1">Фабрика (готовые товары)</div>
+          <div class="fs-6 fw-semibold mb-1">
+            {{ format_money(factory_uzs|default(0), 'UZS') }}
+          </div>
+          <div class="small text-muted">Товар ещё на фабрике</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100 text-center">
+        <div class="card-body">
+          <div class="small text-muted mb-1">Магазин</div>
+          <div class="fs-6 fw-semibold mb-1">
+            {{ format_money(shop_uzs|default(0), 'UZS') }}
+          </div>
+          <div class="small text-muted">Передано в магазин, ещё не продано</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100 text-center">
+        <div class="card-body">
+          <div class="small text-muted mb-1">Готовая продукция (UZS)</div>
+          <div class="fs-6 fw-semibold mb-1">
+            {{ format_money(s.get('product_total_value_uzs', 0), 'UZS') }}
+          </div>
+          <div class="small text-muted">По учётной цене</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: WARNINGS / LOW STOCK PRODUCTS -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-8">
+      {% if low_stock_products %}
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="card-title mb-0">Товары с низким остатком</h5>
+              <small class="text-muted">
+                Порог: {{ LOW_STOCK_THRESHOLD if LOW_STOCK_THRESHOLD is defined else 5 }} шт
+              </small>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Модель</th>
+                    <th scope="col">Остаток</th>
+                    <th scope="col" class="text-end">Действия</th>
+                  </tr>
+                </thead>
+                <tbody>
+                {% for p in low_stock_products %}
+                  <tr class="table-warning">
+                    <td>#{{ p.id }}</td>
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.quantity }}</td>
+                    <td class="text-end">
+                      <a href="{{ url_for('products.list_products', q=p.name) }}"
+                         class="btn btn-sm btn-outline-secondary">
+                        Открыть
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title mb-1">Товары с низким остатком</h5>
+            <p class="mb-0 text-success">Все остатки в норме 🎉</p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- empty right column reserved for future charts / analytics -->
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex flex-column justify-content-center text-center text-muted">
+          <p class="mb-1">Здесь позже можно добавить</p>
+          <p class="mb-0">графики продаж или производства</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: QUICK LINKS -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Быстрый доступ</h6>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('fabrics.list') }}" class="btn btn-sm btn-outline-primary">
+          {{ t('menu_fabrics') }}
+        </a>
+        <a href="{{ url_for('products.list_products') }}" class="btn btn-sm btn-outline-primary">
+          {{ t('menu_products') }}
+        </a>
+        <a href="{{ url_for('sales.list_sales') }}" class="btn btn-sm btn-outline-success">
+          {{ t('menu_sales') }}
+        </a>
+        <a href="{{ url_for('cash.list_cash') }}" class="btn btn-sm btn-outline-secondary">
+          {{ t('menu_cash') }}
+        </a>
+        <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-warning">
+          Товары в магазине
+        </a>
+      </div>
+    </div>
+  </div>
 
 {% endblock %}

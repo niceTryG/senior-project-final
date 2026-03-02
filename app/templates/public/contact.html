@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mt-2">
+  <h2 class="fw-bold mb-2">Contact</h2>
+  <p class="text-muted">Order and questions — fastest on Telegram.</p>
+
+  {% if public_telegram_url %}
+    <a class="btn btn-dark" href="{{ public_telegram_url }}" target="_blank">Open Telegram</a>
+  {% else %}
+    <div class="alert alert-warning">
+      Telegram link is not configured yet. Add <code>PUBLIC_TELEGRAM_URL</code> in config.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

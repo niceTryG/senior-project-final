@@ -658,22 +658,129 @@ html[data-theme="dark"] .mm-page-order-history .table-hover tbody tr:hover {
 html[data-theme="dark"] .table-sticky thead th {
   background-color: #020617;
 }
-/* ===== Dashboard top greeting banner ===== */
+/* ===== Dashboard top greeting banner (Neo subtle) ===== */
 .mm-top-banner{
   margin-left: calc(-50vw + 50%);
-  background: #0b1220;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  padding: 10px 0;
+  background: #f6f7fb;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  padding: 6px 0;
+  box-shadow:
+    0 6px 18px rgba(17,17,17,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.65);
 }
 
 .mm-top-banner-greet{
-  color: rgba(255,255,255,.95);
-  font-weight: 700;
-  font-size: 1.05rem;
+  color: rgba(17,17,17,0.75);
+  font-weight: 500;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
 }
 
 @media (min-width: 768px){
   .mm-top-banner-greet{
-    font-size: 1.15rem;
+    font-size: 0.95rem;
   }
+}
+/* =========================
+   NEO DESIGN SYSTEM (GLOBAL)
+   Put this at END of custom.css
+========================= */
+:root{
+  --mm-surface: #ffffff;
+  --mm-surface-2: #f6f7fb;
+  --mm-border: rgba(0,0,0,0.06);
+  --mm-shadow: 0 14px 32px rgba(17,17,17,0.08);
+  --mm-shadow-soft: 0 10px 24px rgba(17,17,17,0.06);
+  --mm-inset: inset 0 1px 0 rgba(255,255,255,0.70);
+  --mm-radius: 18px;
+}
+
+html[data-theme="dark"]{
+  --mm-surface: #0b1220;
+  --mm-surface-2: #0f172a;
+  --mm-border: rgba(255,255,255,0.08);
+  --mm-shadow: 0 16px 34px rgba(0,0,0,0.55);
+  --mm-shadow-soft: 0 10px 22px rgba(0,0,0,0.45);
+  --mm-inset: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Neo card utility */
+.mm-neo{
+  background: var(--mm-surface);
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius);
+  box-shadow: var(--mm-shadow), var(--mm-inset);
+}
+
+/* Make ALL cards neo by default */
+.card{
+  border-radius: var(--mm-radius) !important;
+  border: 1px solid var(--mm-border) !important;
+  background: var(--mm-surface) !important;
+  box-shadow: var(--mm-shadow-soft), var(--mm-inset) !important;
+}
+
+/* Keep hover subtle */
+.card.shadow-sm:hover{
+  transform: translateY(-1px);
+  box-shadow: var(--mm-shadow), var(--mm-inset) !important;
+}
+
+/* Neo table header */
+.table thead th{
+  background: var(--mm-surface-2) !important;
+  border-bottom: 1px solid var(--mm-border) !important;
+}
+
+/* Neo chips */
+.mm-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:.35rem;
+  padding:.35rem .7rem;
+  border-radius:999px;
+  border:1px solid var(--mm-border);
+  background: var(--mm-surface);
+  box-shadow: 0 8px 18px rgba(17,17,17,0.06), var(--mm-inset);
+  font-weight: 800;
+  font-size:.85rem;
+  color:#111;
+}
+html[data-theme="dark"] .mm-chip{ color:#e5e7eb; }
+
+/* Neo topbar (your navbar) */
+.mm-topbar-neo{
+  background: var(--mm-surface-2) !important;
+  border-bottom: 1px solid var(--mm-border);
+  box-shadow: var(--mm-shadow-soft), var(--mm-inset);
+}
+.mm-topbar-neo .navbar-brand,
+.mm-topbar-neo .navbar-brand .brand-text{
+  color:#111 !important;
+}
+html[data-theme="dark"] .mm-topbar-neo .navbar-brand,
+html[data-theme="dark"] .mm-topbar-neo .navbar-brand .brand-text{
+  color:#e5e7eb !important;
+}
+.mm-topbar-neo .btn{
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+/* Neo greeting banner (subtle) */
+.mm-top-banner{
+  margin-left: calc(-50vw + 50%);
+  background: var(--mm-surface-2);
+  border-bottom: 1px solid var(--mm-border);
+  padding: 6px 0;
+  box-shadow: 0 8px 18px rgba(17,17,17,0.05), var(--mm-inset);
+}
+.mm-top-banner-greet{
+  color: rgba(17,17,17,0.75);
+  font-weight: 600;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+}
+html[data-theme="dark"] .mm-top-banner-greet{
+  color: rgba(229,231,235,0.85);
 }

@@ -69,7 +69,6 @@
 
   /* Make forms feel less heavy */
   .form-control, .form-select { border-radius: 12px; }
-
 </style>
 {% endblock %}
 
@@ -177,9 +176,9 @@
       {% set spct = (shop_qty * 100 // total_qty) if total_qty else 0 %}
       {% set low_total = total_qty > 0 and total_qty < 10 %}
 
-      {% set acc_id = "m-acc-" ~ p.id %}
       {% set toshop_id = "m-toshop-" ~ p.id %}
       {% set sell_id = "m-sell-" ~ p.id %}
+      {% set produce_id = "m-produce-" ~ p.id %}
 
       <div class="card shadow-sm border-0 mb-2 mm-product-card">
         <div class="card-body">
@@ -194,6 +193,13 @@
               </div>
 
               <div class="mt-2">
+                {# 🌍 Public visibility badge #}
+                {% if p.is_published %}
+                  <span class="badge bg-success me-1">🌍 On website</span>
+                {% else %}
+                  <span class="badge bg-secondary me-1">🙈 Hidden</span>
+                {% endif %}
+
                 {% if total_qty == 0 %}
                   <span class="badge bg-secondary me-1">{{ t('products_badge_no_stock') }}</span>
                 {% elif low_total %}
@@ -277,11 +283,34 @@
                 💸 Продать
               </button>
             </div>
+
+            {# ✅ NEW: PRODUCE BUTTON #}
+            <div class="col-12">
+              <button class="btn btn-dark w-100 mm-card-btn"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#{{ produce_id }}"
+                      aria-expanded="false"
+                      aria-controls="{{ produce_id }}">
+                🏭 Produce (fabric → product)
+              </button>
+            </div>
+
             <div class="col-12">
               <a href="{{ url_for('products.product_cost', product_id=p.id) }}"
                  class="btn btn-outline-warning w-100 mm-card-btn">
                 🧮 Себестоимость
               </a>
+            </div>
+
+            {# ✅ Publish / Unpublish #}
+            <div class="col-12">
+              <form method="post" action="{{ url_for('products.toggle_publish', product_id=p.id) }}">
+                <button type="submit"
+                        class="btn w-100 mm-card-btn {% if p.is_published %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                  {% if p.is_published %}🙈 Unpublish{% else %}🌍 Publish to website{% endif %}
+                </button>
+              </form>
             </div>
           </div>
 
@@ -351,6 +380,60 @@
               </div>
             </div>
 
+            {# ✅ NEW: PRODUCE COLLAPSE FORM #}
+            <div class="collapse" id="{{ produce_id }}">
+              <div class="border rounded-3 p-2 bg-white mt-2">
+                <form method="post"
+                      action="{{ url_for('products.produce_with_fabric', product_id=p.id) }}"
+                      class="d-flex flex-column gap-2">
+
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label small mb-1">Produced qty</label>
+                      <input type="number"
+                             name="quantity"
+                             class="form-control form-control-sm text-end"
+                             min="1"
+                             required>
+                    </div>
+
+                    <div class="col-6">
+                      <label class="form-label small mb-1">Fabric used</label>
+                      <input type="number"
+                             step="0.01"
+                             name="used_amount"
+                             class="form-control form-control-sm text-end"
+                             min="0.01"
+                             required>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="form-label small mb-1">Fabric</label>
+                    <select name="fabric_id" class="form-select form-select-sm" required>
+                      <option value="" selected disabled>Choose fabric...</option>
+                      {% for f in fabrics %}
+                        <option value="{{ f.id }}">
+                          {{ f.name }}{% if f.color %} / {{ f.color }}{% endif %}
+                          — {{ "%.2f"|format(f.quantity or 0) }} {{ f.unit }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <input type="text"
+                         name="note"
+                         class="form-control form-control-sm"
+                         maxlength="255"
+                         placeholder="Note (optional)">
+
+                  <button type="submit" class="btn btn-dark btn-sm w-100 mm-card-btn">
+                    ✅ Save production
+                  </button>
+                </form>
+              </div>
+            </div>
+
           </div>
 
         </div>
@@ -358,7 +441,7 @@
     {% endfor %}
   </div>
 
-  {# ================= DESKTOP TABLE (KEEP AS IS, FIX DETAILS) ================= #}
+  {# ================= DESKTOP TABLE ================= #}
   <div class="card shadow-sm border-0 mb-3 d-none d-md-block">
     <div class="card-body p-0">
       <div class="table-responsive">
@@ -399,6 +482,14 @@
                 <div class="d-flex flex-column">
                   <div>
                     <span class="fw-semibold small">{{ p.name }}</span>
+
+                    {# 🌍 Published badge (tiny) #}
+                    {% if p.is_published %}
+                      <span class="badge bg-success ms-1" title="On website">🌍</span>
+                    {% else %}
+                      <span class="badge bg-secondary ms-1" title="Hidden">🙈</span>
+                    {% endif %}
+
                     {% if total_qty == 0 %}
                       <span class="badge bg-secondary ms-1">{{ t('products_badge_no_stock') }}</span>
                     {% elif low_total %}
@@ -444,14 +535,13 @@
               <td class="text-end"><i class="bi bi-chevron-down small text-muted"></i></td>
             </tr>
 
-            {# ✅ FIXED: REAL DETAILS CONTENT (NO super()) #}
             <tr class="collapse bg-light" id="{{ details_id }}">
               <td colspan="10">
                 <div class="p-2 p-md-3">
                   <div class="row g-2 g-md-3">
 
                     <!-- LEFT: Info -->
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-3">
                       <div class="border rounded-3 p-2 h-100 bg-white">
                         <p class="small text-muted mb-1">{{ t('products_details_title_info') }}</p>
 
@@ -522,11 +612,19 @@
                            class="btn btn-sm btn-outline-warning w-100 mt-1">
                           🧮 Расчёт себестоимости
                         </a>
+
+                        {# ✅ Publish / Unpublish #}
+                        <form method="post" action="{{ url_for('products.toggle_publish', product_id=p.id) }}" class="mt-2">
+                          <button type="submit"
+                                  class="btn btn-sm w-100 {% if p.is_published %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                            {% if p.is_published %}🙈 Unpublish (hide from website){% else %}🌍 Publish (show on website){% endif %}
+                          </button>
+                        </form>
                       </div>
                     </div>
 
                     <!-- MIDDLE: TO SHOP -->
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-3">
                       <div class="border rounded-3 p-2 h-100 bg-white">
                         <p class="small text-muted mb-2 mb-md-2">
                           {{ t('products_details_move_to_shop_title') }}
@@ -556,7 +654,7 @@
                     </div>
 
                     <!-- RIGHT: SELL -->
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-3">
                       <div class="border rounded-3 p-2 h-100 bg-white">
                         <p class="small text-muted mb-2">
                           {{ t('products_details_sell_from_factory_title') }}
@@ -615,6 +713,64 @@
 
                           <button type="submit" class="btn btn-sm btn-outline-primary w-100 mt-1">
                             {{ t('products_details_sell_button') }}
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+
+                    <!-- ✅ NEW: PRODUCE -->
+                    <div class="col-12 col-md-3">
+                      <div class="border rounded-3 p-2 h-100 bg-white">
+                        <p class="small text-muted mb-2">
+                          🏭 Produce (fabric → product)
+                        </p>
+
+                        <form method="post"
+                              action="{{ url_for('products.produce_with_fabric', product_id=p.id) }}"
+                              class="d-flex flex-column gap-2">
+
+                          <div class="row g-2">
+                            <div class="col-6">
+                              <label class="form-label small mb-1">Qty</label>
+                              <input type="number"
+                                     name="quantity"
+                                     class="form-control form-control-sm text-end"
+                                     min="1"
+                                     required>
+                            </div>
+
+                            <div class="col-6">
+                              <label class="form-label small mb-1">Used</label>
+                              <input type="number"
+                                     step="0.01"
+                                     name="used_amount"
+                                     class="form-control form-control-sm text-end"
+                                     min="0.01"
+                                     required>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label class="form-label small mb-1">Fabric</label>
+                            <select name="fabric_id" class="form-select form-select-sm" required>
+                              <option value="" selected disabled>Choose fabric...</option>
+                              {% for f in fabrics %}
+                                <option value="{{ f.id }}">
+                                  {{ f.name }}{% if f.color %} / {{ f.color }}{% endif %}
+                                  — {{ "%.2f"|format(f.quantity or 0) }} {{ f.unit }}
+                                </option>
+                              {% endfor %}
+                            </select>
+                          </div>
+
+                          <input type="text"
+                                 name="note"
+                                 class="form-control form-control-sm"
+                                 maxlength="255"
+                                 placeholder="Note (optional)">
+
+                          <button type="submit" class="btn btn-sm btn-dark w-100">
+                            ✅ Save production
                           </button>
                         </form>
                       </div>
@@ -685,10 +841,11 @@
   </div>
 </div>
 
-<!-- ADD PRODUCT MODAL (UNCHANGED) -->
+<!-- ADD PRODUCT MODAL (AI UPGRADE) -->
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
+
       <div class="modal-header py-2">
         <h5 class="modal-title fs-6" id="addProductLabel">{{ t('products_modal_title') }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -700,9 +857,16 @@
 
         <div class="modal-body p-2 p-md-3">
           <div class="row g-2">
+
+           
+
+            <!-- Normal product photo (your existing) -->
             <div class="col-12 col-md-4">
               <label class="form-label small mb-1">Фото товара</label>
               <input type="file" name="image" accept="image/*" class="form-control form-control-sm">
+              <div class="form-text small text-muted">
+                Это фото сохранится в карточке товара.
+              </div>
             </div>
 
             <div class="col-12">
@@ -712,7 +876,9 @@
 
             <div class="col-6">
               <label class="form-label small mb-1">{{ t('products_modal_category_label') }}</label>
-              <input type="text" name="category" class="form-control form-control-sm"
+              <input type="text"
+                     name="category"
+                     class="form-control form-control-sm"
                      placeholder="{{ t('products_modal_category_placeholder') }}">
             </div>
 
@@ -739,6 +905,14 @@
               </select>
             </div>
 
+            <!-- OPTIONAL: if you later add notes in Product model -->
+            {# 
+            <div class="col-12">
+              <label class="form-label small mb-1">Заметки</label>
+              <textarea name="notes" class="form-control form-control-sm" rows="2"></textarea>
+            </div>
+            #}
+
           </div>
         </div>
 
@@ -752,8 +926,10 @@
           </button>
         </div>
       </form>
+
     </div>
   </div>
 </div>
+
 
 {% endblock %}

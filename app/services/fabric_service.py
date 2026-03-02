@@ -5,7 +5,7 @@ from io import StringIO
 import csv
 
 from ..extensions import db
-from ..models import Fabric, Cut
+from ..models import Fabric, Cut,Product, Production, FabricConsumption
 from .currency_service import get_usd_uzs_rate
 
 
@@ -502,3 +502,68 @@ class FabricService:
             q = q.order_by(Fabric.id.desc())
 
         return q.limit(limit).all()
+    def produce_with_fabric(
+        self,
+        *,
+        factory_id: int,
+        product_id: int,
+        quantity: int,
+        fabric_id: int,
+        used_amount: float,
+        note: str | None = None,
+        production_date=None,
+    ) -> tuple[bool, str]:
+        """
+        Creates Production, increases product.qty, decreases fabric.qty,
+        and logs FabricConsumption. All in one transaction.
+        """
+        if quantity <= 0:
+            return False, "Quantity must be > 0"
+        if used_amount <= 0:
+            return False, "Used amount must be > 0"
+
+        production_date = production_date or date.today()
+
+        product = Product.query.filter_by(id=product_id, factory_id=factory_id).first()
+        if not product:
+            return False, "Product not found"
+
+        fabric = Fabric.query.filter_by(id=fabric_id, factory_id=factory_id).first()
+        if not fabric:
+            return False, "Fabric not found"
+
+        current_qty = fabric.quantity or 0.0
+        if used_amount > current_qty:
+            return False, "Not enough fabric quantity"
+
+        try:
+            # 1) create production
+            prod = Production(
+                product_id=product.id,
+                date=production_date,
+                quantity=quantity,
+                note=note,
+            )
+            db.session.add(prod)
+            db.session.flush()  # get prod.id without commit
+
+            # 2) update product stock
+            product.quantity = (product.quantity or 0) + quantity
+
+            # 3) deduct fabric
+            fabric.quantity = current_qty - used_amount
+
+            # 4) log consumption
+            cons = FabricConsumption(
+                factory_id=factory_id,
+                fabric_id=fabric.id,
+                production_id=prod.id,
+                used_amount=used_amount,
+            )
+            db.session.add(cons)
+
+            db.session.commit()
+            return True, "OK"
+        except Exception as e:
+            db.session.rollback()
+            return False, str(e)

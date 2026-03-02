@@ -1,0 +1,113 @@
+{% extends "base.html" %} {% block content %} {% set in_stock =
+(product.quantity or 0) > 0 %}
+
+<div class="container py-3">
+  <div class="mb-3">
+    <a
+      href="{{ url_for('public.catalog') }}"
+      class="text-decoration-none small"
+    >
+      ← {{ t('public_back') if t else 'Back to catalog' }}
+    </a>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="rounded-4 overflow-hidden border bg-light">
+        {% if product.image_path %}
+        <img
+          src="{{ url_for('static', filename=product.image_path) }}"
+          class="w-100"
+          style="object-fit: cover; aspect-ratio: 4/3"
+          alt="{{ product.name }}"
+        />
+        {% else %}
+        <div
+          class="d-flex align-items-center justify-content-center"
+          style="aspect-ratio: 4/3"
+        >
+          <span class="text-muted"
+            >{{ t('public_no_image') if t else 'No image' }}</span
+          >
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="d-flex justify-content-between align-items-start gap-2">
+        <div style="min-width: 0">
+          <div class="h3 fw-bold mb-1">{{ product.name }}</div>
+          <div class="text-muted">
+            {{ product.category or (t('products_no_category') if t else 'No
+            category') }}
+          </div>
+        </div>
+
+        {% if in_stock %}
+        <span class="badge text-bg-success align-self-start">
+          {{ t('public_in_stock') if t else 'In stock' }}
+        </span>
+        {% else %}
+        <span class="badge text-bg-secondary align-self-start">
+          {{ t('public_out_stock') if t else 'Out' }}
+        </span>
+        {% endif %}
+      </div>
+
+      <div class="d-flex align-items-center gap-2 mt-2 small text-muted">
+        <span>
+          {{ t('public_code') if t else 'Code' }}:
+          <strong id="mmcode-{{ product.id }}"
+            >MM-{{ "%05d"|format(product.id) }}</strong
+          >
+        </span>
+
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm py-0"
+          onclick="navigator.clipboard.writeText(document.getElementById('mmcode-{{ product.id }}').innerText)"
+        >
+          Copy
+        </button>
+      </div>
+
+      {% if product.public_description %}
+      <div class="mt-3 text-muted">{{ product.public_description }}</div>
+      {% else %}
+      <div class="mt-3 text-muted small">
+        {{ t('public_no_desc') if t else 'No description yet.' }}
+      </div>
+      {% endif %}
+
+      <div class="d-grid gap-2 mt-4">
+        {% if in_stock %}
+        <a
+          href="{{ tg_order_link(product) }}"
+          target="_blank"
+          rel="noopener"
+          class="btn btn-success rounded-3"
+        >
+          {{ t('public_order_tg') if t else 'Order in Telegram' }}
+        </a>
+        <div class="small text-muted">
+          {{ t('public_order_hint') if t else 'Send: product code + quantity +
+          phone number.' }}
+        </div>
+        {% else %}
+        <button
+          type="button"
+          class="btn btn-outline-secondary rounded-3"
+          disabled
+        >
+          {{ t('public_out_stock') if t else 'Out of stock' }}
+        </button>
+        <div class="small text-muted">
+          {{ t('public_out_stock') if t else 'Out of stock' }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

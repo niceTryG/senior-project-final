@@ -15,7 +15,10 @@ cash_bp = Blueprint("cash", __name__, url_prefix="/cash")
 def list_cash():
     factory_id = current_user.factory_id
 
-    # ----- FILTER RANGE FOR HISTORY TABLE -----
+    # --------------------------------------------------
+    # FILTER RANGE FOR HISTORY TABLE
+    # --------------------------------------------------
+
     date_from_str = request.args.get("from", "").strip()
     date_to_str = request.args.get("to", "").strip()
 
@@ -36,8 +39,10 @@ def list_cash():
             date_to = None
 
     q = CashRecord.query.filter(CashRecord.factory_id == factory_id)
+
     if date_from:
         q = q.filter(CashRecord.date >= date_from)
+
     if date_to:
         q = q.filter(CashRecord.date <= date_to)
 
@@ -46,61 +51,113 @@ def list_cash():
         .all()
     )
 
-    # totals by currency for the selected period
-    total_uzs = sum(r.amount for r in records if r.currency == "UZS")
-    total_usd = sum(r.amount for r in records if r.currency == "USD")
+    # --------------------------------------------------
+    # TOTALS FOR SELECTED PERIOD (HISTORY TABLE)
+    # --------------------------------------------------
 
-    # ----- LAST 7 DAYS WINDOW -----
+    total_uzs = sum((r.amount or 0) for r in records if r.currency == "UZS")
+    total_usd = sum((r.amount or 0) for r in records if r.currency == "USD")
+
+    # --------------------------------------------------
+    # LAST 7 DAYS WINDOW
+    # --------------------------------------------------
+
     today = date.today()
     week_start = today - timedelta(days=6)
 
-    # Weekly SALES (only UZS) – only for this factory
-    weekly_sales = (
+    # --------------------------------------------------
+    # WEEKLY SALES (ALL CURRENCIES)
+    # --------------------------------------------------
+
+    weekly_sales_all = (
         Sale.query
         .join(Product)
         .filter(
             Product.factory_id == factory_id,
             Sale.date >= week_start,
             Sale.date <= today,
-            Sale.currency == "UZS",
         )
         .all()
     )
-    weekly_items_sold = sum(s.quantity for s in weekly_sales)
-    weekly_sales_uzs = sum(s.total_sell for s in weekly_sales)
 
-    # Weekly CASH (only UZS, +/-) – this factory only
-    weekly_cash_records = (
+    weekly_items_sold = sum((s.quantity or 0) for s in weekly_sales_all)
+
+    weekly_sales_uzs = sum(
+        (s.total_sell or 0)
+        for s in weekly_sales_all
+        if s.currency == "UZS"
+    )
+
+    weekly_sales_usd = sum(
+        (s.total_sell or 0)
+        for s in weekly_sales_all
+        if s.currency == "USD"
+    )
+
+    # --------------------------------------------------
+    # WEEKLY CASH (ALL CURRENCIES)
+    # --------------------------------------------------
+
+    weekly_cash_records_all = (
         CashRecord.query
         .filter(
             CashRecord.factory_id == factory_id,
             CashRecord.date >= week_start,
             CashRecord.date <= today,
-            CashRecord.currency == "UZS",
         )
         .all()
     )
 
+    # UZS
     weekly_cash_in_uzs = sum(
-        r.amount for r in weekly_cash_records if r.amount > 0
+        r.amount for r in weekly_cash_records_all
+        if r.currency == "UZS" and r.amount > 0
     )
+
     weekly_cash_out_uzs = -sum(
-        r.amount for r in weekly_cash_records if r.amount < 0
+        r.amount for r in weekly_cash_records_all
+        if r.currency == "UZS" and r.amount < 0
     )
+
     weekly_cash_net_uzs = weekly_cash_in_uzs - weekly_cash_out_uzs
+
+    # USD
+    weekly_cash_in_usd = sum(
+        r.amount for r in weekly_cash_records_all
+        if r.currency == "USD" and r.amount > 0
+    )
+
+    weekly_cash_out_usd = -sum(
+        r.amount for r in weekly_cash_records_all
+        if r.currency == "USD" and r.amount < 0
+    )
+
+    weekly_cash_net_usd = weekly_cash_in_usd - weekly_cash_out_usd
+
+    # --------------------------------------------------
+    # RENDER
+    # --------------------------------------------------
 
     return render_template(
         "cash/list.html",
-        # history
+
+        # History table
         records=records,
         date_from=date_from_str,
         date_to=date_to_str,
         total_uzs=total_uzs,
         total_usd=total_usd,
-        # weekly stats
+
+        # Weekly stats
         weekly_items_sold=weekly_items_sold,
         weekly_sales_uzs=weekly_sales_uzs,
+        weekly_sales_usd=weekly_sales_usd,
+
         weekly_cash_in_uzs=weekly_cash_in_uzs,
         weekly_cash_out_uzs=weekly_cash_out_uzs,
         weekly_cash_net_uzs=weekly_cash_net_uzs,
+
+        weekly_cash_in_usd=weekly_cash_in_usd,
+        weekly_cash_out_usd=weekly_cash_out_usd,
+        weekly_cash_net_usd=weekly_cash_net_usd,
     )

@@ -1,225 +1,240 @@
-{% extends "base.html" %}
-
-{% block title %}Склад магазина — Mini Moda{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Склад магазина — Mini Moda{% endblock
+%} {% block content %}
 <style>
   /* =========================
      Mini Moda — Shop Stock (Hybrid Mobile)
      Scoped: .mm-page-shop-stock
      ========================= */
 
-  .mm-page-shop-stock{
-    --mm-cardA: rgba(255,255,255,.78);
-    --mm-cardB: rgba(255,255,255,.92);
-    --mm-line: rgba(0,0,0,.08);
-    --mm-muted: rgba(0,0,0,.50);
-    --mm-soft: rgba(0,0,0,.68);
-    --mm-shadow: 0 14px 36px rgba(0,0,0,.12);
-    --mm-shadow-soft: 0 10px 22px rgba(0,0,0,.07);
-    --mm-glow: 0 0 0 .22rem rgba(13,110,253,.14);
+  .mm-page-shop-stock {
+    --mm-cardA: rgba(255, 255, 255, 0.78);
+    --mm-cardB: rgba(255, 255, 255, 0.92);
+    --mm-line: rgba(0, 0, 0, 0.08);
+    --mm-muted: rgba(0, 0, 0, 0.5);
+    --mm-soft: rgba(0, 0, 0, 0.68);
+    --mm-shadow: 0 14px 36px rgba(0, 0, 0, 0.12);
+    --mm-shadow-soft: 0 10px 22px rgba(0, 0, 0, 0.07);
+    --mm-glow: 0 0 0 0.22rem rgba(13, 110, 253, 0.14);
     --mm-radius: 18px;
     position: relative;
   }
 
   /* Desktop look can keep some of your “neo” vibe */
-  .mm-page-shop-stock::before{
-    content:"";
-    position:absolute;
-    inset:-18px -12px -18px -12px;
-    pointer-events:none;
+  .mm-page-shop-stock::before {
+    content: "";
+    position: absolute;
+    inset: -18px -12px -18px -12px;
+    pointer-events: none;
     background:
-      radial-gradient(circle at 14% 12%, rgba(13,110,253,.12), transparent 34%),
-      radial-gradient(circle at 86% 18%, rgba(111,66,193,.10), transparent 36%),
-      radial-gradient(circle at 28% 90%, rgba(32,201,151,.10), transparent 38%),
-      linear-gradient(to bottom, rgba(0,0,0,.03), transparent 40%);
-    opacity:.95;
+      radial-gradient(
+        circle at 14% 12%,
+        rgba(13, 110, 253, 0.12),
+        transparent 34%
+      ),
+      radial-gradient(
+        circle at 86% 18%,
+        rgba(111, 66, 193, 0.1),
+        transparent 36%
+      ),
+      radial-gradient(
+        circle at 28% 90%,
+        rgba(32, 201, 151, 0.1),
+        transparent 38%
+      ),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.03), transparent 40%);
+    opacity: 0.95;
   }
 
-  .mm-page-shop-stock > *{ position: relative; z-index: 1; }
+  .mm-page-shop-stock > * {
+    position: relative;
+    z-index: 1;
+  }
 
-  .mm-neo-shell{
-    border:1px solid var(--mm-line);
+  .mm-neo-shell {
+    border: 1px solid var(--mm-line);
     border-radius: var(--mm-radius);
     background: linear-gradient(180deg, var(--mm-cardA), var(--mm-cardB));
     box-shadow: var(--mm-shadow);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    overflow:hidden;
+    overflow: hidden;
   }
 
-  .mm-neo-chip{
-    display:inline-flex;
-    align-items:center;
-    gap:.45rem;
-    padding:.33rem .7rem;
-    border-radius:999px;
-    border:1px solid var(--mm-line);
-    background: rgba(255,255,255,.72);
-    font-size:.78rem;
+  .mm-neo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.33rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--mm-line);
+    background: rgba(255, 255, 255, 0.72);
+    font-size: 0.78rem;
     color: var(--mm-soft);
     white-space: nowrap;
   }
 
-  .mm-neo-title{
+  .mm-neo-title {
     font-weight: 900;
-    letter-spacing: .2px;
+    letter-spacing: 0.2px;
     margin: 0;
   }
 
-  .mm-neo-sub{
+  .mm-neo-sub {
     margin: 0;
     color: var(--mm-muted);
   }
 
   /* Mobile sticky search bar */
-  .mm-stock-sticky{
+  .mm-stock-sticky {
     position: sticky;
     top: 0;
     z-index: 20;
   }
 
   .mm-neo-input:focus,
-  .mm-page-shop-stock .form-select:focus{
+  .mm-page-shop-stock .form-select:focus {
     box-shadow: var(--mm-glow);
-    border-color: rgba(13,110,253,.35);
+    border-color: rgba(13, 110, 253, 0.35);
   }
 
   /* KPI tiles */
-  .mm-kpi-tile{
-    border:1px solid var(--mm-line);
+  .mm-kpi-tile {
+    border: 1px solid var(--mm-line);
     border-radius: 18px;
-    background: rgba(255,255,255,.76);
+    background: rgba(255, 255, 255, 0.76);
     box-shadow: var(--mm-shadow-soft);
   }
 
-  .mm-kpi-label{
-    font-size: .74rem;
-    letter-spacing: .12em;
+  .mm-kpi-label {
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--mm-muted);
     font-weight: 800;
   }
 
-  .mm-kpi-value{
+  .mm-kpi-value {
     font-weight: 900;
     font-size: 1.4rem;
-    color: rgba(0,0,0,.78);
+    color: rgba(0, 0, 0, 0.78);
     line-height: 1.1;
   }
 
-  .mm-kpi-foot{
-    font-size: .8rem;
+  .mm-kpi-foot {
+    font-size: 0.8rem;
     color: var(--mm-muted);
   }
 
   /* Mobile product cards */
-  .mm-stock-card{
+  .mm-stock-card {
     border: 1px solid var(--mm-line);
     border-radius: 18px;
-    background: rgba(255,255,255,.78);
+    background: rgba(255, 255, 255, 0.78);
     box-shadow: var(--mm-shadow-soft);
     overflow: hidden;
   }
-  .mm-stock-card.mm-empty{
-    background: rgba(255,255,255,.72);
-    border-color: rgba(0,0,0,.10);
-    opacity: .92;
+  .mm-stock-card.mm-empty {
+    background: rgba(255, 255, 255, 0.72);
+    border-color: rgba(0, 0, 0, 0.1);
+    opacity: 0.92;
   }
-  .mm-stock-card.mm-low{
-    border-color: rgba(220,53,69,.25);
-    box-shadow: 0 12px 26px rgba(220,53,69,.08);
+  .mm-stock-card.mm-low {
+    border-color: rgba(220, 53, 69, 0.25);
+    box-shadow: 0 12px 26px rgba(220, 53, 69, 0.08);
   }
 
-  .mm-stock-head{
-    display:flex;
-    align-items:flex-start;
+  .mm-stock-head {
+    display: flex;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
   }
 
-  .mm-stock-name{
+  .mm-stock-name {
     font-weight: 900;
     font-size: 1.02rem;
     line-height: 1.15;
     margin-top: 2px;
   }
 
-  .mm-stock-meta{
-    font-size: .82rem;
+  .mm-stock-meta {
+    font-size: 0.82rem;
     color: var(--mm-muted);
     margin-top: 3px;
   }
 
-  .mm-stock-qtybox{
+  .mm-stock-qtybox {
     text-align: right;
     min-width: 84px;
   }
-  .mm-stock-qty{
+  .mm-stock-qty {
     font-weight: 950;
     font-size: 1.55rem;
     line-height: 1;
-    color: rgba(0,0,0,.78);
+    color: rgba(0, 0, 0, 0.78);
   }
 
-  .mm-action-btn{
+  .mm-action-btn {
     border-radius: 999px !important;
     font-weight: 900 !important;
     height: 44px;
   }
 
   /* Details block (hybrid) */
-  .mm-details-row{
-    border-top: 1px solid rgba(0,0,0,.06);
+  .mm-details-row {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
     margin-top: 10px;
     padding-top: 10px;
   }
-  .mm-details-grid{
-    display:grid;
+  .mm-details-grid {
+    display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  .mm-details-item{
-    border:1px solid rgba(0,0,0,.06);
+  .mm-details-item {
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 14px;
-    background: rgba(255,255,255,.62);
+    background: rgba(255, 255, 255, 0.62);
     padding: 8px 10px;
   }
-  .mm-details-item .k{
-    font-size: .72rem;
+  .mm-details-item .k {
+    font-size: 0.72rem;
     color: var(--mm-muted);
     margin-bottom: 1px;
   }
-  .mm-details-item .v{
+  .mm-details-item .v {
     font-weight: 900;
-    font-size: .9rem;
-    color: rgba(0,0,0,.76);
+    font-size: 0.9rem;
+    color: rgba(0, 0, 0, 0.76);
   }
 
   /* ===== MOBILE CALM DOWN (dad-friendly) ===== */
-  @media (max-width: 767.98px){
+  @media (max-width: 767.98px) {
     /* remove the noisy background on mobile */
-    .mm-page-shop-stock::before{ display:none; }
+    .mm-page-shop-stock::before {
+      display: none;
+    }
 
     /* remove blur/glass on mobile (still keeps clean cards) */
-    .mm-neo-shell{
+    .mm-neo-shell {
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
-      box-shadow: 0 10px 18px rgba(0,0,0,.08);
-      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.08);
+      background: rgba(255, 255, 255, 0.92);
     }
 
     /* sticky search should not feel like second navbar */
-    .mm-stock-sticky .mm-neo-shell{
-      box-shadow: 0 8px 14px rgba(0,0,0,.07);
+    .mm-stock-sticky .mm-neo-shell {
+      box-shadow: 0 8px 14px rgba(0, 0, 0, 0.07);
     }
   }
 </style>
 
 <div class="container-fluid py-3 py-md-4 mm-page-shop-stock">
-
   {# ===== HEADER ===== #}
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+  <div
+    class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3"
+  >
     <div>
       <div class="d-flex align-items-center gap-2 mb-1">
         <span class="mm-neo-chip">🏪 <span>Shop</span></span>
@@ -227,15 +242,28 @@
       </div>
       <h1 class="h4 mb-1 mm-neo-title">Склад магазина</h1>
       <p class="small mm-neo-sub">
-        Остатки товаров в магазине: сколько штук, на какую сумму и что готово к продаже.
+        Остатки товаров в магазине: сколько штук, на какую сумму и что готово к
+        продаже.
       </p>
     </div>
 
     <div class="d-flex flex-wrap gap-2 mm-shop-header-actions">
-      <a href="{{ url_for('shop.export_shop') }}?report=daily&format=xlsx" class="btn btn-sm btn-outline-success" style="border-radius:999px;font-weight:800;">
-        <i class="bi bi-download me-1"></i> Скачать XLSX
+      <a
+        <button
+  type="button"
+  class="btn btn-sm btn-outline-success"
+  style="border-radius: 999px; font-weight: 800"
+  onclick="mmDownloadShopXlsx()"
+>
+  <i class="bi bi-download me-1"></i> Скачать XLSX
+</button>
       </a>
-      <a href="{{ url_for('products.list_products') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:999px;font-weight:800;">
+
+      <a
+        href="{{ url_for('products.list_products') }}"
+        class="btn btn-sm btn-outline-secondary"
+        style="border-radius: 999px; font-weight: 800"
+      >
         ← К готовой продукции
       </a>
     </div>
@@ -267,7 +295,7 @@
       <div class="mm-kpi-tile h-100">
         <div class="p-3 py-3 text-center">
           <div class="mm-kpi-label">Сумма (UZS)</div>
-          <div class="mm-kpi-value" style="font-size:1.2rem;">
+          <div class="mm-kpi-value" style="font-size: 1.2rem">
             {{ format_money(total_value_uzs or 0, 'UZS') }}
           </div>
           <div class="mm-kpi-foot">По розничной цене</div>
@@ -279,28 +307,50 @@
   {# ===== QUICK ACTIONS ===== #}
   <div class="mm-neo-shell mb-3">
     <div class="p-3">
-      <div class="mm-kpi-label text-center mb-2" style="letter-spacing:.14em;">Быстрые действия</div>
+      <div class="mm-kpi-label text-center mb-2" style="letter-spacing: 0.14em">
+        Быстрые действия
+      </div>
       <div class="d-flex flex-wrap justify-content-center gap-2">
-        <a href="{{ url_for('shop.transfer_to_shop') }}" class="btn btn-outline-primary btn-sm" style="border-radius:999px;font-weight:800;">
+        <a
+          href="{{ url_for('shop.transfer_to_shop') }}"
+          class="btn btn-outline-primary btn-sm"
+          style="border-radius: 999px; font-weight: 800"
+        >
           → Передать в магазин
         </a>
 
-        <a href="{{ url_for('sales.list_sales') }}" class="btn btn-outline-success btn-sm" style="border-radius:999px;font-weight:800;">
+        <a
+          href="{{ url_for('sales.list_sales') }}"
+          class="btn btn-outline-success btn-sm"
+          style="border-radius: 999px; font-weight: 800"
+        >
           💸 Продажи
         </a>
 
-        <a href="{{ url_for('cash.list_cash') }}" class="btn btn-outline-secondary btn-sm" style="border-radius:999px;font-weight:800;">
+        <a
+          href="{{ url_for('cash.list_cash') }}"
+          class="btn btn-outline-secondary btn-sm"
+          style="border-radius: 999px; font-weight: 800"
+        >
           💰 Касса
         </a>
 
         {% if current_user.is_manager or current_user.is_admin %}
-          <a href="{{ url_for('shop.movement_history') }}" class="btn btn-outline-dark btn-sm" style="border-radius:999px;font-weight:800;">
-            📜 История движений
-          </a>
+        <a
+          href="{{ url_for('shop.movement_history') }}"
+          class="btn btn-outline-dark btn-sm"
+          style="border-radius: 999px; font-weight: 800"
+        >
+          📜 История движений
+        </a>
 
-          <a href="{{ url_for('shop.factory_pending_orders') }}" class="btn btn-outline-danger btn-sm" style="border-radius:999px;font-weight:800;">
-            🏭 Заказы на производство
-          </a>
+        <a
+          href="{{ url_for('shop.factory_pending_orders') }}"
+          class="btn btn-outline-danger btn-sm"
+          style="border-radius: 999px; font-weight: 800"
+        >
+          🏭 Заказы на производство
+        </a>
         {% endif %}
       </div>
     </div>
@@ -315,11 +365,12 @@
             <div class="col-12">
               <label class="form-label small mb-1">Поиск</label>
               <input
-                  type="text"
-                  class="form-control mm-neo-input"
-                  name="q"
-                  placeholder="Название модели или категория"
-                  value="{{ q }}">
+                type="text"
+                class="form-control mm-neo-input"
+                name="q"
+                placeholder="Название модели или категория"
+                value="{{ q }}"
+              />
             </div>
             <div class="col-12 d-grid">
               <button type="submit" class="btn btn-primary mm-action-btn">
@@ -337,25 +388,41 @@
           <div class="col-12 col-md-8">
             <label class="form-label small mb-1">Поиск</label>
             <input
-                type="text"
-                class="form-control form-control-sm mm-neo-input"
-                name="q"
-                placeholder="Название модели или категория"
-                value="{{ q }}">
+              type="text"
+              class="form-control form-control-sm mm-neo-input"
+              name="q"
+              placeholder="Название модели или категория"
+              value="{{ q }}"
+            />
           </div>
 
           <div class="col-6 col-md-3">
             <label class="form-label small mb-1">Сортировка</label>
             <select class="form-select form-select-sm" name="sort">
-              <option value="name" {% if sort == 'name' %}selected{% endif %}>По названию</option>
-              <option value="category" {% if sort == 'category' %}selected{% endif %}>По категории</option>
-              <option value="qty_desc" {% if sort == 'qty_desc' %}selected{% endif %}>Количество: больше → меньше</option>
-              <option value="qty_asc" {% if sort == 'qty_asc' %}selected{% endif %}>Количество: меньше → больше</option>
+              <option value="name" {% if sort == "name" %}selected{% endif %}>
+                По названию
+              </option>
+
+              <option value="category" {% if sort == "category" %}selected{% endif %}>
+                По категории
+              </option>
+
+              <option value="qty_desc" {% if sort == "qty_desc" %}selected{% endif %}>
+                Количество: больше → меньше
+              </option>
+
+              <option value="qty_asc" {% if sort == "qty_asc" %}selected{% endif %}>
+                Количество: меньше → больше
+              </option>
             </select>
           </div>
 
           <div class="col-6 col-md-1 d-flex justify-content-end">
-            <button type="submit" class="btn btn-secondary btn-sm px-3 d-flex align-items-center gap-1" style="border-radius:999px;font-weight:800;">
+            <button
+              type="submit"
+              class="btn btn-secondary btn-sm px-3 d-flex align-items-center gap-1"
+              style="border-radius: 999px; font-weight: 800"
+            >
               <i class="bi bi-funnel"></i>
               <span>Фильтр</span>
             </button>
@@ -364,96 +431,102 @@
       </div>
     </div>
   </div>
-
   {# ===== MOBILE LIST (HYBRID CARDS) ===== #}
   <div class="d-md-none mb-3">
     {% if not items %}
-      <div class="mm-neo-shell">
-        <div class="p-3 small text-muted">В магазине нет товаров.</div>
-      </div>
-    {% endif %}
+    <div class="mm-neo-shell">
+      <div class="p-3 small text-muted">В магазине нет товаров.</div>
+    </div>
+    {% endif %} {% for item in items %} {% set p = item.product %} {% set qty =
+    item.quantity or 0 %} {% set total_val = item.total_value or 0 %} {% set low
+    = qty > 0 and qty < 5 %} {% set details_id = "mmDetailsShop_" ~ p.id %}
 
-    {% for item in items %}
-      {% set p = item.product %}
-      {% set qty = item.quantity or 0 %}
-      {% set total_val = item.total_value or 0 %}
-      {% set low = qty > 0 and qty < 5 %}
-      {% set details_id = "mmDetailsShop_" ~ p.id %}
+    <div
+      class="mm-stock-card mb-2 {% if qty == 0 %}mm-empty{% elif low %}mm-low{% endif %}"
+    >
+      <div class="p-3">
+        <div class="mm-stock-head">
+          <div style="min-width: 0">
+            <div class="mm-stock-name text-truncate">{{ p.name }}</div>
+            <div class="mm-stock-meta text-truncate">
+              {% if qty == 0 %}
+              <span class="badge bg-secondary">нет</span>
+              {% elif low %}
+              <span class="badge bg-danger">мало</span>
+              {% else %}
+              <span class="badge bg-success">в наличии</span>
+              {% endif %}
+              <span class="ms-2 text-muted"
+                >{{ p.category or 'Без категории' }}</span
+              >
+            </div>
+          </div>
 
-      <div class="mm-stock-card mb-2 {% if qty == 0 %}mm-empty{% elif low %}mm-low{% endif %}">
-        <div class="p-3">
+          <div class="mm-stock-qtybox">
+            <div class="small text-muted">в магазине</div>
+            <div class="mm-stock-qty">{{ qty }}</div>
+          </div>
+        </div>
 
-          <div class="mm-stock-head">
-            <div style="min-width:0">
-              <div class="mm-stock-name text-truncate">{{ p.name }}</div>
-              <div class="mm-stock-meta text-truncate">
-                {% if qty == 0 %}
-                  <span class="badge bg-secondary">нет</span>
-                {% elif low %}
-                  <span class="badge bg-danger">мало</span>
-                {% else %}
-                  <span class="badge bg-success">в наличии</span>
-                {% endif %}
-                <span class="ms-2 text-muted">{{ p.category or 'Без категории' }}</span>
+        <div class="mt-3 d-grid gap-2">
+          {% if qty > 0 %}
+          <a
+            href="{{ url_for('shop.sell_product', product_id=p.id) }}"
+            class="btn btn-outline-success mm-action-btn"
+          >
+            💸 Продать
+          </a>
+          {% else %}
+          <button
+            class="btn btn-outline-secondary mm-action-btn"
+            type="button"
+            disabled
+          >
+            Нет в наличии
+          </button>
+          {% endif %}
+
+          <button
+            class="btn btn-outline-primary mm-action-btn"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#{{ details_id }}"
+            aria-expanded="false"
+            aria-controls="{{ details_id }}"
+          >
+            ℹ️ Детали
+          </button>
+        </div>
+
+        <div id="{{ details_id }}" class="collapse">
+          <div class="mm-details-row">
+            <div class="mm-details-grid">
+              <div class="mm-details-item">
+                <div class="k">Код</div>
+                <div class="v">MM-{{ "%05d"|format(p.id) }}</div>
+              </div>
+
+              <div class="mm-details-item">
+                <div class="k">Валюта</div>
+                <div class="v">{{ p.currency }}</div>
+              </div>
+
+              <div class="mm-details-item">
+                <div class="k">Цена / 1</div>
+                <div class="v">
+                  {{ format_money(p.sell_price_per_item or 0, p.currency) }}
+                </div>
+              </div>
+
+              <div class="mm-details-item">
+                <div class="k">Сумма (UZS)</div>
+                <div class="v">{{ format_money(total_val, 'UZS') }}</div>
               </div>
             </div>
-
-            <div class="mm-stock-qtybox">
-              <div class="small text-muted">в магазине</div>
-              <div class="mm-stock-qty">{{ qty }}</div>
-            </div>
           </div>
-
-          <div class="mt-3 d-grid gap-2">
-            {% if qty > 0 %}
-              <a href="{{ url_for('shop.sell_product', product_id=p.id) }}"
-                 class="btn btn-outline-success mm-action-btn">
-                💸 Продать
-              </a>
-            {% else %}
-              <button class="btn btn-outline-secondary mm-action-btn" type="button" disabled>
-                Нет в наличии
-              </button>
-            {% endif %}
-
-            <button class="btn btn-outline-primary mm-action-btn"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#{{ details_id }}"
-                    aria-expanded="false"
-                    aria-controls="{{ details_id }}">
-              ℹ️ Детали
-            </button>
-          </div>
-
-          <div id="{{ details_id }}" class="collapse">
-            <div class="mm-details-row">
-              <div class="mm-details-grid">
-                <div class="mm-details-item">
-                  <div class="k">Код</div>
-                  <div class="v">MM-{{ "%05d"|format(p.id) }}</div>
-                </div>
-
-                <div class="mm-details-item">
-                  <div class="k">Валюта</div>
-                  <div class="v">{{ p.currency }}</div>
-                </div>
-
-                <div class="mm-details-item">
-                  <div class="k">Цена / 1</div>
-                  <div class="v">{{ format_money(p.sell_price_per_item or 0, p.currency) }}</div>
-                </div>
-
-                <div class="mm-details-item">
-                  <div class="k">Сумма (UZS)</div>
-                  <div class="v">{{ format_money(total_val, 'UZS') }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
+    </div>
     {% endfor %}
   </div>
 
@@ -475,25 +548,26 @@
           </thead>
 
           <tbody>
-          {% for item in items %}
-            {% set p = item.product %}
-            {% set qty = item.quantity or 0 %}
-            {% set total_val = item.total_value or 0 %}
-            {% set low = qty > 0 and qty < 5 %}
+            {% for item in items %} {% set p = item.product %} {% set qty =
+            item.quantity or 0 %} {% set total_val = item.total_value or 0 %} {%
+            set low = qty > 0 and qty < 5 %}
 
-            <tr class="{% if qty == 0 %}table-secondary{% elif low %}table-warning{% endif %}">
+            <tr
+              class="{% if qty == 0 %}table-secondary{% elif low %}table-warning{% endif %}"
+            >
               <td>
-                <span class="badge bg-secondary">MM-{{ "%05d"|format(p.id) }}</span>
+                <span class="badge bg-secondary"
+                  >MM-{{ "%05d"|format(p.id) }}</span
+                >
               </td>
 
               <td>
                 <div class="d-flex flex-column">
                   <div class="small fw-semibold">
-                    {{ p.name }}
-                    {% if qty == 0 %}
-                      <span class="badge bg-secondary ms-1">нет остатков</span>
+                    {{ p.name }} {% if qty == 0 %}
+                    <span class="badge bg-secondary ms-1">нет остатков</span>
                     {% elif low %}
-                      <span class="badge bg-danger ms-1">мало</span>
+                    <span class="badge bg-danger ms-1">мало</span>
                     {% endif %}
                   </div>
                   <span class="text-muted small d-md-none">
@@ -518,20 +592,24 @@
 
               <td class="text-center">
                 {% if qty > 0 %}
-                  <a href="{{ url_for('shop.sell_product', product_id=p.id) }}"
-                     class="btn btn-sm btn-outline-success px-2 py-1">
-                    💸 Продать
-                  </a>
+                <a
+                  href="{{ url_for('shop.sell_product', product_id=p.id) }}"
+                  class="btn btn-sm btn-outline-success px-2 py-1"
+                >
+                  💸 Продать
+                </a>
                 {% else %}
-                  <span class="text-muted small">—</span>
+                <span class="text-muted small">—</span>
                 {% endif %}
               </td>
             </tr>
-          {% else %}
+            {% else %}
             <tr>
-              <td colspan="7" class="text-center text-muted py-3">В магазине нет товаров.</td>
+              <td colspan="7" class="text-center text-muted py-3">
+                В магазине нет товаров.
+              </td>
             </tr>
-          {% endfor %}
+            {% endfor %}
           </tbody>
 
           {% if items %}
@@ -540,7 +618,9 @@
               <td colspan="3" class="text-end">Итого:</td>
               <td class="text-end">{{ total_qty }}</td>
               <td></td>
-              <td class="text-end">{{ format_money(total_value_uzs or 0, 'UZS') }}</td>
+              <td class="text-end">
+                {{ format_money(total_value_uzs or 0, 'UZS') }}
+              </td>
               <td></td>
             </tr>
           </tfoot>
@@ -549,6 +629,5 @@
       </div>
     </div>
   </div>
-
 </div>
 {% endblock %}

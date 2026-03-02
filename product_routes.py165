@@ -1,0 +1,28 @@
+[35mapp/routes/product_routes.py[m[36m:[m[32m109[m[36m:[mdef _[1;31mimport_[mfolder(factory_id: int) -> tuple[str, str]:
+[35mapp/routes/product_routes.py[m[36m:[m[32m368[m[36m:[mdef [1;31mimport_[mwizard():
+[35mapp/routes/product_routes.py[m[36m:[m[32m381[m[36m:[m    return render_template("products/[1;31mimport_[mwizard.html", batches=batches)
+[35mapp/routes/product_routes.py[m[36m:[m[32m387[m[36m:[mdef [1;31mimport_[mupload():
+[35mapp/routes/product_routes.py[m[36m:[m[32m396[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mwizard"))
+[35mapp/routes/product_routes.py[m[36m:[m[32m401[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mwizard"))
+[35mapp/routes/product_routes.py[m[36m:[m[32m409[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mbatch_detail", batch_id=existing.id))
+[35mapp/routes/product_routes.py[m[36m:[m[32m412[m[36m:[m    rel_dir, abs_dir = _[1;31mimport_[mfolder(factory_id)  # must return (rel_dir, abs_dir)
+[35mapp/routes/product_routes.py[m[36m:[m[32m442[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mwizard"))
+[35mapp/routes/product_routes.py[m[36m:[m[32m461[m[36m:[m    return render_template("products/[1;31mimport_[mchoose_sheets.html", batch=batch, sheet_info=sheet_info)
+[35mapp/routes/product_routes.py[m[36m:[m[32m466[m[36m:[mdef [1;31mimport_[mconfirm():
+[35mapp/routes/product_routes.py[m[36m:[m[32m470[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mwizard"))
+[35mapp/routes/product_routes.py[m[36m:[m[32m476[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mwizard"))
+[35mapp/routes/product_routes.py[m[36m:[m[32m481[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mbatch_detail", batch_id=batch.id))
+[35mapp/routes/product_routes.py[m[36m:[m[32m489[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mbatch_detail", batch_id=batch.id))
+[35mapp/routes/product_routes.py[m[36m:[m[32m496[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mwizard"))
+[35mapp/routes/product_routes.py[m[36m:[m[32m506[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mwizard"))
+[35mapp/routes/product_routes.py[m[36m:[m[32m526[m[36m:[m                s1 = _[1;31mimport_[msheet_realization(
+[35mapp/routes/product_routes.py[m[36m:[m[32m538[m[36m:[m                s2 = _[1;31mimport_[msheet_cash(raw=raw, factory_id=factory_id, sheet_name=sheet)
+[35mapp/routes/product_routes.py[m[36m:[m[32m555[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mbatch_detail", batch_id=batch.id))
+[35mapp/routes/product_routes.py[m[36m:[m[32m564[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mbatch_detail", batch_id=batch.id))
+[35mapp/routes/product_routes.py[m[36m:[m[32m570[m[36m:[mdef [1;31mimport_[mbatch_detail(batch_id: int):
+[35mapp/routes/product_routes.py[m[36m:[m[32m573[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mwizard"))
+[35mapp/routes/product_routes.py[m[36m:[m[32m591[m[36m:[m    return render_template("products/[1;31mimport_[mdetail.html", batch=batch, stats=stats, sheets=sheets)
+[35mapp/routes/product_routes.py[m[36m:[m[32m600[m[36m:[mdef [1;31mimport_[mbatch_download(batch_id):
+[35mapp/routes/product_routes.py[m[36m:[m[32m612[m[36m:[m        return redirect(url_for("products.[1;31mimport_[mwizard"))
+[35mapp/routes/product_routes.py[m[36m:[m[32m632[m[36m:[mdef _[1;31mimport_[msheet_realization(raw: pd.DataFrame, factory_id: int, sheet_name: str, do_sales: bool, update_prices: bool):
+[35mapp/routes/product_routes.py[m[36m:[m[32m746[m[36m:[mdef _[1;31mimport_[msheet_cash(raw: pd.DataFrame, factory_id: int, sheet_name: str):

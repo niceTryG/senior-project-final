@@ -56,10 +56,157 @@
     </div>
   </div>
 
-  {# пока cost_data пустой, но оставляем на будущее #}
+  {# ===== COST DATA DEFAULTS ===== #}
   {% set cost = cost_data or {} %}
   {% set cur = cost.get('currency', product.currency or 'UZS') %}
   {% set fabric_unit = cost.get('fabric_unit', 'kg') %}
+
+  {# ===== RECENT REAL BATCHES (mobile-collapsible) ===== #}
+  {% if recent_batches %}
+    {% set batch_collapse_id = "mmRecentBatches" %}
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-body py-2">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <div class="fw-semibold">🏭 Последние производства</div>
+            <div class="small text-muted">
+              Нажми “Использовать” чтобы автоматически заполнить ткань/расход/штук.
+            </div>
+          </div>
+
+          {# Mobile collapse toggle #}
+          <button class="btn btn-sm btn-outline-secondary d-md-none"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#{{ batch_collapse_id }}"
+                  aria-expanded="false"
+                  aria-controls="{{ batch_collapse_id }}">
+            Показать / скрыть
+          </button>
+        </div>
+
+        {# ===== DESKTOP TABLE (md+) always visible ===== #}
+        <div class="d-none d-md-block mt-2">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-nowrap">Дата</th>
+                  <th class="text-nowrap">Ткань</th>
+                  <th class="text-nowrap text-end">Произвели</th>
+                  <th class="text-nowrap text-end">Расход</th>
+                  <th class="text-nowrap text-end">Цена/ед.</th>
+                  <th class="text-nowrap text-end">Ткань/шт.</th>
+                  <th class="text-nowrap text-end"></th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for prod, cons, fab in recent_batches %}
+                {% set produced = prod.quantity or 0 %}
+                {% set used = cons.used_amount or 0 %}
+                {% set price = fab.price_per_unit or 0 %}
+                {% set unit = fab.unit or 'kg' %}
+                {% set fcur = fab.price_currency or 'UZS' %}
+                {% set fabric_per_piece = (price * used / produced) if (price and used and produced) else 0 %}
+
+                <tr>
+                  <td class="text-nowrap small">{{ prod.date }}</td>
+                  <td class="small">
+                    <div class="fw-semibold">{{ fab.name }}</div>
+                    <div class="text-muted small">{{ fab.color or '' }} · {{ unit }}</div>
+                  </td>
+                  <td class="text-end small fw-semibold">{{ produced }}</td>
+                  <td class="text-end small">{{ "%.3f"|format(used) }} {{ unit }}</td>
+                  <td class="text-end small">{{ "%.3f"|format(price) }} {{ fcur }}</td>
+                  <td class="text-end small fw-semibold">
+                    {% if fabric_per_piece > 0 %}
+                      {{ "%.4f"|format(fabric_per_piece) }} {{ fcur }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary mm-use-batch"
+                            data-price="{{ price }}"
+                            data-used="{{ used }}"
+                            data-pieces="{{ produced }}"
+                            data-currency="{{ fcur }}"
+                            data-unit="{{ unit }}">
+                      Использовать
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {# ===== MOBILE (xs-sm) collapsible cards ===== #}
+        <div class="collapse d-md-none mt-2" id="{{ batch_collapse_id }}">
+          {% for prod, cons, fab in recent_batches %}
+            {% set produced = prod.quantity or 0 %}
+            {% set used = cons.used_amount or 0 %}
+            {% set price = fab.price_per_unit or 0 %}
+            {% set unit = fab.unit or 'kg' %}
+            {% set fcur = fab.price_currency or 'UZS' %}
+            {% set fabric_per_piece = (price * used / produced) if (price and used and produced) else 0 %}
+
+            <div class="card shadow-sm border-0 mb-2">
+              <div class="card-body p-2 small">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <div class="fw-semibold">{{ fab.name }}</div>
+                    <div class="text-muted small">
+                      {{ prod.date }}{% if fab.color %} · {{ fab.color }}{% endif %} · {{ unit }}
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <div class="text-muted small">Ткань/шт.</div>
+                    <div class="fw-bold text-primary">
+                      {% if fabric_per_piece > 0 %}
+                        {{ "%.2f"|format(fabric_per_piece) }} {{ fcur }}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="my-2">
+
+                <div class="d-flex justify-content-between">
+                  <span class="text-muted">Произвели</span>
+                  <span class="fw-semibold">{{ produced }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span class="text-muted">Расход</span>
+                  <span>{{ "%.3f"|format(used) }} {{ unit }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                  <span class="text-muted">Цена/ед.</span>
+                  <span>{{ "%.3f"|format(price) }} {{ fcur }}</span>
+                </div>
+
+                <button type="button"
+                        class="btn btn-sm btn-success w-100 mm-use-batch"
+                        data-price="{{ price }}"
+                        data-used="{{ used }}"
+                        data-pieces="{{ produced }}"
+                        data-currency="{{ fcur }}"
+                        data-unit="{{ unit }}">
+                  Использовать
+                </button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+  {% endif %}
 
   <form method="post" id="cost-form">
     <div class="row g-3">
@@ -323,6 +470,41 @@ document.addEventListener('DOMContentLoaded', function () {
     if (sumPack)   sumPack.textContent   = packPerPiece   > 0 ? formatMoney(packPerPiece)   : '— ' + currency;
     if (sumTotal)  sumTotal.textContent  = totalCost      > 0 ? formatMoney(totalCost)      : '— ' + currency;
   }
+
+  // ✅ Auto-fill from a real production batch
+  document.querySelectorAll('.mm-use-batch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const price = btn.dataset.price || '';
+      const used = btn.dataset.used || '';
+      const pieces = btn.dataset.pieces || '';
+      const cur = btn.dataset.currency || '';
+
+      const priceEl = document.getElementById('fabric_price_per_unit');
+      const usedEl = document.getElementById('fabric_used_qty');
+      const piecesEl = document.getElementById('pieces_from_batch');
+
+      if (priceEl) priceEl.value = price;
+      if (usedEl) usedEl.value = used;
+      if (piecesEl) piecesEl.value = pieces;
+
+      const currencySelect = document.querySelector('select[name="fabric_price_currency"]');
+      if (currencySelect && cur) {
+        currencySelect.value = cur;
+      }
+
+      recalc();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // If collapse is open on mobile, auto-close after using
+      const collapseEl = document.getElementById("{{ batch_collapse_id if recent_batches else '' }}");
+      if (collapseEl && collapseEl.classList.contains('show')) {
+        try {
+          const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
+          bsCollapse.hide();
+        } catch (e) {}
+      }
+    });
+  });
 
   [
     fabricPriceInput, fabricUsedInput, piecesInput,

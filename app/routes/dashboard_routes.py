@@ -179,7 +179,7 @@ def _build_manager_dashboard(factory_id: int):
     }
 
 
-@main_bp.route("/")
+@main_bp.route("/dashboard")
 @login_required
 def dashboard():
     # ✅ SAFETY NET: shop users must never see manager dashboard

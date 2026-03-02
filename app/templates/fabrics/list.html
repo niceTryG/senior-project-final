@@ -1,23 +1,87 @@
 {% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+  /* Mobile-first page padding (avoid bottom nav overlap if you have it) */
+  .mm-page-fabrics { padding-bottom: 96px; }
+
+  /* Neo buttons */
+  .mm-btn {
+    border-radius: 14px !important;
+    font-weight: 800;
+  }
+  .mm-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: #fff;
+    font-size: .85rem;
+    font-weight: 800;
+    color: #111;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .mm-chip:hover { background: rgba(0,0,0,.03); }
+  .mm-chip-active {
+    background:#111;
+    color:#fff !important;
+    border-color:#111;
+  }
+  .mm-chip-row{
+    display:flex;
+    gap:.5rem;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:.25rem;
+  }
+  .mm-chip-row::-webkit-scrollbar{ height:0; }
+
+  /* Cards */
+  .mm-card { border-radius: 18px; }
+  .mm-soft { background: rgba(0,0,0,.03); }
+  .mm-kv {
+    display:flex;
+    justify-content:space-between;
+    gap:.75rem;
+    padding:.25rem 0;
+    border-bottom: 1px dashed rgba(0,0,0,.10);
+  }
+  .mm-kv:last-child{ border-bottom:0; }
+  .mm-k { color:#6c757d; font-size:.82rem; }
+  .mm-v { font-weight:800; text-align:right; }
+
+  /* Inputs */
+  .form-control, .form-select { border-radius: 12px; }
+  .input-group-text { border-radius: 12px 0 0 12px; }
+
+  /* Small helper */
+  .mm-muted { color:#6c757d; }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<!-- PAGE WRAPPER -->
 <div class="mm-page-fabrics container-fluid py-2 py-md-3">
 
   <!-- HEADER -->
-  <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
     <div>
       <h1 class="mb-0 h4">{{ t('fabrics_title') }}</h1>
-      <div class="small text-muted">
-        Управление тканями и списаниями
-      </div>
+      <div class="small text-muted">Управление тканями и списаниями</div>
     </div>
-    {% if usd_uzs_rate %}
-      <div class="text-muted small text-end">
-        <div>Курс ЦБ РУз</div>
-        <div>1 USD = {{ usd_uzs_rate | round(2) }} UZS</div>
-      </div>
-    {% endif %}
+
+    <div class="text-end">
+      {% if usd_uzs_rate %}
+        <div class="text-muted small">
+          <div>Курс ЦБ РУз</div>
+          <div class="fw-semibold">1 USD = {{ usd_uzs_rate | round(2) }} UZS</div>
+        </div>
+      {% endif %}
+    </div>
   </div>
 
   {% if any_low_stock %}
@@ -26,14 +90,13 @@
     </div>
   {% endif %}
 
-  <!-- SEARCH / FILTERS / EXPORT -->
-  <div class="card shadow-sm mb-3 border-0">
-    <div class="card-body py-2">
-      <form method="get" class="d-flex flex-column gap-2">
+  <!-- TOP ACTION BAR (mobile-first) -->
+  <div class="card shadow-sm border-0 mb-3 mm-card">
+    <div class="card-body p-2 p-md-3">
 
-        <!-- Search + actions row -->
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <div class="flex-grow-1" style="min-width: 180px;">
+      <div class="d-flex gap-2 align-items-center">
+        <div class="flex-grow-1">
+          <form method="get">
             <div class="input-group input-group-sm">
               <span class="input-group-text">🔍</span>
               <input
@@ -43,69 +106,86 @@
                 placeholder="{{ t('search_placeholder') }}"
                 value="{{ q }}"
               >
+              <button class="btn btn-outline-secondary mm-btn" type="submit">OK</button>
             </div>
+
+            {# Keep current filters on submit (important) #}
+            <input type="hidden" name="sort" value="{{ sort }}">
+            <input type="hidden" name="category" value="{{ selected_category }}">
+            {% if not is_latest_view %}
+              <input type="hidden" name="all" value="1">
+            {% endif %}
+          </form>
+        </div>
+
+        <button
+          class="btn btn-outline-secondary btn-sm mm-btn"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#advancedFilters"
+          aria-expanded="false"
+          aria-controls="advancedFilters">
+          ⚙️
+        </button>
+
+        <a href="{{ url_for('fabrics.export') }}" class="btn btn-outline-success btn-sm mm-btn">
+          CSV
+        </a>
+
+        <button
+          class="btn btn-primary btn-sm mm-btn"
+          type="button"
+          data-bs-toggle="modal"
+          data-bs-target="#addFabricModal">
+          ➕
+        </button>
+      </div>
+
+      <!-- Advanced filters -->
+      <div class="collapse mt-2" id="advancedFilters">
+        <form method="get" class="row g-2 align-items-end">
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1">{{ t('sort_label') }}</label>
+            <select class="form-select form-select-sm" name="sort">
+              <option value="name" {% if sort == 'name' %}selected{% endif %}>{{ t('sort_name') }}</option>
+              <option value="qty" {% if sort == 'qty' %}selected{% endif %}>{{ t('sort_quantity') }}</option>
+              <option value="price" {% if sort == 'price' %}selected{% endif %}>{{ t('sort_price') }}</option>
+            </select>
           </div>
 
-          <div class="d-flex gap-2 flex-shrink-0">
-            <button
-              class="btn btn-outline-secondary btn-sm"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#advancedFilters"
-              aria-expanded="false"
-              aria-controls="advancedFilters">
-              Фильтры
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1">Категория</label>
+            <select class="form-select form-select-sm" name="category">
+              <option value="">Все</option>
+              {% for cat in categories %}
+                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1">Режим</label>
+            <select class="form-select form-select-sm" name="all">
+              <option value="" {% if is_latest_view %}selected{% endif %}>Последние 5</option>
+              <option value="1" {% if not is_latest_view %}selected{% endif %}>Все ткани</option>
+            </select>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <button type="submit" class="btn btn-secondary btn-sm w-100 mm-btn">
+              Применить
             </button>
-
-            <a href="{{ url_for('fabrics.export') }}" class="btn btn-outline-success btn-sm">
-              CSV
-            </a>
           </div>
-        </div>
+        </form>
 
-        <!-- Advanced filters -->
-        <div class="collapse" id="advancedFilters">
-          <div class="row g-2 mt-2">
-            <div class="col-6 col-md-3">
-              <label class="form-label mb-1">{{ t('sort_label') }}</label>
-              <select class="form-select form-select-sm" name="sort">
-                <option value="name" {% if sort == 'name' %}selected{% endif %}>{{ t('sort_name') }}</option>
-                <option value="qty" {% if sort == 'qty' %}selected{% endif %}>{{ t('sort_quantity') }}</option>
-                <option value="price" {% if sort == 'price' %}selected{% endif %}>{{ t('sort_price') }}</option>
-              </select>
-            </div>
-
-            <div class="col-6 col-md-3">
-              <label class="form-label mb-1">Категория</label>
-              <select class="form-select form-select-sm" name="category">
-                <option value="">Все</option>
-                {% for cat in categories %}
-                  <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="col-12 col-md-2 d-flex align-items-end">
-              <button type="submit" class="btn btn-secondary btn-sm w-100">
-                Применить
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Active filters chips -->
         {% if q or selected_category or sort != 'name' %}
-          <div class="small text-muted d-flex flex-wrap gap-1">
+          <div class="mt-2 small text-muted d-flex flex-wrap gap-1">
             <span class="me-1">Фильтры:</span>
             {% if q %}
-              <span class="badge bg-light text-dark border">
-                Поиск: “{{ q }}”
-              </span>
+              <span class="badge bg-light text-dark border">Поиск: “{{ q }}”</span>
             {% endif %}
             {% if selected_category %}
-              <span class="badge bg-light text-dark border">
-                Категория: {{ selected_category }}
-              </span>
+              <span class="badge bg-light text-dark border">Категория: {{ selected_category }}</span>
             {% endif %}
             {% if sort != 'name' %}
               <span class="badge bg-light text-dark border">
@@ -115,68 +195,49 @@
             {% endif %}
           </div>
         {% endif %}
-      </form>
+      </div>
+
     </div>
   </div>
 
-  <!-- TITLE + ADD BUTTON -->
-  <div class="d-flex justify-content-between align-items-center mt-1 mb-1">
-    <h3 class="mb-0 h5">{{ t('current_fabrics') }}</h3>
-
-    {# Anchor so /fabrics#add-fabric scrolls here #}
-    <div id="add-fabric" class="d-inline-block"></div>
-
-    <button
-      class="btn btn-sm btn-primary d-flex align-items-center gap-1"
-      type="button"
-      data-bs-toggle="modal"
-      data-bs-target="#addFabricModal">
-      <i class="bi bi-plus-circle"></i>
-      <span>{{ t('add_fabric') }}</span>
-    </button>
+  <!-- VIEW MODE TOGGLE (chips) -->
+  <div class="mm-chip-row mb-2">
+    <a href="{{ url_for('fabrics.list') }}"
+       class="mm-chip {% if is_latest_view %}mm-chip-active{% endif %}">
+      🕒 Последние 5
+    </a>
+    <a href="{{ url_for('fabrics.list', all=1) }}"
+       class="mm-chip {% if not is_latest_view %}mm-chip-active{% endif %}">
+      📦 Все ткани
+    </a>
+    <a href="#add-fabric" class="mm-chip" onclick="document.getElementById('addFabricModalBtn')?.click()">
+      ➕ Добавить
+    </a>
   </div>
 
-  <!-- VIEW MODE TOGGLE -->
-  <div class="mb-2">
-    <div class="btn-group btn-group-sm" role="group">
-      <a href="{{ url_for('fabrics.list') }}"
-         class="btn btn-outline-secondary {% if is_latest_view %}active{% endif %}">
-        Последние 5
-      </a>
-      <a href="{{ url_for('fabrics.list', all=1) }}"
-         class="btn btn-outline-secondary {% if not is_latest_view %}active{% endif %}">
-        Все ткани
-      </a>
-    </div>
-  </div>
-
-  <!-- VIEW SUMMARY (3 CARDS INLINE) -->
+  <!-- SUMMARY (3 mini cards) -->
   <div class="row row-cols-3 g-2 mb-2">
     <div class="col">
-      <div class="card border-0 bg-light-subtle shadow-sm h-100">
+      <div class="card border-0 shadow-sm mm-card mm-soft h-100">
         <div class="card-body py-2">
           <div class="small text-muted">Позиции</div>
-          <div class="fw-bold">
-            {{ view_stats.count }}
-          </div>
+          <div class="fw-bold">{{ view_stats.count }}</div>
         </div>
       </div>
     </div>
     <div class="col">
-      <div class="card border-0 bg-light-subtle shadow-sm h-100">
+      <div class="card border-0 shadow-sm mm-card mm-soft h-100">
         <div class="card-body py-2">
           <div class="small text-muted">Общий объём</div>
-          <div class="fw-bold">
-            {{ "%.2f"|format(view_stats.qty) }}
-          </div>
+          <div class="fw-bold">{{ "%.2f"|format(view_stats.qty) }}</div>
           <div class="small text-muted">сумма quantity</div>
         </div>
       </div>
     </div>
     <div class="col">
-      <div class="card border-0 bg-light-subtle shadow-sm h-100">
+      <div class="card border-0 shadow-sm mm-card mm-soft h-100">
         <div class="card-body py-2">
-          <div class="small text-muted">Стоимость (по списку)</div>
+          <div class="small text-muted">Стоимость</div>
           <div class="fw-bold">
             {% if view_stats.value_usd %}
               {{ "%.2f"|format(view_stats.value_usd) }} USD
@@ -196,95 +257,167 @@
     </div>
   </div>
 
-  {# ================= MOBILE CARDS (FOR PARENTS) ================= #}
+  <!-- TITLE + ADD BUTTON -->
+  <div class="d-flex justify-content-between align-items-center mt-1 mb-1">
+    <h3 class="mb-0 h5">{{ t('current_fabrics') }}</h3>
+    <div id="add-fabric"></div>
+
+    <button id="addFabricModalBtn"
+      class="btn btn-sm btn-primary mm-btn d-flex align-items-center gap-1"
+      type="button"
+      data-bs-toggle="modal"
+      data-bs-target="#addFabricModal">
+      <i class="bi bi-plus-circle"></i>
+      <span>{{ t('add_fabric') }}</span>
+    </button>
+  </div>
+
+  {# ================= MOBILE CARDS ================= #}
   <div class="d-md-none mb-3">
     {% for fab in fabrics %}
       {% set qty = fab.quantity or 0 %}
-      <div class="card shadow-sm border-0 mb-2 mm-fabric-card
-                  {% if qty < LOW_STOCK_THRESHOLD %}mm-fabric-card-low{% endif %}">
-        <div class="card-body">
-          <!-- Top row: name + stock level -->
-          <div class="d-flex justify-content-between align-items-start mb-1">
-            <div>
+      {% set low = qty < LOW_STOCK_THRESHOLD %}
+      {% set mid = (not low) and (qty <= LOW_STOCK_THRESHOLD * 2) %}
+      {% set details_id = "fab-details-" ~ fab.id %}
+      {% set cut_id = "fab-cut-" ~ fab.id %}
+
+      <div class="card shadow-sm border-0 mb-2 mm-card">
+        <div class="card-body p-2">
+
+          <!-- TOP -->
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div style="min-width:0;">
+              <div class="small text-muted">{{ fab.public_id or ("ID-" ~ fab.id) }}</div>
+              <div class="fw-semibold text-truncate">{{ fab.name }}</div>
               <div class="small text-muted">
-                {{ fab.public_id or ("ID-" ~ fab.id) }}
-              </div>
-              <div class="fw-semibold mm-fabric-card-title">
-                {{ fab.name }}
-              </div>
-              <div class="mm-fabric-card-meta small text-muted">
                 {% if fab.color %}{{ fab.color }}{% endif %}
                 {% if fab.category %} · {{ fab.category }}{% endif %}
               </div>
-            </div>
-            <div class="text-end">
-              <div class="small text-muted">
-                {{ t('table_quantity') }}
+
+              <div class="mt-1">
+                {% if low %}
+                  <span class="badge bg-danger">мало</span>
+                {% elif mid %}
+                  <span class="badge bg-warning text-dark">средне</span>
+                {% endif %}
+                {% if not fab.price_per_unit %}
+                  <span class="badge bg-warning text-dark">нет цены</span>
+                {% endif %}
               </div>
-              <div class="fw-bold mm-fabric-card-qty">
+            </div>
+
+            <div class="text-end">
+              <div class="small text-muted">{{ t('table_quantity') }}</div>
+              <div class="fw-bold">
                 {{ "%.2f"|format(qty) }} {{ fab.unit }}
               </div>
-
-              {% if qty < LOW_STOCK_THRESHOLD %}
-                <span class="badge bg-danger mt-1">{{ t('low_stock_badge') }}</span>
-              {% elif qty <= LOW_STOCK_THRESHOLD * 2 %}
-                <span class="badge bg-warning text-dark mt-1">средне</span>
-              {% endif %}
             </div>
           </div>
 
-          <!-- Price row -->
-          <div class="d-flex justify-content-between align-items-center small text-muted mb-1">
-            <div>
-              {% if fab.price_per_unit %}
-                {{ t('table_price_per_unit') }}:
-                <span class="fw-semibold">
+          <!-- QUICK KV -->
+          <div class="mt-2">
+            <div class="mm-kv">
+              <div class="mm-k">Цена/ед.</div>
+              <div class="mm-v">
+                {% if fab.price_per_unit %}
                   {{ format_money(fab.price_per_unit, fab.price_currency or 'USD') }}
-                </span>
-              {% else %}
-                <span class="badge bg-warning text-dark">нет цены</span>
-              {% endif %}
+                {% else %}
+                  —
+                {% endif %}
+              </div>
             </div>
-            <div>
-              {% if fab.price_per_unit %}
-                <span class="badge bg-light text-dark border">{{ fab.price_currency }}</span>
-              {% endif %}
+            <div class="mm-kv">
+              <div class="mm-k">Валюта</div>
+              <div class="mm-v">
+                {% if fab.price_per_unit %}
+                  <span class="badge bg-light text-dark border">{{ fab.price_currency }}</span>
+                {% else %}
+                  <span class="badge bg-light text-dark border">—</span>
+                {% endif %}
+              </div>
             </div>
           </div>
 
-          <!-- Created at -->
-          {% if fab.created_at %}
-            <div class="small text-muted mb-2">
-              {{ fab.created_at.strftime("%d.%m %H:%M") }}
-            </div>
-          {% endif %}
-
-          <!-- CUT FORM (simple, always visible) -->
-          <form method="post"
-                action="{{ url_for('fabrics.cut', fabric_id=fab.id) }}"
-                class="mm-fabric-card-cut d-flex flex-column gap-1 mt-1">
-            <label class="form-label small mb-1">
-              {{ t('last_cuts_used_amount') }}
-            </label>
-            <div class="d-flex gap-1">
-              <input type="number"
-                     name="used_amount"
-                     step="0.01"
-                     min="0"
-                     class="form-control form-control-sm text-end"
-                     placeholder="{{ t('cut_placeholder') }}"
-                     required>
-              <button type="submit" class="btn btn-sm btn-outline-primary">
-                {{ t('cut_button') }}
+          <!-- ACTIONS -->
+          <div class="row g-2 mt-2">
+            <div class="col-6">
+              <button class="btn btn-outline-primary btn-sm w-100 mm-btn"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#{{ cut_id }}"
+                      aria-expanded="false"
+                      aria-controls="{{ cut_id }}">
+                ✂️ Списать
               </button>
             </div>
-          </form>
+            <div class="col-6">
+              <button class="btn btn-outline-secondary btn-sm w-100 mm-btn"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#{{ details_id }}"
+                      aria-expanded="false"
+                      aria-controls="{{ details_id }}">
+                ℹ️ Подробнее
+              </button>
+            </div>
+          </div>
+
+          <!-- CUT COLLAPSE -->
+          <div class="collapse mt-2" id="{{ cut_id }}">
+            <div class="border rounded-3 p-2">
+              <form method="post"
+                    action="{{ url_for('fabrics.cut', fabric_id=fab.id) }}"
+                    class="d-flex flex-column gap-2">
+                <div>
+                  <label class="form-label small mb-1">
+                    {{ t('last_cuts_used_amount') }}
+                  </label>
+                  <div class="d-flex gap-2">
+                    <input type="number"
+                           name="used_amount"
+                           step="0.01"
+                           min="0"
+                           class="form-control form-control-sm text-end"
+                           placeholder="{{ t('cut_placeholder') }}"
+                           required>
+                    <button type="submit" class="btn btn-primary btn-sm mm-btn">
+                      ✅ {{ t('cut_button') }}
+                    </button>
+                  </div>
+                </div>
+                <div class="small text-muted">
+                  Остаток: <span class="fw-semibold">{{ "%.2f"|format(qty) }} {{ fab.unit }}</span>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- DETAILS COLLAPSE -->
+          <div class="collapse mt-2" id="{{ details_id }}">
+            <div class="border rounded-3 p-2 small">
+              <div class="mm-kv">
+                <div class="mm-k">Категория</div>
+                <div class="mm-v">{{ fab.category or '—' }}</div>
+              </div>
+              <div class="mm-kv">
+                <div class="mm-k">Добавлено</div>
+                <div class="mm-v">
+                  {% if fab.created_at %}{{ fab.created_at.strftime("%d.%m %H:%M") }}{% else %}—{% endif %}
+                </div>
+              </div>
+              <div class="mm-kv">
+                <div class="mm-k">ID</div>
+                <div class="mm-v">#{{ fab.id }}</div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     {% endfor %}
   </div>
 
-  {# ================= DESKTOP TABLE (POWER USER VIEW) ================= #}
+  {# ================= DESKTOP TABLE (keep yours) ================= #}
   <div class="card shadow-sm border-0 mb-3 d-none d-md-block">
     <div class="card-body p-0">
       <div class="table-responsive mb-0">
@@ -307,18 +440,10 @@
           {% for fab in fabrics %}
             {% set qty = fab.quantity or 0 %}
             <tr class="{% if qty < LOW_STOCK_THRESHOLD %}table-warning{% endif %}">
-
-              <!-- Code + internal ID -->
               <td class="text-muted small">
-                <div class="fw-semibold">
-                  {{ fab.public_id or ("ID-" ~ fab.id) }}
-                </div>
-                <div class="small text-muted">
-                  #{{ fab.id }}
-                </div>
+                <div class="fw-semibold">{{ fab.public_id or ("ID-" ~ fab.id) }}</div>
+                <div class="small text-muted">#{{ fab.id }}</div>
               </td>
-
-              <!-- Name + mobile meta -->
               <td>
                 <div class="fw-semibold">
                   {{ fab.name }}
@@ -326,38 +451,15 @@
                     <span class="badge bg-danger ms-1">{{ t('low_stock_badge') }}</span>
                   {% endif %}
                 </div>
-
                 <div class="small text-muted d-sm-none">
                   {{ fab.color or "" }}
                   {% if fab.category %} · {{ fab.category }}{% endif %}
                 </div>
-
-                <div class="small text-muted d-sm-none">
-                  {{ "%.2f"|format(qty) }} {{ fab.unit }},
-                  {% if fab.price_per_unit %}
-                    {{ format_money(fab.price_per_unit, fab.price_currency or 'USD') }}
-                    {{ fab.price_currency }}
-                  {% endif %}
-                </div>
-
-                <div class="small text-muted d-sm-none">
-                  {% if fab.created_at %}
-                    {{ fab.created_at.strftime("%d.%m %H:%M") }}
-                  {% endif %}
-                </div>
               </td>
-
-              <!-- Created at (desktop) -->
               <td class="small text-muted d-none d-lg-table-cell">
-                {% if fab.created_at %}
-                  {{ fab.created_at.strftime("%Y-%m-%d %H:%M") }}
-                {% endif %}
+                {% if fab.created_at %}{{ fab.created_at.strftime("%Y-%m-%d %H:%M") }}{% endif %}
               </td>
-
-              <!-- Color -->
               <td class="d-none d-sm-table-cell">{{ fab.color or "" }}</td>
-
-              <!-- Quantity + stock state -->
               <td class="text-nowrap">
                 {{ "%.2f"|format(qty) }} {{ fab.unit }}
                 {% if qty < LOW_STOCK_THRESHOLD %}
@@ -366,17 +468,9 @@
                   <span class="badge bg-warning ms-1">средне</span>
                 {% endif %}
               </td>
-
-              <!-- Price per unit -->
               <td class="d-none d-md-table-cell text-nowrap">
-                {% if fab.price_per_unit %}
-                  {{ format_money(fab.price_per_unit, fab.price_currency or 'USD') }}
-                {% else %}
-                  —
-                {% endif %}
+                {% if fab.price_per_unit %}{{ format_money(fab.price_per_unit, fab.price_currency or 'USD') }}{% else %}—{% endif %}
               </td>
-
-              <!-- Currency -->
               <td class="d-none d-sm-table-cell">
                 {% if fab.price_per_unit %}
                   <span class="badge bg-light text-dark border">{{ fab.price_currency }}</span>
@@ -384,24 +478,16 @@
                   <span class="badge bg-warning text-dark">нет цены</span>
                 {% endif %}
               </td>
-
-              <!-- Category -->
               <td class="d-none d-md-table-cell">
                 {% if fab.category %}
-                  <span class="badge bg-light text-dark border rounded-pill">
-                    {{ fab.category }}
-                  </span>
+                  <span class="badge bg-light text-dark border rounded-pill">{{ fab.category }}</span>
                 {% endif %}
               </td>
-
-              <!-- QR -->
               <td class="text-center d-none d-md-table-cell">
                 <img src="{{ url_for('fabrics.qrcode_image', fabric_id=fab.id) }}"
                      alt="QR"
                      style="width:40px; height:auto;">
               </td>
-
-              <!-- Cut action -->
               <td class="text-center">
                 <form method="post"
                       action="{{ url_for('fabrics.cut', fabric_id=fab.id) }}"
@@ -409,13 +495,12 @@
                   <input type="number" name="used_amount" step="0.01" min="0"
                          class="form-control form-control-sm"
                          placeholder="{{ t('cut_placeholder') }}" required
-                         style="max-width: 100px;">
-                  <button type="submit" class="btn btn-sm btn-outline-primary">
+                         style="max-width: 110px;">
+                  <button type="submit" class="btn btn-sm btn-outline-primary mm-btn">
                     {{ t('cut_button') }}
                   </button>
                 </form>
               </td>
-
             </tr>
           {% endfor %}
           </tbody>
@@ -427,11 +512,14 @@
   <!-- LAST CUTS -->
   <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
     <h3 class="mb-0 h5">{{ t('last_cuts') }}</h3>
-    <a href="{{ url_for('fabrics.cuts_history') }}" class="btn btn-outline-secondary btn-sm">
-      История списаний
-    </a>
-    <a href="{{ url_for('fabrics.usage_summary') }}" class="btn btn-outline-secondary btn-sm">Отчёт по использованию</a>
-
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('fabrics.cuts_history') }}" class="btn btn-outline-secondary btn-sm mm-btn">
+        История
+      </a>
+      <a href="{{ url_for('fabrics.usage_summary') }}" class="btn btn-outline-secondary btn-sm mm-btn">
+        Отчёт
+      </a>
+    </div>
   </div>
 
   <div class="table-responsive">
@@ -440,7 +528,7 @@
         <tr>
           <th>{{ t('last_cuts_date') }}</th>
           <th>{{ t('last_cuts_fabric') }}</th>
-          <th>{{ t('last_cuts_used_amount') }}</th>
+          <th class="text-end">{{ t('last_cuts_used_amount') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -448,7 +536,7 @@
         <tr>
           <td>{{ c.cut_date }}</td>
           <td>{{ c.fabric.name }}</td>
-          <td>{{ "%.2f"|format(c.used_amount) }} {{ c.fabric.unit }}</td>
+          <td class="text-end">{{ "%.2f"|format(c.used_amount) }} {{ c.fabric.unit }}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -475,9 +563,7 @@
             </a>
           </li>
         {% else %}
-          <li class="page-item disabled">
-            <span class="page-link">…</span>
-          </li>
+          <li class="page-item disabled"><span class="page-link">…</span></li>
         {% endif %}
       {% endfor %}
 
@@ -491,9 +577,9 @@
   </nav>
   {% endif %}
 
-</div>  {# end .mm-page-fabrics #}
+</div>
 
-<!-- ADD FABRIC MODAL -->
+<!-- ADD FABRIC MODAL (your existing modal unchanged) -->
 <div class="modal fade" id="addFabricModal" tabindex="-1" aria-labelledby="addFabricLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -566,11 +652,11 @@
 
         <div class="modal-footer py-2">
           <button type="button"
-                  class="btn btn-outline-secondary btn-sm"
+                  class="btn btn-outline-secondary btn-sm mm-btn"
                   data-bs-dismiss="modal">
             Отмена
           </button>
-          <button type="submit" class="btn btn-success btn-sm">
+          <button type="submit" class="btn btn-success btn-sm mm-btn">
             {{ t('add_button') }}
           </button>
         </div>

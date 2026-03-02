@@ -1,71 +1,11 @@
 {% extends "base.html" %}
-{% block content %}
 
-{# =========================================================
-  Dad-friendly Factory Dashboard (Manager) — PRODUCT-FIRST
-  Focus:
-   ✅ Transfer to shop
-   ✅ Production today
-   ✅ Shop low stock
-   ✅ Yesterday transfer total
-   ✅ Stock values (factory/shop/total)
-   ✅ Cash (optional)
-  Removed:
-   ❌ Fabrics
-   ❌ Shop orders
-========================================================= #}
-
-<style>
-  /* ===== NEO Dashboard helpers ===== */
-  .mm-dash { padding-top: 10px; padding-bottom: 96px; }
-  .mm-card { border-radius: 18px; }
-  .mm-pill { border-radius: 999px; font-weight: 800; }
-  .mm-btn-neo { border-radius: 16px; font-weight: 800; padding: .85rem 1rem; }
-  .mm-btn-neo-sm { border-radius: 14px; font-weight: 800; padding: .60rem .75rem; }
-  .mm-muted { color: #6c757d; }
-  .mm-mini { font-size: .85rem; }
-  .mm-kpi-title { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: #6c757d; }
-  .mm-kpi-value { font-weight: 900; font-size: 1.15rem; }
-  .mm-total { font-weight: 900; font-size: 1.45rem; }
-
-  .mm-chip {
-    display:inline-flex; align-items:center; justify-content:center;
-    border-radius: 999px;
-    padding: .45rem .75rem;
-    border: 1px solid rgba(0,0,0,.10);
-    background: #fff;
-    font-size: .85rem;
-    font-weight: 800;
-    color: #111;
-    text-decoration: none;
-    width: 100%;
-  }
-
-  .mm-rowline {
-    display:flex; justify-content:space-between; gap:.75rem;
-    padding:.35rem 0; border-bottom: 1px dashed rgba(0,0,0,.10);
-  }
-  .mm-rowline:last-child { border-bottom: 0; }
-
-  .mm-topitem {
-    border: 1px solid rgba(0,0,0,.08);
-    border-radius: 14px;
-    padding: .45rem .65rem;
-    background:#fff;
-  }
-
-  .mm-progress { height: 9px; border-radius: 999px; overflow:hidden; }
-  .mm-progress .progress-bar { border-radius: 999px; }
-</style>
-
-{% set total_stock_uzs = (factory_uzs|default(0)) + (shop_uzs|default(0)) %}
-{% set factory_pct = ((factory_uzs|default(0)) * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
-{% set shop_pct = ((shop_uzs|default(0)) * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
-
-<div class="container-fluid mm-dash dad-padding">
-
-  {# ===== HEADER ===== #}
-  {% set uname = current_user.username|lower %}
+{# =========================
+   TOP BANNER (optional)
+   If you prefer greeting inside content only, delete this block.
+   ========================= #}
+{% block top_banner %}
+  {% set uname = (current_user.username or '')|lower %}
   {% if 'muzaffar' in uname %}
     {% set display_name = "Muzaffar" %}
   {% elif 'rano' in uname or "ra'no" in uname %}
@@ -78,18 +18,80 @@
     {% set display_name = current_user.username %}
   {% endif %}
 
-  <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-    <div style="min-width:0;">
-      <div class="h5 fw-semibold mb-0 text-truncate" style="min-width:0;">
-        السلام عليكم, {{ display_name }} 👋
+  <div class="mm-top-banner">
+    <div class="container-fluid">
+      <div class="container-lg">
+        <div class="d-flex justify-content-between align-items-center gap-2">
+          <div class="mm-top-banner-greet">
+            السلام عليكم, {{ display_name }} 👋
+          </div>
+          <span class="badge bg-primary mm-pill" style="white-space:nowrap;">
+            {{ current_date|default('') }}
+          </span>
+        </div>
       </div>
-      <div class="mm-mini mm-muted">Главная панель (товары и склад)</div>
     </div>
-
-    <span class="badge bg-primary mm-pill" style="white-space:nowrap;">
-      {{ current_date|default('') }}
-    </span>
   </div>
+{% endblock %}
+
+
+{% block content %}
+
+{# =========================================================
+  Dad-friendly Factory Dashboard (Manager) — PRODUCT-FIRST
+========================================================= #}
+
+<style>
+  .mm-dash { padding-top: 10px; padding-bottom: 96px; }
+  .mm-card { border-radius: 18px; }
+  .mm-pill { border-radius: 999px; font-weight: 800; }
+  .mm-btn-neo { border-radius: 16px; font-weight: 800; padding: .85rem 1rem; }
+  .mm-btn-neo-sm { border-radius: 14px; font-weight: 800; padding: .60rem .75rem; }
+  .mm-muted { color: #6c757d; }
+  .mm-mini { font-size: .85rem; }
+  .mm-kpi-title { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: #6c757d; }
+  .mm-kpi-value { font-weight: 900; font-size: 1.15rem; }
+
+  .mm-chip{
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius: 999px;
+    padding: .45rem .75rem;
+    border: 1px solid rgba(0,0,0,.10);
+    background: #fff;
+    font-size: .85rem;
+    font-weight: 800;
+    color: #111;
+    text-decoration: none;
+    width: 100%;
+  }
+
+  .mm-rowline{
+    display:flex; justify-content:space-between; gap:.75rem;
+    padding:.35rem 0; border-bottom: 1px dashed rgba(0,0,0,.10);
+  }
+  .mm-rowline:last-child { border-bottom: 0; }
+
+  .mm-topitem{
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 14px;
+    padding: .45rem .65rem;
+    background:#fff;
+  }
+
+  .mm-progress { height: 9px; border-radius: 999px; overflow:hidden; }
+  .mm-progress .progress-bar { border-radius: 999px; }
+</style>
+
+{% set factory_uzs_v = factory_uzs|default(0) %}
+{% set shop_uzs_v = shop_uzs|default(0) %}
+{% set total_stock_uzs = factory_uzs_v + shop_uzs_v %}
+{% set factory_pct = (factory_uzs_v * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
+{% set shop_pct = (shop_uzs_v * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
+
+<div class="container-fluid mm-dash dad-padding">
+
+  {# ===== HEADER (small subtitle only; greeting is in top_banner) ===== #}
+  
 
   {# ===== QUICK ACTIONS ===== #}
   <div class="card shadow-sm border-0 mb-3 mm-card">
@@ -98,22 +100,19 @@
 
       <div class="row g-2">
         <div class="col-12 col-md-4">
-          <a href="{{ url_for('factory.produce_today') }}"
-             class="btn btn-primary w-100 mm-btn-neo">
+          <a href="{{ url_for('factory.produce_today') }}" class="btn btn-primary w-100 mm-btn-neo">
             🏭 Производство сегодня
           </a>
         </div>
 
         <div class="col-12 col-md-4">
-          <a href="{{ url_for('shop.transfer_to_shop') }}"
-             class="btn btn-warning w-100 mm-btn-neo">
+          <a href="{{ url_for('shop.transfer_to_shop') }}" class="btn btn-warning w-100 mm-btn-neo">
             🚚 Передать в магазин
           </a>
         </div>
 
         <div class="col-12 col-md-4">
-          <a href="{{ url_for('products.list_products') }}"
-             class="btn btn-outline-primary w-100 mm-btn-neo">
+          <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-primary w-100 mm-btn-neo">
             ➕ Товары (добавить / цены)
           </a>
         </div>
@@ -130,32 +129,26 @@
   {# ===== TOP KPI CARDS ===== #}
   <div class="row g-2 g-md-3 mb-3">
 
-    {# Yesterday transfer total #}
     <div class="col-6 col-md-3">
       <a href="{{ url_for('shop.movement_history') }}" class="text-decoration-none text-reset">
         <div class="card shadow-sm border-0 h-100 mm-card">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <span class="mm-kpi-title">Вчера передано</span>
-              <i class="bi bi-truck text-muted"></i>
             </div>
-            <div class="mm-kpi-value">
-              {{ yesterday_transfer_total|default(0) }} шт
-            </div>
+            <div class="mm-kpi-value">{{ yesterday_transfer_total|default(0) }} шт</div>
             <div class="mm-mini mm-muted">фабрика → магазин</div>
           </div>
         </div>
       </a>
     </div>
 
-    {# Shop low stock #}
     <div class="col-6 col-md-3">
       <a href="{{ url_for('shop.list_shop') }}" class="text-decoration-none text-reset">
         <div class="card shadow-sm border-0 h-100 mm-card">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <span class="mm-kpi-title">Магазин: мало</span>
-              <i class="bi bi-exclamation-triangle text-muted"></i>
             </div>
             <div class="mm-kpi-value {% if (shop_low_stock_count|default(0))|int > 0 %}text-danger{% else %}text-success{% endif %}">
               {{ shop_low_stock_count|default(0) }}
@@ -166,38 +159,28 @@
       </a>
     </div>
 
-    {# Production today #}
     <div class="col-6 col-md-3">
       <a href="{{ url_for('factory.produce_today') }}" class="text-decoration-none text-reset">
         <div class="card shadow-sm border-0 h-100 mm-card">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <span class="mm-kpi-title">Сегодня произведено</span>
-              <i class="bi bi-activity text-muted"></i>
             </div>
-            <div class="mm-kpi-value">
-              {{ produced_today_total|default(0) }} шт
-            </div>
-            <div class="mm-mini mm-muted">
-              моделей: {{ produced_today_models|default(0) }}
-            </div>
+            <div class="mm-kpi-value">{{ produced_today_total|default(0) }} шт</div>
+            <div class="mm-mini mm-muted">моделей: {{ produced_today_models|default(0) }}</div>
           </div>
         </div>
       </a>
     </div>
 
-    {# Total stock value #}
     <div class="col-6 col-md-3">
       <a href="{{ url_for('products.factory_stock') }}" class="text-decoration-none text-reset">
         <div class="card shadow-sm border-0 h-100 mm-card">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <span class="mm-kpi-title">Товары всего</span>
-              <i class="bi bi-box-seam text-muted"></i>
             </div>
-            <div class="mm-kpi-value">
-              {{ format_money(total_uzs|default(0), 'UZS') }}
-            </div>
+            <div class="mm-kpi-value">{{ format_money(total_uzs|default(0), 'UZS') }}</div>
             <div class="mm-mini mm-muted">фабрика + магазин</div>
           </div>
         </div>
@@ -211,60 +194,48 @@
     <div class="card-body py-2">
       <div class="d-flex justify-content-between align-items-center mb-1">
         <div class="fw-semibold">📦 Остатки по складам</div>
-        <a href="{{ url_for('products.factory_stock') }}" class="mm-mini text-decoration-none">
-          открыть отчёт →
-        </a>
+        <a href="{{ url_for('products.factory_stock') }}" class="mm-mini text-decoration-none">открыть отчёт →</a>
       </div>
 
       <div class="mt-2">
         <div class="mm-rowline">
           <div class="mm-mini mm-muted">Фабрика</div>
-          <div class="fw-bold">{{ format_money(factory_uzs|default(0), 'UZS') }}</div>
+          <div class="fw-bold">{{ format_money(factory_uzs_v, 'UZS') }}</div>
         </div>
         <div class="mm-rowline">
           <div class="mm-mini mm-muted">Магазин</div>
-          <div class="fw-bold">{{ format_money(shop_uzs|default(0), 'UZS') }}</div>
+          <div class="fw-bold">{{ format_money(shop_uzs_v, 'UZS') }}</div>
         </div>
       </div>
 
       {% if total_stock_uzs %}
         <div class="progress mt-2 mm-progress">
-          <div class="progress-bar" role="progressbar"
-               style="width: {{ factory_pct }}%;"
+          <div class="progress-bar" role="progressbar" style="width: {{ factory_pct }}%;"
                aria-valuenow="{{ factory_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-          <div class="progress-bar bg-warning" role="progressbar"
-               style="width: {{ shop_pct }}%;"
+          <div class="progress-bar bg-warning" role="progressbar" style="width: {{ shop_pct }}%;"
                aria-valuenow="{{ shop_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
-        <div class="mm-mini mm-muted mt-1">
-          Фабрика: {{ factory_pct }}% • Магазин: {{ shop_pct }}%
-        </div>
+        <div class="mm-mini mm-muted mt-1">Фабрика: {{ factory_pct }}% • Магазин: {{ shop_pct }}%</div>
       {% else %}
         <div class="mm-mini mm-muted mt-2">Пока нет данных по складу.</div>
       {% endif %}
     </div>
   </div>
 
-  {# ===== SHOP LOW STOCK LIST (top items) ===== #}
+  {# ===== SHOP LOW STOCK LIST ===== #}
   <div class="card shadow-sm border-0 mb-3 mm-card">
     <div class="card-body py-2">
       <div class="d-flex justify-content-between align-items-center mb-1">
         <div class="fw-semibold">⚠️ Магазин: товары заканчиваются</div>
-        <a href="{{ url_for('shop.list_shop') }}" class="mm-mini text-decoration-none">
-          открыть склад →
-        </a>
+        <a href="{{ url_for('shop.list_shop') }}" class="mm-mini text-decoration-none">открыть склад →</a>
       </div>
 
       {% if shop_low_stock_items and shop_low_stock_items|length %}
         <div class="d-grid gap-2 mt-2">
           {% for it in shop_low_stock_items %}
             <div class="d-flex justify-content-between align-items-center mm-topitem">
-              <div class="text-truncate" style="min-width:0;">
-                {{ it.name }}
-              </div>
-              <div class="fw-bold {% if (it.qty|int) <= 0 %}text-danger{% endif %}">
-                {{ it.qty }} шт
-              </div>
+              <div class="text-truncate" style="min-width:0;">{{ it.name }}</div>
+              <div class="fw-bold {% if (it.qty|int) <= 0 %}text-danger{% endif %}">{{ it.qty }} шт</div>
             </div>
           {% endfor %}
         </div>
@@ -275,14 +246,12 @@
           </a>
         </div>
       {% else %}
-        <div class="mm-mini mm-muted mt-2">
-          Отлично 👍 В магазине нет товаров с остатком меньше 5.
-        </div>
+        <div class="mm-mini mm-muted mt-2">Отлично 👍 В магазине нет товаров с остатком меньше 5.</div>
       {% endif %}
     </div>
   </div>
 
-  {# ===== CASH (optional) ===== #}
+  {# ===== CASH ===== #}
   <div class="card shadow-sm border-0 mb-3 mm-card">
     <div class="card-body py-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
       <div>
@@ -302,5 +271,4 @@
   </div>
 
 </div>
-
 {% endblock %}

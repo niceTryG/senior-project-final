@@ -1,7 +1,10 @@
 # ==== app/routes/product_routes.py (REPLACE FULL FILE) ====
 from flask import render_template
+from ..services.fabric_service import FabricService
+from flask import jsonify
 
-from ..models import Product
+fabric_service = FabricService()
+from ..models import Product, Production, FabricConsumption
 
 import os
 import json
@@ -9,7 +12,7 @@ import hashlib
 from io import BytesIO
 from datetime import datetime, date
 from flask import session
-from ..models import Factory
+from ..models import Factory, Fabric
 from ..extensions import db
 import pandas as pd
 from werkzeug.utils import secure_filename
@@ -48,6 +51,7 @@ service = ProductService()
 #   🔧 SMALL HELPERS
 # ==========================
 
+
 def _to_int(value, default: int = 0) -> int:
     try:
         return int(value)
@@ -69,6 +73,7 @@ def _to_float(value, default=None):
 
 
 from flask import session
+
 
 def _ensure_factory_bound():
     # Superadmin: может работать без привязки, тогда используем session выбор
@@ -97,7 +102,10 @@ def _ensure_factory_bound():
             db.session.commit()
             return only_id
 
-        flash("У пользователя не привязан цех (factory). Обратитесь к администратору.", "danger")
+        flash(
+            "У пользователя не привязан цех (factory). Обратитесь к администратору.",
+            "danger",
+        )
         return None
 
     return current_user.factory_id
@@ -116,6 +124,7 @@ def _import_folder(factory_id: int) -> tuple[str, str]:
 
     os.makedirs(abs_dir, exist_ok=True)
     return rel_dir, abs_dir
+
 
 def _norm(s) -> str:
     return str(s).strip().lower()
@@ -140,9 +149,12 @@ def _make_hash(*parts) -> str:
 
 
 def _already_imported(factory_id: int, kind: str, row_hash: str) -> bool:
-    return db.session.query(ExcelImportRow.id).filter_by(
-        factory_id=factory_id, kind=kind, row_hash=row_hash
-    ).first() is not None
+    return (
+        db.session.query(ExcelImportRow.id)
+        .filter_by(factory_id=factory_id, kind=kind, row_hash=row_hash)
+        .first()
+        is not None
+    )
 
 
 def _mark_imported(factory_id: int, kind: str, row_hash: str) -> None:
@@ -161,6 +173,7 @@ def _ensure_shop_stock(product: Product) -> ShopStock:
 # ==========================
 #   📦 PRODUCT LIST
 # ==========================
+
 @products_bp.route("/")
 @login_required
 def list_products():
@@ -172,20 +185,25 @@ def list_products():
     if factory_id is None:
         return redirect(url_for("auth.login"))
 
-    query = (
-        db.session.query(
-            Product,
-            func.coalesce(ShopStock.quantity, 0).label("qty_shop"),
-        )
-        .outerjoin(ShopStock, ShopStock.product_id == Product.id)
+    fabrics = (
+        Fabric.query.filter(Fabric.factory_id == factory_id)
+        .order_by(Fabric.name.asc())
+        .all()
     )
+
+    query = db.session.query(
+        Product,
+        func.coalesce(ShopStock.quantity, 0).label("qty_shop"),
+    ).outerjoin(ShopStock, ShopStock.product_id == Product.id)
 
     if not getattr(current_user, "is_superadmin", False):
         query = query.filter(Product.factory_id == factory_id)
 
     if q:
         like = f"%{q}%"
-        query = query.filter(or_(Product.name.ilike(like), Product.category.ilike(like)))
+        query = query.filter(
+            or_(Product.name.ilike(like), Product.category.ilike(like))
+        )
 
     if selected_category:
         query = query.filter(Product.category == selected_category)
@@ -193,7 +211,9 @@ def list_products():
     if sort == "name":
         query = query.order_by(Product.name.asc())
     elif sort == "qty_total":
-        query = query.order_by((Product.quantity + func.coalesce(ShopStock.quantity, 0)).desc())
+        query = query.order_by(
+            (Product.quantity + func.coalesce(ShopStock.quantity, 0)).desc()
+        )
     elif sort == "qty_factory":
         query = query.order_by(Product.quantity.desc())
     elif sort == "qty_shop":
@@ -206,17 +226,27 @@ def list_products():
         qty_factory = product.quantity or 0
         qty_shop_val = qty_shop or 0
         qty_total = qty_factory + qty_shop_val
-        rows.append({"p": product, "qty_factory": qty_factory, "qty_shop": qty_shop_val, "qty_total": qty_total})
+        rows.append(
+            {
+                "p": product,
+                "qty_factory": qty_factory,
+                "qty_shop": qty_shop_val,
+                "qty_total": qty_total,
+            }
+        )
 
     cat_query = db.session.query(Product.category).distinct()
     if not getattr(current_user, "is_superadmin", False):
         cat_query = cat_query.filter(Product.factory_id == factory_id)
 
-    categories = [c[0] for c in cat_query.order_by(Product.category.asc()).all() if c[0]]
+    categories = [
+        c[0] for c in cat_query.order_by(Product.category.asc()).all() if c[0]
+    ]
 
     return render_template(
         "products/list.html",
         products=rows,
+        fabrics=fabrics,
         q=q,
         sort=sort,
         categories=categories,
@@ -242,8 +272,12 @@ def add_product():
     if quantity < 0:
         quantity = 0
 
-    cost_price_per_item = _to_float(request.form.get("cost_price_per_item"), default=None)
-    sell_price_per_item = _to_float(request.form.get("sell_price_per_item"), default=None)
+    cost_price_per_item = _to_float(
+        request.form.get("cost_price_per_item"), default=None
+    )
+    sell_price_per_item = _to_float(
+        request.form.get("sell_price_per_item"), default=None
+    )
     currency = (request.form.get("currency", "UZS") or "UZS").strip()
 
     if not name:
@@ -256,7 +290,9 @@ def add_product():
         ext = file.filename.rsplit(".", 1)[-1].lower()
         if ext in {"png", "jpg", "jpeg", "webp"}:
             filename = secure_filename(file.filename)
-            upload_dir = current_app.config.get("UPLOAD_FOLDER", os.path.join("app", "static", "uploads", "products"))
+            upload_dir = current_app.config.get(
+                "UPLOAD_FOLDER", os.path.join("app", "static", "uploads", "products")
+            )
             os.makedirs(upload_dir, exist_ok=True)
             save_path = os.path.join(upload_dir, filename)
             file.save(save_path)
@@ -295,7 +331,9 @@ def add_stock(product_id: int):
         flash("Количество должно быть больше нуля.", "warning")
         return redirect(url_for("products.list_products"))
 
-    service.increase_stock(factory_id=factory_id, product_id=product_id, quantity=quantity)
+    service.increase_stock(
+        factory_id=factory_id, product_id=product_id, quantity=quantity
+    )
     flash("Остаток на фабрике увеличен.", "success")
     return redirect(url_for("products.list_products"))
 
@@ -316,7 +354,9 @@ def sell(product_id: int):
         flash("Количество должно быть больше нуля.", "warning")
         return redirect(url_for("products.list_products"))
 
-    sell_price_override = _to_float(request.form.get("sell_price_per_item"), default=None)
+    sell_price_override = _to_float(
+        request.form.get("sell_price_per_item"), default=None
+    )
     customer_name = request.form.get("customer_name", "").strip() or None
     customer_phone = request.form.get("customer_phone", "").strip() or None
 
@@ -353,7 +393,9 @@ def to_shop(product_id: int):
         return redirect(url_for("products.list_products"))
 
     try:
-        service.transfer_to_shop(factory_id=factory_id, product_id=product_id, quantity=quantity)
+        service.transfer_to_shop(
+            factory_id=factory_id, product_id=product_id, quantity=quantity
+        )
         flash("Товар передан в магазин.", "success")
     except ValueError as e:
         flash(str(e), "danger")
@@ -365,6 +407,7 @@ def to_shop(product_id: int):
 #   📥 EXCEL IMPORT WIZARD
 # =========================================================
 
+
 @products_bp.route("/import", methods=["GET"])
 @login_required
 @roles_required("admin", "manager")
@@ -375,8 +418,7 @@ def import_wizard():
         return redirect(url_for("products.list_products"))
 
     batches = (
-        ExcelImportBatch.query
-        .filter_by(factory_id=factory_id)
+        ExcelImportBatch.query.filter_by(factory_id=factory_id)
         .order_by(ExcelImportBatch.uploaded_at.desc())
         .limit(20)
         .all()
@@ -414,7 +456,9 @@ def import_upload():
     filename = secure_filename(file.filename)
     file_hash = _sha256_bytes(raw_bytes)
 
-    existing = ExcelImportBatch.query.filter_by(factory_id=factory_id, file_hash=file_hash).first()
+    existing = ExcelImportBatch.query.filter_by(
+        factory_id=factory_id, file_hash=file_hash
+    ).first()
     if existing:
         flash("Этот Excel уже был загружен раньше. Открыл существующий импорт.", "info")
         return redirect(url_for("products.import_batch_detail", batch_id=existing.id))
@@ -422,9 +466,9 @@ def import_upload():
     batch = ExcelImportBatch(
         factory_id=factory_id,
         filename=filename,
-        stored_path=None,          # ✅ don't rely on disk
+        stored_path=None,  # ✅ don't rely on disk
         file_hash=file_hash,
-        file_bytes=raw_bytes,      # ✅ store bytes in DB
+        file_bytes=raw_bytes,  # ✅ store bytes in DB
         file_size=len(raw_bytes),
         uploaded_by_id=current_user.id,
         status="uploaded",
@@ -453,16 +497,30 @@ def import_upload():
 
         tags = []
         if not preview.empty:
-            text = " ".join(_norm(v) for v in preview.fillna("").astype(str).values.flatten().tolist())
-            if ("модел" in text or "модель" in text) and ("сони" in text or "soni" in text) and ("нархи" in text or "цена" in text):
+            text = " ".join(
+                _norm(v)
+                for v in preview.fillna("").astype(str).values.flatten().tolist()
+            )
+            if (
+                ("модел" in text or "модель" in text)
+                and ("сони" in text or "soni" in text)
+                and ("нархи" in text or "цена" in text)
+            ):
                 tags.append("реализация")
-            if "касса" in text and ("сумма" in text) and (("число" in text) or ("дата" in text)):
+            if (
+                "касса" in text
+                and ("сумма" in text)
+                and (("число" in text) or ("дата" in text))
+            ):
                 tags.append("касса")
 
         sheet_info.append({"name": sheet, "tags": tags})
 
-    return render_template("products/import_choose_sheets.html", batch=batch, sheet_info=sheet_info)
- 
+    return render_template(
+        "products/import_choose_sheets.html", batch=batch, sheet_info=sheet_info
+    )
+
+
 @products_bp.route("/import/confirm", methods=["POST"])
 @login_required
 @roles_required("admin", "manager")
@@ -548,7 +606,9 @@ def import_confirm():
                 stats["warnings"].extend(s1.get("warnings", []) or [])
 
             if do_cash:
-                s2 = _import_sheet_cash(raw=raw, factory_id=factory_id, sheet_name=sheet)
+                s2 = _import_sheet_cash(
+                    raw=raw, factory_id=factory_id, sheet_name=sheet
+                )
                 stats["cash_added"] += int(s2.get("cash_added", 0) or 0)
                 stats["warnings"].extend(s2.get("warnings", []) or [])
 
@@ -577,6 +637,7 @@ def import_confirm():
         flash(f"Excel import failed: {e}", "danger")
         return redirect(url_for("products.import_batch_detail", batch_id=batch.id))
 
+
 @products_bp.route("/imports/<int:batch_id>")
 @login_required
 @roles_required("admin", "manager")
@@ -585,7 +646,9 @@ def import_batch_detail(batch_id: int):
     if factory_id is None:
         return redirect(url_for("products.import_wizard"))
 
-    batch = ExcelImportBatch.query.filter_by(id=batch_id, factory_id=factory_id).first_or_404()
+    batch = ExcelImportBatch.query.filter_by(
+        id=batch_id, factory_id=factory_id
+    ).first_or_404()
 
     stats = {}
     if batch.stats_json:
@@ -601,11 +664,14 @@ def import_batch_detail(batch_id: int):
         except Exception:
             sheets = []
 
-    return render_template("products/import_detail.html", batch=batch, stats=stats, sheets=sheets)
+    return render_template(
+        "products/import_detail.html", batch=batch, stats=stats, sheets=sheets
+    )
 
 
 from flask import abort
 import os
+
 
 @products_bp.route("/imports/<int:batch_id>/download")
 @login_required
@@ -615,7 +681,9 @@ def import_batch_download(batch_id):
     if factory_id is None:
         return redirect(url_for("products.import_wizard"))
 
-    batch = ExcelImportBatch.query.filter_by(id=batch_id, factory_id=factory_id).first_or_404()
+    batch = ExcelImportBatch.query.filter_by(
+        id=batch_id, factory_id=factory_id
+    ).first_or_404()
 
     raw_bytes = batch.file_bytes if getattr(batch, "file_bytes", None) else None
 
@@ -647,9 +715,11 @@ def import_batch_download(batch_id):
         mimetype=mimetype,
     )
 
+
 # =========================================================
 #   INTERNAL: sheet parsers
 # =========================================================
+
 
 def _locate_cols(row_strs, keys_map):
     out = {}
@@ -663,7 +733,13 @@ def _locate_cols(row_strs, keys_map):
     return out
 
 
-def _import_sheet_realization(raw: pd.DataFrame, factory_id: int, sheet_name: str, do_sales: bool, update_prices: bool):
+def _import_sheet_realization(
+    raw: pd.DataFrame,
+    factory_id: int,
+    sheet_name: str,
+    do_sales: bool,
+    update_prices: bool,
+):
     res = {"prices_updated": 0, "products_created": 0, "sales_added": 0, "warnings": []}
 
     header_row = None
@@ -688,14 +764,22 @@ def _import_sheet_realization(raw: pd.DataFrame, factory_id: int, sheet_name: st
     if header_row is None:
         return res
 
-    cols = _locate_cols(header_strs, {
-        "date": ["число", "дата"],
-        "model": ["модел", "модель"],
-        "qty": ["сони", "soni"],
-        "price": ["нархи", "цена"],
-        "sum": ["сумма"],
-    })
-    if cols["date"] is None or cols["model"] is None or cols["qty"] is None or cols["price"] is None:
+    cols = _locate_cols(
+        header_strs,
+        {
+            "date": ["число", "дата"],
+            "model": ["модел", "модель"],
+            "qty": ["сони", "soni"],
+            "price": ["нархи", "цена"],
+            "sum": ["сумма"],
+        },
+    )
+    if (
+        cols["date"] is None
+        or cols["model"] is None
+        or cols["qty"] is None
+        or cols["price"] is None
+    ):
         res["warnings"].append(f"{sheet_name}: не смог определить колонки Реализация")
         return res
 
@@ -709,7 +793,9 @@ def _import_sheet_realization(raw: pd.DataFrame, factory_id: int, sheet_name: st
             continue
 
         qty = _clean_int(raw.iat[r, cols["qty"]]) if cols["qty"] < raw.shape[1] else 0
-        price = _clean_int(raw.iat[r, cols["price"]]) if cols["price"] < raw.shape[1] else 0
+        price = (
+            _clean_int(raw.iat[r, cols["price"]]) if cols["price"] < raw.shape[1] else 0
+        )
 
         # IMPORTANT:
         # If you want "models + price" even with empty qty -> allow price-only rows.
@@ -739,7 +825,9 @@ def _import_sheet_realization(raw: pd.DataFrame, factory_id: int, sheet_name: st
                 res["prices_updated"] += 1
 
         if do_sales and qty > 0 and price > 0:
-            sale_hash = _make_hash("sale", sheet_name, sold_date.isoformat(), model, qty, price)
+            sale_hash = _make_hash(
+                "sale", sheet_name, sold_date.isoformat(), model, qty, price
+            )
             if _already_imported(factory_id, "sale", sale_hash):
                 continue
 
@@ -793,10 +881,12 @@ def _import_sheet_cash(raw: pd.DataFrame, factory_id: int, sheet_name: str):
             continue
 
         has_date = ("число" in blob) or ("дата" in blob)
-        has_sum = ("сумма" in blob)
+        has_sum = "сумма" in blob
 
         if has_date and has_sum:
-            prev = " ".join([_norm(v) for v in raw.iloc[r - 1].tolist()]) if r > 0 else ""
+            prev = (
+                " ".join([_norm(v) for v in raw.iloc[r - 1].tolist()]) if r > 0 else ""
+            )
             if ("касса" in prev) or ("касса" in blob):
                 cash_header_row = r
                 header_strs = row_strs
@@ -816,7 +906,9 @@ def _import_sheet_cash(raw: pd.DataFrame, factory_id: int, sheet_name: str):
         raw_date = raw.iat[r, cols["date"]] if cols["date"] < raw.shape[1] else None
         raw_sum = raw.iat[r, cols["sum"]] if cols["sum"] < raw.shape[1] else None
 
-        if (raw_date is None or str(raw_date).strip() == "") and (raw_sum is None or str(raw_sum).strip() == ""):
+        if (raw_date is None or str(raw_date).strip() == "") and (
+            raw_sum is None or str(raw_sum).strip() == ""
+        ):
             continue
 
         dt = pd.to_datetime(raw_date, errors="coerce", dayfirst=True)
@@ -849,6 +941,8 @@ def _import_sheet_cash(raw: pd.DataFrame, factory_id: int, sheet_name: str):
         res["cash_added"] += 1
 
     return res
+
+
 # ==========================
 #   💸 COST CALCULATION
 # ==========================
@@ -856,13 +950,41 @@ def _import_sheet_cash(raw: pd.DataFrame, factory_id: int, sheet_name: str):
 @login_required
 def product_cost(product_id: int):
     """
-    Страница расчёта себестоимости для модели.
+    Страница расчёта себестоимости для модели + подсказки из реальных производств.
     """
+    factory_id = getattr(current_user, "factory_id", None)
+    if not factory_id:
+        flash("Сначала привяжите аккаунт к фабрике.", "warning")
+        return redirect(url_for("products.list_products"))
+
     product = Product.query.get_or_404(product_id)
 
+    # strict factory isolation
+    if product.factory_id != factory_id:
+        flash("Нет доступа к этой модели.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    # ---- Load recent real batches (Production + FabricConsumption + Fabric) ----
+    recent_batches = (
+        db.session.query(Production, FabricConsumption, Fabric)
+        .join(FabricConsumption, FabricConsumption.production_id == Production.id)
+        .join(Fabric, Fabric.id == FabricConsumption.fabric_id)
+        .filter(Production.product_id == product_id)
+        .filter(FabricConsumption.factory_id == factory_id)
+        .order_by(Production.date.desc(), Production.id.desc())
+        .limit(12)
+        .all()
+    )
+
+    # Default display helpers (unit/currency)
     cost_data = {}
+    if recent_batches:
+        _prod0, _cons0, _fab0 = recent_batches[0]
+        cost_data["fabric_unit"] = _fab0.unit or "kg"
+        cost_data["fabric_price_currency"] = _fab0.price_currency or "UZS"
 
     if request.method == "POST":
+
         def f(name: str, default: float = 0.0) -> float:
             raw = (request.form.get(name, "") or "").strip().replace(",", ".")
             if raw == "":
@@ -894,10 +1016,77 @@ def product_cost(product_id: int):
 
         flash("Себестоимость сохранена.", "success")
         return redirect(url_for("products.list_products"))
+    print("COST recent_batches:", len(recent_batches))
 
-    return render_template("products/product_cost.html", product=product, cost_data=cost_data)
+    return render_template(
+        "products/product_cost.html",
+        product=product,
+        cost_data=cost_data,
+        recent_batches=recent_batches,   # ✅ NEW
+    )
 @products_bp.route("/factory-stock", endpoint="factory_stock")
 @login_required
 def factory_stock():
     # temporary redirect so dashboard doesn't crash
+    return redirect(url_for("products.list_products"))
+
+
+@products_bp.route("/<int:product_id>/toggle_publish", methods=["POST"])
+@login_required
+@roles_required("admin", "manager")
+def toggle_publish(product_id: int):
+    factory_id = _ensure_factory_bound()
+    if factory_id is None and not getattr(current_user, "is_superadmin", False):
+        return redirect(url_for("products.list_products"))
+
+    product = Product.query.get_or_404(product_id)
+
+    # Security: managers/admin should only touch their factory products
+    if not getattr(current_user, "is_superadmin", False):
+        if product.factory_id != factory_id:
+            flash("Нет доступа к этой модели.", "danger")
+            return redirect(url_for("products.list_products"))
+
+    product.is_published = not bool(getattr(product, "is_published", False))
+    db.session.commit()
+
+    flash("Статус публикации обновлён.", "success")
+    return redirect(url_for("products.list_products"))
+
+
+@products_bp.route("/<int:product_id>/produce", methods=["POST"])
+@login_required
+@roles_required("admin", "manager")
+def produce_with_fabric(product_id: int):
+    factory_id = _ensure_factory_bound()
+    if factory_id is None:
+        return redirect(url_for("products.list_products"))
+
+    quantity = _to_int(request.form.get("quantity", "0"), default=0)
+    fabric_id = _to_int(request.form.get("fabric_id", "0"), default=0)
+    used_amount = _to_float(request.form.get("used_amount"), default=0.0)
+    note = request.form.get("note", "").strip() or None
+
+    if quantity <= 0:
+        flash("Количество должно быть больше 0.", "warning")
+        return redirect(url_for("products.list_products"))
+
+    if used_amount <= 0:
+        flash("Расход ткани должен быть больше 0.", "warning")
+        return redirect(url_for("products.list_products"))
+
+    success, message = fabric_service.produce_with_fabric(
+        factory_id=factory_id,
+        product_id=product_id,
+        quantity=quantity,
+        fabric_id=fabric_id,
+        used_amount=used_amount,
+        note=note,
+    )
+
+    if not success:
+        flash(message, "danger")
+    else:
+        flash("Производство зарегистрировано + ткань списана.", "success")
+
     return redirect(url_for("products.list_products"))
