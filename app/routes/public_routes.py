@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, abort, current_app, request
 from urllib.parse import quote
-from app import db 
+
 from sqlalchemy import or_
 from ..models import Product
-from sqlalchemy.exc import SQLAlchemyError, ProgrammingError
+
 public_bp = Blueprint("public", __name__)
 
 
@@ -51,29 +51,31 @@ def _tg_order_link(product=None, qty=1):
 # ======================
 #   🏠 HOME
 # ======================
-from sqlalchemy.exc import ProgrammingError
-from app import db  # make sure this import exists
+from sqlalchemy import text
+from app import db
 
 @public_bp.route("/")
 def home():
-    try:
-        products = (
-            Product.query
-            .filter_by(is_published=True)
-            .order_by(Product.id.desc())
-            .limit(6)
-            .all()
-        )
-    except (ProgrammingError, SQLAlchemyError):
-        # DB schema mismatch (column missing), rollback and fallback
-        db.session.rollback()
-        products = (
-            Product.query
-            .order_by(Product.id.desc())
-            .limit(6)
-            .all()
-        )
+    # check if column exists (Postgres)
+    col_exists = db.session.execute(
+        text("""
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name='products' AND column_name='is_published'
+            LIMIT 1
+        """)
+    ).first() is not None
 
+    if not col_exists:
+        return render_template("public/home.html", products=[])
+
+    products = (
+        Product.query
+        .filter_by(is_published=True)
+        .order_by(Product.id.desc())
+        .limit(6)
+        .all()
+    )
     return render_template("public/home.html", products=products)
 
 # ======================
