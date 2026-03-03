@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, abort, current_app, request
 from urllib.parse import quote
-
+from app import db 
 from sqlalchemy import or_
 from ..models import Product
 
@@ -51,15 +51,30 @@ def _tg_order_link(product=None, qty=1):
 # ======================
 #   🏠 HOME
 # ======================
+from sqlalchemy.exc import ProgrammingError
+from app import db  # make sure this import exists
+
 @public_bp.route("/")
 def home():
-    products = (
-        Product.query
-        .filter_by(is_published=True)
-        .order_by(Product.id.desc())
-        .limit(6)
-        .all()
-    )
+    try:
+        products = (
+            Product.query
+            .filter_by(is_published=True)
+            .order_by(Product.id.desc())
+            .limit(6)
+            .all()
+        )
+    except ProgrammingError:
+        # If column does not exist in production DB yet
+        db.session.rollback()
+        products = (
+            Product.query
+            .order_by(Product.id.desc())
+            .limit(6)
+            .all()
+        )
+
+    return render_template("public/home.html", products=products)
 
     return render_template(
         "public/home.html",
