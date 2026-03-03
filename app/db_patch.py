@@ -5,56 +5,78 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from .extensions import db
-from .models import User
+
+
+def _log_db_info():
+    try:
+        url = str(db.engine.url)
+        # hide password in logs
+        safe_url = url.replace(db.engine.url.password or "", "***") if db.engine.url.password else url
+        print("DB PATCH: engine =", db.engine.dialect.name, "| url =", safe_url)
+    except Exception as e:
+        print("DB PATCH: could not read engine url:", e)
+
+
+def _pg_column_exists(table: str, column: str) -> bool:
+    row = db.session.execute(
+        text(
+            """
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name = :table AND column_name = :col
+            LIMIT 1
+            """
+        ),
+        {"table": table, "col": column},
+    ).first()
+    return row is not None
 
 
 def apply_db_patches() -> None:
     """
     Safe, idempotent DB patching.
-    Runs inside Render (so internal DATABASE_URL works).
+    Designed for Render Postgres, but logs what DB it actually hits.
     """
+    _log_db_info()
 
     try:
-        # ----------------------------------------
-        # 1️⃣ Ensure required Product columns exist
-        # ----------------------------------------
-        with db.engine.begin() as conn:
-            conn.execute(
-                text(
-                    """
-                    ALTER TABLE products
-                    ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE;
-                    """
+        dialect = db.engine.dialect.name
+
+        # Ensure tables exist (in case this runs early)
+        # NOTE: create_all is done in create_app, but this keeps us safe.
+        # We avoid importing models here to prevent circular imports.
+
+        if dialect == "postgresql":
+            # Add is_published
+            if not _pg_column_exists("products", "is_published"):
+                db.session.execute(
+                    text("ALTER TABLE products ADD COLUMN is_published BOOLEAN NOT NULL DEFAULT FALSE")
                 )
-            )
-
-            conn.execute(
-                text(
-                    """
-                    ALTER TABLE products
-                    ADD COLUMN IF NOT EXISTS public_description TEXT;
-                    """
-                )
-            )
-
-        # ----------------------------------------
-        # 2️⃣ Bootstrap first admin (env-based)
-        # ----------------------------------------
-        username = os.getenv("BOOTSTRAP_ADMIN_USERNAME", "").strip()
-        password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "").strip()
-
-        if username and password:
-            # Only create if NO users exist
-            if db.session.query(User.id).first() is None:
-                admin = User(username=username, role="admin")
-                admin.set_password(password)
-
-                db.session.add(admin)
                 db.session.commit()
+                print("DB PATCH: added products.is_published")
 
-                print("✅ Bootstrap admin created from env variables.")
+            # Add public_description
+            if not _pg_column_exists("products", "public_description"):
+                db.session.execute(
+                    text("ALTER TABLE products ADD COLUMN public_description TEXT")
+                )
+                db.session.commit()
+                print("DB PATCH: added products.public_description")
+
+        else:
+            # Best-effort generic (may work on sqlite too)
+            db.session.execute(
+                text("ALTER TABLE products ADD COLUMN IF NOT EXISTS is_published BOOLEAN")
+            )
+            db.session.execute(
+                text("ALTER TABLE products ADD COLUMN IF NOT EXISTS public_description TEXT")
+            )
+            db.session.commit()
+            print("DB PATCH: generic alter attempted")
 
     except SQLAlchemyError as e:
-        # Do NOT crash the whole app if patch fails
         db.session.rollback()
         print("DB PATCH ERROR:", e)
+    except Exception as e:
+        db.session.rollback()
+        print("DB PATCH UNEXPECTED ERROR:", e)
