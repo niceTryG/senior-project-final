@@ -3,7 +3,7 @@ from urllib.parse import quote
 from app import db 
 from sqlalchemy import or_
 from ..models import Product
-
+from sqlalchemy.exc import SQLAlchemyError, ProgrammingError
 public_bp = Blueprint("public", __name__)
 
 
@@ -64,8 +64,8 @@ def home():
             .limit(6)
             .all()
         )
-    except ProgrammingError:
-        # If column does not exist in production DB yet
+    except (ProgrammingError, SQLAlchemyError):
+        # DB schema mismatch (column missing), rollback and fallback
         db.session.rollback()
         products = (
             Product.query
@@ -75,14 +75,6 @@ def home():
         )
 
     return render_template("public/home.html", products=products)
-
-    return render_template(
-        "public/home.html",
-        products=products,
-        public_telegram_url=_telegram_url(),
-        tg_order_link=_tg_order_link,
-    )
-
 
 # ======================
 #   📦 CATALOG
