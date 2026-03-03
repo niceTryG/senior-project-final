@@ -26,15 +26,18 @@ def create_app(config_class="config.DevConfig"):
     # Extensions
     # -------------------------
     db.init_app(app)
+       
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "warning"
+
 
     # -------------------------
     # Create tables only
     # -------------------------
     with app.app_context():
         db.create_all()
+        apply_db_patches()
 
     # -------------------------
     # Login manager
