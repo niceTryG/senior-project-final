@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 from sqlalchemy import or_, func
-
+from sqlalchemy import text
 from ..extensions import db
 from ..models import Product, Sale, CashRecord, Production, ShopStock, Fabric
 
@@ -217,20 +217,24 @@ class ProductService:
             .all()
         )
 
-    def total_stock_value(self, factory_id: int | None = None):
-        q = Product.query
-        if factory_id is not None:
-            q = q.filter(Product.factory_id == factory_id)
+    def total_stock_value(factory_id: int):
+        """
+        Render-safe: avoids ORM selecting missing columns (like is_published).
+        Returns: (total_uzs, total_usd)
+        """
+        rows = db.session.execute(
+            text("""
+                SELECT
+                  COALESCE(SUM(CASE WHEN currency = 'UZS' THEN quantity * cost_price_per_item ELSE 0 END), 0) AS total_uzs,
+                  COALESCE(SUM(CASE WHEN currency = 'USD' THEN quantity * cost_price_per_item ELSE 0 END), 0) AS total_usd
+                FROM products
+                WHERE factory_id = :factory_id
+            """),
+            {"factory_id": factory_id},
+        ).mappings().first()
 
-        products = q.all()
-        total_uzs = 0.0
-        total_usd = 0.0
-        for p in products:
-            value = p.stock_value_cost()
-            if (p.currency or "UZS").upper() == "USD":
-                total_usd += value
-            else:
-                total_uzs += value
+        total_uzs = float(rows["total_uzs"] or 0)
+        total_usd = float(rows["total_usd"] or 0)
         return total_uzs, total_usd
 
     def sales_totals(self, factory_id: int | None = None):
