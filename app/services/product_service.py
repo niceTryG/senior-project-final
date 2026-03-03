@@ -217,7 +217,7 @@ class ProductService:
             .all()
         )
 
-    def total_stock_value(factory_id: int):
+    def total_stock_value(self, factory_id: int):
         """
         Render-safe: avoids ORM selecting missing columns (like is_published).
         Returns: (total_uzs, total_usd)
