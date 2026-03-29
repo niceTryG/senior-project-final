@@ -1,53 +1,820 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="mb-3">📊 Финансовый отчёт руководителя</h2>
+{# =========================
+   SAFE FIELD FALLBACKS
+   ========================= #}
+{% set factory_cost = (
+    report.factory_cost_uzs
+    if report is defined and report and report.factory_cost_uzs is defined
+    else 0
+) %}
 
-<div class="card mb-3">
-    <div class="card-body">
-        <h5>Общая информация</h5>
-        <p><strong>Инвестиции (фабрика):</strong> {{ format_money(report.factory_cost_uzs, 'UZS') }}</p>
-        <p><strong>Стоимость на складе магазина:</strong> {{ format_money(report.shop_sell_uzs, 'UZS') }}</p>
-        <p><strong>Потенциальная прибыль:</strong> {{ format_money(report.unrealized_profit, 'UZS') }}</p>
-        <p><strong>Полученная прибыль (продажи):</strong> {{ format_money(report.realized_profit, 'UZS') }}</p>
+{% set shop_value = (
+    report.shop_sell_uzs
+    if report is defined and report and report.shop_sell_uzs is defined
+    else (
+        report.transferred_to_shop_uzs
+        if report is defined and report and report.transferred_to_shop_uzs is defined
+        else 0
+    )
+) %}
 
-        <a href="{{ url_for('manager_report.manager_report_pdf') }}" class="btn btn-danger mt-2">
-            📄 Скачать PDF
-        </a>
+{% set unrealized_profit = (
+    report.unrealized_profit
+    if report is defined and report and report.unrealized_profit is defined
+    else (
+        report.stock_profit_uzs
+        if report is defined and report and report.stock_profit_uzs is defined
+        else 0
+    )
+) %}
+
+{% set realized_profit = (
+    report.realized_profit
+    if report is defined and report and report.realized_profit is defined
+    else (
+        report.realized_profit_uzs
+        if report is defined and report and report.realized_profit_uzs is defined
+        else (
+            report.profit_uzs
+            if report is defined and report and report.profit_uzs is defined
+            else 0
+        )
+    )
+) %}
+
+{% set fabric_value = (
+    report.fabric_value_uzs
+    if report is defined and report and report.fabric_value_uzs is defined
+    else 0
+) %}
+
+{% set products = (
+    report.products
+    if report is defined and report and report.products is defined
+    else (
+        report.product_rows
+        if report is defined and report and report.product_rows is defined
+        else []
+    )
+) %}
+
+{% set low_stock = (
+    report.low_stock
+    if report is defined and report and report.low_stock is defined
+    else []
+) %}
+
+{% set total_assets = factory_cost + shop_value + fabric_value %}
+{% set total_profit = realized_profit + unrealized_profit %}
+{% set profit_ratio = ((realized_profit / total_assets) * 100) if total_assets else 0 %}
+
+{% set ns = namespace(
+    total_factory_qty=0,
+    total_shop_qty=0,
+    total_sold_units=0,
+    total_potential_profit=0,
+    best_product_name='—',
+    best_product_profit=0,
+    best_seller_name='—',
+    best_seller_units=0,
+    max_potential_profit=0,
+    max_sold_units=0
+) %}
+
+{% for p in products %}
+    {% set ns.total_factory_qty = ns.total_factory_qty + (p.factory_qty or 0) %}
+    {% set ns.total_shop_qty = ns.total_shop_qty + (p.shop_qty or 0) %}
+    {% set ns.total_sold_units = ns.total_sold_units + (p.sold_units or 0) %}
+    {% set ns.total_potential_profit = ns.total_potential_profit + (p.potential_profit or 0) %}
+
+    {% if (p.potential_profit or 0) > ns.best_product_profit %}
+        {% set ns.best_product_profit = p.potential_profit or 0 %}
+        {% set ns.best_product_name = p.name %}
+    {% endif %}
+
+    {% if (p.sold_units or 0) > ns.best_seller_units %}
+        {% set ns.best_seller_units = p.sold_units or 0 %}
+        {% set ns.best_seller_name = p.name %}
+    {% endif %}
+
+    {% if (p.potential_profit or 0) > ns.max_potential_profit %}
+        {% set ns.max_potential_profit = p.potential_profit or 0 %}
+    {% endif %}
+
+    {% if (p.sold_units or 0) > ns.max_sold_units %}
+        {% set ns.max_sold_units = p.sold_units or 0 %}
+    {% endif %}
+{% endfor %}
+
+<div class="manager-report-page">
+
+    <style>
+        .manager-report-page {
+            --surface: rgba(255, 255, 255, 0.88);
+            --surface-strong: #ffffff;
+            --surface-soft: #f8fbff;
+            --border: rgba(148, 163, 184, 0.16);
+            --text: #0f172a;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-2: #1d4ed8;
+            --primary-soft: rgba(37, 99, 235, 0.10);
+            --success: #059669;
+            --success-2: #10b981;
+            --success-soft: rgba(5, 150, 105, 0.10);
+            --warning: #d97706;
+            --warning-2: #f59e0b;
+            --warning-soft: rgba(217, 119, 6, 0.10);
+            --danger: #dc2626;
+            --danger-soft: rgba(220, 38, 38, 0.10);
+            --purple: #7c3aed;
+            --purple-soft: rgba(124, 58, 237, 0.10);
+            --shadow-sm: 0 10px 30px rgba(15, 23, 42, 0.06);
+            --shadow-md: 0 18px 40px rgba(15, 23, 42, 0.10);
+            --shadow-lg: 0 24px 64px rgba(15, 23, 42, 0.18);
+            color: var(--text);
+        }
+
+        .mr-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .mr-hero {
+            position: relative;
+            overflow: hidden;
+            border-radius: 30px;
+            padding: 28px;
+            background:
+                radial-gradient(circle at top right, rgba(59, 130, 246, 0.26), transparent 30%),
+                radial-gradient(circle at bottom left, rgba(124, 58, 237, 0.18), transparent 28%),
+                linear-gradient(135deg, #07111f 0%, #0f1a34 48%, #13284d 100%);
+            box-shadow: var(--shadow-lg);
+            color: #fff;
+        }
+
+        .mr-hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(255,255,255,0.05), transparent 38%);
+            pointer-events: none;
+        }
+
+        .mr-hero-inner {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.85fr);
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .mr-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.12);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        .mr-title {
+            font-size: clamp(28px, 4vw, 42px);
+            line-height: 1.04;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .mr-subtitle {
+            max-width: 760px;
+            color: rgba(255,255,255,0.76);
+            font-size: 15px;
+            line-height: 1.65;
+            margin-bottom: 16px;
+        }
+
+        .mr-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .mr-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 0 14px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            transition: 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .mr-btn-primary {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            border-color: rgba(255,255,255,0.16);
+        }
+
+        .mr-btn-primary:hover {
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+        }
+
+        .mr-hero-side {
+            display: grid;
+            gap: 14px;
+        }
+
+        .mr-glass-card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 22px;
+            padding: 18px;
+            backdrop-filter: blur(12px);
+        }
+
+        .mr-glass-label {
+            display: block;
+            color: rgba(255,255,255,0.72);
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .mr-glass-value {
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .mr-glass-meta {
+            color: rgba(255,255,255,0.72);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .mr-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .mr-metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(14px);
+        }
+
+        .mr-metric-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .mr-metric-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .mr-metric-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .icon-primary { background: var(--primary-soft); color: var(--primary); }
+        .icon-success { background: var(--success-soft); color: var(--success); }
+        .icon-warning { background: var(--warning-soft); color: var(--warning); }
+        .icon-purple { background: var(--purple-soft); color: var(--purple); }
+
+        .mr-metric-value {
+            font-size: 28px;
+            line-height: 1.05;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .mr-metric-meta {
+            font-size: 13px;
+            line-height: 1.55;
+            color: var(--muted);
+        }
+
+        .mr-insights {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .mr-insight-card,
+        .mr-alert-card,
+        .mr-toolbar-card,
+        .mr-table-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .mr-insight-card {
+            padding: 18px 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,251,255,0.98) 100%);
+        }
+
+        .mr-insight-title {
+            font-size: 14px;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .mr-insight-text {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .mr-alert-card,
+        .mr-toolbar-card {
+            padding: 18px;
+        }
+
+        .mr-section-title {
+            font-size: 18px;
+            font-weight: 900;
+            margin: 0 0 6px;
+            color: var(--text);
+        }
+
+        .mr-section-subtitle {
+            font-size: 13px;
+            color: var(--muted);
+            margin: 0 0 14px;
+        }
+
+        .mr-alert-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .mr-alert-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 700;
+            background: var(--warning-soft);
+            color: var(--warning);
+            border: 1px solid rgba(217, 119, 6, 0.12);
+        }
+
+        .mr-toolbar-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .mr-search {
+            min-width: 260px;
+            max-width: 360px;
+            width: 100%;
+            position: relative;
+        }
+
+        .mr-search input {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 16px;
+            padding: 12px 14px 12px 42px;
+            outline: none;
+            font-size: 14px;
+            transition: 0.2s ease;
+        }
+
+        .mr-search input:focus {
+            border-color: rgba(37, 99, 235, 0.35);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+        }
+
+        .mr-search-icon {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .mr-table-wrap {
+            padding: 0 16px 16px;
+        }
+
+        .mr-table {
+            margin-bottom: 0;
+            vertical-align: middle;
+        }
+
+        .mr-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: var(--surface-soft);
+            color: #475569;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 15px 14px;
+            white-space: nowrap;
+        }
+
+        .mr-table tbody td {
+            padding: 16px 14px;
+            border-top: 1px solid rgba(148, 163, 184, 0.10);
+        }
+
+        .mr-table tbody tr {
+            transition: 0.2s ease;
+        }
+
+        .mr-table tbody tr:hover {
+            background: rgba(37, 99, 235, 0.03);
+        }
+
+        .mr-product-name {
+            font-weight: 900;
+            color: var(--text);
+        }
+
+        .mr-strong {
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .mr-sold {
+            font-weight: 800;
+            color: var(--success);
+        }
+
+        .mr-profit {
+            font-weight: 800;
+            color: var(--purple);
+        }
+
+        .mr-bar-cell {
+            min-width: 180px;
+        }
+
+        .mr-bar-track {
+            width: 100%;
+            height: 10px;
+            background: #e9eef6;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .mr-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--primary), #60a5fa);
+        }
+
+        .mr-row-note {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .mr-empty {
+            padding: 44px 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .mr-empty h5 {
+            margin-bottom: 8px;
+            font-weight: 900;
+            color: var(--text);
+        }
+
+        @media (max-width: 1200px) {
+            .mr-hero-inner {
+                grid-template-columns: 1fr;
+            }
+
+            .mr-metrics {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .mr-insights {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mr-hero {
+                padding: 22px;
+                border-radius: 24px;
+            }
+
+            .mr-title {
+                font-size: 28px;
+            }
+
+            .mr-metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .mr-insight-card,
+            .mr-alert-card,
+            .mr-toolbar-card,
+            .mr-table-card,
+            .mr-metric-card {
+                border-radius: 20px;
+            }
+
+            .mr-search {
+                max-width: 100%;
+            }
+        }
+    </style>
+
+    <div class="mr-shell">
+
+        <section class="mr-hero">
+            <div class="mr-hero-inner">
+                <div>
+                    <div class="mr-kicker">{{ t('manager_report_kicker') }}</div>
+                    <h1 class="mr-title">{{ t('manager_report_title') }}</h1>
+                    <p class="mr-subtitle">
+                        {{ t('manager_report_subtitle_line_1') }}
+                        {{ t('manager_report_subtitle_line_2') }}
+                        {{ t('manager_report_subtitle_line_3') }}
+                    </p>
+
+                    <div class="mr-hero-actions">
+                        <a href="{{ url_for('manager_report.manager_report_pdf') }}" class="mr-btn mr-btn-primary">
+                            ?? {{ t('manager_download_pdf') }}
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mr-hero-side">
+                    <div class="mr-glass-card">
+                        <span class="mr-glass-label">{{ t('manager_total_assets') }}</span>
+                        <div class="mr-glass-value">{{ format_money(total_assets, 'UZS') }}</div>
+                        <div class="mr-glass-meta">
+                            {{ t('manager_total_assets_meta') }}
+                        </div>
+                    </div>
+
+                    <div class="mr-glass-card">
+                        <span class="mr-glass-label">{{ t('manager_realized_profit_ratio') }}</span>
+                        <div class="mr-glass-value">{{ "%.1f"|format(profit_ratio) }}%</div>
+                        <div class="mr-glass-meta">
+                            {% if profit_ratio >= 25 %}
+                                {{ t('manager_profit_ratio_high') }}
+                            {% elif profit_ratio >= 10 %}
+                                {{ t('manager_profit_ratio_mid') }}
+                            {% elif profit_ratio > 0 %}
+                                {{ t('manager_profit_ratio_low_positive') }}
+                            {% else %}
+                                {{ t('manager_profit_ratio_low') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mr-metrics">
+            <div class="mr-metric-card">
+                <div class="mr-metric-top">
+                    <span class="mr-metric-label">{{ t('manager_factory_investment') }}</span>
+                    <span class="mr-metric-icon icon-primary">🏭</span>
+                </div>
+                <div class="mr-metric-value">{{ format_money(factory_cost, 'UZS') }}</div>
+                <div class="mr-metric-meta">
+                    {{ t('manager_factory_investment_meta') }}
+                </div>
+            </div>
+
+            <div class="mr-metric-card">
+                <div class="mr-metric-top">
+                    <span class="mr-metric-label">{{ t('manager_shop_stock_value') }}</span>
+                    <span class="mr-metric-icon icon-warning">🏬</span>
+                </div>
+                <div class="mr-metric-value">{{ format_money(shop_value, 'UZS') }}</div>
+                <div class="mr-metric-meta">
+                    {{ t('manager_shop_stock_meta') }}
+                </div>
+            </div>
+
+            <div class="mr-metric-card">
+                <div class="mr-metric-top">
+                    <span class="mr-metric-label">{{ t('manager_potential_profit') }}</span>
+                    <span class="mr-metric-icon icon-purple">✦</span>
+                </div>
+                <div class="mr-metric-value">{{ format_money(unrealized_profit, 'UZS') }}</div>
+                <div class="mr-metric-meta">
+                    {{ t('manager_potential_profit_meta') }}
+                </div>
+            </div>
+
+            <div class="mr-metric-card">
+                <div class="mr-metric-top">
+                    <span class="mr-metric-label">{{ t('manager_realized_profit') }}</span>
+                    <span class="mr-metric-icon icon-success">▲</span>
+                </div>
+                <div class="mr-metric-value">{{ format_money(realized_profit, 'UZS') }}</div>
+                <div class="mr-metric-meta">
+                    {{ t('manager_realized_profit_meta') }}
+                </div>
+            </div>
+        </section>
+
+        <section class="mr-insights">
+            <div class="mr-insight-card">
+                <div class="mr-insight-title">{{ t('manager_best_profit_product_title') }}</div>
+                <p class="mr-insight-text">
+                    {{ t('manager_best_profit_product_prefix') }}
+                    <strong>{{ ns.best_product_name }}</strong>
+                    {{ t('manager_best_profit_product_middle') }}
+                    <strong>{{ format_money(ns.best_product_profit, 'UZS') }}</strong>.
+                </p>
+            </div>
+
+            <div class="mr-insight-card">
+                <div class="mr-insight-title">{{ t('manager_best_seller_title') }}</div>
+                <p class="mr-insight-text">
+                    {{ t('manager_best_seller_prefix') }}
+                    <strong>{{ ns.best_seller_name }}</strong>,
+                    {{ t('manager_best_seller_suffix') }} <strong>{{ ns.best_seller_units }}</strong> {{ t('pieces_short') }}.
+                </p>
+            </div>
+
+            <div class="mr-insight-card">
+                <div class="mr-insight-title">{{ t('manager_conclusion_title') }}</div>
+                <p class="mr-insight-text">
+                    {{ t('manager_conclusion_line_1') }}
+                    <strong>{{ format_money(ns.total_potential_profit, 'UZS') }}</strong>.
+                    {{ t('manager_conclusion_line_2') }}
+                </p>
+            </div>
+        </section>
+
+        {% if low_stock %}
+        <section class="mr-alert-card">
+            <h3 class="mr-section-title">{{ t('dashboard_low_stock_products') }}</h3>
+            <p class="mr-section-subtitle">
+                {{ t('manager_low_stock_subtitle') }}
+            </p>
+
+            <div class="mr-alert-list">
+                {% for p in low_stock %}
+                    <span class="mr-alert-pill">
+                        ⚠ {{ p.name }}
+                    </span>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="mr-toolbar-card">
+            <div>
+                <h3 class="mr-section-title mb-0">{{ t('manager_product_details') }}</h3>
+                <p class="mr-section-subtitle mb-0">
+                    {{ t('manager_product_details_subtitle') }}
+                </p>
+            </div>
+
+            <div class="mr-search">
+                <span class="mr-search-icon">🔎</span>
+                <input type="text" id="managerReportSearch" placeholder="{{ t('manager_search_placeholder') }}">
+            </div>
+        </section>
+
+        <section class="mr-table-card">
+            {% if products %}
+            <div class="mr-table-wrap">
+                <div class="table-responsive">
+                    <table class="table mr-table" id="managerReportTable">
+                        <thead>
+                            <tr>
+                                <th>{{ t('table_name') }}</th>
+                                <th>{{ t('label_factory') }}</th>
+                                <th>{{ t('label_shop') }}</th>
+                                <th>{{ t('shop_monthly_metric_cost') }}</th>
+                                <th>{{ t('sale_price') }}</th>
+                                <th>{{ t('manager_potential_profit') }}</th>
+                                <th>{{ t('shop_weekly_metric_sold') }}</th>
+                                <th>{{ t('manager_realized_profit') }}</th>
+                                <th>{{ t('manager_product_strength') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in products %}
+                                {% set product_percent = ((p.potential_profit or 0) / ns.max_potential_profit * 100) if ns.max_potential_profit else 0 %}
+                                <tr class="manager-product-row">
+                                    <td>
+                                        <div class="mr-product-name">{{ p.name }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="mr-strong">{{ p.factory_qty or 0 }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="mr-strong">{{ p.shop_qty or 0 }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="mr-strong">{{ format_money(p.cost_price or 0, 'UZS') }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="mr-strong">{{ format_money(p.sell_price or 0, 'UZS') }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="mr-profit">{{ format_money(p.potential_profit or 0, 'UZS') }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="mr-sold">{{ p.sold_units or 0 }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="mr-profit">{{ format_money(p.realized_profit or 0, 'UZS') }}</span>
+                                    </td>
+                                    <td class="mr-bar-cell">
+                                        <div class="mr-bar-track">
+                                            <div class="mr-bar-fill" style="width: {{ product_percent if product_percent <= 100 else 100 }}%;"></div>
+                                        </div>
+                                        <div class="mr-row-note">
+                                            {{ "%.1f"|format(product_percent) }}% {{ t('manager_vs_top_potential_suffix') }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="mr-empty">
+                <h5>{{ t('manager_no_product_data_title') }}</h5>
+                <p class="mb-0">{{ t('manager_no_product_data') }}</p>
+            </div>
+            {% endif %}
+        </section>
+
     </div>
 </div>
 
-<h4 class="mt-4">Детали по каждому товару</h4>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("managerReportSearch");
+        const rows = document.querySelectorAll("#managerReportTable tbody .manager-product-row");
 
-<div class="table-responsive">
-<table class="table table-bordered table-striped">
-    <thead class="table-light">
-        <tr>
-            <th>Название</th>
-            <th>Фабрика (шт)</th>
-            <th>Магазин (шт)</th>
-            <th>Себестоимость</th>
-            <th>Цена продажи</th>
-            <th>Потенциальная прибыль</th>
-            <th>Продано (шт)</th>
-            <th>Прибыль полученная</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for p in report.products %}
-        <tr>
-            <td>{{ p.name }}</td>
-            <td>{{ p.factory_qty }}</td>
-            <td>{{ p.shop_qty }}</td>
-            <td>{{ format_money(p.cost_price, 'UZS') }}</td>
-            <td>{{ format_money(p.sell_price, 'UZS') }}</td>
-            <td>{{ format_money(p.potential_profit, 'UZS') }}</td>
-            <td>{{ p.sold_units }}</td>
-            <td>{{ format_money(p.realized_profit, 'UZS') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
+        if (searchInput) {
+            searchInput.addEventListener("input", function () {
+                const value = this.value.toLowerCase().trim();
+
+                rows.forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(value) ? "" : "none";
+                });
+            });
+        }
+    });
+</script>
 
 {% endblock %}

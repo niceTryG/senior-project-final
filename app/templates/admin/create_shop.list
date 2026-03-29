@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Create Shop{% endblock %}
+
+{% block content %}
+<style>
+  .mm-shop-form-page{
+    padding-top:10px;
+    padding-bottom:96px;
+  }
+
+  .mm-card{
+    border-radius:18px;
+    border:0;
+    box-shadow:0 10px 28px rgba(16,24,40,0.06);
+  }
+
+  .mm-btn{
+    border-radius:14px;
+    font-weight:800;
+  }
+
+  .form-control, .form-select, .form-check-input{
+    border-radius:12px;
+  }
+
+  .mm-factory-box{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    padding:.9rem;
+    background:#fff;
+  }
+</style>
+
+<div class="container-fluid mm-shop-form-page">
+  <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="h4 mb-0">Создать магазин</h1>
+      <div class="small text-muted">
+        Добавление нового магазина и привязка к нескольким фабрикам
+      </div>
+    </div>
+
+    <a href="{{ url_for('auth.list_shops') }}" class="btn btn-outline-secondary btn-sm mm-btn">
+      ← Назад
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0 mm-card">
+    <div class="card-body p-3 p-md-4">
+      <form method="post" class="row g-3">
+
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">Название магазина</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">Адрес / локация</label>
+          <input type="text" name="location" class="form-control">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label small mb-1">Заметка</label>
+          <textarea name="note" rows="3" class="form-control"></textarea>
+        </div>
+
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" value="1" checked>
+            <label class="form-check-label" for="isActive">
+              Магазин активен
+            </label>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label small mb-2">Привязанные фабрики</label>
+
+          <div class="mm-factory-box">
+            <div class="row g-2">
+              {% for f in factories %}
+                <div class="col-12 col-md-6">
+                  <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="factory_ids"
+                           id="factory_{{ f.id }}"
+                           value="{{ f.id }}"
+                           {% if f.id in selected_factory_ids %}checked{% endif %}>
+                    <label class="form-check-label" for="factory_{{ f.id }}">
+                      {{ f.name }}
+                    </label>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="form-text">
+            Один магазин может быть привязан к нескольким фабрикам.
+          </div>
+        </div>
+
+        <div class="col-12 d-flex gap-2 flex-wrap">
+          <button type="submit" class="btn btn-success mm-btn">
+            ✅ Создать магазин
+          </button>
+          <a href="{{ url_for('auth.list_shops') }}" class="btn btn-outline-secondary mm-btn">
+            Отмена
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

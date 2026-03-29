@@ -1,0 +1,677 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('factory_sales_detail_title') }} — Mini Moda{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mm-factory-detail {
+    --mm-bg: #f4f7fb;
+    --mm-card: rgba(255,255,255,.98);
+    --mm-card-soft: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
+    --mm-line: rgba(15,23,42,.08);
+    --mm-line-strong: rgba(15,23,42,.12);
+    --mm-text: #0f172a;
+    --mm-muted: #64748b;
+    --mm-primary: #2563eb;
+    --mm-primary-soft: rgba(37,99,235,.10);
+    --mm-success: #059669;
+    --mm-success-soft: rgba(5,150,105,.12);
+    --mm-warning: #d97706;
+    --mm-warning-soft: rgba(217,119,6,.12);
+    --mm-purple: #7c3aed;
+    --mm-purple-soft: rgba(124,58,237,.10);
+    --mm-danger: #dc2626;
+    --mm-danger-soft: rgba(220,38,38,.10);
+    --mm-radius-xl: 24px;
+    --mm-radius-lg: 18px;
+    --mm-radius-md: 16px;
+    --mm-shadow-soft: 0 12px 30px rgba(15,23,42,.06);
+    --mm-shadow-card: 0 10px 22px rgba(15,23,42,.05);
+    color: var(--mm-text);
+  }
+
+  .mm-factory-detail .mm-shell {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 16px 12px 110px;
+  }
+
+  .mm-factory-detail .mm-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .mm-factory-detail .mm-topbar > * {
+    flex: 1 1 220px;
+  }
+
+  .mm-factory-detail .mm-btn {
+    min-height: 46px;
+    padding: 0 16px;
+    border-radius: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: .92rem;
+    border: 1px solid transparent;
+    box-shadow: var(--mm-shadow-card);
+    transition: .18s ease;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .mm-factory-detail .mm-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .mm-factory-detail .mm-btn-light {
+    background: rgba(255,255,255,.96);
+    color: var(--mm-text);
+    border-color: var(--mm-line);
+  }
+
+  .mm-factory-detail .mm-btn-light:active {
+    transform: scale(.995);
+  }
+
+  .mm-factory-detail .mm-section {
+    background: var(--mm-card);
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius-xl);
+    box-shadow: var(--mm-shadow-soft);
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+
+  .mm-factory-detail .mm-section-head {
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--mm-line);
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,.035), transparent 42%),
+      linear-gradient(180deg, rgba(255,255,255,.98), rgba(250,252,255,.98));
+  }
+
+  .mm-factory-detail .mm-section-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .mm-factory-detail .mm-section-title {
+    margin: 0;
+    font-size: 1.04rem;
+    font-weight: 900;
+    letter-spacing: -.02em;
+    line-height: 1.2;
+  }
+
+  .mm-factory-detail .mm-section-subtitle {
+    margin-top: 6px;
+    color: var(--mm-muted);
+    font-size: .88rem;
+    line-height: 1.5;
+  }
+
+  .mm-factory-detail .mm-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 31px;
+    padding: 0 11px;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 900;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  .mm-factory-detail .mm-pill-primary {
+    background: var(--mm-primary-soft);
+    color: var(--mm-primary);
+  }
+
+  .mm-factory-detail .mm-pill-success {
+    background: var(--mm-success-soft);
+    color: var(--mm-success);
+  }
+
+  .mm-factory-detail .mm-pill-purple {
+    background: var(--mm-purple-soft);
+    color: var(--mm-purple);
+  }
+
+  .mm-factory-detail .mm-pill-danger {
+    background: var(--mm-danger-soft);
+    color: var(--mm-danger);
+  }
+
+  .mm-factory-detail .mm-section-body {
+    padding: 14px 16px 16px;
+  }
+
+  .mm-factory-detail .mm-hero {
+    padding: 14px;
+    border-radius: 20px;
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,.09), transparent 42%),
+      radial-gradient(circle at bottom right, rgba(124,58,237,.05), transparent 38%),
+      linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.99));
+    border: 1px solid var(--mm-line);
+  }
+
+  .mm-factory-detail .mm-hero-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+  }
+
+  .mm-factory-detail .mm-hero-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: -.02em;
+  }
+
+  .mm-factory-detail .mm-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .mm-factory-detail .mm-stat {
+    border: 1px solid var(--mm-line);
+    border-radius: 17px;
+    background: rgba(255,255,255,.96);
+    padding: 12px;
+    min-width: 0;
+    box-shadow: var(--mm-shadow-card);
+  }
+
+  .mm-factory-detail .mm-stat-k {
+    color: var(--mm-muted);
+    font-size: .72rem;
+    font-weight: 800;
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+  }
+
+  .mm-factory-detail .mm-stat-v {
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.24;
+    word-break: break-word;
+  }
+
+  .mm-factory-detail .mm-profit {
+    color: var(--mm-success);
+  }
+
+  .mm-factory-detail .mm-due {
+    color: var(--mm-purple);
+  }
+
+  .mm-factory-detail .mm-remaining {
+    color: var(--mm-danger);
+  }
+
+  .mm-factory-detail .mm-remaining-ok {
+    color: var(--mm-success);
+  }
+
+  .mm-factory-detail .mm-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 10px;
+  }
+
+  .mm-factory-detail .mm-log-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 10px;
+  }
+
+  .mm-factory-detail .mm-mini-box {
+    border: 1px solid var(--mm-line);
+    border-radius: 16px;
+    background: var(--mm-card-soft);
+    padding: 12px;
+    min-width: 0;
+    box-shadow: var(--mm-shadow-card);
+  }
+
+  .mm-factory-detail .mm-mini-box-k {
+    color: var(--mm-muted);
+    font-size: .74rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+  }
+
+  .mm-factory-detail .mm-mini-box-v {
+    font-size: .95rem;
+    font-weight: 900;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+
+  .mm-factory-detail .mm-row-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mm-factory-detail .mm-row-item {
+    border: 1px solid var(--mm-line);
+    border-radius: 18px;
+    background: var(--mm-card-soft);
+    padding: 13px;
+    box-shadow: var(--mm-shadow-card);
+  }
+
+  .mm-factory-detail .mm-row-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mm-factory-detail .mm-row-name {
+    font-size: .95rem;
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+  }
+
+  .mm-factory-detail .mm-row-meta {
+    margin-top: 5px;
+    color: var(--mm-muted);
+    font-size: .81rem;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .mm-factory-detail .mm-row-amount {
+    font-size: .98rem;
+    font-weight: 900;
+    white-space: nowrap;
+    line-height: 1.2;
+    text-align: right;
+    color: var(--mm-success);
+  }
+
+  .mm-factory-detail .mm-empty {
+    text-align: center;
+    padding: 28px 14px;
+    color: var(--mm-muted);
+  }
+
+  .mm-factory-detail .mm-empty-title {
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    margin-bottom: 5px;
+  }
+
+  .mm-factory-detail .mm-empty-text {
+    margin: 0 auto;
+    max-width: 520px;
+    font-size: .9rem;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 900px) {
+    .mm-factory-detail .mm-meta-grid,
+    .mm-factory-detail .mm-log-grid {
+      grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .mm-factory-detail .mm-shell {
+      padding: 12px 10px 98px;
+    }
+
+    .mm-factory-detail .mm-topbar {
+      position: sticky;
+      top: 8px;
+      z-index: 20;
+      padding-top: 2px;
+      background: linear-gradient(180deg, rgba(244,247,251,.94), rgba(244,247,251,0));
+      backdrop-filter: blur(2px);
+    }
+
+    .mm-factory-detail .mm-topbar > * {
+      flex: 1 1 100%;
+    }
+
+    .mm-factory-detail .mm-btn {
+      min-height: 48px;
+      border-radius: 15px;
+      font-size: .92rem;
+    }
+
+    .mm-factory-detail .mm-section {
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+
+    .mm-factory-detail .mm-section-head {
+      padding: 14px 14px 10px;
+    }
+
+    .mm-factory-detail .mm-section-body {
+      padding: 12px 14px 14px;
+    }
+
+    .mm-factory-detail .mm-hero {
+      padding: 13px;
+      border-radius: 18px;
+    }
+
+    .mm-factory-detail .mm-hero-title {
+      font-size: 1.06rem;
+    }
+
+    .mm-factory-detail .mm-kpi-grid {
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 9px;
+    }
+
+    .mm-factory-detail .mm-meta-grid,
+    .mm-factory-detail .mm-log-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-factory-detail .mm-row-top,
+    .mm-factory-detail .mm-hero-top,
+    .mm-factory-detail .mm-section-title-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .mm-factory-detail .mm-pill {
+      white-space: normal;
+      text-align: center;
+      min-height: 34px;
+      padding: 7px 12px;
+    }
+
+    .mm-factory-detail .mm-stat {
+      padding: 11px 11px;
+      border-radius: 15px;
+    }
+
+    .mm-factory-detail .mm-stat-k {
+      font-size: .68rem;
+      margin-bottom: 5px;
+    }
+
+    .mm-factory-detail .mm-stat-v {
+      font-size: .93rem;
+      line-height: 1.22;
+    }
+
+    .mm-factory-detail .mm-row-item {
+      padding: 12px;
+      border-radius: 16px;
+    }
+
+    .mm-factory-detail .mm-row-amount {
+      white-space: normal;
+      text-align: left;
+      margin-top: 4px;
+      font-size: .96rem;
+    }
+
+    .mm-factory-detail .mm-mini-box,
+    .mm-factory-detail .mm-row-item {
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(249,251,255,.98));
+    }
+  }
+
+  @media (max-width: 420px) {
+    .mm-factory-detail .mm-shell {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    .mm-factory-detail .mm-kpi-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-factory-detail .mm-hero-title {
+      font-size: 1rem;
+    }
+
+    .mm-factory-detail .mm-stat-v,
+    .mm-factory-detail .mm-mini-box-v,
+    .mm-factory-detail .mm-row-amount {
+      font-size: .92rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set group = group if group is defined and group else {} %}
+{% set settlement_rows = settlement_rows if settlement_rows is defined and settlement_rows else [] %}
+
+<div class="mm-factory-detail">
+  <div class="mm-shell">
+
+    <div class="mm-topbar">
+      <a href="{{ url_for('sales.shop_sales_overview') }}" class="mm-btn mm-btn-light">
+        <span>←</span><span>{{ t('back_to_overview') }}</span>
+      </a>
+
+      <a href="{{ url_for('sales.shop_sales_log', factory_id=group.factory_id) }}" class="mm-btn mm-btn-light">
+        <span>🕘</span><span>{{ t('open_sales_log') }}</span>
+      </a>
+    </div>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('factory_detail_title') }}</h2>
+          <span class="mm-pill mm-pill-primary">{{ t('phone_first_detail_view') }}</span>
+        </div>
+        <div class="mm-section-subtitle">
+          {{ t('factory_detail_subtitle') }}
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        <div class="mm-hero">
+          <div class="mm-hero-top">
+            <div>
+              <h1 class="mm-hero-title">🏭 {{ group.factory_name if group.factory_name is defined else t('factory_badge') }}</h1>
+            </div>
+
+            {% set remaining_value = group.remaining_amount if group.remaining_amount is defined else 0 %}
+            <span class="mm-pill {% if remaining_value > 0 %}mm-pill-danger{% else %}mm-pill-success{% endif %}">
+              {% if remaining_value > 0 %}
+                {{ t('remaining_label') }}: {{ remaining_value }} {{ group.currency if group.currency is defined else 'UZS' }}
+              {% else %}
+                {{ t('fully_settled_label') }}
+              {% endif %}
+            </span>
+          </div>
+
+          <div class="mm-kpi-grid">
+            <div class="mm-stat">
+              <div class="mm-stat-k">{{ t('revenue_label') }}</div>
+              <div class="mm-stat-v">
+                {{ group.total_sales_amount if group.total_sales_amount is defined else 0 }}
+                {{ group.currency if group.currency is defined else 'UZS' }}
+              </div>
+            </div>
+
+            <div class="mm-stat">
+              <div class="mm-stat-k">{{ t('profit_label') }}</div>
+              <div class="mm-stat-v mm-profit">
+                {{ group.total_profit if group.total_profit is defined else 0 }}
+                {{ group.currency if group.currency is defined else 'UZS' }}
+              </div>
+            </div>
+
+            <div class="mm-stat">
+              <div class="mm-stat-k">{{ t('due_to_factory_label') }}</div>
+              <div class="mm-stat-v mm-due">
+                {{ group.realizatsiya_due_amount if group.realizatsiya_due_amount is defined else 0 }}
+                {{ group.currency if group.currency is defined else 'UZS' }}
+              </div>
+            </div>
+
+            <div class="mm-stat">
+              <div class="mm-stat-k">{{ t('settled_label') }}</div>
+              <div class="mm-stat-v mm-profit">
+                {{ group.settled_amount if group.settled_amount is defined else 0 }}
+                {{ group.currency if group.currency is defined else 'UZS' }}
+              </div>
+            </div>
+
+            <div class="mm-stat">
+              <div class="mm-stat-k">{{ t('remaining_label') }}</div>
+              <div class="mm-stat-v {% if remaining_value > 0 %}mm-remaining{% else %}mm-remaining-ok{% endif %}">
+                {{ remaining_value }}
+                {{ group.currency if group.currency is defined else 'UZS' }}
+              </div>
+            </div>
+
+            <div class="mm-stat">
+              <div class="mm-stat-k">{{ t('stock_value_in_shop') }}</div>
+              <div class="mm-stat-v">
+                {{ group.value_in_shop if group.value_in_shop is defined else 0 }}
+                {{ group.currency if group.currency is defined else 'UZS' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('period_breakdown_title') }}</h2>
+          <span class="mm-pill mm-pill-primary">{{ t('sales_timing_label') }}</span>
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        <div class="mm-log-grid">
+          <div class="mm-mini-box">
+            <div class="mm-mini-box-k">{{ t('today_revenue_label') }}</div>
+            <div class="mm-mini-box-v">
+              {{ group.today_sales_amount if group.today_sales_amount is defined else 0 }}
+              {{ group.currency if group.currency is defined else 'UZS' }}
+            </div>
+          </div>
+
+          <div class="mm-mini-box">
+            <div class="mm-mini-box-k">{{ t('yesterday_revenue_label') }}</div>
+            <div class="mm-mini-box-v">
+              {{ group.yesterday_sales_amount if group.yesterday_sales_amount is defined else 0 }}
+              {{ group.currency if group.currency is defined else 'UZS' }}
+            </div>
+          </div>
+
+          <div class="mm-mini-box">
+            <div class="mm-mini-box-k">{{ t('week_revenue_label') }}</div>
+            <div class="mm-mini-box-v">
+              {{ group.week_sales_amount if group.week_sales_amount is defined else 0 }}
+              {{ group.currency if group.currency is defined else 'UZS' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('stock_sales_meta_title') }}</h2>
+          <span class="mm-pill mm-pill-purple">{{ t('operational_view_label') }}</span>
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        <div class="mm-meta-grid">
+          <div class="mm-mini-box">
+            <div class="mm-mini-box-k">{{ t('sold_qty_label') }}</div>
+            <div class="mm-mini-box-v">{{ group.total_qty if group.total_qty is defined else 0 }} {{ t('pieces_short') }}</div>
+          </div>
+
+          <div class="mm-mini-box">
+            <div class="mm-mini-box-k">{{ t('still_in_shop_label') }}</div>
+            <div class="mm-mini-box-v">{{ group.qty_in_shop if group.qty_in_shop is defined else 0 }} {{ t('pieces_short') }}</div>
+          </div>
+
+          <div class="mm-mini-box">
+            <div class="mm-mini-box-k">{{ t('sold_models_label') }}</div>
+            <div class="mm-mini-box-v">{{ group.total_skus if group.total_skus is defined else 0 }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('settlement_history_for_factory_title') }}</h2>
+          <span class="mm-pill mm-pill-success">{{ t('entries_count_label').format(count=settlement_rows|length) }}</span>
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        {% if settlement_rows %}
+          <div class="mm-row-list">
+            {% for row in settlement_rows %}
+              <article class="mm-row-item">
+                <div class="mm-row-top">
+                  <div>
+                    <div class="mm-row-name">{{ row.factory_name }}</div>
+                    <div class="mm-row-meta">
+                      {{ row.settlement_date }}
+                      {% if row.created_by_name %} • {{ t('by_label') }} {{ row.created_by_name }}{% endif %}
+                      {% if row.note %} • {{ row.note }}{% endif %}
+                    </div>
+                  </div>
+
+                  <div class="mm-row-amount">
+                    {{ row.amount }} {{ row.currency }}
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="mm-empty">
+            <div class="mm-empty-title">{{ t('no_settlement_history_yet') }}</div>
+            <p class="mm-empty-text">
+              {{ t('settlement_history_factory_empty_subtitle') }}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

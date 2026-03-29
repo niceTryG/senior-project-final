@@ -1,296 +1,429 @@
 {% extends "base.html" %}
-{% block title %}{{ t('shop_product_sale_title') }} — {{ product.name }}{% endblock %}
+{% block title %}{{ t('shop_product_sale_title') }} — Mini Moda{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mm-page-shop-sale {
+    --mm-cardA: rgba(255,255,255,.84);
+    --mm-cardB: rgba(255,255,255,.97);
+    --mm-line: rgba(0,0,0,.08);
+    --mm-muted: rgba(0,0,0,.54);
+    --mm-soft: rgba(0,0,0,.78);
+    --mm-shadow: 0 16px 40px rgba(0,0,0,.10);
+    --mm-shadow-soft: 0 10px 24px rgba(0,0,0,.08);
+    --mm-glow: 0 0 0 .22rem rgba(13,110,253,.14);
+    position: relative;
+  }
+
+  .mm-page-shop-sale::before {
+    content: "";
+    position: absolute;
+    inset: -16px -10px -16px -10px;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 14%, rgba(13,110,253,.10), transparent 34%),
+      radial-gradient(circle at 88% 18%, rgba(111,66,193,.08), transparent 36%),
+      radial-gradient(circle at 26% 90%, rgba(32,201,151,.08), transparent 38%);
+    opacity: .95;
+  }
+
+  .mm-page-shop-sale > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mm-sale-shell {
+    border: 1px solid var(--mm-line);
+    border-radius: 22px;
+    background: linear-gradient(180deg, var(--mm-cardA), var(--mm-cardB));
+    box-shadow: var(--mm-shadow);
+    overflow: hidden;
+  }
+
+  .mm-hero-title {
+    font-weight: 900;
+    letter-spacing: .16px;
+    margin: 0;
+    color: rgba(0,0,0,.86);
+  }
+
+  .mm-hero-sub {
+    color: var(--mm-muted);
+    margin: 0;
+  }
+
+  .mm-neo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .35rem .72rem;
+    border-radius: 999px;
+    border: 1px solid var(--mm-line);
+    background: rgba(255,255,255,.76);
+    font-size: .78rem;
+    color: var(--mm-soft);
+    white-space: nowrap;
+  }
+
+  .mm-section-title {
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--mm-muted);
+    font-weight: 800;
+    margin-bottom: .7rem;
+  }
+
+  .mm-soft-box {
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 16px;
+    background: rgba(255,255,255,.72);
+    padding: 12px;
+  }
+
+  .mm-soft-k {
+    font-size: .73rem;
+    color: var(--mm-muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 800;
+    margin-bottom: 3px;
+  }
+
+  .mm-soft-v {
+    font-size: .98rem;
+    font-weight: 900;
+    color: rgba(0,0,0,.84);
+    line-height: 1.15;
+  }
+
+  .mm-sale-shell .form-label {
+    font-size: .84rem;
+    font-weight: 800;
+    color: rgba(0,0,0,.72);
+    margin-bottom: .35rem;
+  }
+
+  .mm-page-shop-sale .form-control,
+  .mm-page-shop-sale .form-check-input {
+    border-radius: 14px;
+  }
+
+  .mm-page-shop-sale .form-control:focus,
+  .mm-page-shop-sale .form-check-input:focus {
+    box-shadow: var(--mm-glow);
+    border-color: rgba(13,110,253,.35);
+  }
+
+  .mm-qty-grid {
+    display: grid;
+    grid-template-columns: 52px 1fr 52px auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .mm-qty-btn {
+    border-radius: 14px !important;
+    height: 52px;
+    font-size: 1.1rem;
+    font-weight: 900 !important;
+  }
+
+  .mm-qty-input {
+    height: 52px;
+    font-size: 1.2rem;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .mm-max-btn {
+    border-radius: 14px !important;
+    min-height: 52px;
+    font-weight: 800 !important;
+    white-space: nowrap;
+  }
+
+  .mm-total-box {
+    border: 1px solid rgba(25,135,84,.12);
+    border-radius: 18px;
+    background: rgba(25,135,84,.06);
+    padding: 12px;
+  }
+
+  .mm-total-label {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: rgba(25,135,84,.72);
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .mm-total-value {
+    font-size: 1.45rem;
+    font-weight: 950;
+    line-height: 1.05;
+    color: #198754;
+  }
+
+  .mm-submit-btn {
+    border-radius: 999px !important;
+    min-height: 50px;
+    font-weight: 900 !important;
+    padding-inline: 1.15rem;
+  }
+
+  .mm-cancel-btn {
+    border-radius: 999px !important;
+    min-height: 50px;
+    font-weight: 800 !important;
+    padding-inline: 1.15rem;
+  }
+
+  .mm-muted-box {
+    border: 1px dashed rgba(0,0,0,.12);
+    border-radius: 16px;
+    background: rgba(255,255,255,.66);
+    padding: 10px 12px;
+    color: var(--mm-muted);
+    font-size: .88rem;
+  }
+
+  @media (max-width: 767.98px) {
+    .mm-page-shop-sale::before {
+      display: none;
+    }
+
+    .mm-qty-grid {
+      grid-template-columns: 46px 1fr 46px;
+    }
+
+    .mm-qty-grid .mm-max-col {
+      grid-column: 1 / -1;
+    }
+
+    .mm-total-value {
+      font-size: 1.15rem;
+    }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-3 py-md-4 mm-page-shop-sale">
 
-  {# ===== HEADER ===== #}
+  {% set unit_price = product.sell_price_per_item or 0 %}
+  {% set currency = product.currency or 'UZS' %}
+  {% set source_factory_name = shop_stock.source_factory.name if shop_stock and shop_stock.source_factory else '—' %}
+
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
-      <h1 class="h5 mb-1">{{ t('shop_product_sale_title') }}</h1>
-      <p class="small text-muted mb-0">
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <span class="mm-neo-chip">💸 <span>{{ t('shop_product_sale_title') }}</span></span>
+        {% if product.id %}
+          <span class="mm-neo-chip">🏷 <span>MM-{{ "%05d"|format(product.id) }}</span></span>
+        {% endif %}
+        <span class="mm-neo-chip">🏭 <span>{{ source_factory_name }}</span></span>
+      </div>
+      <h1 class="h4 mm-hero-title mb-1">{{ product.name }}</h1>
+      <p class="small mm-hero-sub">
         {{ t('shop_product_sale_subtitle') }}
       </p>
     </div>
-    <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-secondary">
+
+    <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-outline-secondary rounded-pill">
       ← {{ t('shop_product_sale_back') }}
     </a>
   </div>
 
-  {% set unit_price = product.sell_price_per_item or 0 %}
-  {% set currency = product.currency %}
-  {% set can_sell = stock_qty > 0 %}
+  <form method="post" class="mm-sale-shell">
+    <div class="p-3 p-md-4">
+      <div class="row g-3">
+        <div class="col-12 col-lg-5">
+          <div class="mm-section-title">{{ t('products_details_title_info') }}</div>
 
-  <div class="row g-3">
-    {# ===== PRODUCT INFO CARD ===== #}
-    <div class="col-12 col-md-5 col-lg-4">
-      <div class="card shadow-sm border-0 h-100 mm-sale-product-card">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <h5 class="card-title mb-1">{{ product.name }}</h5>
-              <p class="small text-muted mb-1">
-                {{ t('shop_product_info_category') }}:
-                <span class="fw-semibold">
-                  {{ product.category or "—" }}
-                </span>
-              </p>
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="mm-soft-box">
+                <div class="mm-soft-k">{{ t('shop_product_info_category') }}</div>
+                <div class="mm-soft-v">{{ product.category or t('products_no_category') }}</div>
+              </div>
             </div>
-            {% if product.id %}
-              <span class="badge bg-secondary small">
-                MM-{{ "%05d"|format(product.id) }}
-              </span>
-            {% endif %}
-          </div>
-
-          <div class="mb-1 small">
-            {{ t('shop_product_info_stock') }}:
-            <span class="fw-semibold">
-              {{ stock_qty }} шт.
-            </span>
-            {% if stock_qty == 0 %}
-              <span class="badge bg-secondary ms-1">нет в магазине</span>
-            {% elif stock_qty < 5 %}
-              <span class="badge bg-danger ms-1">мало</span>
-            {% elif stock_qty <= 10 %}
-              <span class="badge bg-warning text-dark ms-1">средне</span>
-            {% else %}
-              <span class="badge bg-success ms-1">достаточно</span>
-            {% endif %}
-          </div>
-
-          <div class="mb-2 small">
-            {{ t('shop_product_info_price') }}:
-            <span class="fw-semibold">
-              {{ format_money(unit_price, currency) }}
-            </span>
-          </div>
-
-          <hr class="my-2">
-
-          <div class="small text-muted mb-1">
-            Если продать весь остаток:
-          </div>
-          <div class="fw-semibold mb-2">
-            {{ format_money(unit_price * stock_qty, currency) }}
-          </div>
-
-          {% if not can_sell %}
-            <div class="alert alert-warning py-2 small mb-0">
-              В магазине нет остатков этой модели. Продажа невозможна, пока не передадите товар в магазин.
+            <div class="col-6">
+              <div class="mm-soft-box">
+                <div class="mm-soft-k">{{ t('shop_product_info_stock') }}</div>
+                <div class="mm-soft-v">{{ stock_qty or 0 }}</div>
+              </div>
             </div>
-          {% endif %}
+            <div class="col-6">
+              <div class="mm-soft-box">
+                <div class="mm-soft-k">{{ t('shop_product_info_price') }}</div>
+                <div class="mm-soft-v">{{ format_money(unit_price, currency) }}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mm-soft-box">
+                <div class="mm-soft-k">{{ t('dashboard_factory') }}</div>
+                <div class="mm-soft-v">{{ source_factory_name }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mm-total-box mt-3">
+            <div class="mm-total-label">{{ t('total_amount') }}</div>
+            <div class="mm-total-value" id="mm-sale-total">{{ format_money(0, currency) }}</div>
+          </div>
+
+          <div class="mm-muted-box mt-3">
+            {{ t('shop_product_form_allow_partial_label') }}
+          </div>
         </div>
-      </div>
-    </div>
 
-    {# ===== SALE FORM CARD ===== #}
-    <div class="col-12 col-md-7 col-lg-8">
-      <div class="card shadow-sm border-0 h-100 mm-sale-form-card">
-        <div class="card-body">
-          <h6 class="card-title mb-2">{{ t('shop_product_form_title') }}</h6>
+        <div class="col-12 col-lg-7">
+          <div class="mm-section-title">{{ t('shop_product_form_title') }}</div>
 
-          {% if not can_sell %}
-            <p class="small text-muted mb-2">
-              Здесь будет форма, когда товар появится на складе магазина.
-            </p>
-            <a href="{{ url_for('shop.list_shop') }}"
-               class="btn btn-sm btn-outline-secondary">
-              {{ t('shop_product_form_cancel') }}
-            </a>
-          {% else %}
-            <form method="post" id="shop-sale-form">
-              {# QUANTITY + TOTAL #}
-              <div class="mb-3">
-                <label class="form-label small mb-1">
-                  {{ t('shop_product_form_quantity_label') }}
-                </label>
-
-                <div class="input-group input-group-sm mb-1">
-                  <button class="btn btn-outline-secondary"
-                          type="button"
-                          id="qty-minus">
-                    −
-                  </button>
-                  <input type="number"
-                         name="quantity"
-                         id="quantity"
-                         class="form-control text-center"
-                         min="1"
-                         value="1"
-                         required>
-                  <button class="btn btn-outline-secondary"
-                          type="button"
-                          id="qty-plus">
-                    +
-                  </button>
-                  <button class="btn btn-outline-secondary"
-                          type="button"
-                          id="qty-max">
-                    max
-                  </button>
-                </div>
-
-                <div class="d-flex justify-content-between small text-muted">
-                  <div>
-                    {{ t('shop_product_form_quantity_help') }}: {{ stock_qty }} шт.
-                  </div>
-                  <div id="sale-total" class="fw-semibold">
-                    Итого: {{ format_money(unit_price, currency) }}
-                  </div>
-                </div>
-                <div class="small mt-1" id="qty-hint"></div>
+          <div class="mb-3">
+            <label class="form-label">{{ t('shop_product_form_quantity_label') }}</label>
+            <div class="mm-qty-grid">
+              <button type="button" class="btn btn-outline-secondary mm-qty-btn" id="mm-qty-minus">−</button>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                name="quantity"
+                id="mm-qty-input"
+                class="form-control mm-qty-input"
+                value="1"
+                required
+              />
+              <button type="button" class="btn btn-outline-secondary mm-qty-btn" id="mm-qty-plus">+</button>
+              <div class="mm-max-col">
+                <button type="button" class="btn btn-outline-primary mm-max-btn w-100" id="mm-qty-max">
+                  {{ t('shop_product_form_quantity_help') }}: {{ stock_qty or 0 }}
+                </button>
               </div>
+            </div>
+          </div>
 
-              {# CUSTOMER INFO #}
-              <div class="mb-2">
-                <div class="small text-muted mb-1">
-                  Информация о покупателе (необязательно)
-                </div>
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label small mb-1">
-                      {{ t('shop_product_form_customer_name_label') }}
-                    </label>
-                    <input type="text"
-                           name="customer_name"
-                           class="form-control form-control-sm">
-                  </div>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label">{{ t('shop_product_form_customer_name_label') }}</label>
+              <input
+                type="text"
+                name="customer_name"
+                class="form-control"
+                placeholder="{{ t('shop_product_form_customer_name_label') }}"
+              />
+            </div>
 
-                  <div class="col-12 col-md-6">
-                    <label class="form-label small mb-1">
-                      {{ t('shop_product_form_customer_phone_label') }}
-                    </label>
-                    <input type="text"
-                           name="customer_phone"
-                           class="form-control form-control-sm">
-                  </div>
-                </div>
-              </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">{{ t('shop_product_form_customer_phone_label') }}</label>
+              <input
+                type="text"
+                name="customer_phone"
+                class="form-control"
+                placeholder="+998 ..."
+              />
+            </div>
 
-              {# NOTE #}
-              <div class="mb-2">
-                <label class="form-label small mb-1">
-                  {{ t('shop_product_form_note_label') }}
-                </label>
-                <textarea name="note"
-                          rows="2"
-                          class="form-control form-control-sm"
-                          placeholder="{{ t('shop_product_form_note_placeholder') }}"></textarea>
-              </div>
+            <div class="col-12">
+              <label class="form-label">{{ t('shop_product_form_note_label') }}</label>
+              <textarea
+                name="note"
+                class="form-control"
+                rows="3"
+                placeholder="{{ t('shop_product_form_note_placeholder') }}"
+              ></textarea>
+            </div>
 
-              {# PARTIAL SALE OPTION #}
-              <div class="form-check mb-3">
-                <input class="form-check-input"
-                       type="checkbox"
-                       name="allow_partial_sale"
-                       id="allow_partial_sale"
-                       checked>
-                <label class="form-check-label small" for="allow_partial_sale">
+            <div class="col-12">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  value="1"
+                  id="allow_partial"
+                  name="allow_partial"
+                />
+                <label class="form-check-label" for="allow_partial">
                   {{ t('shop_product_form_allow_partial_label') }}
                 </label>
               </div>
+            </div>
+          </div>
 
-              {# ACTIONS #}
-              <div class="d-flex justify-content-end gap-2">
-                <a href="{{ url_for('shop.list_shop') }}"
-                   class="btn btn-sm btn-outline-secondary">
-                  {{ t('shop_product_form_cancel') }}
-                </a>
-                <button type="submit" class="btn btn-sm btn-success">
-                  💸 {{ t('shop_product_form_submit') }}
-                </button>
-              </div>
-
-            </form>
-          {% endif %}
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+            <a href="{{ url_for('shop.list_shop') }}" class="btn btn-outline-secondary mm-cancel-btn">
+              {{ t('shop_product_form_cancel') }}
+            </a>
+            <button type="submit" class="btn btn-success mm-submit-btn">
+              💸 {{ t('shop_product_form_submit') }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
+  </form>
 </div>
+{% endblock %}
 
-{% if can_sell %}
+{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const qtyInput = document.getElementById('quantity');
-  const minusBtn = document.getElementById('qty-minus');
-  const plusBtn = document.getElementById('qty-plus');
-  const maxBtn = document.getElementById('qty-max');
-  const totalEl = document.getElementById('sale-total');
-  const hintEl = document.getElementById('qty-hint');
+  (function () {
+    const qtyInput = document.getElementById("mm-qty-input");
+    const minusBtn = document.getElementById("mm-qty-minus");
+    const plusBtn = document.getElementById("mm-qty-plus");
+    const maxBtn = document.getElementById("mm-qty-max");
+    const totalEl = document.getElementById("mm-sale-total");
 
-  if (!qtyInput || !totalEl) return;
+    const maxStock = Number({{ stock_qty or 0 }});
+    const unitPrice = Number({{ unit_price or 0 }});
+    const currency = {{ (currency or 'UZS')|tojson }};
 
-  const unitPrice = {{ unit_price|float }};
-  const currency = "{{ currency }}";
-  const maxQty = {{ stock_qty|int }};
-
-  function clampMin(value) {
-    let v = parseInt(value || 0, 10);
-    if (isNaN(v) || v < 1) v = 1;
-    return v;
-  }
-
-  function formatMoney(amount) {
-    return new Intl.NumberFormat('ru-RU', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    }).format(amount) + ' ' + currency;
-  }
-
-  function updateTotal() {
-    const q = clampMin(qtyInput.value);
-    qtyInput.value = q;
-
-    const total = q * unitPrice;
-    totalEl.textContent = 'Итого: ' + formatMoney(total);
-
-    // Подсказка: если запрашивают больше, чем есть в магазине,
-    // остальное пойдёт в заказ
-    if (q > maxQty) {
-      const missing = q - maxQty;
-      hintEl.textContent =
-        'В магазине сейчас ' + maxQty +
-        ' шт. Остальные ' + missing +
-        ' шт. будут оформлены как заказ.';
-      hintEl.classList.remove('text-muted', 'text-success');
-      hintEl.classList.add('text-warning');
-    } else {
-      hintEl.textContent = '';
-      hintEl.classList.remove('text-warning');
-      hintEl.classList.add('text-muted');
+    function formatMoney(value, currency) {
+      try {
+        return new Intl.NumberFormat(undefined, {
+          maximumFractionDigits: 2
+        }).format(value) + " " + currency;
+      } catch (e) {
+        return value + " " + currency;
+      }
     }
-  }
 
-  if (minusBtn) {
-    minusBtn.addEventListener('click', function () {
-      qtyInput.value = clampMin((qtyInput.value || 1) - 1);
+    function sanitizeQty() {
+      let value = parseInt(qtyInput.value || "0", 10);
+      if (isNaN(value) || value < 1) value = 1;
+      qtyInput.value = value;
+      updateTotal();
+    }
+
+    function updateTotal() {
+      const qty = parseInt(qtyInput.value || "0", 10) || 0;
+      totalEl.textContent = formatMoney(qty * unitPrice, currency);
+    }
+
+    minusBtn?.addEventListener("click", function () {
+      const current = parseInt(qtyInput.value || "1", 10) || 1;
+      qtyInput.value = Math.max(1, current - 1);
       updateTotal();
     });
-  }
 
-  if (plusBtn) {
-    plusBtn.addEventListener('click', function () {
-      const current = parseInt(qtyInput.value || 0, 10) || 0;
-      qtyInput.value = clampMin(current + 1);
+    plusBtn?.addEventListener("click", function () {
+      const current = parseInt(qtyInput.value || "1", 10) || 1;
+      qtyInput.value = current + 1;
       updateTotal();
     });
-  }
 
-  if (maxBtn) {
-    maxBtn.addEventListener('click', function () {
-      qtyInput.value = maxQty || 1;
-      updateTotal();
+    maxBtn?.addEventListener("click", function () {
+      if (maxStock > 0) {
+        qtyInput.value = maxStock;
+        updateTotal();
+      }
     });
-  }
 
-  qtyInput.addEventListener('input', updateTotal);
+    qtyInput?.addEventListener("input", sanitizeQty);
 
-  // init
-  updateTotal();
-});
+    updateTotal();
+  })();
 </script>
-{% endif %}
 {% endblock %}

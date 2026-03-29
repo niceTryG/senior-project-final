@@ -2,7 +2,7 @@
   <div class="card-body py-2">
 
     <div class="fw-bold">
-      Заказ #{{ order.id }} —
+      {{ t('shop_orders_order_label') }} #{{ order.id }} -
       {% if order.status == "pending" %}
         {{ t('shop_orders_status_pending') }}
       {% elif order.status == "ready" %}
@@ -22,7 +22,7 @@
 
     <p class="mb-0">
       <b>{{ t('shop_order_card_customer_label') }}:</b> {{ order.customer_name or '-' }}
-      ·
+      &middot;
       <b>{{ t('shop_order_card_phone_label') }}:</b> {{ order.customer_phone or '-' }}
     </p>
 

@@ -2,14 +2,14 @@
 
 {% block content %}
 <div class="mt-2">
-  <h2 class="fw-bold mb-2">Contact</h2>
-  <p class="text-muted">Order and questions — fastest on Telegram.</p>
+  <h2 class="fw-bold mb-2">{{ t('contact_title') }}</h2>
+  <p class="text-muted">{{ t('contact_subtitle') }}</p>
 
   {% if public_telegram_url %}
-    <a class="btn btn-dark" href="{{ public_telegram_url }}" target="_blank">Open Telegram</a>
+    <a class="btn btn-dark" href="{{ public_telegram_url }}" target="_blank">{{ t('contact_open_telegram') }}</a>
   {% else %}
     <div class="alert alert-warning">
-      Telegram link is not configured yet. Add <code>PUBLIC_TELEGRAM_URL</code> in config.
+      {{ t('contact_missing_telegram') }}
     </div>
   {% endif %}
 </div>

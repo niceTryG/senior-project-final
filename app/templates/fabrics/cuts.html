@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}История списаний ткани{% endblock %}
+{% block title %}{{ t('fabrics_cuts_title') }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-2 py-md-3 mm-page-fabric-cuts">
@@ -8,20 +8,20 @@
   {# ===== HEADER ===== #}
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
     <div>
-      <h1 class="h4 mb-1">История списаний ткани</h1>
+      <h1 class="h4 mb-1">{{ t('fabrics_cuts_title') }}</h1>
       <p class="small text-muted mb-0">
-        Просмотр всех списаний ткани за период, с возможностью фильтрации и анализа.
+        {{ t('fabrics_cuts_subtitle') }}
       </p>
     </div>
     <div class="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end">
       <a href="{{ url_for('fabrics.list') }}" class="btn btn-outline-secondary btn-sm">
-        ← К списку тканей
+        ← {{ t('fabrics_cuts_back') }}
       </a>
 
-      {# опционально: экспорт #}
+      {# optional export #}
       {% if cuts_export_url is defined %}
         <a href="{{ cuts_export_url }}" class="btn btn-outline-success btn-sm">
-          ⬇️ Экспорт CSV
+          ⬇️ {{ t('btn_export_csv') }}
         </a>
       {% endif %}
     </div>
@@ -33,20 +33,20 @@
       <form method="get" class="row g-2 align-items-end">
 
         <div class="col-12 col-md-3">
-          <label class="form-label small mb-1">От даты</label>
+          <label class="form-label small mb-1">{{ t('from_date') }}</label>
           <input type="date" name="from" class="form-control form-control-sm" value="{{ date_from }}">
         </div>
 
         <div class="col-12 col-md-3">
-          <label class="form-label small mb-1">До даты</label>
+          <label class="form-label small mb-1">{{ t('to_date') }}</label>
           <input type="date" name="to" class="form-control form-control-sm" value="{{ date_to }}">
         </div>
 
         <div class="col-12 col-md-3">
-          <label class="form-label small mb-1">Ткань</label>
+          <label class="form-label small mb-1">{{ t('fabric_label') }}</label>
           {% if fabric_options is defined and fabric_options %}
             <select name="fabric_id" class="form-select form-select-sm">
-              <option value="">Все ткани</option>
+              <option value="">{{ t('all_fabrics') }}</option>
               {% for f in fabric_options %}
                 <option value="{{ f.id }}"
                         {% if selected_fabric_id == f.id %}selected{% endif %}>
@@ -58,39 +58,39 @@
             <input type="text"
                    name="q"
                    class="form-control form-control-sm"
-                   placeholder="Поиск по имени ткани"
+                   placeholder="{{ t('fabrics_cuts_search_placeholder') }}"
                    value="{{ q }}">
           {% endif %}
         </div>
 
         <div class="col-12 col-md-2">
-          <label class="form-label small mb-1">Сортировка</label>
+          <label class="form-label small mb-1">{{ t('fabrics_sorting') }}</label>
           <select name="sort" class="form-select form-select-sm">
-            {# значения sort: date_desc / date_asc / amount_desc / amount_asc #}
+            {# sort values: date_desc / date_asc / amount_desc / amount_asc #}
             <option value="date_desc" {% if sort == 'date_desc' or not sort %}selected{% endif %}>
-              По дате (новые сверху)
+              {{ t('sort_date_newest') }}
             </option>
             <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>
-              По дате (старые сверху)
+              {{ t('sort_date_oldest') }}
             </option>
             <option value="amount_desc" {% if sort == 'amount_desc' %}selected{% endif %}>
-              По количеству (по убыванию)
+              {{ t('sort_amount_desc') }}
             </option>
             <option value="amount_asc" {% if sort == 'amount_asc' %}selected{% endif %}>
-              По количеству (по возрастанию)
+              {{ t('sort_amount_asc') }}
             </option>
           </select>
         </div>
 
         <div class="col-6 col-md-1 d-grid gap-1">
           <button type="submit" class="btn btn-secondary btn-sm">
-            Фильтр
+            {{ t('filter_button') }}
           </button>
         </div>
 
         <div class="col-6 col-md-1 d-grid gap-1">
           <a href="{{ url_for('fabrics.cuts_history') }}" class="btn btn-outline-secondary btn-sm">
-            Сброс
+            {{ t('reset') }}
           </a>
         </div>
       </form>
@@ -98,37 +98,37 @@
       {# Active filters chips #}
       {% if date_from or date_to or (q) or (selected_fabric_name is defined and selected_fabric_name) or (sort and sort != 'date_desc') %}
         <div class="small text-muted d-flex flex-wrap gap-1 mt-2">
-          <span class="me-1">Активные фильтры:</span>
+          <span class="me-1">{{ t('active_filters') }}:</span>
 
           {% if date_from %}
             <span class="badge bg-light text-dark border">
-              От: {{ date_from }}
+              {{ t('from') }}: {{ date_from }}
             </span>
           {% endif %}
           {% if date_to %}
             <span class="badge bg-light text-dark border">
-              До: {{ date_to }}
+              {{ t('to') }}: {{ date_to }}
             </span>
           {% endif %}
 
           {% if selected_fabric_name is defined and selected_fabric_name %}
             <span class="badge bg-light text-dark border">
-              Ткань: {{ selected_fabric_name }}
+              {{ t('fabric_label') }}: {{ selected_fabric_name }}
             </span>
           {% endif %}
 
           {% if q %}
             <span class="badge bg-light text-dark border">
-              Поиск: “{{ q }}”
+              {{ t('filter_search') }}: “{{ q }}”
             </span>
           {% endif %}
 
           {% if sort and sort != 'date_desc' %}
             <span class="badge bg-light text-dark border">
-              Сортировка:
-              {% if sort == 'date_asc' %}Дата ↑
-              {% elif sort == 'amount_desc' %}Количество ↓
-              {% elif sort == 'amount_asc' %}Количество ↑
+              {{ t('fabrics_sorting') }}:
+              {% if sort == 'date_asc' %}{{ t('sort_date_oldest') }}
+              {% elif sort == 'amount_desc' %}{{ t('sort_amount_desc') }}
+              {% elif sort == 'amount_asc' %}{{ t('sort_amount_asc') }}
               {% endif %}
             </span>
           {% endif %}
@@ -137,13 +137,13 @@
     </div>
   </div>
 
-  {# ===== SUMMARY CARDS (если есть статистика) ===== #}
+  {# ===== SUMMARY CARDS ===== #}
   {% if cuts_stats is defined %}
     <div class="row g-2 mb-3">
       <div class="col-12 col-md-3">
         <div class="card border-0 bg-light-subtle shadow-sm h-100">
           <div class="card-body py-2">
-            <div class="small text-muted">Всего списаний</div>
+            <div class="small text-muted">{{ t('fabrics_cuts_total_write_offs') }}</div>
             <div class="fw-bold fs-6">
               {{ cuts_stats.total_cuts }}
             </div>
@@ -153,7 +153,7 @@
       <div class="col-12 col-md-3">
         <div class="card border-0 bg-light-subtle shadow-sm h-100">
           <div class="card-body py-2">
-            <div class="small text-muted">Уникальных тканей</div>
+            <div class="small text-muted">{{ t('fabrics_cuts_unique_fabrics') }}</div>
             <div class="fw-bold fs-6">
               {{ cuts_stats.total_fabrics }}
             </div>
@@ -163,7 +163,7 @@
       <div class="col-12 col-md-6">
         <div class="card border-0 bg-light-subtle shadow-sm h-100">
           <div class="card-body py-2">
-            <div class="small text-muted mb-1">Списано за период (по единицам)</div>
+            <div class="small text-muted mb-1">{{ t('fabrics_cuts_written_off_by_unit') }}</div>
             {% if cuts_stats.totals_by_unit %}
               <div class="d-flex flex-wrap gap-2">
                 {% for unit, total in cuts_stats.totals_by_unit.items() %}
@@ -173,7 +173,7 @@
                 {% endfor %}
               </div>
             {% else %}
-              <div class="small text-muted">Нет данных по количеству.</div>
+              <div class="small text-muted">{{ t('fabrics_cuts_no_amount_data') }}</div>
             {% endif %}
           </div>
         </div>
@@ -185,13 +185,13 @@
   <div class="d-md-none mb-3">
     {% if cuts|length == 0 %}
       <div class="alert alert-light border small mb-0">
-        Нет списаний для выбранных фильтров.
+        {{ t('fabrics_cuts_empty') }}
       </div>
     {% endif %}
 
     {% for c in cuts %}
       {% set ua = c.used_amount or 0 %}
-      {# helper: считаем, большое ли списание (для подсветки) #}
+      {# helper: determine whether the write-off is large enough to highlight #}
       {% set big_cut = ua >= (big_cut_threshold if big_cut_threshold is defined else 50) %}
 
       <div class="card shadow-sm border-0 mb-2 mm-fabric-cut-card
@@ -206,7 +206,7 @@
                 {% endif %}
               </div>
               <div class="fw-semibold mm-fabric-cut-title">
-                {% if c.fabric %}{{ c.fabric.name }}{% else %}Без названия{% endif %}
+                {% if c.fabric %}{{ c.fabric.name }}{% else %}{{ t('unnamed') }}{% endif %}
               </div>
               {% if c.fabric and (c.fabric.color or c.fabric.category) %}
                 <div class="small text-muted">
@@ -216,7 +216,7 @@
               {% endif %}
             </div>
             <div class="text-end">
-              <div class="small text-muted">Дата</div>
+              <div class="small text-muted">{{ t('table_date') }}</div>
               <div class="fw-semibold mm-fabric-cut-date">
                 {{ c.cut_date }}
               </div>
@@ -225,7 +225,7 @@
 
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div class="small text-muted">
-              Списано:
+              {{ t('written_off') }}:
             </div>
             <div class="fw-bold mm-fabric-cut-amount">
               {{ "%.2f"|format(ua) }} {{ c.fabric.unit if c.fabric and c.fabric.unit else "" }}
@@ -234,7 +234,7 @@
 
           {% if c.remaining_quantity is defined and c.remaining_quantity is not none %}
             <div class="small text-muted mb-1">
-              Остаток после списания:
+              {{ t('remaining_after_write_off') }}:
               <span class="fw-semibold">
                 {{ "%.2f"|format(c.remaining_quantity) }} {{ c.fabric.unit if c.fabric and c.fabric.unit else "" }}
               </span>
@@ -243,7 +243,7 @@
 
           {% if c.comment is defined and c.comment %}
             <div class="small text-muted">
-              Причина: {{ c.comment }}
+              {{ t('reason') }}: {{ c.comment }}
             </div>
           {% endif %}
         </div>
@@ -258,16 +258,16 @@
         <table class="table table-sm table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th class="text-nowrap">ID</th>
-              <th class="text-nowrap">Дата</th>
-              <th>Ткань</th>
-              <th class="text-nowrap text-end">Списанное количество</th>
-              <th class="text-nowrap">Ед. изм.</th>
+              <th class="text-nowrap">{{ t('table_id') }}</th>
+              <th class="text-nowrap">{{ t('table_date') }}</th>
+              <th>{{ t('fabric_label') }}</th>
+              <th class="text-nowrap text-end">{{ t('fabrics_cuts_written_off_qty') }}</th>
+              <th class="text-nowrap">{{ t('unit_short') }}</th>
               {% if cuts_have_stock_info is defined and cuts_have_stock_info %}
-                <th class="text-nowrap text-end">Остаток после списания</th>
+                <th class="text-nowrap text-end">{{ t('remaining_after_write_off') }}</th>
               {% endif %}
               {% if cuts_have_comment is defined and cuts_have_comment %}
-                <th>Комментарий</th>
+                <th>{{ t('comment') }}</th>
               {% endif %}
             </tr>
           </thead>
@@ -275,7 +275,7 @@
           {% if cuts|length == 0 %}
             <tr>
               <td colspan="7" class="text-center small text-muted py-3">
-                Нет списаний для выбранных фильтров.
+                {{ t('fabrics_cuts_empty') }}
               </td>
             </tr>
           {% endif %}
@@ -335,7 +335,7 @@
 
   {# ===== PAGINATION (OPTIONAL) ===== #}
   {% if pagination is defined and pagination %}
-    <nav aria-label="Fabric cuts pagination" class="mt-2">
+    <nav aria-label="{{ t('fabrics_cuts_pagination') }}" class="mt-2">
       <ul class="pagination pagination-sm justify-content-center">
         <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
           <a class="page-link"

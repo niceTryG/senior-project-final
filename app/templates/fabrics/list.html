@@ -60,10 +60,36 @@
 
   /* Small helper */
   .mm-muted { color:#6c757d; }
+
+  /* Charts */
+  .mm-chart-wrap{
+    position:relative;
+    height:260px;
+  }
+  .mm-chart-title{
+    font-weight: 800;
+    font-size: .98rem;
+  }
+  .mm-chart-sub{
+    font-size: .83rem;
+    color:#6c757d;
+    margin-top: 2px;
+  }
+
+  @media (min-width: 768px){
+    .mm-chart-wrap{
+      height:300px;
+    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
+
+{% set chart_labels = fabric_chart_labels|default([]) %}
+{% set chart_quantities = fabric_chart_quantities|default([]) %}
+{% set cut_chart_labels = fabric_cut_chart_labels|default([]) %}
+{% set cut_chart_values = fabric_cut_chart_values|default([]) %}
 
 <div class="mm-page-fabrics container-fluid py-2 py-md-3">
 
@@ -71,13 +97,13 @@
   <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
     <div>
       <h1 class="mb-0 h4">{{ t('fabrics_title') }}</h1>
-      <div class="small text-muted">Управление тканями и списаниями</div>
+      <div class="small text-muted">{{ t('fabrics_manage_subtitle') }}</div>
     </div>
 
     <div class="text-end">
       {% if usd_uzs_rate %}
         <div class="text-muted small">
-          <div>Курс ЦБ РУз</div>
+          <div>{{ t('central_bank_rate_label') }}</div>
           <div class="fw-semibold">1 USD = {{ usd_uzs_rate | round(2) }} UZS</div>
         </div>
       {% endif %}
@@ -106,10 +132,9 @@
                 placeholder="{{ t('search_placeholder') }}"
                 value="{{ q }}"
               >
-              <button class="btn btn-outline-secondary mm-btn" type="submit">OK</button>
+          <button class="btn btn-outline-secondary mm-btn" type="submit">{{ t('shop_order_big_submit') }}</button>
             </div>
 
-            {# Keep current filters on submit (important) #}
             <input type="hidden" name="sort" value="{{ sort }}">
             <input type="hidden" name="category" value="{{ selected_category }}">
             {% if not is_latest_view %}
@@ -129,7 +154,7 @@
         </button>
 
         <a href="{{ url_for('fabrics.export') }}" class="btn btn-outline-success btn-sm mm-btn">
-          CSV
+          {{ t('btn_export_csv') }}
         </a>
 
         <button
@@ -154,9 +179,9 @@
           </div>
 
           <div class="col-6 col-md-3">
-            <label class="form-label small mb-1">Категория</label>
+            <label class="form-label small mb-1">{{ t('filter_category') }}</label>
             <select class="form-select form-select-sm" name="category">
-              <option value="">Все</option>
+              <option value="">{{ t('all_option') }}</option>
               {% for cat in categories %}
                 <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
               {% endfor %}
@@ -164,33 +189,33 @@
           </div>
 
           <div class="col-6 col-md-3">
-            <label class="form-label small mb-1">Режим</label>
+            <label class="form-label small mb-1">{{ t('view_mode') }}</label>
             <select class="form-select form-select-sm" name="all">
-              <option value="" {% if is_latest_view %}selected{% endif %}>Последние 5</option>
-              <option value="1" {% if not is_latest_view %}selected{% endif %}>Все ткани</option>
+              <option value="" {% if is_latest_view %}selected{% endif %}>{{ t('latest_five') }}</option>
+              <option value="1" {% if not is_latest_view %}selected{% endif %}>{{ t('all_fabrics') }}</option>
             </select>
           </div>
 
           <div class="col-6 col-md-3">
             <button type="submit" class="btn btn-secondary btn-sm w-100 mm-btn">
-              Применить
+              {{ t('apply') }}
             </button>
           </div>
         </form>
 
         {% if q or selected_category or sort != 'name' %}
           <div class="mt-2 small text-muted d-flex flex-wrap gap-1">
-            <span class="me-1">Фильтры:</span>
+            <span class="me-1">{{ t('active_filters') }}:</span>
             {% if q %}
-              <span class="badge bg-light text-dark border">Поиск: “{{ q }}”</span>
+              <span class="badge bg-light text-dark border">{{ t('filter_search') }}: “{{ q }}”</span>
             {% endif %}
             {% if selected_category %}
-              <span class="badge bg-light text-dark border">Категория: {{ selected_category }}</span>
+              <span class="badge bg-light text-dark border">{{ t('filter_category') }}: {{ selected_category }}</span>
             {% endif %}
             {% if sort != 'name' %}
               <span class="badge bg-light text-dark border">
-                Сортировка:
-                {% if sort == 'qty' %}Количество{% elif sort == 'price' %}Цена{% else %}Имя{% endif %}
+                {{ t('fabrics_sorting') }}:
+                {% if sort == 'qty' %}{{ t('sort_quantity') }}{% elif sort == 'price' %}{{ t('sort_price') }}{% else %}{{ t('sort_name') }}{% endif %}
               </span>
             {% endif %}
           </div>
@@ -204,23 +229,23 @@
   <div class="mm-chip-row mb-2">
     <a href="{{ url_for('fabrics.list') }}"
        class="mm-chip {% if is_latest_view %}mm-chip-active{% endif %}">
-      🕒 Последние 5
+      🕒 {{ t('latest_five') }}
     </a>
     <a href="{{ url_for('fabrics.list', all=1) }}"
        class="mm-chip {% if not is_latest_view %}mm-chip-active{% endif %}">
-      📦 Все ткани
+      📦 {{ t('all_fabrics') }}
     </a>
     <a href="#add-fabric" class="mm-chip" onclick="document.getElementById('addFabricModalBtn')?.click()">
-      ➕ Добавить
+      ➕ {{ t('add_fabric') }}
     </a>
   </div>
 
   <!-- SUMMARY (3 mini cards) -->
-  <div class="row row-cols-3 g-2 mb-2">
+  <div class="row row-cols-3 g-2 mb-3">
     <div class="col">
       <div class="card border-0 shadow-sm mm-card mm-soft h-100">
         <div class="card-body py-2">
-          <div class="small text-muted">Позиции</div>
+          <div class="small text-muted">{{ t('positions_label') }}</div>
           <div class="fw-bold">{{ view_stats.count }}</div>
         </div>
       </div>
@@ -228,16 +253,16 @@
     <div class="col">
       <div class="card border-0 shadow-sm mm-card mm-soft h-100">
         <div class="card-body py-2">
-          <div class="small text-muted">Общий объём</div>
+          <div class="small text-muted">{{ t('total_volume_label') }}</div>
           <div class="fw-bold">{{ "%.2f"|format(view_stats.qty) }}</div>
-          <div class="small text-muted">сумма quantity</div>
+                <div class="small text-muted">{{ t('quantity') }}</div>
         </div>
       </div>
     </div>
     <div class="col">
       <div class="card border-0 shadow-sm mm-card mm-soft h-100">
         <div class="card-body py-2">
-          <div class="small text-muted">Стоимость</div>
+          <div class="small text-muted">{{ t('value_label') }}</div>
           <div class="fw-bold">
             {% if view_stats.value_usd %}
               {{ "%.2f"|format(view_stats.value_usd) }} USD
@@ -251,6 +276,33 @@
             {% else %}
               &nbsp;
             {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm border-0 mm-card h-100">
+        <div class="card-body p-3">
+          <div class="mm-chart-title">{{ t('fabric_volume_chart_title') }}</div>
+          <div class="mm-chart-sub">{{ t('fabric_volume_chart_subtitle') }}</div>
+          <div class="mm-chart-wrap mt-3">
+            <canvas id="fabricQtyChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm border-0 mm-card h-100">
+        <div class="card-body p-3">
+          <div class="mm-chart-title">{{ t('fabric_recent_cuts_title') }}</div>
+          <div class="mm-chart-sub">{{ t('fabric_recent_cuts_subtitle') }}</div>
+          <div class="mm-chart-wrap mt-3">
+            <canvas id="fabricCutsChart"></canvas>
           </div>
         </div>
       </div>
@@ -284,7 +336,6 @@
       <div class="card shadow-sm border-0 mb-2 mm-card">
         <div class="card-body p-2">
 
-          <!-- TOP -->
           <div class="d-flex justify-content-between align-items-start gap-2">
             <div style="min-width:0;">
               <div class="small text-muted">{{ fab.public_id or ("ID-" ~ fab.id) }}</div>
@@ -296,12 +347,12 @@
 
               <div class="mt-1">
                 {% if low %}
-                  <span class="badge bg-danger">мало</span>
+                  <span class="badge bg-danger">{{ t('stock_low') }}</span>
                 {% elif mid %}
-                  <span class="badge bg-warning text-dark">средне</span>
+                  <span class="badge bg-warning text-dark">{{ t('stock_medium') }}</span>
                 {% endif %}
                 {% if not fab.price_per_unit %}
-                  <span class="badge bg-warning text-dark">нет цены</span>
+                  <span class="badge bg-warning text-dark">{{ t('no_price') }}</span>
                 {% endif %}
               </div>
             </div>
@@ -314,10 +365,9 @@
             </div>
           </div>
 
-          <!-- QUICK KV -->
           <div class="mt-2">
             <div class="mm-kv">
-              <div class="mm-k">Цена/ед.</div>
+              <div class="mm-k">{{ t('price_per_unit_label') }}</div>
               <div class="mm-v">
                 {% if fab.price_per_unit %}
                   {{ format_money(fab.price_per_unit, fab.price_currency or 'USD') }}
@@ -327,7 +377,7 @@
               </div>
             </div>
             <div class="mm-kv">
-              <div class="mm-k">Валюта</div>
+              <div class="mm-k">{{ t('table_currency') }}</div>
               <div class="mm-v">
                 {% if fab.price_per_unit %}
                   <span class="badge bg-light text-dark border">{{ fab.price_currency }}</span>
@@ -338,7 +388,6 @@
             </div>
           </div>
 
-          <!-- ACTIONS -->
           <div class="row g-2 mt-2">
             <div class="col-6">
               <button class="btn btn-outline-primary btn-sm w-100 mm-btn"
@@ -347,7 +396,7 @@
                       data-bs-target="#{{ cut_id }}"
                       aria-expanded="false"
                       aria-controls="{{ cut_id }}">
-                ✂️ Списать
+                ✂️ {{ t('write_off') }}
               </button>
             </div>
             <div class="col-6">
@@ -357,12 +406,11 @@
                       data-bs-target="#{{ details_id }}"
                       aria-expanded="false"
                       aria-controls="{{ details_id }}">
-                ℹ️ Подробнее
+                ℹ️ {{ t('details') }}
               </button>
             </div>
           </div>
 
-          <!-- CUT COLLAPSE -->
           <div class="collapse mt-2" id="{{ cut_id }}">
             <div class="border rounded-3 p-2">
               <form method="post"
@@ -386,27 +434,26 @@
                   </div>
                 </div>
                 <div class="small text-muted">
-                  Остаток: <span class="fw-semibold">{{ "%.2f"|format(qty) }} {{ fab.unit }}</span>
+                  {{ t('remaining_label') }}: <span class="fw-semibold">{{ "%.2f"|format(qty) }} {{ fab.unit }}</span>
                 </div>
               </form>
             </div>
           </div>
 
-          <!-- DETAILS COLLAPSE -->
           <div class="collapse mt-2" id="{{ details_id }}">
             <div class="border rounded-3 p-2 small">
               <div class="mm-kv">
-                <div class="mm-k">Категория</div>
+                <div class="mm-k">{{ t('filter_category') }}</div>
                 <div class="mm-v">{{ fab.category or '—' }}</div>
               </div>
               <div class="mm-kv">
-                <div class="mm-k">Добавлено</div>
+                <div class="mm-k">{{ t('added_label') }}</div>
                 <div class="mm-v">
                   {% if fab.created_at %}{{ fab.created_at.strftime("%d.%m %H:%M") }}{% else %}—{% endif %}
                 </div>
               </div>
               <div class="mm-kv">
-                <div class="mm-k">ID</div>
+                <div class="mm-k">{{ t('table_id') }}</div>
                 <div class="mm-v">#{{ fab.id }}</div>
               </div>
             </div>
@@ -417,22 +464,22 @@
     {% endfor %}
   </div>
 
-  {# ================= DESKTOP TABLE (keep yours) ================= #}
+  {# ================= DESKTOP TABLE ================= #}
   <div class="card shadow-sm border-0 mb-3 d-none d-md-block">
     <div class="card-body p-0">
       <div class="table-responsive mb-0">
         <table class="table table-sm table-hover align-middle table-sticky mb-0">
           <thead class="table-light">
             <tr>
-              <th class="text-nowrap">Код</th>
+              <th class="text-nowrap">{{ t('code_label') }}</th>
               <th>{{ t('table_name') }}</th>
-              <th class="text-nowrap d-none d-lg-table-cell">Добавлено</th>
+              <th class="text-nowrap d-none d-lg-table-cell">{{ t('added_label') }}</th>
               <th class="d-none d-sm-table-cell">{{ t('table_color') }}</th>
               <th class="text-nowrap">{{ t('table_quantity') }}</th>
               <th class="text-nowrap d-none d-md-table-cell">{{ t('table_price_per_unit') }}</th>
               <th class="text-nowrap d-none d-sm-table-cell">{{ t('table_currency') }}</th>
               <th class="d-none d-md-table-cell">{{ t('table_category') }}</th>
-              <th class="text-center d-none d-md-table-cell">QR</th>
+              <th class="text-center d-none d-md-table-cell">{{ t('qr') }}</th>
               <th class="text-nowrap text-center">{{ t('table_actions') }}</th>
             </tr>
           </thead>
@@ -463,9 +510,9 @@
               <td class="text-nowrap">
                 {{ "%.2f"|format(qty) }} {{ fab.unit }}
                 {% if qty < LOW_STOCK_THRESHOLD %}
-                  <span class="badge bg-danger ms-1">мало</span>
+                  <span class="badge bg-danger ms-1">{{ t('stock_low') }}</span>
                 {% elif qty <= LOW_STOCK_THRESHOLD * 2 %}
-                  <span class="badge bg-warning ms-1">средне</span>
+                  <span class="badge bg-warning ms-1">{{ t('stock_medium') }}</span>
                 {% endif %}
               </td>
               <td class="d-none d-md-table-cell text-nowrap">
@@ -475,7 +522,7 @@
                 {% if fab.price_per_unit %}
                   <span class="badge bg-light text-dark border">{{ fab.price_currency }}</span>
                 {% else %}
-                  <span class="badge bg-warning text-dark">нет цены</span>
+                  <span class="badge bg-warning text-dark">{{ t('no_price') }}</span>
                 {% endif %}
               </td>
               <td class="d-none d-md-table-cell">
@@ -514,10 +561,10 @@
     <h3 class="mb-0 h5">{{ t('last_cuts') }}</h3>
     <div class="d-flex gap-2">
       <a href="{{ url_for('fabrics.cuts_history') }}" class="btn btn-outline-secondary btn-sm mm-btn">
-        История
+        {{ t('fabric_history') }}
       </a>
       <a href="{{ url_for('fabrics.usage_summary') }}" class="btn btn-outline-secondary btn-sm mm-btn">
-        Отчёт
+        {{ t('fabric_report') }}
       </a>
     </div>
   </div>
@@ -545,7 +592,7 @@
 
   <!-- PAGINATION -->
   {% if pagination %}
-  <nav aria-label="Fabric pagination" class="mt-2">
+  <nav aria-label="{{ t('fabric_pagination') }}" class="mt-2">
     <ul class="pagination pagination-sm justify-content-center">
       <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
         <a class="page-link"
@@ -579,7 +626,7 @@
 
 </div>
 
-<!-- ADD FABRIC MODAL (your existing modal unchanged) -->
+<!-- ADD FABRIC MODAL -->
 <div class="modal fade" id="addFabricModal" tabindex="-1" aria-labelledby="addFabricLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -587,7 +634,7 @@
         <h5 class="modal-title fs-6" id="addFabricLabel">
           {{ t('add_fabric') }}
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('aria_close') }}"></button>
       </div>
 
       <form method="post" action="{{ url_for('fabrics.add') }}">
@@ -598,21 +645,21 @@
               <input type="text" name="name"
                      class="form-control form-control-sm"
                      required
-                     placeholder="Интерлок 180гр">
+                     placeholder="{{ t('add_fabric_name_placeholder') }}">
             </div>
 
             <div class="col-6 col-md-3">
               <label class="form-label small mb-1">{{ t('add_color') }}</label>
               <input type="text" name="color"
                      class="form-control form-control-sm"
-                     placeholder="Белый / розовый">
+                     placeholder="{{ t('add_fabric_color_placeholder') }}">
             </div>
 
             <div class="col-6 col-md-2">
               <label class="form-label small mb-1">{{ t('add_unit') }}</label>
               <select name="unit" class="form-select form-select-sm" required>
-                <option value="kg" selected>kg</option>
-                <option value="m">m</option>
+                <option value="kg" selected>{{ t('unit_kg') }}</option>
+                <option value="m">{{ t('unit_m') }}</option>
               </select>
             </div>
 
@@ -645,7 +692,7 @@
               <label class="form-label small mb-1">{{ t('add_category') }}</label>
               <input type="text" name="category"
                      class="form-control form-control-sm"
-                     placeholder="Кулир, Интерлок">
+                     placeholder="{{ t('add_fabric_category_placeholder') }}">
             </div>
           </div>
         </div>
@@ -654,7 +701,7 @@
           <button type="button"
                   class="btn btn-outline-secondary btn-sm mm-btn"
                   data-bs-dismiss="modal">
-            Отмена
+            {{ t('btn_cancel') }}
           </button>
           <button type="submit" class="btn btn-success btn-sm mm-btn">
             {{ t('add_button') }}
@@ -665,6 +712,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   if (window.location.hash === '#add-fabric') {
@@ -673,6 +721,99 @@ document.addEventListener('DOMContentLoaded', function () {
       var modal = new bootstrap.Modal(modalEl);
       modal.show();
     }
+  }
+
+  const qtyLabels = {{ chart_labels|tojson }};
+  const qtyValues = {{ chart_quantities|tojson }};
+  const cutLabels = {{ cut_chart_labels|tojson }};
+  const cutValues = {{ cut_chart_values|tojson }};
+
+  const qtyCanvas = document.getElementById('fabricQtyChart');
+  if (qtyCanvas) {
+    new Chart(qtyCanvas, {
+      type: 'bar',
+      data: {
+        labels: qtyLabels,
+        datasets: [{
+          label: {{ t('quantity_chart_label')|tojson }},
+          data: qtyValues,
+          backgroundColor: 'rgba(37, 99, 235, 0.75)',
+          borderColor: 'rgba(37, 99, 235, 1)',
+          borderWidth: 1,
+          borderRadius: 8,
+          maxBarThickness: 34
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: '#667085',
+              font: { weight: '700' }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(16,24,40,0.08)' },
+            ticks: {
+              color: '#667085',
+              font: { weight: '700' }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  const cutCanvas = document.getElementById('fabricCutsChart');
+  if (cutCanvas) {
+    new Chart(cutCanvas, {
+      type: 'line',
+      data: {
+        labels: cutLabels,
+        datasets: [{
+          label: {{ t('written_off_chart_label')|tojson }},
+          data: cutValues,
+          borderColor: 'rgba(217, 119, 6, 1)',
+          backgroundColor: 'rgba(217, 119, 6, 0.12)',
+          tension: 0.35,
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: '#667085',
+              font: { weight: '700' }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(16,24,40,0.08)' },
+            ticks: {
+              color: '#667085',
+              font: { weight: '700' }
+            }
+          }
+        }
+      }
+    });
   }
 });
 </script>

@@ -3,19 +3,18 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <h1 class="h4 mb-1">Отчёт для бухгалтера / учёта производства</h1>
+    <h1 class="h4 mb-1">{{ t('accountant_report_title') }}</h1>
     <p class="text-muted mb-0">
-      Расход ткани и объём пошива за выбранный период.
+      {{ t('accountant_report_subtitle') }}
     </p>
   </div>
 </div>
 
-<!-- Фильтр по датам -->
 <div class="card shadow-sm mb-3">
   <div class="card-body">
     <form method="get" class="row g-2 align-items-end">
       <div class="col-md-3">
-        <label class="form-label form-label-sm">С даты</label>
+        <label class="form-label form-label-sm">{{ t('from_date') }}</label>
         <input
           type="date"
           name="from"
@@ -24,7 +23,7 @@
         >
       </div>
       <div class="col-md-3">
-        <label class="form-label form-label-sm">По дату</label>
+        <label class="form-label form-label-sm">{{ t('to_date') }}</label>
         <input
           type="date"
           name="to"
@@ -34,28 +33,27 @@
       </div>
       <div class="col-md-3">
         <button type="submit" class="btn btn-sm btn-primary mt-3 mt-md-0">
-          Показать
+          {{ t('show') }}
         </button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Блок 1: расход ткани -->
 <div class="card shadow-sm mb-4">
   <div class="card-body">
-    <h5 class="card-title mb-3">Расход ткани за период</h5>
+    <h5 class="card-title mb-3">{{ t('accountant_report_fabric_usage') }}</h5>
 
     {% if usage.rows %}
       <div class="table-responsive">
         <table class="table table-sm table-bordered align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th>Ткань</th>
-              <th>Цвет</th>
-              <th>Категория</th>
-              <th>Ед. изм.</th>
-              <th class="text-end">Израсходовано</th>
+              <th>{{ t('fabrics_title') }}</th>
+              <th>{{ t('table_color') }}</th>
+              <th>{{ t('category') }}</th>
+              <th>{{ t('table_unit') }}</th>
+              <th class="text-end">{{ t('accountant_report_used') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -73,27 +71,26 @@
         </table>
       </div>
       <div class="mt-2 text-end text-muted">
-        Всего израсходовано (сумма по всем тканям): <strong>{{ usage.total_used }}</strong>
+        {{ t('accountant_report_total_used') }}: <strong>{{ usage.total_used }}</strong>
       </div>
     {% else %}
-      <p class="mb-0 text-muted">За выбранный период списаний ткани не было.</p>
+      <p class="mb-0 text-muted">{{ t('accountant_report_no_fabric_usage') }}</p>
     {% endif %}
   </div>
 </div>
 
-<!-- Блок 2: объём производства -->
 <div class="card shadow-sm mb-4">
   <div class="card-body">
-    <h5 class="card-title mb-3">Производство (готовая продукция)</h5>
+    <h5 class="card-title mb-3">{{ t('accountant_report_production') }}</h5>
 
     {% if prod.rows %}
       <div class="table-responsive">
         <table class="table table-sm table-bordered align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th>Модель</th>
-              <th>Категория</th>
-              <th class="text-end">Произведено (шт)</th>
+              <th>{{ t('products_details_model') }}</th>
+              <th>{{ t('category') }}</th>
+              <th class="text-end">{{ t('accountant_report_produced') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -109,10 +106,10 @@
         </table>
       </div>
       <div class="mt-2 text-end text-muted">
-        Всего произведено за период: <strong>{{ prod.total_qty }}</strong> шт
+        {{ t('accountant_report_total_produced') }}: <strong>{{ prod.total_qty }}</strong> {{ t('pieces_short') }}
       </div>
     {% else %}
-      <p class="mb-0 text-muted">За выбранный период выпуск готовой продукции не зарегистрирован.</p>
+      <p class="mb-0 text-muted">{{ t('accountant_report_no_production') }}</p>
     {% endif %}
   </div>
 </div>

@@ -2,9 +2,9 @@
 {% block content %}
 <div class="container py-3">
 
-  <h4 class="mb-1">Выберите листы для импорта</h4>
+  <h4 class="mb-1">{{ t('import_choose_sheets_title') }}</h4>
   <div class="text-muted small mb-3">
-    Файл: <span class="fw-semibold">{{ batch.filename }}</span>
+    {{ t('label_file') }}: <span class="fw-semibold">{{ batch.filename }}</span>
   </div>
 
   <form method="post" action="{{ url_for('products.import_confirm') }}" id="mm-import-form">
@@ -12,42 +12,42 @@
 
     <div class="card shadow-sm border-0 mb-3">
       <div class="card-body">
-        <div class="fw-semibold mb-2">✅ Что импортировать</div>
+        <div class="fw-semibold mb-2">? {{ t('import_choose_what') }}</div>
 
         <div class="form-check">
           <input class="form-check-input" type="checkbox" name="update_prices" value="1" id="p1" checked>
-          <label class="form-check-label" for="p1">Обновить цены моделей (Нархи/Цена)</label>
+          <label class="form-check-label" for="p1">{{ t('import_update_prices') }}</label>
         </div>
 
         <div class="form-check">
           <input class="form-check-input" type="checkbox" name="do_sales" value="1" id="s1">
-          <label class="form-check-label" for="s1">Импортировать Реализацию (Sales)</label>
+          <label class="form-check-label" for="s1">{{ t('import_sales') }}</label>
         </div>
 
         <div class="form-check">
           <input class="form-check-input" type="checkbox" name="do_cash" value="1" id="c1">
-          <label class="form-check-label" for="c1">Импортировать Кассу (Cash)</label>
+          <label class="form-check-label" for="c1">{{ t('import_cash') }}</label>
         </div>
 
         <div class="alert alert-info small mt-3 mb-0">
-          Выберите хотя бы один пункт и хотя бы один лист.
+          {{ t('import_choose_sheet_warning') }}
         </div>
       </div>
     </div>
 
     <div class="card shadow-sm border-0">
       <div class="card-header py-2 d-flex justify-content-between align-items-center gap-2">
-        <span class="fw-semibold small">📄 Листы в Excel</span>
+        <span class="fw-semibold small">📄 {{ t('import_excel_sheets') }}</span>
 
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSelectAll">Выбрать всё</button>
-          <button type="button" class="btn btn-outline-secondary btn-sm" id="btnClearAll">Очистить</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSelectAll">{{ t('select_all') }}</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="btnClearAll">{{ t('clear_all') }}</button>
         </div>
       </div>
 
       <div class="card-body">
         {% if not sheet_info %}
-          <div class="text-muted small">Листы не найдены.</div>
+          <div class="text-muted small">{{ t('import_sheets_not_found') }}</div>
         {% else %}
           {% for s in sheet_info %}
             <div class="form-check mb-2">
@@ -65,8 +65,8 @@
     </div>
 
     <div class="d-flex gap-2 mt-3">
-      <a href="{{ url_for('products.import_wizard') }}" class="btn btn-outline-secondary">Назад</a>
-      <button type="submit" class="btn btn-primary">Импортировать</button>
+      <a href="{{ url_for('products.import_wizard') }}" class="btn btn-outline-secondary">{{ t('btn_back') }}</a>
+      <button type="submit" class="btn btn-primary">{{ t('products_import_button') }}</button>
     </div>
   </form>
 
@@ -102,7 +102,7 @@
 
       if (!anyAction || !anySheet) {
         e.preventDefault();
-        alert("Выберите что импортировать и хотя бы один лист.");
+        alert({{ t('import_choose_sheet_warning')|tojson }});
       }
     });
   }

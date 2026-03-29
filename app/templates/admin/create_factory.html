@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('admin_create_factory_title') }}{% endblock %}
+
+{% block content %}
+<style>
+  .mm-factory-form-page{
+    padding-top:10px;
+    padding-bottom:96px;
+  }
+
+  .mm-card{
+    border-radius:18px;
+    border:0;
+    box-shadow:0 10px 28px rgba(16,24,40,0.06);
+  }
+
+  .mm-btn{
+    border-radius:14px;
+    font-weight:800;
+  }
+
+  .form-control, textarea.form-control{
+    border-radius:12px;
+  }
+</style>
+
+<div class="container-fluid mm-factory-form-page">
+  <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="h4 mb-0">{{ t('admin_create_factory_title') }}</h1>
+      <div class="small text-muted">
+        {{ t('admin_create_factory_subtitle') }}
+      </div>
+    </div>
+
+    <a href="{{ url_for('auth.list_factories') }}" class="btn btn-outline-secondary btn-sm mm-btn">
+      {{ t('btn_back') }}
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0 mm-card">
+    <div class="card-body p-3 p-md-4">
+      <form method="post" class="row g-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">{{ t('admin_factory_name') }}</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">{{ t('admin_factory_owner') }}</label>
+          <input type="text" name="owner_name" class="form-control">
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">{{ t('admin_factory_location') }}</label>
+          <input type="text" name="location" class="form-control">
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">{{ t('phone') }}</label>
+          <input type="text" name="phone" class="form-control">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label small mb-1">{{ t('note') }}</label>
+          <textarea name="note" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="col-12 d-flex gap-2 flex-wrap">
+          <button type="submit" class="btn btn-success mm-btn">
+            {{ t('admin_create_factory_submit') }}
+          </button>
+          <a href="{{ url_for('auth.list_factories') }}" class="btn btn-outline-secondary mm-btn">
+            {{ t('btn_cancel') }}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,35 +1,721 @@
 {% extends "base.html" %}
+
 {% block content %}
+{% set ns = namespace(
+    total_bought=0,
+    total_used=0,
+    total_remaining=0,
+    total_efficiency=0,
+    low_efficiency_count=0,
+    high_efficiency_count=0
+) %}
 
-<h2 class="mb-4">Отчёт по использованию тканей</h2>
+{% for row in report %}
+    {% set ns.total_bought = ns.total_bought + row.bought %}
+    {% set ns.total_used = ns.total_used + row.used %}
+    {% set ns.total_remaining = ns.total_remaining + row.remaining %}
+    {% set ns.total_efficiency = ns.total_efficiency + row.efficiency %}
+    {% if row.efficiency < 60 %}
+        {% set ns.low_efficiency_count = ns.low_efficiency_count + 1 %}
+    {% endif %}
+    {% if row.efficiency >= 85 %}
+        {% set ns.high_efficiency_count = ns.high_efficiency_count + 1 %}
+    {% endif %}
+{% endfor %}
 
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Ткань</th>
-            <th>Закуплено</th>
-            <th>Использовано</th>
-            <th>Осталось</th>
-            <th>Стоимость использованного</th>
-            <th>Стоимость остатка</th>
-            <th>Всего стоимость</th>
-            <th>Эффективность (%)</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in report %}
-        <tr>
-            <td>{{ row.fabric.name }} ({{ row.fabric.color }})</td>
-            <td>{{ row.bought }}</td>
-            <td class="text-danger fw-bold">{{ row.used }}</td>
-            <td>{{ row.remaining }}</td>
-            <td>{{ format_money(row.cost_used, row.fabric.price_currency) }}</td>
-            <td>{{ format_money(row.cost_remaining, row.fabric.price_currency) }}</td>
-            <td>{{ format_money(row.cost_total, row.fabric.price_currency) }}</td>
-            <td>{{ row.efficiency }}%</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% set avg_efficiency = (ns.total_efficiency / report|length) if report|length else 0 %}
+{% set usage_ratio = ((ns.total_used / ns.total_bought) * 100) if ns.total_bought else 0 %}
+{% set remaining_ratio = ((ns.total_remaining / ns.total_bought) * 100) if ns.total_bought else 0 %}
 
+<div class="fabric-report-page">
+
+    <style>
+        .fabric-report-page {
+            --bg: #f4f7fb;
+            --surface: rgba(255, 255, 255, 0.78);
+            --surface-strong: #ffffff;
+            --border: rgba(148, 163, 184, 0.18);
+            --text: #0f172a;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-soft: rgba(37, 99, 235, 0.10);
+            --success: #059669;
+            --success-soft: rgba(5, 150, 105, 0.10);
+            --warning: #d97706;
+            --warning-soft: rgba(217, 119, 6, 0.10);
+            --danger: #dc2626;
+            --danger-soft: rgba(220, 38, 38, 0.10);
+            --purple: #7c3aed;
+            --purple-soft: rgba(124, 58, 237, 0.10);
+            --shadow-sm: 0 10px 30px rgba(15, 23, 42, 0.06);
+            --shadow-md: 0 18px 40px rgba(15, 23, 42, 0.10);
+            color: var(--text);
+        }
+
+        .fabric-report-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .fabric-report-hero {
+            position: relative;
+            overflow: hidden;
+            border-radius: 28px;
+            padding: 28px;
+            background:
+                radial-gradient(circle at top right, rgba(37, 99, 235, 0.22), transparent 32%),
+                radial-gradient(circle at bottom left, rgba(124, 58, 237, 0.18), transparent 28%),
+                linear-gradient(135deg, #081225 0%, #0f1b36 50%, #132347 100%);
+            color: #fff;
+            box-shadow: var(--shadow-md);
+        }
+
+        .fabric-report-hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(255,255,255,0.05), transparent 40%);
+            pointer-events: none;
+        }
+
+        .fabric-report-hero-inner {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .fabric-report-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.14);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        .fabric-report-title {
+            font-size: clamp(28px, 4vw, 40px);
+            line-height: 1.05;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .fabric-report-subtitle {
+            max-width: 700px;
+            color: rgba(255,255,255,0.76);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .fabric-report-hero-side {
+            display: grid;
+            gap: 14px;
+        }
+
+        .hero-mini-card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(12px);
+            border-radius: 22px;
+            padding: 18px;
+        }
+
+        .hero-mini-label {
+            display: block;
+            font-size: 12px;
+            color: rgba(255,255,255,0.72);
+            margin-bottom: 6px;
+        }
+
+        .hero-mini-value {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .hero-mini-meta {
+            color: rgba(255,255,255,0.72);
+            font-size: 13px;
+        }
+
+        .fabric-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .fabric-kpi-card {
+            background: var(--surface);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .fabric-kpi-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .fabric-kpi-label {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .fabric-kpi-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .icon-primary { background: var(--primary-soft); color: var(--primary); }
+        .icon-success { background: var(--success-soft); color: var(--success); }
+        .icon-warning { background: var(--warning-soft); color: var(--warning); }
+        .icon-purple  { background: var(--purple-soft); color: var(--purple); }
+
+        .fabric-kpi-value {
+            font-size: 30px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .fabric-kpi-meta {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .fabric-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 16px 18px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .fabric-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .fabric-toolbar-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .fabric-toolbar-subtitle {
+            margin: 0;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .fabric-search {
+            min-width: 260px;
+            max-width: 340px;
+            width: 100%;
+            position: relative;
+        }
+
+        .fabric-search input {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 16px;
+            padding: 12px 14px 12px 42px;
+            outline: none;
+            font-size: 14px;
+            transition: 0.2s ease;
+        }
+
+        .fabric-search input:focus {
+            border-color: rgba(37, 99, 235, 0.35);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+        }
+
+        .fabric-search-icon {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .fabric-table-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .table-responsive {
+            margin-bottom: 0;
+        }
+
+        .fabric-table {
+            margin-bottom: 0;
+            vertical-align: middle;
+        }
+
+        .fabric-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #f8fbff;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.20);
+            color: #475569;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 16px 14px;
+            white-space: nowrap;
+        }
+
+        .fabric-table tbody td {
+            padding: 16px 14px;
+            border-top: 1px solid rgba(148, 163, 184, 0.12);
+        }
+
+        .fabric-table tbody tr {
+            transition: 0.2s ease;
+        }
+
+        .fabric-table tbody tr:hover {
+            background: rgba(37, 99, 235, 0.03);
+        }
+
+        .fabric-name {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .fabric-name-main {
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .fabric-name-sub {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .metric-strong {
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .metric-danger {
+            color: var(--danger);
+            font-weight: 800;
+        }
+
+        .money-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .money-main {
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .money-sub {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .efficiency-wrap {
+            min-width: 170px;
+        }
+
+        .efficiency-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .efficiency-value {
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .efficiency-bar {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: #e8eef8;
+            overflow: hidden;
+        }
+
+        .efficiency-fill {
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        .fill-good {
+            background: linear-gradient(90deg, #059669, #34d399);
+        }
+
+        .fill-mid {
+            background: linear-gradient(90deg, #d97706, #f59e0b);
+        }
+
+        .fill-low {
+            background: linear-gradient(90deg, #dc2626, #f87171);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status-good {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+
+        .status-mid {
+            background: var(--warning-soft);
+            color: var(--warning);
+        }
+
+        .status-low {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .usage-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #f8fafc;
+            color: #334155;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+        .empty-state {
+            padding: 50px 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-state h5 {
+            color: var(--text);
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 1200px) {
+            .fabric-kpi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .fabric-report-hero-inner {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .fabric-report-hero {
+                padding: 22px;
+                border-radius: 24px;
+            }
+
+            .fabric-kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .fabric-kpi-card,
+            .fabric-toolbar,
+            .fabric-table-card {
+                border-radius: 20px;
+            }
+
+            .fabric-report-title {
+                font-size: 28px;
+            }
+
+            .fabric-toolbar {
+                align-items: stretch;
+            }
+
+            .fabric-search {
+                max-width: 100%;
+            }
+        }
+    </style>
+
+    <div class="fabric-report-shell">
+
+        <section class="fabric-report-hero">
+            <div class="fabric-report-hero-inner">
+                <div>
+    <div class="fabric-report-kicker">{{ t('fabrics_report_intelligence') }}</div>
+                    <h1 class="fabric-report-title">{{ t('fabrics_usage_report_title') }}</h1>
+                    <p class="fabric-report-subtitle">
+                        {{ t('fabrics_usage_report_subtitle') }}
+                    </p>
+                </div>
+
+                <div class="fabric-report-hero-side">
+                    <div class="hero-mini-card">
+                        <span class="hero-mini-label">{{ t('fabrics_usage_report_average_efficiency') }}</span>
+                        <div class="hero-mini-value">{{ "%.1f"|format(avg_efficiency) }}%</div>
+                        <div class="hero-mini-meta">
+                            {% if avg_efficiency >= 85 %}
+                                {{ t('fabrics_usage_report_efficiency_excellent') }}
+                            {% elif avg_efficiency >= 60 %}
+                                {{ t('fabrics_usage_report_efficiency_normal') }}
+                            {% else %}
+                                {{ t('fabrics_usage_report_efficiency_low') }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hero-mini-card">
+                        <span class="hero-mini-label">{{ t('fabrics_usage_report_used_share') }}</span>
+                        <div class="hero-mini-value">{{ "%.1f"|format(usage_ratio) }}%</div>
+                        <div class="hero-mini-meta">
+                            {{ t('fabrics_usage_report_remaining_share').format(percent="%.1f"|format(remaining_ratio)) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="fabric-kpi-grid">
+            <div class="fabric-kpi-card">
+                <div class="fabric-kpi-top">
+                    <span class="fabric-kpi-label">{{ t('fabrics_usage_report_total_types') }}</span>
+                    <span class="fabric-kpi-icon icon-primary">🧵</span>
+                </div>
+                <div class="fabric-kpi-value">{{ report|length }}</div>
+                <div class="fabric-kpi-meta">
+                    {{ t('fabrics_usage_report_active_positions') }}
+                </div>
+            </div>
+
+            <div class="fabric-kpi-card">
+                <div class="fabric-kpi-top">
+                    <span class="fabric-kpi-label">{{ t('fabrics_usage_report_bought_used') }}</span>
+                    <span class="fabric-kpi-icon icon-success">📦</span>
+                </div>
+                <div class="fabric-kpi-value">{{ ns.total_used }}</div>
+                <div class="fabric-kpi-meta">
+                    {{ t('fabrics_usage_report_used_from_bought').format(total=ns.total_bought) }}
+                </div>
+            </div>
+
+            <div class="fabric-kpi-card">
+                <div class="fabric-kpi-top">
+                    <span class="fabric-kpi-label">{{ t('fabrics_usage_report_stock_remaining') }}</span>
+                    <span class="fabric-kpi-icon icon-warning">📉</span>
+                </div>
+                <div class="fabric-kpi-value">{{ ns.total_remaining }}</div>
+                <div class="fabric-kpi-meta">
+                    {{ t('fabrics_usage_report_available_remaining') }}
+                </div>
+            </div>
+
+            <div class="fabric-kpi-card">
+                <div class="fabric-kpi-top">
+                    <span class="fabric-kpi-label">{{ t('fabrics_usage_report_risks_strong') }}</span>
+                    <span class="fabric-kpi-icon icon-purple">📊</span>
+                </div>
+                <div class="fabric-kpi-value">{{ ns.low_efficiency_count }} / {{ ns.high_efficiency_count }}</div>
+                <div class="fabric-kpi-meta">
+                    {{ t('fabrics_usage_report_low_high_efficiency') }}
+                </div>
+            </div>
+        </section>
+
+        <section class="fabric-toolbar">
+            <div class="fabric-toolbar-left">
+                <div>
+                    <h3 class="fabric-toolbar-title">{{ t('fabrics_usage_report_detailed_title') }}</h3>
+                    <p class="fabric-toolbar-subtitle">
+                        {{ t('fabrics_usage_report_detailed_subtitle') }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="fabric-search">
+                <span class="fabric-search-icon">🔎</span>
+    <input type="text" id="fabricSearch" placeholder="{{ t('fabrics_search_color_placeholder') }}">
+            </div>
+        </section>
+
+        <section class="fabric-table-card">
+            {% if report %}
+            <div class="table-responsive">
+                <table class="table fabric-table align-middle" id="fabricReportTable">
+                    <thead>
+                        <tr>
+                            <th>{{ t('fabric_label') }}</th>
+                            <th>{{ t('fabrics_usage_report_bought') }}</th>
+                            <th>{{ t('fabrics_usage_report_used') }}</th>
+                            <th>{{ t('fabrics_usage_report_remaining') }}</th>
+                            <th>{{ t('fabrics_usage_report_usage') }}</th>
+                            <th>{{ t('fabrics_usage_report_used_cost') }}</th>
+                            <th>{{ t('fabrics_usage_report_remaining_cost') }}</th>
+                            <th>{{ t('fabrics_usage_report_total_cost') }}</th>
+                            <th>{{ t('fabrics_usage_report_efficiency') }}</th>
+                            <th>{{ t('status') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report %}
+                            {% set usage_percent = ((row.used / row.bought) * 100) if row.bought else 0 %}
+
+                            {% if row.efficiency >= 85 %}
+                                {% set status_class = "status-good" %}
+                                {% set fill_class = "fill-good" %}
+                                {% set status_text = t('fabrics_usage_report_status_strong') %}
+                            {% elif row.efficiency >= 60 %}
+                                {% set status_class = "status-mid" %}
+                                {% set fill_class = "fill-mid" %}
+                                {% set status_text = t('fabrics_usage_report_status_watch') %}
+                            {% else %}
+                                {% set status_class = "status-low" %}
+                                {% set fill_class = "fill-low" %}
+                                {% set status_text = t('fabrics_usage_report_status_risk') %}
+                            {% endif %}
+
+                            <tr class="fabric-row">
+                                <td>
+                                    <div class="fabric-name">
+                                        <span class="fabric-name-main">{{ row.fabric.name }}</span>
+                                        <span class="fabric-name-sub">{{ row.fabric.color }}</span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="metric-strong">{{ row.bought }}</span>
+                                </td>
+
+                                <td>
+                                    <span class="metric-danger">{{ row.used }}</span>
+                                </td>
+
+                                <td>
+                                    <span class="metric-strong">{{ row.remaining }}</span>
+                                </td>
+
+                                <td>
+                                    <span class="usage-pill">{{ "%.1f"|format(usage_percent) }}%</span>
+                                </td>
+
+                                <td>
+                                    <div class="money-stack">
+                                        <span class="money-main">{{ format_money(row.cost_used, row.fabric.price_currency) }}</span>
+                                        <span class="money-sub">{{ t('fabrics_usage_report_spent') }}</span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="money-stack">
+                                        <span class="money-main">{{ format_money(row.cost_remaining, row.fabric.price_currency) }}</span>
+                                        <span class="money-sub">{{ t('fabrics_usage_report_remaining_cost_short') }}</span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="money-stack">
+                                        <span class="money-main">{{ format_money(row.cost_total, row.fabric.price_currency) }}</span>
+                                        <span class="money-sub">{{ t('fabrics_usage_report_full_cost') }}</span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="efficiency-wrap">
+                                        <div class="efficiency-top">
+                                            <span class="efficiency-value">{{ "%.1f"|format(row.efficiency) }}%</span>
+                                        </div>
+                                        <div class="efficiency-bar">
+                                            <div class="efficiency-fill {{ fill_class }}" style="width: {{ row.efficiency if row.efficiency <= 100 else 100 }}%;"></div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="status-badge {{ status_class }}">{{ status_text }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <h5>{{ t('fabrics_usage_report_empty_title') }}</h5>
+                <p class="mb-0">{{ t('fabrics_usage_report_empty_subtitle') }}</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("fabricSearch");
+        const rows = document.querySelectorAll("#fabricReportTable tbody .fabric-row");
+
+        if (searchInput) {
+            searchInput.addEventListener("input", function () {
+                const value = this.value.toLowerCase().trim();
+
+                rows.forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(value) ? "" : "none";
+                });
+            });
+        }
+    });
+</script>
 {% endblock %}

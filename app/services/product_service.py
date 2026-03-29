@@ -1,8 +1,11 @@
-from datetime import date, datetime, timedelta
-from sqlalchemy import or_, func
-from sqlalchemy import text
+from datetime import date, timedelta
+from types import SimpleNamespace
+
+from sqlalchemy import or_, func, text
+
 from ..extensions import db
 from ..models import Product, Sale, CashRecord, Production, ShopStock, Fabric
+from ..shop_utils import get_or_create_default_shop
 
 
 LOW_STOCK_THRESHOLD = 20  # you can change this later or move to settings
@@ -41,11 +44,7 @@ class ProductService:
         if factory_id is not None:
             q = q.filter(Product.factory_id == factory_id)
 
-        rows = (
-            q.distinct()
-            .order_by(Product.category.asc())
-            .all()
-        )
+        rows = q.distinct().order_by(Product.category.asc()).all()
         return [r[0] for r in rows]
 
     def add_product(
@@ -57,32 +56,30 @@ class ProductService:
         cost_price_per_item: float | None,
         sell_price_per_item: float | None,
         currency: str,
-        image_path=None
+        image_path=None,
+        website_image=None,
+        fabric_used=None,
+        notes=None,
     ):
         name_clean = name.strip()
         category_clean = (category or "").strip()
+        fabric_used_clean = (fabric_used or "").strip() or None
+        notes_clean = (notes or "").strip() or None
         qty = max(quantity, 0)
 
-        # 1) Try to find existing matching product in this factory
-        existing = (
-            Product.query
-            .filter(
-                Product.factory_id == factory_id,
-                db.func.lower(Product.name) == name_clean.lower(),
-                db.func.lower(db.func.coalesce(Product.category, "")) == category_clean.lower(),
-                Product.currency == currency,
-            )
-            .first()
-        )
+        existing = Product.query.filter(
+            Product.factory_id == factory_id,
+            db.func.lower(Product.name) == name_clean.lower(),
+            db.func.lower(db.func.coalesce(Product.category, "")) == category_clean.lower(),
+            Product.currency == currency,
+        ).first()
 
         if existing:
-            # --- MERGE LOGIC: update quantity and prices ---
-            old_qty = existing.quantity
+            old_qty = existing.quantity or 0
             new_qty = qty
 
             existing.quantity = old_qty + new_qty
 
-            # weighted average cost if new cost provided
             if new_qty > 0 and cost_price_per_item is not None:
                 old_cost = existing.cost_price_per_item or 0.0
                 new_cost = cost_price_per_item
@@ -92,13 +89,22 @@ class ProductService:
                 total_qty = old_qty + new_qty
 
                 if total_qty > 0:
-                    existing.cost_price_per_item = (total_cost_old + total_cost_new) / total_qty
+                    existing.cost_price_per_item = (
+                        total_cost_old + total_cost_new
+                    ) / total_qty
 
-            # overwrite sell price if provided
             if sell_price_per_item is not None and sell_price_per_item > 0:
                 existing.sell_price_per_item = sell_price_per_item
 
-            # log production for this batch
+            if image_path is not None:
+                existing.image_path = image_path
+
+            if website_image is not None:
+                existing.website_image = website_image
+
+            existing.fabric_used = fabric_used_clean
+            existing.notes = notes_clean
+
             if new_qty > 0:
                 prod = Production(
                     product_id=existing.id,
@@ -110,7 +116,6 @@ class ProductService:
             db.session.commit()
             return existing
 
-        # 2) No existing product → create a new one
         product = Product(
             factory_id=factory_id,
             name=name_clean,
@@ -119,10 +124,13 @@ class ProductService:
             cost_price_per_item=cost_price_per_item or 0.0,
             sell_price_per_item=sell_price_per_item or 0.0,
             currency=currency,
-            image_path=image_path
+            image_path=image_path,
+            website_image=website_image,
+            fabric_used=fabric_used_clean,
+            notes=notes_clean,
         )
         db.session.add(product)
-        db.session.flush()  # get product.id
+        db.session.flush()
 
         if qty > 0:
             prod = Production(
@@ -136,11 +144,7 @@ class ProductService:
         return product
 
     def increase_stock(self, factory_id: int, product_id: int, quantity: int):
-        product = (
-            Product.query
-            .filter_by(id=product_id, factory_id=factory_id)
-            .first()
-        )
+        product = Product.query.filter_by(id=product_id, factory_id=factory_id).first()
         if not product or quantity <= 0:
             return False
         product.quantity += quantity
@@ -156,21 +160,15 @@ class ProductService:
         customer_phone: str | None = None,
         sell_price_override: float | None = None,
     ):
-        product = (
-            Product.query
-            .filter_by(id=product_id, factory_id=factory_id)
-            .first()
-        )
+        product = Product.query.filter_by(id=product_id, factory_id=factory_id).first()
         if not product or quantity <= 0:
             return None
 
         shop_stock = self._get_or_create_shop_stock(product_id, factory_id)
 
-        # cannot sell more than what is in the shop
         if quantity > shop_stock.quantity:
             return None
 
-        # prices
         sell_price = (
             sell_price_override
             if sell_price_override is not None
@@ -178,7 +176,6 @@ class ProductService:
         )
         cost_price = product.cost_price_per_item
 
-        # reduce only shop stock
         shop_stock.quantity -= quantity
 
         sale = Sale(
@@ -192,7 +189,6 @@ class ProductService:
             currency=product.currency,
         )
 
-        # записываем в кассу выручку (по цене продажи)
         cash = CashRecord(
             date=date.today(),
             amount=sale.total_sell,
@@ -211,52 +207,39 @@ class ProductService:
         if factory_id is not None:
             q = q.filter(Product.factory_id == factory_id)
 
-        return (
-            q.order_by(Sale.date.desc(), Sale.id.desc())
-            .limit(limit)
-            .all()
-        )
+        return q.order_by(Sale.date.desc(), Sale.id.desc()).limit(limit).all()
 
     def total_stock_value(self, factory_id: int):
-        """
-        Render-safe: avoids ORM selecting missing columns (like is_published).
-        Returns: (total_uzs, total_usd)
-        """
-        rows = db.session.execute(
-            text("""
+        rows = (
+            db.session.execute(
+                text(
+                    """
                 SELECT
                   COALESCE(SUM(CASE WHEN currency = 'UZS' THEN quantity * cost_price_per_item ELSE 0 END), 0) AS total_uzs,
                   COALESCE(SUM(CASE WHEN currency = 'USD' THEN quantity * cost_price_per_item ELSE 0 END), 0) AS total_usd
                 FROM products
                 WHERE factory_id = :factory_id
-            """),
-            {"factory_id": factory_id},
-        ).mappings().first()
+            """
+                ),
+                {"factory_id": factory_id},
+            )
+            .mappings()
+            .first()
+        )
 
         total_uzs = float(rows["total_uzs"] or 0)
         total_usd = float(rows["total_usd"] or 0)
         return total_uzs, total_usd
 
     def sales_totals(self, factory_id: int | None = None):
-        """
-        Return sales totals grouped by period and currency.
-
-        Periods:
-          - today
-          - yesterday
-          - last_week (FULL previous week Monday → Sunday)
-          - month (current month)
-        """
         today = date.today()
         yesterday = today - timedelta(days=1)
 
-        # ---- Last week (previous full Monday → Sunday) ----
-        weekday = today.weekday()  # Monday=0 ... Sunday=6
+        weekday = today.weekday()
         this_monday = today - timedelta(days=weekday)
         last_monday = this_monday - timedelta(days=7)
         last_sunday = this_monday - timedelta(days=1)
 
-        # ---- Month start ----
         month_start = date(today.year, today.month, 1)
 
         base_q = Sale.query.join(Product)
@@ -296,7 +279,6 @@ class ProductService:
         date_to=None,
         factory_id: int | None = None,
     ):
-        """Return all sales, optionally filtered by date range + factory."""
         q = Sale.query.join(Product)
         if factory_id is not None:
             q = q.filter(Product.factory_id == factory_id)
@@ -309,8 +291,12 @@ class ProductService:
         return q.order_by(Sale.date.desc(), Sale.id.desc()).all()
 
     def production_stats(self, factory_id: int | None = None):
-        q_all = db.session.query(func.coalesce(func.sum(Production.quantity), 0)).join(Product)
-        q_today = db.session.query(func.coalesce(func.sum(Production.quantity), 0)).join(Product)
+        q_all = db.session.query(func.coalesce(func.sum(Production.quantity), 0)).join(
+            Product
+        )
+        q_today = db.session.query(
+            func.coalesce(func.sum(Production.quantity), 0)
+        ).join(Product)
 
         if factory_id is not None:
             q_all = q_all.filter(Product.factory_id == factory_id)
@@ -325,7 +311,6 @@ class ProductService:
         }
 
     def stock_value_sell_totals(self, factory_id: int | None = None):
-        """Total stock value at SELL price, by currency."""
         q = Product.query
         if factory_id is not None:
             q = q.filter(Product.factory_id == factory_id)
@@ -344,7 +329,6 @@ class ProductService:
         return total_uzs, total_usd
 
     def stock_profit_totals(self, factory_id: int | None = None):
-        """Total potential profit in all remaining stock, by currency."""
         q = Product.query
         if factory_id is not None:
             q = q.filter(Product.factory_id == factory_id)
@@ -363,7 +347,6 @@ class ProductService:
         return total_uzs, total_usd
 
     def get_low_stock_products(self, factory_id: int | None = None):
-        """Return products where quantity is at or below the low stock threshold."""
         q = Product.query
         if factory_id is not None:
             q = q.filter(Product.factory_id == factory_id)
@@ -375,28 +358,30 @@ class ProductService:
         )
 
     def _get_or_create_shop_stock(self, product_id: int, factory_id: int) -> ShopStock:
+        default_shop = get_or_create_default_shop(factory_id)
+
         stock = (
-            ShopStock.query
-            .join(Product)
-            .filter(
+            ShopStock.query.filter(
                 ShopStock.product_id == product_id,
-                Product.factory_id == factory_id,
+                ShopStock.shop_id == default_shop.id,
+                ShopStock.source_factory_id == factory_id,
             )
             .first()
         )
         if not stock:
-            stock = ShopStock(product_id=product_id, quantity=0)
+            stock = ShopStock(
+                shop_id=default_shop.id,
+                product_id=product_id,
+                source_factory_id=factory_id,
+                quantity=0,
+            )
             db.session.add(stock)
-            db.session.flush()  # to get id
+            db.session.flush()
         return stock
 
     def transfer_to_shop(self, factory_id: int, product_id: int, quantity: int):
         """Move ready products from factory stock to shop stock."""
-        product = (
-            Product.query
-            .filter_by(id=product_id, factory_id=factory_id)
-            .first()
-        )
+        product = Product.query.filter_by(id=product_id, factory_id=factory_id).first()
         if not product or quantity <= 0:
             return None
 
@@ -416,13 +401,9 @@ class ProductService:
         sort: str = "name_asc",
         factory_id: int | None = None,
     ):
-        """
-        Products currently in the shop, with optional search + sorting.
-        sort options: name_asc, name_desc, qty_asc, qty_desc, value_desc
-        """
         q = ShopStock.query.join(Product)
         if factory_id is not None:
-            q = q.filter(Product.factory_id == factory_id)
+            q = q.filter(ShopStock.source_factory_id == factory_id)
 
         if query:
             pattern = f"%{query.lower()}%"
@@ -431,7 +412,6 @@ class ProductService:
                 | db.func.lower(db.func.coalesce(Product.category, "")).like(pattern)
             )
 
-        # sorting
         if sort == "name_desc":
             q = q.order_by(Product.name.desc())
         elif sort == "qty_asc":
@@ -440,9 +420,12 @@ class ProductService:
             q = q.order_by(ShopStock.quantity.desc())
         elif sort == "value_desc":
             q = q.order_by(
-                (ShopStock.quantity * db.func.coalesce(Product.sell_price_per_item, 0)).desc()
+                (
+                    ShopStock.quantity
+                    * db.func.coalesce(Product.sell_price_per_item, 0)
+                ).desc()
             )
-        else:  # default name_asc
+        else:
             q = q.order_by(Product.name.asc())
 
         return q.all()
@@ -451,14 +434,14 @@ class ProductService:
         """Total money currently in shop (unsold goods), by currency."""
         q = ShopStock.query.join(Product)
         if factory_id is not None:
-            q = q.filter(Product.factory_id == factory_id)
+            q = q.filter(ShopStock.source_factory_id == factory_id)
 
         stocks = q.all()
         total_uzs = 0.0
         total_usd = 0.0
 
         for s in stocks:
-            value = s.total_value
+            value = (s.quantity or 0) * (s.product.sell_price_per_item or 0)
             cur = (s.product.currency or "UZS").upper()
             if cur == "USD":
                 total_usd += value
@@ -470,14 +453,13 @@ class ProductService:
     def weekly_shop_report(self, factory_id: int | None = None):
         """Return weekly report for Monday–Sunday shop activity (current week)."""
         today = date.today()
-        weekday = today.weekday()  # Monday=0
+        weekday = today.weekday()
         monday = today - timedelta(days=weekday)
         sunday = monday + timedelta(days=6)
 
-        # shop stock for this factory
         shop_q = ShopStock.query.join(Product)
         if factory_id is not None:
-            shop_q = shop_q.filter(Product.factory_id == factory_id)
+            shop_q = shop_q.filter(ShopStock.source_factory_id == factory_id)
         shop = shop_q.all()
 
         report = []
@@ -485,19 +467,20 @@ class ProductService:
         for item in shop:
             product = item.product
 
-            # Sales this week (Mon–Sun) for this product
             sales_q = Sale.query.filter(
                 Sale.product_id == product.id,
                 Sale.date >= monday,
                 Sale.date <= sunday,
             )
-            # factory filter is implied by product.id
+
+            if factory_id is not None:
+                sales_q = sales_q.join(Product).filter(Product.factory_id == factory_id)
 
             sales = sales_q.all()
 
             sold_qty = sum(s.quantity for s in sales)
-            sent_qty = item.quantity + sold_qty  # sent = current + sold
-            total_value = item.total_value
+            sent_qty = item.quantity + sold_qty
+            total_value = (item.quantity or 0) * (product.sell_price_per_item or 0)
 
             report.append(
                 {
@@ -509,8 +492,8 @@ class ProductService:
                 }
             )
 
-        total_sent = sum(r["sent"] * r["product"].sell_price_per_item for r in report)
-        total_sold = sum(r["sold"] * r["product"].sell_price_per_item for r in report)
+        total_sent = sum((r["sent"] or 0) * (r["product"].sell_price_per_item or 0) for r in report)
+        total_sold = sum((r["sold"] or 0) * (r["product"].sell_price_per_item or 0) for r in report)
         total_remaining = sum(r["total_value"] for r in report)
 
         return {
@@ -531,13 +514,8 @@ class ProductService:
         if factory_id is not None:
             base = base.filter(Product.factory_id == factory_id)
 
-        # Sales this month
-        sales = (
-            base.filter(Sale.date >= month_start, Sale.date <= today)
-            .all()
-        )
+        sales = base.filter(Sale.date >= month_start, Sale.date <= today).all()
 
-        # Daily totals
         daily_totals = (
             db.session.query(
                 Sale.date,
@@ -547,14 +525,13 @@ class ProductService:
             .filter(
                 Sale.date >= month_start,
                 Sale.date <= today,
-                *( [Product.factory_id == factory_id] if factory_id is not None else [] ),
+                *([Product.factory_id == factory_id] if factory_id is not None else []),
             )
             .group_by(Sale.date)
             .order_by(Sale.date.asc())
             .all()
         )
 
-        # Best products
         top_products = (
             db.session.query(
                 Product.name,
@@ -564,7 +541,7 @@ class ProductService:
             .filter(
                 Sale.date >= month_start,
                 Sale.date <= today,
-                *( [Product.factory_id == factory_id] if factory_id is not None else [] ),
+                *([Product.factory_id == factory_id] if factory_id is not None else []),
             )
             .group_by(Product.id)
             .order_by(func.sum(Sale.quantity).desc())
@@ -584,10 +561,21 @@ class ProductService:
             "profit": profit,
         }
 
+    def _get_total_shop_qty_for_product(
+        self, product_id: int, factory_id: int | None = None
+    ) -> int:
+        q = db.session.query(func.coalesce(func.sum(ShopStock.quantity), 0)).filter(
+            ShopStock.product_id == product_id
+        )
+
+        if factory_id is not None:
+            q = q.filter(ShopStock.source_factory_id == factory_id)
+
+        return int(q.scalar() or 0)
+
     def get_manager_financial_report(self, factory_id: int | None = None):
         """Full financial overview for manager (Dad). All values in UZS only."""
 
-        # ---- 1) Factory stock value (cost price, UZS only) ----
         q_products = Product.query
         if factory_id is not None:
             q_products = q_products.filter(Product.factory_id == factory_id)
@@ -602,15 +590,16 @@ class ProductService:
             cost_price = p.cost_price_per_item or 0.0
             factory_cost_uzs += qty_factory * cost_price
 
-        # ---- 2) Shop stock value (sell price, UZS only) ----
         q_shop = ShopStock.query.join(Product)
         if factory_id is not None:
-            q_shop = q_shop.filter(Product.factory_id == factory_id)
+            q_shop = q_shop.filter(ShopStock.source_factory_id == factory_id)
         shop_items = q_shop.all()
 
         shop_sell_uzs = 0.0
         for s in shop_items:
             p = s.product
+            if not p:
+                continue
             cur = (p.currency or "UZS").upper()
             if cur != "UZS":
                 continue
@@ -618,7 +607,6 @@ class ProductService:
             sell_price = p.sell_price_per_item or 0.0
             shop_sell_uzs += qty_shop * sell_price
 
-        # ---- 3) Fabric total value (UZS only) ----
         q_fabrics = Fabric.query
         if factory_id is not None:
             q_fabrics = q_fabrics.filter(Fabric.factory_id == factory_id)
@@ -629,20 +617,18 @@ class ProductService:
             cur = (f.price_currency or "UZS").upper()
             if cur != "UZS":
                 continue
-            fabric_value_uzs += f.total_value()
+            fabric_value_uzs += f.total_value() or 0.0
 
-        # ---- 4) Sales totals (reuse helper) ----
         totals = self.sales_totals(factory_id=factory_id)
-        today_sales_uzs = totals["today"].get("UZS", 0.0)
-        month_sales_uzs = totals["month"].get("UZS", 0.0)
+        today_sales_uzs = totals.get("today", {}).get("UZS", 0.0)
+        month_sales_uzs = totals.get("month", {}).get("UZS", 0.0)
 
-        # ---- 5) Month profit (sales in this month, UZS only) ----
-        today = date.today()
-        month_start = date(today.year, today.month, 1)
+        today_dt = date.today()
+        month_start = date(today_dt.year, today_dt.month, 1)
 
         month_q = Sale.query.join(Product).filter(
             Sale.date >= month_start,
-            Sale.date <= today,
+            Sale.date <= today_dt,
         )
         if factory_id is not None:
             month_q = month_q.filter(Product.factory_id == factory_id)
@@ -653,12 +639,10 @@ class ProductService:
             cur = (s.currency or "UZS").upper()
             if cur != "UZS":
                 continue
-            month_profit_uzs += s.profit
+            month_profit_uzs += s.profit or 0.0
 
-        # ---- 5.5) Unrealized profit (potential profit in remaining stock) ----
         stock_profit_uzs, stock_profit_usd = self.stock_profit_totals(factory_id=factory_id)
 
-        # ---- 5.6) Realized profit for all time (all sales, UZS only) ----
         all_q = Sale.query.join(Product)
         if factory_id is not None:
             all_q = all_q.filter(Product.factory_id == factory_id)
@@ -669,20 +653,18 @@ class ProductService:
             cur = (s.currency or "UZS").upper()
             if cur != "UZS":
                 continue
-            realized_profit_uzs += s.profit
+            realized_profit_uzs += s.profit or 0.0
 
-        # ---- 6) Low stock products (factory + shop <= threshold) ----
         low_stock = []
         for p in products:
-            shop_qty = p.shop_stock.quantity if p.shop_stock else 0
+            shop_qty = self._get_total_shop_qty_for_product(p.id, factory_id=factory_id)
             total_qty = (p.quantity or 0) + (shop_qty or 0)
             if total_qty <= LOW_STOCK_THRESHOLD:
                 low_stock.append(p)
 
-        # ---- 7) Per-product breakdown for table ----
         product_rows = []
         for p in products:
-            shop_qty = p.shop_stock.quantity if p.shop_stock else 0
+            shop_qty = self._get_total_shop_qty_for_product(p.id, factory_id=factory_id) or 0
             factory_qty = p.quantity or 0
             margin = (p.sell_price_per_item or 0.0) - (p.cost_price_per_item or 0.0)
 
@@ -690,12 +672,18 @@ class ProductService:
 
             sold_units = 0
             realized_profit = 0.0
+
             for s in p.sales:
+                if factory_id is not None and getattr(p, "factory_id", None) != factory_id:
+                    continue
+
+                sold_units += s.quantity or 0
+
                 cur = (s.currency or "UZS").upper()
-                sold_units += s.quantity
                 if cur != "UZS":
                     continue
-                realized_profit += s.profit
+
+                realized_profit += s.profit or 0.0
 
             product_rows.append(
                 {
@@ -710,18 +698,23 @@ class ProductService:
                 }
             )
 
-        return {
-            "factory_cost_uzs": factory_cost_uzs,
-            "shop_sell_uzs": shop_sell_uzs,
-            "fabric_value_uzs": fabric_value_uzs,
-            "today_sales_uzs": today_sales_uzs,
-            "month_sales_uzs": month_sales_uzs,
-            "month_profit_uzs": month_profit_uzs,
-            "unrealized_profit": stock_profit_uzs,
-            "realized_profit": realized_profit_uzs,
-            "low_stock": low_stock,
-            "products": product_rows,
-        }
+        return SimpleNamespace(
+            factory_cost_uzs=factory_cost_uzs,
+            shop_sell_uzs=shop_sell_uzs,
+            fabric_value_uzs=fabric_value_uzs,
+            today_sales_uzs=today_sales_uzs,
+            month_sales_uzs=month_sales_uzs,
+            month_profit_uzs=month_profit_uzs,
+            stock_profit_uzs=stock_profit_uzs or 0.0,
+            stock_profit_usd=stock_profit_usd or 0.0,
+            realized_profit_uzs=realized_profit_uzs,
+            transferred_to_shop_uzs=shop_sell_uzs,
+            sold_uzs=month_sales_uzs,
+            remaining_uzs=(factory_cost_uzs + fabric_value_uzs),
+            profit_uzs=month_profit_uzs,
+            low_stock=low_stock,
+            product_rows=product_rows,
+        )
 
     def production_summary(
         self,
@@ -729,12 +722,6 @@ class ProductService:
         date_to=None,
         factory_id: int | None = None,
     ):
-        """
-        Отчёт по производству за период.
-        Возвращает dict:
-          - rows: список {product: Product, total_qty: int}
-          - total_qty: общий выпуск (шт)
-        """
         q = Production.query.join(Product)
         if factory_id is not None:
             q = q.filter(Product.factory_id == factory_id)
@@ -765,3 +752,34 @@ class ProductService:
             "rows": list(stats.values()),
             "total_qty": total_qty,
         }
+
+    def update_product_info(
+        self,
+        factory_id: int,
+        product_id: int,
+        category: str | None = None,
+        fabric_used: str | None = None,
+        notes: str | None = None,
+        image_path: str | None = None,
+        website_image: str | None = None,
+    ):
+        product = Product.query.filter(
+            Product.id == product_id,
+            Product.factory_id == factory_id,
+        ).first()
+
+        if not product:
+            return None
+
+        product.category = (category or "").strip() or None
+        product.fabric_used = (fabric_used or "").strip() or None
+        product.notes = (notes or "").strip() or None
+
+        if image_path is not None:
+            product.image_path = image_path
+
+        if website_image is not None:
+            product.website_image = website_image
+
+        db.session.commit()
+        return product

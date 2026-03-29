@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Список для магазина{% endblock %}
+{% block title %}{{ t('factory_production_list_title') }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-2 py-md-3">
   <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 mb-2">
-    <h1 class="h5 mb-0 fw-semibold text-truncate" style="min-width:0;">🧾 Список для магазина</h1>
+    <h1 class="h5 mb-0 fw-semibold text-truncate" style="min-width:0;">🧾 {{ t('factory_production_list_title') }}</h1>
     <span class="badge bg-primary" style="white-space:nowrap;">{{ today }}</span>
   </div>
 
   <div class="card shadow-sm border-0">
     <div class="card-body p-2 p-md-3">
       {% if not rows %}
-        <div class="text-muted">Сегодня производство не записано.</div>
+        <div class="text-muted">{{ t('factory_production_list_empty') }}</div>
       {% else %}
         <div class="d-grid gap-2">
           {% for p, prod in rows %}
@@ -22,7 +22,7 @@
                   <div class="small text-muted text-truncate">{{ p.category or "—" }}</div>
                 </div>
                 <div class="text-end">
-                  <div class="small text-muted">Кол-во</div>
+                  <div class="small text-muted">{{ t('quantity') }}</div>
                   <div class="fs-5 fw-bold">{{ prod.quantity }}</div>
                 </div>
               </div>

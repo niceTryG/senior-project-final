@@ -1,0 +1,1322 @@
+{% extends "base.html" %}
+{% block title %}{{ t('wholesale_page_title') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mm-big-sale-page {
+    --mm-bg: #f4f7fb;
+    --mm-card: rgba(255,255,255,.96);
+    --mm-card-strong: rgba(255,255,255,.99);
+    --mm-line: rgba(15,23,42,.08);
+    --mm-line-strong: rgba(15,23,42,.12);
+    --mm-text: #0f172a;
+    --mm-muted: #64748b;
+    --mm-primary: #0d6efd;
+    --mm-success: #198754;
+    --mm-danger: #dc3545;
+    --mm-warning: #d97706;
+    --mm-radius: 20px;
+    --mm-radius-lg: 18px;
+    --mm-radius-md: 16px;
+    --mm-shadow-soft: 0 8px 20px rgba(15,23,42,.06);
+    --mm-shadow-pop: 0 18px 40px rgba(15,23,42,.14);
+  }
+
+  .mm-big-sale-page .mm-block,
+  .mm-big-sale-page .mm-product-card,
+  .mm-big-sale-page .mm-order-line,
+  .mm-big-sale-page .mm-summary-card,
+  .mm-big-sale-page .mm-empty-card {
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: var(--mm-card);
+    box-shadow: var(--mm-shadow-soft);
+  }
+
+  .mm-big-sale-page .mm-page-shell {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  .mm-section-title {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    line-height: 1.2;
+    letter-spacing: -.01em;
+  }
+
+  .mm-note {
+    color: var(--mm-muted);
+    font-size: .84rem;
+    line-height: 1.45;
+  }
+
+  .mm-action-btn {
+    border-radius: 14px !important;
+    min-height: 42px;
+    font-weight: 800 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .42rem;
+  }
+
+  .mm-search-results {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 30;
+    border: 1px solid var(--mm-line-strong);
+    border-radius: 18px;
+    background: rgba(255,255,255,.98);
+    box-shadow: var(--mm-shadow-pop);
+    overflow: hidden;
+    max-height: 420px;
+    overflow-y: auto;
+    backdrop-filter: blur(10px);
+  }
+
+  .mm-search-result-item {
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--mm-line);
+  }
+
+  .mm-search-result-item:last-child {
+    border-bottom: none;
+  }
+
+  .mm-search-result-item:hover {
+    background: rgba(13,110,253,.04);
+  }
+
+  .mm-search-result-title {
+    margin: 0;
+    font-size: .95rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    line-height: 1.15;
+    word-break: break-word;
+  }
+
+  .mm-search-result-sub {
+    margin-top: 4px;
+    font-size: .78rem;
+    color: var(--mm-muted);
+    line-height: 1.45;
+  }
+
+  .mm-search-result-right {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .mm-search-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .mm-search-pill,
+  .mm-factory-pill,
+  .mm-stock-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .28rem .58rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 800;
+    border: 1px solid var(--mm-line);
+    background: rgba(248,250,252,.95);
+    color: var(--mm-text);
+    line-height: 1.2;
+  }
+
+  .mm-search-empty,
+  .mm-empty-card {
+    padding: 16px;
+    color: var(--mm-muted);
+    text-align: center;
+    font-size: .9rem;
+  }
+
+  .mm-factory-selector {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }
+
+  .mm-factory-selector::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .mm-factory-selector::-webkit-scrollbar-thumb {
+    background: rgba(15,23,42,.18);
+    border-radius: 999px;
+  }
+
+  .mm-factory-chip {
+    flex: 0 0 auto;
+    min-width: 116px;
+    max-width: 160px;
+    min-height: 92px;
+    border: 1px solid var(--mm-line);
+    border-radius: 18px;
+    background: rgba(255,255,255,.98);
+    color: var(--mm-text);
+    text-decoration: none;
+    box-shadow: var(--mm-shadow-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px 14px;
+    transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease;
+    scroll-snap-align: start;
+  }
+
+  .mm-factory-chip:hover {
+    color: var(--mm-text);
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(15,23,42,.10);
+    border-color: rgba(13,110,253,.24);
+  }
+
+  .mm-factory-chip.is-active {
+    border-color: rgba(25,135,84,.36);
+    background: rgba(25,135,84,.06);
+  }
+
+  .mm-factory-chip-label {
+    font-size: .88rem;
+    font-weight: 900;
+    line-height: 1.15;
+    word-break: break-word;
+  }
+
+  .mm-product-card {
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .mm-product-card-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+  }
+
+  .mm-product-title {
+    margin: 0;
+    font-size: .94rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    line-height: 1.15;
+    word-break: break-word;
+  }
+
+  .mm-product-sub {
+    color: var(--mm-muted);
+    font-size: .78rem;
+    line-height: 1.45;
+  }
+
+  .mm-product-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+  }
+
+  .mm-order-line {
+    padding: 12px;
+  }
+
+  .mm-order-line + .mm-order-line {
+    margin-top: 10px;
+  }
+
+  .mm-cart-factory-group + .mm-cart-factory-group {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--mm-line);
+  }
+
+  .mm-cart-factory-title {
+    margin: 0 0 10px;
+    font-size: .88rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    line-height: 1.2;
+  }
+
+  .mm-line-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .mm-line-title {
+    margin: 0;
+    font-size: .94rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    line-height: 1.15;
+    word-break: break-word;
+  }
+
+  .mm-line-sub {
+    margin-top: 4px;
+    color: var(--mm-muted);
+    font-size: .77rem;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .mm-remove-btn {
+    border-radius: 12px !important;
+    min-width: 40px;
+    min-height: 40px;
+    font-weight: 900 !important;
+    flex-shrink: 0;
+  }
+
+  .mm-line-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mm-line-total {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--mm-line-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mm-line-total-k {
+    font-size: .76rem;
+    color: var(--mm-muted);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .mm-line-total-v {
+    font-size: .98rem;
+    color: var(--mm-text);
+    font-weight: 900;
+  }
+
+  .mm-summary-card {
+    padding: 14px;
+    position: sticky;
+    top: 16px;
+    background: var(--mm-card-strong);
+  }
+
+  .mm-summary-title {
+    margin: 0 0 12px;
+    font-size: .96rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    line-height: 1.2;
+  }
+
+  .mm-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    color: var(--mm-text);
+    font-size: .9rem;
+  }
+
+  .mm-summary-row + .mm-summary-row {
+    border-top: 1px dashed var(--mm-line);
+  }
+
+  .mm-summary-row strong {
+    font-weight: 900;
+  }
+
+  .mm-summary-total {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--mm-line-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mm-summary-total-k {
+    font-size: .84rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .mm-summary-total-v {
+    font-size: 1.08rem;
+    font-weight: 950;
+    color: var(--mm-success);
+  }
+
+  .mm-summary-note {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(13,110,253,.05);
+    border: 1px dashed rgba(13,110,253,.18);
+    color: var(--mm-muted);
+    font-size: .82rem;
+    line-height: 1.45;
+  }
+
+  @media (max-width: 1199.98px) {
+    .mm-summary-card {
+      position: static;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .mm-big-sale-page {
+      --mm-radius: 18px;
+    }
+
+    .mm-big-sale-page .container-fluid {
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+
+    .mm-block,
+    .mm-summary-card,
+    .mm-empty-card,
+    .mm-product-card,
+    .mm-order-line {
+      border-radius: 18px;
+    }
+
+    .mm-factory-chip {
+      min-width: 96px;
+      max-width: 132px;
+      min-height: 84px;
+      padding: 10px 12px;
+    }
+
+    .mm-factory-chip-label {
+      font-size: .82rem;
+    }
+
+    .mm-search-results {
+      border-radius: 16px;
+      max-height: 62vh;
+    }
+
+    .mm-search-result-item {
+      align-items: flex-start;
+      padding: 12px;
+    }
+
+    .mm-search-result-right {
+      align-items: stretch;
+      min-width: 96px;
+    }
+
+    .mm-search-meta {
+      justify-content: flex-start;
+    }
+
+    .mm-line-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .mm-remove-btn {
+      width: 100%;
+      min-height: 38px;
+    }
+
+    .mm-line-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-summary-row,
+    .mm-summary-total {
+      font-size: .88rem;
+    }
+
+    .mm-summary-total-v {
+      font-size: 1rem;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .mm-section-title {
+      font-size: .96rem;
+    }
+
+    .mm-note {
+      font-size: .8rem;
+    }
+
+    .mm-product-title,
+    .mm-line-title,
+    .mm-search-result-title {
+      font-size: .9rem;
+    }
+
+    .mm-search-pill,
+    .mm-factory-pill,
+    .mm-stock-pill {
+      font-size: .68rem;
+      padding: .28rem .5rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4 mm-big-sale-page">
+  <div class="mm-page-shell">
+    <form method="post" id="bigSaleForm">
+      {% if factory_id %}
+        <input type="hidden" name="factory_id" value="{{ factory_id }}">
+      {% endif %}
+
+      <div class="row g-3">
+        <div class="col-12 col-xl-8">
+
+          <div class="mm-block p-3 mb-3">
+            <div class="mb-3">
+              <h2 class="mm-section-title mb-1">{{ t('wholesale_search_products') }}</h2>
+              <div class="mm-note">
+                {{ t('wholesale_search_hint') }}
+              </div>
+            </div>
+
+            <div class="position-relative">
+              <input
+                type="text"
+                id="productSearch"
+                class="form-control form-control-lg"
+                placeholder="{{ t('wholesale_search_placeholder') }}"
+                autocomplete="off"
+              >
+              <div id="searchResults" class="mm-search-results d-none"></div>
+            </div>
+          </div>
+
+          <div class="mm-block p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+              <div>
+                <h2 class="mm-section-title mb-1">{{ t('wholesale_cart') }}</h2>
+                <div class="mm-note">{{ t('wholesale_cart_hint') }}</div>
+              </div>
+            </div>
+
+            <div id="orderLines"></div>
+
+            <div id="emptyLinesState" class="mm-empty-card">
+              {{ t('wholesale_cart_empty') }}
+            </div>
+          </div>
+
+          <div class="mm-block p-3 mb-3">
+            <div class="mb-3">
+              <h2 class="mm-section-title mb-1">{{ t('wholesale_factories') }}</h2>
+              <div class="mm-note">
+                {{ t('wholesale_factories_hint') }}
+              </div>
+            </div>
+
+            <div class="mm-factory-selector">
+              {% for f in available_factories %}
+                <a
+                  href="{{ url_for('sales.wholesale_create', factory_id=f.factory_id) }}"
+                  class="mm-factory-chip {% if factory_id == f.factory_id %}is-active{% endif %}"
+                >
+                  <span class="mm-factory-chip-label">{{ f.factory_name }}</span>
+                </a>
+              {% else %}
+                <div class="mm-empty-card w-100">
+                  {{ t('wholesale_no_factory_stock') }}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          {% if factory_id %}
+            <div class="mm-block p-3 mb-3">
+              <div class="mb-3">
+                <h2 class="mm-section-title mb-1">{{ t('wholesale_products_in_factory') }}</h2>
+                <div class="mm-note">
+                  {{ t('wholesale_products_in_factory_hint') }}
+                </div>
+              </div>
+
+              {% if stock_rows %}
+                <div class="row g-2 g-md-3">
+                  {% for row in stock_rows %}
+                    {% set p = row.product %}
+                    <div class="col-6 col-md-4 col-xl-3">
+                      <div class="mm-product-card h-100">
+                        <div class="mm-product-card-body">
+                          <div>
+                            <h3 class="mm-product-title">{{ p.name }}</h3>
+                            <div class="mm-product-sub">{{ p.category or t('wholesale_no_category') }}</div>
+                          </div>
+
+                          <div class="d-flex flex-wrap gap-2">
+                            <span class="mm-stock-pill">{{ t('wholesale_stock') }}: {{ row.quantity }}</span>
+                            <span class="mm-stock-pill">{{ format_money(p.sell_price_per_item or 0, p.currency or 'UZS') }}</span>
+                          </div>
+
+                          <div class="mm-product-foot">
+                            <button
+                              type="button"
+                              class="btn btn-primary mm-action-btn btn-sm js-add-grid-line"
+                              data-stock-id="{{ row.id }}"
+                              data-product-id="{{ p.id }}"
+                              data-source-factory-id="{{ row.source_factory_id }}"
+                              data-source-factory-name="{{ row.source_factory.name if row.source_factory else '' }}"
+                              data-product-name="{{ p.name }}"
+                              data-category-name="{{ p.category or '' }}"
+                              data-available="{{ row.quantity }}"
+                              data-unit-price="{{ p.sell_price_per_item or 0 }}"
+                              data-currency="{{ p.currency or 'UZS' }}"
+                            >
+                              {{ t('wholesale_add') }}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="mm-empty-card">
+                  {{ t('wholesale_no_products_in_factory') }}
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
+
+        </div>
+
+        <div class="col-12 col-xl-4">
+          <div class="mm-summary-card">
+            <h2 class="mm-summary-title">{{ t('wholesale_summary_title') }}</h2>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">{{ t('wholesale_customer_name') }}</label>
+              <input
+                type="text"
+                name="customer_name"
+                class="form-control"
+                placeholder="{{ t('wholesale_optional') }}"
+                value="{{ request.form.get('customer_name', '') }}"
+              >
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">{{ t('wholesale_customer_phone') }}</label>
+              <input
+                type="text"
+                name="customer_phone"
+                class="form-control"
+                placeholder="{{ t('wholesale_optional') }}"
+                value="{{ request.form.get('customer_phone', '') }}"
+              >
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">{{ t('note') }}</label>
+              <textarea
+                name="note"
+                class="form-control"
+                rows="2"
+                placeholder="{{ t('wholesale_optional') }}"
+              >{{ request.form.get('note', '') }}</textarea>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">{{ t('wholesale_payment_method') }}</label>
+              <select name="payment_method" class="form-select">
+                <option value="">{{ t('wholesale_select') }}</option>
+                <option value="cash">{{ t('payment_cash') }}</option>
+                <option value="card">{{ t('payment_card') }}</option>
+                <option value="transfer">{{ t('payment_transfer') }}</option>
+                <option value="mixed">{{ t('payment_mixed') }}</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">{{ t('wholesale_payment_status') }}</label>
+              <select name="payment_status" class="form-select">
+                <option value="paid">{{ t('wholesale_paid') }}</option>
+                <option value="partial">{{ t('wholesale_partial') }}</option>
+                <option value="unpaid">{{ t('wholesale_unpaid') }}</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">{{ t('wholesale_discount_amount') }}</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="discount_amount"
+                id="discountAmount"
+                class="form-control"
+                value="{{ request.form.get('discount_amount', '0') }}"
+              >
+            </div>
+
+            <div class="mm-summary-row">
+              <span>{{ t('wholesale_sku_count') }}</span>
+              <strong id="summarySkus">0</strong>
+            </div>
+            <div class="mm-summary-row">
+              <span>{{ t('wholesale_total_qty') }}</span>
+              <strong id="summaryQty">0</strong>
+            </div>
+            <div class="mm-summary-row">
+              <span>{{ t('wholesale_subtotal') }}</span>
+              <strong id="summarySubtotal">0 UZS</strong>
+            </div>
+            <div class="mm-summary-row">
+              <span>{{ t('wholesale_discount') }}</span>
+              <strong id="summaryDiscount">0 UZS</strong>
+            </div>
+
+            <div class="mm-summary-total">
+              <div class="mm-summary-total-k">{{ t('wholesale_final_total') }}</div>
+              <div class="mm-summary-total-v" id="summaryFinal">0 UZS</div>
+            </div>
+
+            <div class="d-grid mt-3">
+              <button type="submit" class="btn btn-success mm-action-btn" id="saveBigSaleBtn">
+                💾 {{ t('wholesale_save_button') }}
+              </button>
+            </div>
+
+            <div class="mm-summary-note">
+              {{ t('wholesale_backend_note') }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const CART_KEY = "mm_big_sale_cart_v5";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("saved") === "1") {
+      localStorage.removeItem(CART_KEY);
+      urlParams.delete("saved");
+      const cleanUrl =
+        window.location.pathname +
+        (urlParams.toString() ? "?" + urlParams.toString() : "");
+      window.history.replaceState({}, "", cleanUrl);
+    }
+
+    const form = document.getElementById("bigSaleForm");
+    const saveBtn = document.getElementById("saveBigSaleBtn");
+    const orderLines = document.getElementById("orderLines");
+    const emptyLinesState = document.getElementById("emptyLinesState");
+    const searchInput = document.getElementById("productSearch");
+    const searchResults = document.getElementById("searchResults");
+    const discountInput = document.getElementById("discountAmount");
+
+    const summarySkus = document.getElementById("summarySkus");
+    const summaryQty = document.getElementById("summaryQty");
+    const summarySubtotal = document.getElementById("summarySubtotal");
+    const summaryDiscount = document.getElementById("summaryDiscount");
+    const summaryFinal = document.getElementById("summaryFinal");
+
+    const factoryMap = {
+      {% for f in available_factories %}
+        {{ f.factory_id }}: {{ f.factory_name|tojson }}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    };
+
+    const allSearchRows = [
+      {% for row in search_rows %}
+        {
+          stockId: {{ row.id }},
+          productId: {{ row.product.id }},
+          sourceFactoryId: {{ row.source_factory_id or 0 }},
+          sourceFactoryName: {{ (row.source_factory.name if row.source_factory else '')|tojson }},
+          productName: {{ (row.product.name or '')|tojson }},
+          categoryName: {{ (row.product.category or '')|tojson }},
+          available: {{ row.quantity or 0 }},
+          unitPrice: {{ row.product.sell_price_per_item or 0 }},
+          currency: {{ (row.product.currency or 'UZS')|tojson }}
+        }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    function getCart() {
+      try {
+        return JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveCart(cart) {
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    }
+
+    function money(value, currency) {
+      const num = Number(value || 0);
+      const cur = currency || "UZS";
+      try {
+        return new Intl.NumberFormat(undefined, {
+          maximumFractionDigits: 2,
+        }).format(num) + " " + cur;
+      } catch (e) {
+        return num.toFixed(2) + " " + cur;
+      }
+    }
+
+    function normalizeText(str) {
+      return String(str || "")
+        .toLowerCase()
+        .replace(/[`'’"]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function cyrToLat(str) {
+      const map = {
+        "\u0430":"a","\u0431":"b","\u0432":"v","\u0433":"g","\u0434":"d","\u0435":"e","\u0451":"yo","\u0436":"j","\u0437":"z",
+        "\u0438":"i","\u0439":"y","\u043a":"k","\u043b":"l","\u043c":"m","\u043d":"n","\u043e":"o","\u043f":"p","\u0440":"r",
+        "\u0441":"s","\u0442":"t","\u0443":"u","\u0444":"f","\u0445":"x","\u0446":"ts","\u0447":"ch","\u0448":"sh","\u0449":"sh",
+        "\u044a":"","\u044b":"i","\u044c":"","\u044d":"e","\u044e":"yu","\u044f":"ya",
+        "\u049b":"q","\u0493":"g","\u04b3":"h","\u045e":"o","\u04af":"u"
+      };
+      return normalizeText(str).split("").map(ch => map[ch] ?? ch).join("");
+    }
+
+    function latToCyrApprox(str) {
+      let s = normalizeText(str);
+
+      const rules = [
+        ["shch", "\u0449"],
+        ["yo", "\u0451"],
+        ["yu", "\u044e"],
+        ["ya", "\u044f"],
+        ["ch", "\u0447"],
+        ["sh", "\u0448"],
+        ["ts", "\u0446"],
+        ["kh", "\u0445"],
+        ["q", "\u049b"],
+        ["g'", "\u0493"],
+        ["o'", "\u045e"],
+        ["h", "\u04b3"]
+      ];
+
+      for (const [from, to] of rules) {
+        s = s.split(from).join(to);
+      }
+
+      const map = {
+        "a":"\u0430","b":"\u0431","d":"\u0434","e":"\u0435","f":"\u0444","g":"\u0433","i":"\u0438","j":"\u0436","k":"\u043a",
+        "l":"\u043b","m":"\u043c","n":"\u043d","o":"\u043e","p":"\u043f","r":"\u0440","s":"\u0441","t":"\u0442","u":"\u0443",
+        "v":"\u0432","x":"\u0445","y":"\u0439","z":"\u0437","c":"\u043a","w":"\u0432"
+      };
+
+      return s.split("").map(ch => map[ch] ?? ch).join("");
+    }
+
+    function levenshtein(a, b) {
+      a = normalizeText(a);
+      b = normalizeText(b);
+
+      const matrix = Array.from({ length: b.length + 1 }, (_, i) =>
+        Array.from({ length: a.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+      );
+
+      for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+          const cost = a[j - 1] === b[i - 1] ? 0 : 1;
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j - 1] + cost
+          );
+        }
+      }
+
+      return matrix[b.length][a.length];
+    }
+
+    function similarity(a, b) {
+      if (!a || !b) return 0;
+      const distance = levenshtein(a, b);
+      const maxLen = Math.max(a.length, b.length, 1);
+      return 1 - distance / maxLen;
+    }
+
+    function buildSearchKeys(row) {
+      const name = normalizeText(row.productName);
+      const category = normalizeText(row.categoryName || "");
+      const nameLat = cyrToLat(name);
+      const nameCyrApprox = latToCyrApprox(name);
+      return {
+        ...row,
+        keyName: name,
+        keyCategory: category,
+        keyNameLat: nameLat,
+        keyNameCyrApprox: nameCyrApprox
+      };
+    }
+
+    const searchableRows = allSearchRows.map(buildSearchKeys);
+
+    function scoreRow(row, query) {
+      const q = normalizeText(query);
+      if (!q) return 0;
+
+      const qLat = cyrToLat(q);
+      const qCyr = latToCyrApprox(q);
+
+      const targets = [
+        row.keyName,
+        row.keyCategory,
+        row.keyNameLat,
+        row.keyNameCyrApprox
+      ];
+
+      let score = 0;
+
+      for (const t of targets) {
+        if (!t) continue;
+
+        if (t === q) score = Math.max(score, 120);
+        if (t.startsWith(q)) score = Math.max(score, 110);
+        if (t.includes(q)) score = Math.max(score, 100);
+
+        if (qLat && t.includes(qLat)) score = Math.max(score, 95);
+        if (qCyr && t.includes(qCyr)) score = Math.max(score, 95);
+
+        const sim1 = similarity(t, q);
+        const sim2 = similarity(t, qLat);
+        const sim3 = similarity(t, qCyr);
+        const bestSim = Math.max(sim1, sim2, sim3);
+
+        if (bestSim >= 0.82) score = Math.max(score, 90);
+        else if (bestSim >= 0.72) score = Math.max(score, 78);
+        else if (bestSim >= 0.62) score = Math.max(score, 66);
+      }
+
+      return score;
+    }
+
+    function updateEmptyState() {
+      const count = orderLines.querySelectorAll(".mm-order-line").length;
+      emptyLinesState.style.display = count ? "none" : "block";
+    }
+
+    function recalcSummary() {
+      const cart = getCart();
+      let skus = 0;
+      let qty = 0;
+      let subtotal = 0;
+      let currency = "UZS";
+
+      cart.forEach((item) => {
+        const q = Number(item.quantity || 0);
+        const p = Number(item.unitPrice || 0);
+        const lineTotal = q * p;
+        if (q > 0) {
+          skus += 1;
+          qty += q;
+          subtotal += lineTotal;
+          currency = item.currency || "UZS";
+        }
+      });
+
+      const discount = Math.max(Number(discountInput ? discountInput.value || 0 : 0), 0);
+      const finalTotal = Math.max(subtotal - discount, 0);
+
+      summarySkus.textContent = skus;
+      summaryQty.textContent = qty;
+      summarySubtotal.textContent = money(subtotal, currency);
+      summaryDiscount.textContent = money(discount, currency);
+      summaryFinal.textContent = money(finalTotal, currency);
+    }
+
+    function updateCartItem(stockId, patch) {
+      const cart = getCart().map(item => {
+        if (String(item.stockId) === String(stockId)) {
+          return { ...item, ...patch };
+        }
+        return item;
+      });
+      saveCart(cart);
+      renderCart();
+    }
+
+    function removeCartItem(stockId) {
+      const cart = getCart().filter(item => String(item.stockId) !== String(stockId));
+      saveCart(cart);
+      renderCart();
+    }
+
+    function createLineCard(data) {
+      const wrap = document.createElement("div");
+      wrap.className = "mm-order-line";
+      wrap.dataset.stockId = data.stockId;
+      wrap.dataset.currency = data.currency || "UZS";
+      wrap.dataset.available = String(data.available || 0);
+
+      wrap.innerHTML = `
+        <div class="mm-line-head">
+          <div style="min-width:0;">
+            <h3 class="mm-line-title">${data.productName}</h3>
+            <div class="mm-line-sub">
+              <span class="mm-factory-pill">🏭 ${data.sourceFactoryName || factoryMap[data.sourceFactoryId] || "-"}</span>
+              ${data.categoryName || "{{ t('wholesale_no_category') }}"} • {{ t('wholesale_stock') }}: <strong>${data.available}</strong>
+            </div>
+          </div>
+          <button type="button" class="btn btn-outline-danger mm-remove-btn js-remove-line">×</button>
+        </div>
+
+        <input type="hidden" name="shop_stock_id" value="${data.stockId}">
+        <input type="hidden" name="source_factory_id" value="${data.sourceFactoryId || ''}">
+
+        <div class="mm-line-grid">
+          <div>
+            <label class="form-label small fw-bold">{{ t('quantity') }}</label>
+            <input
+              type="number"
+              min="1"
+              max="${data.available}"
+              step="1"
+              name="quantity"
+              class="form-control js-qty"
+              value="${data.quantity || 1}"
+            >
+          </div>
+          <div>
+            <label class="form-label small fw-bold">{{ t('wholesale_unit_price') }}</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              name="unit_price"
+              class="form-control js-price"
+              value="${data.unitPrice || 0}"
+            >
+          </div>
+        </div>
+
+        <div class="mm-line-total">
+          <div class="mm-line-total-k">{{ t('wholesale_line_total') }}</div>
+          <div class="mm-line-total-v js-line-total">${money((data.quantity || 1) * (data.unitPrice || 0), data.currency)}</div>
+        </div>
+      `;
+
+      const qtyInput = wrap.querySelector(".js-qty");
+      const priceInput = wrap.querySelector(".js-price");
+      const lineTotal = wrap.querySelector(".js-line-total");
+      const removeBtn = wrap.querySelector(".js-remove-line");
+
+      function syncLine() {
+        const max = Number(wrap.dataset.available || 0);
+
+        let q = Number(qtyInput.value || 0);
+        let p = Number(priceInput.value || 0);
+
+        if (q < 1) q = 1;
+        if (max > 0 && q > max) q = max;
+        if (p < 0) p = 0;
+
+        qtyInput.value = q;
+        priceInput.value = p;
+        lineTotal.textContent = money(q * p, data.currency);
+
+        updateCartItem(data.stockId, {
+          quantity: q,
+          unitPrice: p
+        });
+      }
+
+      qtyInput.addEventListener("input", syncLine);
+      priceInput.addEventListener("input", syncLine);
+
+      removeBtn.addEventListener("click", function () {
+        removeCartItem(data.stockId);
+      });
+
+      return wrap;
+    }
+
+    function renderCart() {
+      const cart = getCart();
+      orderLines.innerHTML = "";
+
+      if (!cart.length) {
+        updateEmptyState();
+        recalcSummary();
+        return;
+      }
+
+      const groups = {};
+      cart.forEach(item => {
+        const factoryId = item.sourceFactoryId || 0;
+        if (!groups[factoryId]) groups[factoryId] = [];
+        groups[factoryId].push(item);
+      });
+
+      Object.keys(groups).forEach(factoryId => {
+        const wrap = document.createElement("div");
+        wrap.className = "mm-cart-factory-group";
+
+        const factoryName = groups[factoryId][0].sourceFactoryName || factoryMap[factoryId] || `{{ t('label_factory') }} ${factoryId}`;
+        wrap.innerHTML = `<h3 class="mm-cart-factory-title">🏭 ${factoryName}</h3>`;
+
+        groups[factoryId].forEach(item => {
+          wrap.appendChild(createLineCard(item));
+        });
+
+        orderLines.appendChild(wrap);
+      });
+
+      updateEmptyState();
+      recalcSummary();
+    }
+
+    function addLine(data) {
+      const cart = getCart();
+      const existing = cart.find(item => String(item.stockId) === String(data.stockId));
+
+      if (existing) {
+        const max = Number(existing.available || 0);
+        existing.quantity = Math.min(Number(existing.quantity || 1) + 1, max);
+        saveCart(cart);
+        renderCart();
+        return;
+      }
+
+      cart.push({
+        stockId: data.stockId,
+        productId: data.productId,
+        sourceFactoryId: data.sourceFactoryId,
+        sourceFactoryName: data.sourceFactoryName || factoryMap[data.sourceFactoryId] || "",
+        productName: data.productName,
+        categoryName: data.categoryName,
+        available: Number(data.available || 0),
+        quantity: 1,
+        unitPrice: Number(data.unitPrice || 0),
+        currency: data.currency || "UZS"
+      });
+
+      saveCart(cart);
+      renderCart();
+    }
+
+    function hideResults() {
+      if (!searchResults) return;
+      searchResults.classList.add("d-none");
+      searchResults.innerHTML = "";
+    }
+
+    function renderResults(query) {
+      if (!searchResults) return;
+
+      const q = normalizeText(query);
+      if (!q) {
+        hideResults();
+        return;
+      }
+
+      const ranked = searchableRows
+        .map(row => ({ row, score: scoreRow(row, q) }))
+        .filter(x => x.score >= 62)
+        .sort((a, b) => b.score - a.score || a.row.productName.localeCompare(b.row.productName))
+        .slice(0, 12);
+
+      if (!ranked.length) {
+        searchResults.innerHTML = `<div class="mm-search-empty">{{ t('wholesale_no_matching_products') }}</div>`;
+        searchResults.classList.remove("d-none");
+        return;
+      }
+
+      searchResults.innerHTML = ranked.map(({ row }) => `
+        <div class="mm-search-result-item">
+          <div style="min-width:0;">
+            <h3 class="mm-search-result-title">${row.productName}</h3>
+            <div class="mm-search-result-sub">
+              <span class="mm-factory-pill">🏭 ${row.sourceFactoryName || factoryMap[row.sourceFactoryId] || "-"}</span>
+              ${row.categoryName || "{{ t('wholesale_no_category') }}"}
+            </div>
+          </div>
+          <div class="mm-search-result-right">
+            <div class="mm-search-meta">
+              <span class="mm-search-pill">{{ t('wholesale_stock') }}: ${row.available}</span>
+              <span class="mm-search-pill">${money(row.unitPrice, row.currency)}</span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm mm-action-btn js-result-add"
+              data-stock-id="${row.stockId}"
+            >
+              {{ t('wholesale_add') }}
+            </button>
+          </div>
+        </div>
+      `).join("");
+
+      searchResults.classList.remove("d-none");
+
+      searchResults.querySelectorAll(".js-result-add").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const stockId = Number(btn.dataset.stockId || 0);
+          const row = searchableRows.find(x => x.stockId === stockId);
+          if (!row) return;
+
+          addLine(row);
+
+          if (searchInput) {
+            searchInput.value = "";
+            searchInput.focus();
+          }
+          hideResults();
+        });
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        renderResults(searchInput.value || "");
+      });
+
+      searchInput.addEventListener("focus", function () {
+        if ((searchInput.value || "").trim()) {
+          renderResults(searchInput.value || "");
+        }
+      });
+    }
+
+    document.addEventListener("click", function (e) {
+      if (!searchResults || !searchInput) return;
+      if (!searchResults.contains(e.target) && e.target !== searchInput) {
+        hideResults();
+      }
+    });
+
+    document.querySelectorAll(".js-add-grid-line").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        addLine({
+          stockId: Number(btn.dataset.stockId || 0),
+          productId: Number(btn.dataset.productId || 0),
+          sourceFactoryId: Number(btn.dataset.sourceFactoryId || 0),
+          sourceFactoryName: btn.dataset.sourceFactoryName || "",
+          productName: btn.dataset.productName || "",
+          categoryName: btn.dataset.categoryName || "",
+          available: Number(btn.dataset.available || 0),
+          unitPrice: Number(btn.dataset.unitPrice || 0),
+          currency: btn.dataset.currency || "UZS"
+        });
+      });
+    });
+
+    if (discountInput) {
+      discountInput.addEventListener("input", recalcSummary);
+    }
+
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        const cart = getCart();
+
+        if (!cart.length) {
+          e.preventDefault();
+          alert({{ t('wholesale_add_at_least_one_product_alert')|tojson }});
+          return;
+        }
+
+        this.querySelectorAll(".js-generated-hidden").forEach(el => el.remove());
+
+        for (const item of cart) {
+          const q = Number(item.quantity || 0);
+          const p = Number(item.unitPrice || 0);
+          const max = Number(item.available || 0);
+
+          if (q <= 0) {
+            e.preventDefault();
+            alert({{ t('wholesale_quantity_gt_zero_alert')|tojson }});
+            return;
+          }
+
+          if (q > max) {
+            e.preventDefault();
+            alert({{ t('wholesale_line_exceeds_stock_alert').format(product="__PRODUCT__")|replace("__PRODUCT__", "${item.productName}")|tojson }});
+            return;
+          }
+
+          if (p < 0) {
+            e.preventDefault();
+            alert({{ t('wholesale_price_negative_alert')|tojson }});
+            return;
+          }
+
+          const fields = [
+            ["shop_stock_id", item.stockId],
+            ["quantity", q],
+            ["unit_price", p],
+            ["source_factory_id", item.sourceFactoryId || ""]
+          ];
+
+          fields.forEach(([name, value]) => {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = name;
+            input.value = value;
+            input.className = "js-generated-hidden";
+            this.appendChild(input);
+          });
+        }
+
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = "⏳ {{ t('wholesale_saving') }}";
+        }
+      });
+    }
+
+    renderCart();
+  })();
+</script>
+{% endblock %}

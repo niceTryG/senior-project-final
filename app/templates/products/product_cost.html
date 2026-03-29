@@ -1,104 +1,841 @@
 {% extends "base.html" %}
-{% block title %}Себестоимость — {{ product.name }}{% endblock %}
+{% block title %}{{ t('product_cost_page_short') }} — {{ product.name }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3 py-md-4 mm-page-cost-product">
+{% set cost = cost_data or {} %}
+{% set cur = cost.get('currency', product.currency or 'UZS') %}
+{% set fabric_unit = cost.get('fabric_unit', 'kg') %}
+{% set sell_price = product.sell_price_per_item or 0 %}
 
-  {# ===== HEADER ===== #}
-  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-      <h1 class="h5 mb-1">Себестоимость модели</h1>
-      <p class="small text-muted mb-0">
-        Ткань + пошив + упаковка → реальная себестоимость 1 изделия.
-      </p>
-    </div>
-    <a href="{{ url_for('products.list_products') }}" class="btn btn-sm btn-outline-secondary">
-      ← К списку моделей
-    </a>
-  </div>
+<div class="container-fluid py-3 py-md-4 mm-cost-page">
 
-  {# ===== PRODUCT SUMMARY ===== #}
-  <div class="card shadow-sm border-0 mb-3">
-    <div class="card-body py-2">
-      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-        <div>
-          <div class="small text-muted">Модель</div>
-          <div class="fw-semibold">
-            {{ product.name }}
-          </div>
-          <div class="small text-muted">
-            Категория: {{ product.category or "—" }}
-          </div>
+  <style>
+    :root{
+      --mm-bg: #f4f7fb;
+      --mm-surface: rgba(255,255,255,0.98);
+      --mm-surface-soft: #f8fafc;
+      --mm-border: rgba(16,24,40,0.08);
+      --mm-border-strong: rgba(16,24,40,0.14);
+      --mm-text: #101828;
+      --mm-muted: rgba(16,24,40,0.66);
+      --mm-muted-2: rgba(16,24,40,0.48);
+      --mm-primary: #111827;
+      --mm-primary-soft: #eef2ff;
+      --mm-success: #157347;
+      --mm-success-soft: rgba(25,135,84,0.10);
+      --mm-danger: #b42318;
+      --mm-danger-soft: rgba(220,53,69,0.10);
+      --mm-info: #1d4ed8;
+      --mm-info-soft: rgba(29,78,216,0.10);
+      --mm-warning: #b54708;
+      --mm-warning-soft: rgba(245,158,11,0.12);
+      --mm-shadow: 0 18px 40px rgba(16,24,40,0.08), inset 0 1px 0 rgba(255,255,255,0.78);
+      --mm-shadow-soft: 0 10px 24px rgba(16,24,40,0.06), inset 0 1px 0 rgba(255,255,255,0.75);
+    }
+
+    .mm-cost-page{
+      color: var(--mm-text);
+    }
+
+    .mm-shell{
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .mm-card{
+      background: var(--mm-surface);
+      border: 1px solid var(--mm-border);
+      border-radius: 22px;
+      box-shadow: var(--mm-shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .mm-card-soft{
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+      border: 1px solid var(--mm-border);
+      border-radius: 20px;
+      box-shadow: var(--mm-shadow-soft);
+    }
+
+    .mm-chip{
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      padding: .42rem .78rem;
+      border-radius: 999px;
+      border: 1px solid rgba(16,24,40,0.08);
+      background: #fff;
+      font-size: .78rem;
+      font-weight: 900;
+      color: var(--mm-text);
+      white-space: nowrap;
+    }
+
+    .mm-chip-muted{
+      color: var(--mm-muted);
+      background: rgba(255,255,255,0.72);
+    }
+
+    .mm-page-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .mm-page-title{
+      margin:0;
+      font-size: clamp(1.25rem, 1.8vw, 1.7rem);
+      line-height:1.08;
+      letter-spacing:-0.03em;
+      font-weight:900;
+      color:var(--mm-text);
+    }
+
+    .mm-page-subtitle{
+      margin:.45rem 0 0 0;
+      color:var(--mm-muted);
+      font-size:.92rem;
+      max-width:680px;
+      line-height:1.45;
+    }
+
+    .mm-back-btn{
+      min-height:42px;
+      border-radius:999px;
+      font-weight:900;
+      padding-inline:14px;
+    }
+
+    .mm-hero{
+      padding:18px;
+      background:
+        radial-gradient(circle at top right, rgba(99,102,241,0.10), transparent 32%),
+        radial-gradient(circle at bottom left, rgba(16,185,129,0.07), transparent 28%),
+        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94));
+      overflow:hidden;
+      position:relative;
+    }
+
+    .mm-hero::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background: linear-gradient(135deg, rgba(255,255,255,0.35), transparent 44%);
+    }
+
+    .mm-product-grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:12px;
+      position:relative;
+      z-index:1;
+    }
+
+    .mm-product-main,
+    .mm-product-side{
+      padding:16px;
+      border-radius:18px;
+      border:1px solid rgba(16,24,40,0.08);
+      background: rgba(255,255,255,0.80);
+    }
+
+    .mm-kicker{
+      font-size:.75rem;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      color:var(--mm-muted);
+      font-weight:900;
+      margin-bottom:8px;
+    }
+
+    .mm-product-name{
+      font-size:1.18rem;
+      line-height:1.12;
+      font-weight:900;
+      letter-spacing:-0.02em;
+      color:var(--mm-text);
+      margin:0 0 6px 0;
+    }
+
+    .mm-meta-list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .mm-meta-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:.35rem;
+      padding:.4rem .7rem;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid rgba(16,24,40,0.08);
+      font-size:.8rem;
+      font-weight:800;
+      color:var(--mm-text);
+    }
+
+    .mm-product-side-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+
+    .mm-metric{
+      padding:12px 14px;
+      border-radius:16px;
+      background:#fff;
+      border:1px solid rgba(16,24,40,0.08);
+    }
+
+    .mm-metric-label{
+      font-size:.76rem;
+      color:var(--mm-muted);
+      font-weight:800;
+      margin-bottom:6px;
+    }
+
+    .mm-metric-value{
+      font-size:1rem;
+      line-height:1.15;
+      font-weight:900;
+      letter-spacing:-0.02em;
+      color:var(--mm-text);
+      word-break:break-word;
+    }
+
+    .mm-helper-card{
+      padding:16px;
+    }
+
+    .mm-section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .mm-section-title{
+      margin:0;
+      font-size:1rem;
+      font-weight:900;
+      color:var(--mm-text);
+      letter-spacing:-0.02em;
+    }
+
+    .mm-section-subtitle{
+      margin:4px 0 0 0;
+      color:var(--mm-muted);
+      font-size:.88rem;
+      line-height:1.45;
+      max-width:760px;
+    }
+
+    .mm-collapse-btn{
+      min-height:38px;
+      border-radius:999px;
+      font-weight:900;
+      padding-inline:12px;
+    }
+
+    .mm-batch-table thead th{
+      background: rgba(248,250,252,.96) !important;
+      border-bottom:1px solid rgba(16,24,40,0.08) !important;
+      color:var(--mm-muted);
+      font-size:.75rem;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .mm-batch-table tbody td{
+      vertical-align:middle;
+      border-color:rgba(16,24,40,0.06);
+    }
+
+    .mm-batch-card{
+      border:1px solid rgba(16,24,40,0.08);
+      border-radius:18px;
+      background:#fff;
+      padding:14px;
+      box-shadow: var(--mm-shadow-soft);
+    }
+
+    .mm-batch-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:10px;
+    }
+
+    .mm-batch-name{
+      font-weight:900;
+      color:var(--mm-text);
+      line-height:1.2;
+      margin-bottom:3px;
+    }
+
+    .mm-batch-muted{
+      color:var(--mm-muted);
+      font-size:.83rem;
+      line-height:1.35;
+    }
+
+    .mm-batch-kpi{
+      text-align:right;
+    }
+
+    .mm-batch-kpi-label{
+      color:var(--mm-muted);
+      font-size:.72rem;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+
+    .mm-batch-kpi-value{
+      font-weight:900;
+      color:var(--mm-info);
+      line-height:1.15;
+    }
+
+    .mm-batch-list{
+      display:grid;
+      gap:10px;
+    }
+
+    .mm-batch-row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      font-size:.86rem;
+      margin-bottom:6px;
+    }
+
+    .mm-batch-row:last-child{
+      margin-bottom:0;
+    }
+
+    .mm-batch-row span:first-child{
+      color:var(--mm-muted);
+      font-weight:700;
+    }
+
+    .mm-batch-row span:last-child{
+      color:var(--mm-text);
+      font-weight:800;
+      text-align:right;
+    }
+
+    .mm-use-btn{
+      min-height:40px;
+      border-radius:12px;
+      font-weight:900;
+    }
+
+    .mm-form-layout{
+      display:grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+      gap:14px;
+      align-items:start;
+    }
+
+    .mm-form-stack{
+      display:grid;
+      gap:14px;
+    }
+
+    .mm-step-card{
+      padding:16px;
+    }
+
+    .mm-step-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .mm-step-left{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+    }
+
+    .mm-step-num{
+      width:36px;
+      height:36px;
+      border-radius:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#fff;
+      border:1px solid rgba(16,24,40,0.08);
+      font-size:.9rem;
+      font-weight:900;
+      color:var(--mm-text);
+      flex-shrink:0;
+    }
+
+    .mm-step-title{
+      margin:0;
+      font-size:1rem;
+      font-weight:900;
+      color:var(--mm-text);
+      letter-spacing:-0.02em;
+    }
+
+    .mm-step-subtitle{
+      margin:4px 0 0 0;
+      color:var(--mm-muted);
+      font-size:.86rem;
+      line-height:1.45;
+    }
+
+    .mm-step-result{
+      text-align:right;
+      min-width:120px;
+    }
+
+    .mm-step-result-label{
+      font-size:.72rem;
+      color:var(--mm-muted);
+      font-weight:800;
+      margin-bottom:4px;
+    }
+
+    .mm-step-result-value{
+      font-size:1rem;
+      font-weight:900;
+      color:var(--mm-text);
+      line-height:1.15;
+    }
+
+    .mm-field{
+      margin-bottom:12px;
+    }
+
+    .mm-field:last-child{
+      margin-bottom:0;
+    }
+
+    .mm-field label{
+      display:block;
+      margin-bottom:6px;
+      font-size:.82rem;
+      color:var(--mm-text);
+      font-weight:800;
+    }
+
+    .mm-field .form-control,
+    .mm-field .form-select{
+      min-height:46px;
+      border-radius:14px;
+      border:1px solid rgba(16,24,40,0.10);
+      font-weight:700;
+      box-shadow:none !important;
+    }
+
+    .mm-field .form-control:focus,
+    .mm-field .form-select:focus{
+      border-color:rgba(16,24,40,0.18);
+    }
+
+    .mm-field .input-group .form-control,
+    .mm-field .input-group .form-select{
+      min-height:46px;
+    }
+
+    .mm-field .form-text{
+      color:var(--mm-muted);
+      font-size:.79rem;
+      line-height:1.4;
+    }
+
+    .mm-live-source{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:14px;
+      background: var(--mm-info-soft);
+      color: var(--mm-info);
+      font-size:.83rem;
+      font-weight:800;
+      display:none;
+    }
+
+    .mm-live-source.show{
+      display:block;
+    }
+
+    .mm-summary-card{
+      padding:16px;
+      position:sticky;
+      top:88px;
+    }
+
+    .mm-summary-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .mm-summary-title{
+      margin:0;
+      font-size:1rem;
+      font-weight:900;
+      color:var(--mm-text);
+      letter-spacing:-0.02em;
+    }
+
+    .mm-summary-subtitle{
+      margin:4px 0 0 0;
+      color:var(--mm-muted);
+      font-size:.84rem;
+      line-height:1.4;
+    }
+
+    .mm-total-box{
+      padding:14px;
+      border-radius:18px;
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+      border:1px solid rgba(16,24,40,0.08);
+      margin-bottom:12px;
+    }
+
+    .mm-total-label{
+      font-size:.76rem;
+      color:var(--mm-muted);
+      font-weight:800;
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+
+    .mm-total-value{
+      font-size:1.38rem;
+      line-height:1.05;
+      font-weight:900;
+      letter-spacing:-0.03em;
+      color:var(--mm-text);
+      word-break:break-word;
+    }
+
+    .mm-breakdown{
+      display:grid;
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .mm-breakdown-item{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      padding:10px 12px;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid rgba(16,24,40,0.08);
+    }
+
+    .mm-breakdown-item span:first-child{
+      color:var(--mm-muted);
+      font-size:.84rem;
+      font-weight:700;
+    }
+
+    .mm-breakdown-item strong{
+      color:var(--mm-text);
+      font-size:.88rem;
+      font-weight:900;
+      text-align:right;
+    }
+
+    .mm-profit-box{
+      padding:14px;
+      border-radius:18px;
+      border:1px solid rgba(16,24,40,0.08);
+      background:#fff;
+      margin-bottom:14px;
+    }
+
+    .mm-profit-title{
+      font-size:.76rem;
+      color:var(--mm-muted);
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      margin-bottom:10px;
+    }
+
+    .mm-profit-grid{
+      display:grid;
+      gap:10px;
+    }
+
+    .mm-profit-item{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      font-size:.88rem;
+    }
+
+    .mm-profit-item span{
+      color:var(--mm-muted);
+      font-weight:700;
+    }
+
+    .mm-profit-item strong{
+      color:var(--mm-text);
+      font-weight:900;
+      text-align:right;
+    }
+
+    .mm-positive{
+      color:var(--mm-success) !important;
+    }
+
+    .mm-negative{
+      color:var(--mm-danger) !important;
+    }
+
+    .mm-actions{
+      display:grid;
+      gap:8px;
+    }
+
+    .mm-btn-primary{
+      min-height:46px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:.95rem;
+    }
+
+    .mm-btn-secondary{
+      min-height:46px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:.95rem;
+    }
+
+    .mm-mobile-summary{
+      display:none;
+    }
+
+    .mm-mobile-actions{
+      display:none;
+    }
+
+    @media (max-width: 1199.98px){
+      .mm-form-layout{
+        grid-template-columns: 1fr;
+      }
+
+      .mm-summary-card{
+        position:static;
+      }
+
+      .mm-desktop-summary{
+        display:none;
+      }
+
+      .mm-mobile-summary{
+        display:block;
+      }
+
+      .mm-mobile-actions{
+        display:flex;
+        position:sticky;
+        bottom:10px;
+        z-index:30;
+        gap:8px;
+        padding:10px;
+        border-radius:18px;
+        background: rgba(255,255,255,0.92);
+        border:1px solid rgba(16,24,40,0.08);
+        box-shadow: 0 16px 30px rgba(16,24,40,0.12);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .mm-mobile-actions > *{
+        flex:1 1 0;
+      }
+    }
+
+    @media (max-width: 991.98px){
+      .mm-product-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width: 767.98px){
+      .mm-shell{
+        gap:12px;
+      }
+
+      .mm-hero,
+      .mm-helper-card,
+      .mm-step-card,
+      .mm-summary-card{
+        padding:14px;
+      }
+
+      .mm-step-head{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .mm-step-result{
+        text-align:left;
+        min-width:auto;
+      }
+
+      .mm-page-head{
+        align-items:stretch;
+      }
+
+      .mm-back-btn{
+        width:100%;
+      }
+
+      .mm-total-value{
+        font-size:1.24rem;
+      }
+    }
+  </style>
+
+  <div class="mm-shell">
+
+    {# ===== PAGE HEADER ===== #}
+    <div class="mm-page-head">
+      <div>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <span class="mm-chip">
+            <i class="bi bi-calculator"></i>
+            {{ t('product_cost_page_short') }}
+          </span>
+          <span class="mm-chip mm-chip-muted">
+            <i class="bi bi-box-seam"></i>
+            {{ t('one_model_label') }}
+          </span>
         </div>
-        <div class="text-end small">
-          {% if product.id %}
-            <div class="small text-muted">Код</div>
-            <div class="badge bg-secondary">
+
+        <h1 class="mm-page-title">{{ t('product_cost_page_title') }}</h1>
+        <p class="mm-page-subtitle">
+          {{ t('product_cost_page_subtitle') }}
+        </p>
+      </div>
+
+      <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-secondary mm-back-btn">
+        <i class="bi bi-arrow-left me-1"></i>
+        {{ t('back_to_models') }}
+      </a>
+    </div>
+
+    {# ===== PRODUCT HERO ===== #}
+    <section class="mm-card mm-hero">
+      <div class="mm-product-grid">
+        <div class="mm-product-main">
+          <div class="mm-kicker">{{ t('model_label') }}</div>
+          <h2 class="mm-product-name">{{ product.name }}</h2>
+
+          <div class="small text-muted">
+            {{ t('product_cost_current_calc_help') }}
+          </div>
+
+          <div class="mm-meta-list">
+            <span class="mm-meta-pill">
+              <i class="bi bi-tag"></i>
+              {{ t('filter_category') }}: {{ product.category or "—" }}
+            </span>
+
+            {% if product.id %}
+            <span class="mm-meta-pill">
+              <i class="bi bi-upc-scan"></i>
               MM-{{ "%05d"|format(product.id) }}
-            </div>
-          {% endif %}
-          <div class="small text-muted mt-2">
-            Продажная цена:
-            <span class="fw-semibold">
-              {{ format_money(product.sell_price_per_item or 0, product.currency) }}
+            </span>
+            {% endif %}
+
+            <span class="mm-meta-pill">
+              <i class="bi bi-rulers"></i>
+              {{ t('fabric_unit_label') }}: <span class="mm-unit-label">{{ fabric_unit }}</span>
             </span>
           </div>
-          {% if product.cost_price_per_item %}
-            <div class="small text-muted">
-              Текущая себестоимость:
-              <span class="fw-semibold">
-                {{ format_money(product.cost_price_per_item, product.currency) }}
-              </span>
-            </div>
-          {% endif %}
         </div>
-      </div>
-    </div>
-  </div>
 
-  {# ===== COST DATA DEFAULTS ===== #}
-  {% set cost = cost_data or {} %}
-  {% set cur = cost.get('currency', product.currency or 'UZS') %}
-  {% set fabric_unit = cost.get('fabric_unit', 'kg') %}
+        <div class="mm-product-side">
+          <div class="mm-product-side-grid">
+            <div class="mm-metric">
+              <div class="mm-metric-label">{{ t('sale_price') }}</div>
+              <div class="mm-metric-value">
+                {{ format_money(product.sell_price_per_item or 0, product.currency) }}
+              </div>
+            </div>
 
-  {# ===== RECENT REAL BATCHES (mobile-collapsible) ===== #}
-  {% if recent_batches %}
-    {% set batch_collapse_id = "mmRecentBatches" %}
-    <div class="card shadow-sm border-0 mb-3">
-      <div class="card-body py-2">
-
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div>
-            <div class="fw-semibold">🏭 Последние производства</div>
-            <div class="small text-muted">
-              Нажми “Использовать” чтобы автоматически заполнить ткань/расход/штук.
+            <div class="mm-metric">
+              <div class="mm-metric-label">{{ t('saved_cost_price_label') }}</div>
+              <div class="mm-metric-value">
+                {% if product.cost_price_per_item %}
+                  {{ format_money(product.cost_price_per_item, product.currency) }}
+                {% else %}
+                  —
+                {% endif %}
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
 
-          {# Mobile collapse toggle #}
-          <button class="btn btn-sm btn-outline-secondary d-md-none"
+    {# ===== RECENT REAL BATCHES ===== #}
+    {% if recent_batches %}
+      {% set batch_collapse_id = "mmRecentBatches" %}
+      <section class="mm-card mm-helper-card">
+        <div class="mm-section-head">
+          <div>
+            <h2 class="mm-section-title">{{ t('real_production_hint_title') }}</h2>
+            <p class="mm-section-subtitle">
+              {{ t('real_production_hint_subtitle') }}
+            </p>
+          </div>
+
+          <button class="btn btn-outline-secondary d-xl-none mm-collapse-btn"
                   type="button"
                   data-bs-toggle="collapse"
                   data-bs-target="#{{ batch_collapse_id }}"
                   aria-expanded="false"
                   aria-controls="{{ batch_collapse_id }}">
-            Показать / скрыть
+            {{ t('show_batches') }}
           </button>
         </div>
 
-        {# ===== DESKTOP TABLE (md+) always visible ===== #}
-        <div class="d-none d-md-block mt-2">
+        <div class="d-none d-xl-block">
           <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-              <thead class="table-light">
+            <table class="table table-sm align-middle mb-0 mm-batch-table">
+              <thead>
                 <tr>
-                  <th class="text-nowrap">Дата</th>
-                  <th class="text-nowrap">Ткань</th>
-                  <th class="text-nowrap text-end">Произвели</th>
-                  <th class="text-nowrap text-end">Расход</th>
-                  <th class="text-nowrap text-end">Цена/ед.</th>
-                  <th class="text-nowrap text-end">Ткань/шт.</th>
-                  <th class="text-nowrap text-end"></th>
+                  <th class="text-nowrap">{{ t('table_date') }}</th>
+                  <th class="text-nowrap">{{ t('fabric_label') }}</th>
+                  <th class="text-end text-nowrap">{{ t('pieces_label') }}</th>
+                  <th class="text-end text-nowrap">{{ t('usage_label') }}</th>
+                  <th class="text-end text-nowrap">{{ t('price_per_unit_label') }}</th>
+                  <th class="text-end text-nowrap">{{ t('fabric_per_piece_label') }}</th>
+                  <th class="text-end text-nowrap"></th>
                 </tr>
               </thead>
               <tbody>
@@ -109,12 +846,14 @@
                 {% set unit = fab.unit or 'kg' %}
                 {% set fcur = fab.price_currency or 'UZS' %}
                 {% set fabric_per_piece = (price * used / produced) if (price and used and produced) else 0 %}
-
+                {% set source_label = (fab.name or t('fabric_label')) ~ ' · ' ~ (prod.date or '') %}
                 <tr>
-                  <td class="text-nowrap small">{{ prod.date }}</td>
+                  <td class="text-nowrap small fw-semibold">{{ prod.date }}</td>
                   <td class="small">
                     <div class="fw-semibold">{{ fab.name }}</div>
-                    <div class="text-muted small">{{ fab.color or '' }} · {{ unit }}</div>
+                    <div class="text-muted small">
+                      {{ fab.color or t('no_color_label') }} · {{ unit }}
+                    </div>
                   </td>
                   <td class="text-end small fw-semibold">{{ produced }}</td>
                   <td class="text-end small">{{ "%.3f"|format(used) }} {{ unit }}</td>
@@ -128,13 +867,14 @@
                   </td>
                   <td class="text-end">
                     <button type="button"
-                            class="btn btn-sm btn-outline-primary mm-use-batch"
+                            class="btn btn-sm btn-outline-primary mm-use-btn mm-use-batch"
                             data-price="{{ price }}"
                             data-used="{{ used }}"
                             data-pieces="{{ produced }}"
                             data-currency="{{ fcur }}"
-                            data-unit="{{ unit }}">
-                      Использовать
+                            data-unit="{{ unit }}"
+                            data-source="{{ source_label }}">
+                      {{ t('use_button_label') }}
                     </button>
                   </td>
                 </tr>
@@ -144,30 +884,31 @@
           </div>
         </div>
 
-        {# ===== MOBILE (xs-sm) collapsible cards ===== #}
-        <div class="collapse d-md-none mt-2" id="{{ batch_collapse_id }}">
-          {% for prod, cons, fab in recent_batches %}
-            {% set produced = prod.quantity or 0 %}
-            {% set used = cons.used_amount or 0 %}
-            {% set price = fab.price_per_unit or 0 %}
-            {% set unit = fab.unit or 'kg' %}
-            {% set fcur = fab.price_currency or 'UZS' %}
-            {% set fabric_per_piece = (price * used / produced) if (price and used and produced) else 0 %}
+        <div class="collapse d-xl-none" id="{{ batch_collapse_id }}">
+          <div class="mm-batch-list mt-2">
+            {% for prod, cons, fab in recent_batches %}
+              {% set produced = prod.quantity or 0 %}
+              {% set used = cons.used_amount or 0 %}
+              {% set price = fab.price_per_unit or 0 %}
+              {% set unit = fab.unit or 'kg' %}
+              {% set fcur = fab.price_currency or 'UZS' %}
+              {% set fabric_per_piece = (price * used / produced) if (price and used and produced) else 0 %}
+              {% set source_label = (fab.name or t('fabric_label')) ~ ' · ' ~ (prod.date or '') %}
 
-            <div class="card shadow-sm border-0 mb-2">
-              <div class="card-body p-2 small">
-                <div class="d-flex justify-content-between align-items-start gap-2">
+              <article class="mm-batch-card">
+                <div class="mm-batch-top">
                   <div>
-                    <div class="fw-semibold">{{ fab.name }}</div>
-                    <div class="text-muted small">
+                    <div class="mm-batch-name">{{ fab.name }}</div>
+                    <div class="mm-batch-muted">
                       {{ prod.date }}{% if fab.color %} · {{ fab.color }}{% endif %} · {{ unit }}
                     </div>
                   </div>
-                  <div class="text-end">
-                    <div class="text-muted small">Ткань/шт.</div>
-                    <div class="fw-bold text-primary">
+
+                  <div class="mm-batch-kpi">
+                    <div class="mm-batch-kpi-label">{{ t('fabric_per_piece_label') }}</div>
+                    <div class="mm-batch-kpi-value">
                       {% if fabric_per_piece > 0 %}
-                        {{ "%.2f"|format(fabric_per_piece) }} {{ fcur }}
+                        {{ "%.4f"|format(fabric_per_piece) }} {{ fcur }}
                       {% else %}
                         —
                       {% endif %}
@@ -175,342 +916,559 @@
                   </div>
                 </div>
 
-                <hr class="my-2">
-
-                <div class="d-flex justify-content-between">
-                  <span class="text-muted">Произвели</span>
-                  <span class="fw-semibold">{{ produced }}</span>
+                <div class="mm-batch-row">
+                  <span>{{ t('produced_label') }}</span>
+                  <span>{{ produced }}</span>
                 </div>
-                <div class="d-flex justify-content-between">
-                  <span class="text-muted">Расход</span>
+                <div class="mm-batch-row">
+                  <span>{{ t('fabric_usage_label') }}</span>
                   <span>{{ "%.3f"|format(used) }} {{ unit }}</span>
                 </div>
-                <div class="d-flex justify-content-between mb-2">
-                  <span class="text-muted">Цена/ед.</span>
+                <div class="mm-batch-row">
+                  <span>{{ t('unit_price_label') }}</span>
                   <span>{{ "%.3f"|format(price) }} {{ fcur }}</span>
                 </div>
 
                 <button type="button"
-                        class="btn btn-sm btn-success w-100 mm-use-batch"
+                        class="btn btn-primary w-100 mt-2 mm-use-btn mm-use-batch"
                         data-price="{{ price }}"
                         data-used="{{ used }}"
                         data-pieces="{{ produced }}"
                         data-currency="{{ fcur }}"
-                        data-unit="{{ unit }}">
-                  Использовать
+                        data-unit="{{ unit }}"
+                        data-source="{{ source_label }}">
+                  {{ t('use_this_batch') }}
                 </button>
+              </article>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    <form method="post" id="cost-form">
+      <div class="mm-form-layout">
+
+        {# ===== LEFT: INPUT STEPS ===== #}
+        <div class="mm-form-stack">
+
+          {# ===== FABRIC ===== #}
+          <section class="mm-card-soft mm-step-card" id="mm-fabric-step">
+            <div class="mm-step-head">
+              <div class="mm-step-left">
+                <div class="mm-step-num">1</div>
+                <div>
+                  <h2 class="mm-step-title">{{ t('fabric_label') }}</h2>
+                  <p class="mm-step-subtitle">
+                    {{ t('fabric_step_subtitle') }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mm-step-result">
+                <div class="mm-step-result-label">{{ t('fabric_per_piece_step') }}</div>
+                <div class="mm-step-result-value" id="fabric_cost_per_piece_display">— {{ cur }}</div>
               </div>
             </div>
-          {% endfor %}
-        </div>
 
-      </div>
-    </div>
-  {% endif %}
-
-  <form method="post" id="cost-form">
-    <div class="row g-3">
-
-      {# ===== 1. FABRIC BLOCK ===== #}
-      <div class="col-12 col-lg-4">
-        <div class="card shadow-sm border-0 h-100">
-          <div class="card-body">
-            <div class="small text-muted text-uppercase mb-2">1. Ткань</div>
-
-            <div class="mb-2">
-              <label class="form-label small mb-1">
-                Цена ткани за 1 {{ fabric_unit }}
-              </label>
-              <div class="input-group input-group-sm">
+            <div class="mm-field">
+              <label>{{ t('fabric_price_per_unit_field') }} <span class="mm-unit-label">{{ fabric_unit }}</span></label>
+              <div class="input-group">
                 <input type="number"
                        step="0.0001"
                        name="fabric_price_per_unit"
                        id="fabric_price_per_unit"
                        class="form-control"
                        value="{{ cost.get('fabric_price_per_unit', '') }}">
-                <select name="fabric_price_currency" class="form-select">
-                  {% set fcur = cost.get('fabric_price_currency', 'USD') %}
+                <select name="fabric_price_currency" id="fabric_price_currency" class="form-select">
+                  {% set fcur = cost.get('fabric_price_currency', cur) %}
                   <option value="USD" {% if fcur == 'USD' %}selected{% endif %}>USD</option>
                   <option value="UZS" {% if fcur == 'UZS' %}selected{% endif %}>UZS</option>
                 </select>
               </div>
-              <div class="form-text small">
-                Пример: купили 1 {{ fabric_unit }} ткани за сумму X.
+              <div class="form-text">
+                {{ t('fabric_price_per_unit_hint') }} <span class="mm-unit-label">{{ fabric_unit }}</span>.
               </div>
             </div>
 
-            <div class="mb-2">
-              <label class="form-label small mb-1">
-                Сколько ткани израсходовано ({{ fabric_unit }})
-              </label>
+            <div class="mm-field">
+              <label>{{ t('fabric_used_qty_field') }} (<span class="mm-unit-label">{{ fabric_unit }}</span>)</label>
               <input type="number"
                      step="0.0001"
                      name="fabric_used_qty"
                      id="fabric_used_qty"
-                     class="form-control form-control-sm"
+                     class="form-control"
                      value="{{ cost.get('fabric_used_qty', '') }}">
-              <div class="form-text small">
-                Было 10 {{ fabric_unit }}, осталось 2 → использовано 8 {{ fabric_unit }}.
+              <div class="form-text">
+                {{ t('fabric_used_qty_hint') }}
               </div>
             </div>
 
-            <div class="mb-2">
-              <label class="form-label small mb-1">
-                Сколько штук получилось из этой ткани
-              </label>
+            <div class="mm-field">
+              <label>{{ t('pieces_from_batch_field') }}</label>
               <input type="number"
                      step="1"
                      min="1"
                      name="pieces_from_batch"
                      id="pieces_from_batch"
-                     class="form-control form-control-sm"
+                     class="form-control"
                      value="{{ cost.get('pieces_from_batch', '') }}">
-              <div class="form-text small">
-                Общее количество готовых изделий из этого куска ткани.
+              <div class="form-text">
+                {{ t('pieces_from_batch_hint') }}
               </div>
             </div>
 
-            <hr class="my-2">
+            <div id="mm-batch-source" class="mm-live-source"></div>
+          </section>
 
-            <div class="small text-muted mb-1">Ткань на 1 шт.</div>
-            <div class="fw-semibold" id="fabric_cost_per_piece_display">
-              — {{ cur }}
+          {# ===== SEWING ===== #}
+          <section class="mm-card-soft mm-step-card">
+            <div class="mm-step-head">
+              <div class="mm-step-left">
+                <div class="mm-step-num">2</div>
+                <div>
+                  <h2 class="mm-step-title">{{ t('sewing_label') }}</h2>
+                  <p class="mm-step-subtitle">
+                    {{ t('sewing_step_subtitle') }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mm-step-result">
+                <div class="mm-step-result-label">{{ t('sewing_per_piece_label') }}</div>
+                <div class="mm-step-result-value" id="sewing_cost_per_piece_display">— {{ cur }}</div>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {# ===== 2. SEWING BLOCK ===== #}
-      <div class="col-12 col-lg-4">
-        <div class="card shadow-sm border-0 h-100">
-          <div class="card-body">
-            <div class="small text-muted text-uppercase mb-2">2. Пошив</div>
-
-            <div class="mb-2">
-              <label class="form-label small mb-1">
-                Оплата за пошив за 1 шт.
-              </label>
+            <div class="mm-field mb-0">
+              <label>{{ t('sewing_cost_field') }}</label>
               <input type="number"
                      step="0.0001"
                      name="sewing_cost_per_piece"
                      id="sewing_cost_per_piece"
-                     class="form-control form-control-sm"
+                     class="form-control"
                      value="{{ cost.get('sewing_cost_per_piece', '') }}">
-              <div class="form-text small">
-                Если несколько людей шьют одну модель, сложите их оплату за 1 шт.
+              <div class="form-text">
+                {{ t('sewing_cost_hint') }}
+              </div>
+            </div>
+          </section>
+
+          {# ===== PACKAGING ===== #}
+          <section class="mm-card-soft mm-step-card">
+            <div class="mm-step-head">
+              <div class="mm-step-left">
+                <div class="mm-step-num">3</div>
+                <div>
+                  <h2 class="mm-step-title">{{ t('packaging_label') }}</h2>
+                  <p class="mm-step-subtitle">
+                    {{ t('packaging_step_subtitle') }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mm-step-result">
+                <div class="mm-step-result-label">{{ t('packaging_per_piece_label') }}</div>
+                <div class="mm-step-result-value" id="pack_cost_per_piece_display">— {{ cur }}</div>
               </div>
             </div>
 
-            <hr class="my-2">
-
-            <div class="small text-muted mb-1">Пошив на 1 шт.</div>
-            <div class="fw-semibold" id="sewing_cost_per_piece_display">
-              — {{ cur }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {# ===== 3. PACKAGING BLOCK ===== #}
-      <div class="col-12 col-lg-4">
-        <div class="card shadow-sm border-0 h-100">
-          <div class="card-body">
-            <div class="small text-muted text-uppercase mb-2">3. Упаковка</div>
-
-            <div class="mb-2">
-              <label class="form-label small mb-1">
-                Вешалка за 1 шт.
-              </label>
+            <div class="mm-field">
+              <label>{{ t('hanger_per_piece') }}</label>
               <input type="number"
                      step="0.0001"
                      name="pack_hanger_cost"
                      id="pack_hanger_cost"
-                     class="form-control form-control-sm"
+                     class="form-control"
                      value="{{ cost.get('pack_hanger_cost', '') }}">
             </div>
 
-            <div class="mb-2">
-              <label class="form-label small mb-1">
-                Пакет / плёнка за 1 шт.
-              </label>
+            <div class="mm-field">
+              <label>{{ t('plastic_per_piece') }}</label>
               <input type="number"
                      step="0.0001"
                      name="pack_plastic_cost"
                      id="pack_plastic_cost"
-                     class="form-control form-control-sm"
+                     class="form-control"
                      value="{{ cost.get('pack_plastic_cost', '') }}">
             </div>
 
-            <div class="mb-2">
-              <label class="form-label small mb-1">
-                Остальное (наклейка, бирка и т.п.) за 1 шт.
-              </label>
+            <div class="mm-field mb-0">
+              <label>{{ t('other_packaging_per_piece') }}</label>
               <input type="number"
                      step="0.0001"
                      name="pack_other_cost"
                      id="pack_other_cost"
-                     class="form-control form-control-sm"
+                     class="form-control"
                      value="{{ cost.get('pack_other_cost', '') }}">
             </div>
+          </section>
 
-            <hr class="my-2">
-
-            <div class="small text-muted mb-1">Упаковка на 1 шт.</div>
-            <div class="fw-semibold" id="pack_cost_per_piece_display">
-              — {{ cur }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {# ===== SUMMARY ROW ===== #}
-    <div class="row g-3 mt-3">
-      <div class="col-12">
-        <div class="card shadow-sm border-0">
-          <div class="card-body py-2">
-            <div class="small text-muted mb-2">Итог по себестоимости</div>
-            <div class="row g-2">
-              <div class="col-6 col-md-3">
-                <div class="small text-muted">Ткань / шт.</div>
-                <div class="fw-semibold" id="summary_fabric">{{ cur }}</div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="small text-muted">Пошив / шт.</div>
-                <div class="fw-semibold" id="summary_sewing">{{ cur }}</div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="small text-muted">Упаковка / шт.</div>
-                <div class="fw-semibold" id="summary_pack">{{ cur }}</div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="small text-muted">Итого себестоимость</div>
-                <div class="fw-bold" id="summary_total">{{ cur }}</div>
+          {# ===== MOBILE SUMMARY ===== #}
+          <section class="mm-card mm-summary-card mm-mobile-summary">
+            <div class="mm-summary-top">
+              <div>
+                <h2 class="mm-summary-title">{{ t('calculation_summary_title') }}</h2>
+                <p class="mm-summary-subtitle">
+                  {{ t('calculation_summary_subtitle') }}
+                </p>
               </div>
             </div>
-          </div>
+
+            <div class="mm-total-box">
+              <div class="mm-total-label">{{ t('total_cost_per_piece') }}</div>
+              <div class="mm-total-value" id="summary_total_mobile">— {{ cur }}</div>
+            </div>
+
+            <div class="mm-breakdown">
+              <div class="mm-breakdown-item">
+                <span>{{ t('fabric_label') }}</span>
+                <strong id="summary_fabric_mobile">— {{ cur }}</strong>
+              </div>
+              <div class="mm-breakdown-item">
+                <span>{{ t('sewing_label') }}</span>
+                <strong id="summary_sewing_mobile">— {{ cur }}</strong>
+              </div>
+              <div class="mm-breakdown-item">
+                <span>{{ t('packaging_label') }}</span>
+                <strong id="summary_pack_mobile">— {{ cur }}</strong>
+              </div>
+            </div>
+
+            <div class="mm-profit-box">
+              <div class="mm-profit-title">{{ t('compare_with_sell_price') }}</div>
+              <div class="mm-profit-grid">
+                <div class="mm-profit-item">
+                  <span>{{ t('sale_price') }}</span>
+                  <strong id="summary_sell_price_mobile">
+                    {{ format_money(product.sell_price_per_item or 0, product.currency) }}
+                  </strong>
+                </div>
+                <div class="mm-profit-item">
+                  <span>{{ t('profit_per_piece_label') }}</span>
+                  <strong id="summary_profit_mobile">—</strong>
+                </div>
+                <div class="mm-profit-item">
+                  <span>{{ t('cost_share_of_price') }}</span>
+                  <strong id="summary_cost_share_mobile">—</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
         </div>
+
+        {# ===== RIGHT: DESKTOP LIVE SUMMARY ===== #}
+        <aside class="mm-card mm-summary-card mm-desktop-summary">
+          <div class="mm-summary-top">
+            <div>
+              <h2 class="mm-summary-title">{{ t('calculation_summary_title') }}</h2>
+              <p class="mm-summary-subtitle">
+                {{ t('calculation_summary_desktop_subtitle') }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mm-total-box">
+            <div class="mm-total-label">{{ t('total_cost_per_piece') }}</div>
+            <div class="mm-total-value" id="summary_total">— {{ cur }}</div>
+          </div>
+
+          <div class="mm-breakdown">
+            <div class="mm-breakdown-item">
+              <span>{{ t('fabric_label') }}</span>
+              <strong id="summary_fabric">— {{ cur }}</strong>
+            </div>
+            <div class="mm-breakdown-item">
+              <span>{{ t('sewing_label') }}</span>
+              <strong id="summary_sewing">— {{ cur }}</strong>
+            </div>
+            <div class="mm-breakdown-item">
+              <span>{{ t('packaging_label') }}</span>
+              <strong id="summary_pack">— {{ cur }}</strong>
+            </div>
+          </div>
+
+          <div class="mm-profit-box">
+            <div class="mm-profit-title">{{ t('compare_with_sell_price') }}</div>
+            <div class="mm-profit-grid">
+              <div class="mm-profit-item">
+                <span>{{ t('sale_price') }}</span>
+                <strong id="summary_sell_price">
+                  {{ format_money(product.sell_price_per_item or 0, product.currency) }}
+                </strong>
+              </div>
+              <div class="mm-profit-item">
+                <span>{{ t('profit_per_piece_label') }}</span>
+                <strong id="summary_profit">—</strong>
+              </div>
+              <div class="mm-profit-item">
+                <span>{{ t('cost_share_of_price') }}</span>
+                <strong id="summary_cost_share">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="mm-actions">
+            <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-secondary mm-btn-secondary">
+              {{ t('btn_cancel') }}
+            </a>
+            <button type="submit" class="btn btn-success mm-btn-primary">
+              <i class="bi bi-check2-circle me-1"></i>
+              {{ t('save_cost_price_button') }}
+            </button>
+          </div>
+        </aside>
+
       </div>
-    </div>
 
-    {# ===== ACTIONS ===== #}
-    <div class="d-flex justify-content-end gap-2 mt-3">
-      <a href="{{ url_for('products.list_products') }}"
-         class="btn btn-sm btn-outline-secondary">
-        Отмена
-      </a>
-      <button type="submit" class="btn btn-sm btn-success">
-        💾 Сохранить себестоимость
-      </button>
-    </div>
-  </form>
+      {# ===== MOBILE ACTIONS ===== #}
+      <div class="mm-mobile-actions">
+        <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-secondary mm-btn-secondary">
+          {{ t('btn_cancel') }}
+        </a>
+        <button type="submit" class="btn btn-success mm-btn-primary">
+          <i class="bi bi-check2-circle me-1"></i>
+          {{ t('save_button_label') }}
+        </button>
+      </div>
+    </form>
 
+  </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  function getVal(id) {
-    const el = document.getElementById(id);
-    if (!el) return 0;
-    const v = parseFloat((el.value || '').replace(',', '.'));
-    return isNaN(v) ? 0 : v;
+  function parseNumber(value) {
+    const normalized = String(value || '').replace(',', '.').trim();
+    const num = parseFloat(normalized);
+    return Number.isFinite(num) ? num : 0;
   }
 
-  const fabricPriceInput = document.getElementById('fabric_price_per_unit');
-  const fabricUsedInput  = document.getElementById('fabric_used_qty');
-  const piecesInput      = document.getElementById('pieces_from_batch');
-  const sewingInput      = document.getElementById('sewing_cost_per_piece');
-  const packHangerInput  = document.getElementById('pack_hanger_cost');
-  const packPlasticInput = document.getElementById('pack_plastic_cost');
-  const packOtherInput   = document.getElementById('pack_other_cost');
-
-  const fabricDisplay = document.getElementById('fabric_cost_per_piece_display');
-  const sewingDisplay = document.getElementById('sewing_cost_per_piece_display');
-  const packDisplay   = document.getElementById('pack_cost_per_piece_display');
-
-  const sumFabric = document.getElementById('summary_fabric');
-  const sumSewing = document.getElementById('summary_sewing');
-  const sumPack   = document.getElementById('summary_pack');
-  const sumTotal  = document.getElementById('summary_total');
-
-  const currency = "{{ cur }}";
-
-  function formatMoney(num) {
+  function formatMoney(num, currency) {
     return new Intl.NumberFormat('ru-RU', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 4
     }).format(num) + ' ' + currency;
   }
 
+  function formatPercent(num) {
+    return new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1
+    }).format(num) + '%';
+  }
+
+  const defaultCurrency = {{ cur|tojson }};
+  const productCurrency = {{ (product.currency or cur)|tojson }};
+  const sellPrice = parseNumber({{ (product.sell_price_per_item or 0)|tojson }});
+
+  const fabricPriceInput = document.getElementById('fabric_price_per_unit');
+  const fabricUsedInput = document.getElementById('fabric_used_qty');
+  const piecesInput = document.getElementById('pieces_from_batch');
+  const sewingInput = document.getElementById('sewing_cost_per_piece');
+  const packHangerInput = document.getElementById('pack_hanger_cost');
+  const packPlasticInput = document.getElementById('pack_plastic_cost');
+  const packOtherInput = document.getElementById('pack_other_cost');
+  const fabricCurrencySelect = document.getElementById('fabric_price_currency');
+
+  const batchSourceBox = document.getElementById('mm-batch-source');
+  const unitLabels = document.querySelectorAll('.mm-unit-label');
+
+  const targets = {
+    fabricDisplay: document.getElementById('fabric_cost_per_piece_display'),
+    sewingDisplay: document.getElementById('sewing_cost_per_piece_display'),
+    packDisplay: document.getElementById('pack_cost_per_piece_display'),
+
+    desktop: {
+      fabric: document.getElementById('summary_fabric'),
+      sewing: document.getElementById('summary_sewing'),
+      pack: document.getElementById('summary_pack'),
+      total: document.getElementById('summary_total'),
+      sell: document.getElementById('summary_sell_price'),
+      profit: document.getElementById('summary_profit'),
+      costShare: document.getElementById('summary_cost_share')
+    },
+
+    mobile: {
+      fabric: document.getElementById('summary_fabric_mobile'),
+      sewing: document.getElementById('summary_sewing_mobile'),
+      pack: document.getElementById('summary_pack_mobile'),
+      total: document.getElementById('summary_total_mobile'),
+      sell: document.getElementById('summary_sell_price_mobile'),
+      profit: document.getElementById('summary_profit_mobile'),
+      costShare: document.getElementById('summary_cost_share_mobile')
+    }
+  };
+
+  function getCurrency() {
+    return (fabricCurrencySelect && fabricCurrencySelect.value) ? fabricCurrencySelect.value : defaultCurrency;
+  }
+
+  function setText(el, value) {
+    if (el) el.textContent = value;
+  }
+
+  function setClassState(el, value) {
+    if (!el) return;
+    el.classList.remove('mm-positive', 'mm-negative');
+
+    if (typeof value === 'number') {
+      if (value > 0) el.classList.add('mm-positive');
+      if (value < 0) el.classList.add('mm-negative');
+    }
+  }
+
+  function setUnitLabel(unit) {
+    if (!unit) return;
+    unitLabels.forEach(el => {
+      el.textContent = unit;
+    });
+  }
+
+  function updateSummaryBlock(group, values, currency) {
+    if (!group) return;
+
+    setText(group.fabric, values.fabric > 0 ? formatMoney(values.fabric, currency) : '— ' + currency);
+    setText(group.sewing, values.sewing > 0 ? formatMoney(values.sewing, currency) : '— ' + currency);
+    setText(group.pack, values.pack > 0 ? formatMoney(values.pack, currency) : '— ' + currency);
+    setText(group.total, values.total > 0 ? formatMoney(values.total, currency) : '— ' + currency);
+
+    if (group.sell) {
+      if (sellPrice > 0 && currency === productCurrency) {
+        setText(group.sell, formatMoney(sellPrice, currency));
+      } else if (sellPrice > 0) {
+        setText(group.sell, formatMoney(sellPrice, productCurrency));
+      } else {
+        setText(group.sell, '—');
+      }
+    }
+
+    if (group.profit) {
+      if (sellPrice > 0 && currency === productCurrency) {
+        const profit = sellPrice - values.total;
+        setText(group.profit, formatMoney(profit, currency));
+        setClassState(group.profit, profit);
+      } else {
+        setText(group.profit, '—');
+        group.profit.classList.remove('mm-positive', 'mm-negative');
+      }
+    }
+
+    if (group.costShare) {
+      if (sellPrice > 0 && currency === productCurrency && values.total > 0) {
+        const share = (values.total / sellPrice) * 100;
+        setText(group.costShare, formatPercent(share));
+      } else {
+        setText(group.costShare, '—');
+      }
+    }
+  }
+
   function recalc() {
-    const fabricPrice = getVal('fabric_price_per_unit');
-    const fabricUsed  = getVal('fabric_used_qty');
-    const pieces      = getVal('pieces_from_batch');
+    const currency = getCurrency();
+
+    const fabricPrice = parseNumber(fabricPriceInput && fabricPriceInput.value);
+    const fabricUsed = parseNumber(fabricUsedInput && fabricUsedInput.value);
+    const pieces = parseNumber(piecesInput && piecesInput.value);
+    const sewingPerPiece = parseNumber(sewingInput && sewingInput.value);
+    const packPerPiece =
+      parseNumber(packHangerInput && packHangerInput.value) +
+      parseNumber(packPlasticInput && packPlasticInput.value) +
+      parseNumber(packOtherInput && packOtherInput.value);
 
     let fabricPerPiece = 0;
     if (fabricPrice > 0 && fabricUsed > 0 && pieces > 0) {
       fabricPerPiece = (fabricPrice * fabricUsed) / pieces;
     }
 
-    const sewingPerPiece = getVal('sewing_cost_per_piece');
-    const packPerPiece   = getVal('pack_hanger_cost') +
-                           getVal('pack_plastic_cost') +
-                           getVal('pack_other_cost');
-    const totalCost      = fabricPerPiece + sewingPerPiece + packPerPiece;
+    const total = fabricPerPiece + sewingPerPiece + packPerPiece;
 
-    if (fabricDisplay) fabricDisplay.textContent =
-      fabricPerPiece > 0 ? formatMoney(fabricPerPiece) : '— ' + currency;
-    if (sewingDisplay) sewingDisplay.textContent =
-      sewingPerPiece > 0 ? formatMoney(sewingPerPiece) : '— ' + currency;
-    if (packDisplay)   packDisplay.textContent   =
-      packPerPiece   > 0 ? formatMoney(packPerPiece)   : '— ' + currency;
+    setText(
+      targets.fabricDisplay,
+      fabricPerPiece > 0 ? formatMoney(fabricPerPiece, currency) : '— ' + currency
+    );
 
-    if (sumFabric) sumFabric.textContent = fabricPerPiece > 0 ? formatMoney(fabricPerPiece) : '— ' + currency;
-    if (sumSewing) sumSewing.textContent = sewingPerPiece > 0 ? formatMoney(sewingPerPiece) : '— ' + currency;
-    if (sumPack)   sumPack.textContent   = packPerPiece   > 0 ? formatMoney(packPerPiece)   : '— ' + currency;
-    if (sumTotal)  sumTotal.textContent  = totalCost      > 0 ? formatMoney(totalCost)      : '— ' + currency;
+    setText(
+      targets.sewingDisplay,
+      sewingPerPiece > 0 ? formatMoney(sewingPerPiece, currency) : '— ' + currency
+    );
+
+    setText(
+      targets.packDisplay,
+      packPerPiece > 0 ? formatMoney(packPerPiece, currency) : '— ' + currency
+    );
+
+    updateSummaryBlock(targets.desktop, {
+      fabric: fabricPerPiece,
+      sewing: sewingPerPiece,
+      pack: packPerPiece,
+      total: total
+    }, currency);
+
+    updateSummaryBlock(targets.mobile, {
+      fabric: fabricPerPiece,
+      sewing: sewingPerPiece,
+      pack: packPerPiece,
+      total: total
+    }, currency);
   }
 
-  // ✅ Auto-fill from a real production batch
   document.querySelectorAll('.mm-use-batch').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', function () {
       const price = btn.dataset.price || '';
       const used = btn.dataset.used || '';
       const pieces = btn.dataset.pieces || '';
-      const cur = btn.dataset.currency || '';
+      const currency = btn.dataset.currency || '';
+      const unit = btn.dataset.unit || '';
+      const source = btn.dataset.source || {{ t('real_batch_default')|tojson }};
 
-      const priceEl = document.getElementById('fabric_price_per_unit');
-      const usedEl = document.getElementById('fabric_used_qty');
-      const piecesEl = document.getElementById('pieces_from_batch');
+      if (fabricPriceInput) fabricPriceInput.value = price;
+      if (fabricUsedInput) fabricUsedInput.value = used;
+      if (piecesInput) piecesInput.value = pieces;
+      if (fabricCurrencySelect && currency) fabricCurrencySelect.value = currency;
+      if (unit) setUnitLabel(unit);
 
-      if (priceEl) priceEl.value = price;
-      if (usedEl) usedEl.value = used;
-      if (piecesEl) piecesEl.value = pieces;
-
-      const currencySelect = document.querySelector('select[name="fabric_price_currency"]');
-      if (currencySelect && cur) {
-        currencySelect.value = cur;
+      if (batchSourceBox) {
+        batchSourceBox.textContent = {{ t('autofill_from_batch_prefix')|tojson }} + source;
+        batchSourceBox.classList.add('show');
       }
 
       recalc();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // If collapse is open on mobile, auto-close after using
-      const collapseEl = document.getElementById("{{ batch_collapse_id if recent_batches else '' }}");
-      if (collapseEl && collapseEl.classList.contains('show')) {
-        try {
-          const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
-          bsCollapse.hide();
-        } catch (e) {}
+      const fabricStep = document.getElementById('mm-fabric-step');
+      if (fabricStep) {
+        fabricStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      const collapseId = {{ (batch_collapse_id if recent_batches else '')|tojson }};
+      if (collapseId) {
+        const collapseEl = document.getElementById(collapseId);
+        if (collapseEl && collapseEl.classList.contains('show')) {
+          try {
+            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
+            bsCollapse.hide();
+          } catch (e) {}
+        }
       }
     });
   });
 
   [
-    fabricPriceInput, fabricUsedInput, piecesInput,
+    fabricPriceInput,
+    fabricUsedInput,
+    piecesInput,
     sewingInput,
-    packHangerInput, packPlasticInput, packOtherInput,
-  ].forEach(el => el && el.addEventListener('input', recalc));
+    packHangerInput,
+    packPlasticInput,
+    packOtherInput,
+    fabricCurrencySelect
+  ].forEach(el => {
+    if (el) {
+      el.addEventListener('input', recalc);
+      el.addEventListener('change', recalc);
+    }
+  });
 
   recalc();
 });

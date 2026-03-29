@@ -1,15 +1,267 @@
 {% extends "base.html" %}
-{% block title %}Производство сегодня{% endblock %}
+{% block title %}{{ t('factory_produce_today_title') }}{% endblock %}
 
 {% block content %}
+<style>
+  .mm-page-produce {
+    --mm-radius: 18px;
+    --mm-radius-sm: 14px;
+    --mm-line: rgba(15, 23, 42, 0.08);
+    --mm-soft: #f8fafc;
+    --mm-muted: #6b7280;
+    --mm-text: #111827;
+    --mm-blue-bg: rgba(240, 247, 255, 0.96);
+    --mm-blue-line: rgba(13, 110, 253, 0.18);
+    --mm-yellow-bg: rgba(255, 250, 235, 0.96);
+    --mm-yellow-line: rgba(255, 193, 7, 0.22);
+  }
+
+  .mm-page-produce .mm-order-card {
+    border: 1px solid var(--mm-yellow-line);
+    border-radius: 16px;
+    background: var(--mm-yellow-bg);
+  }
+
+  .mm-page-produce .mm-order-title {
+    font-weight: 900;
+    font-size: 0.95rem;
+  }
+
+  .mm-page-produce .mm-order-mini {
+    font-size: 0.82rem;
+    color: #6c757d;
+  }
+
+  .mm-page-produce .mm-preselect-row {
+    border: 1px solid var(--mm-blue-line) !important;
+    background: var(--mm-blue-bg) !important;
+  }
+
+  .mm-page-produce .mm-suggest-badge {
+    border-radius: 999px;
+    font-weight: 800;
+    padding: 0.35rem 0.7rem;
+  }
+
+  .mm-page-produce .mm-products-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mm-page-produce .mm-product-card {
+    border: 1px solid var(--mm-line);
+    border-radius: 18px;
+    background: #fff;
+    padding: 12px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  }
+
+  .mm-page-produce .mm-product-main {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .mm-page-produce .mm-product-image-wrap {
+    width: 88px;
+    min-width: 88px;
+    height: 88px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f3f4f6;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mm-page-produce .mm-product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .mm-page-produce .mm-product-image-placeholder {
+    font-size: 0.78rem;
+    color: #6b7280;
+    text-align: center;
+    line-height: 1.2;
+    padding: 8px;
+  }
+
+  .mm-page-produce .mm-product-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mm-page-produce .mm-product-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .mm-page-produce .mm-product-name {
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--mm-text);
+  }
+
+  .mm-page-produce .mm-product-meta {
+    font-size: 0.83rem;
+    color: var(--mm-muted);
+    margin-top: 3px;
+  }
+
+  .mm-page-produce .mm-product-order-note {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: #0d6efd;
+    font-weight: 700;
+  }
+
+  .mm-page-produce .mm-product-today {
+    text-align: right;
+    min-width: 62px;
+  }
+
+  .mm-page-produce .mm-product-today-label {
+    font-size: 0.76rem;
+    color: var(--mm-muted);
+  }
+
+  .mm-page-produce .mm-product-today-value {
+    font-size: 1.05rem;
+    font-weight: 900;
+    line-height: 1.15;
+    color: var(--mm-text);
+  }
+
+  .mm-page-produce .mm-qty-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--mm-text);
+  }
+
+  .mm-page-produce .mm-qty-input {
+    border-radius: 12px;
+    min-height: 42px;
+    font-size: 1rem;
+  }
+
+  @media (max-width: 575.98px) {
+    .mm-page-produce .mm-product-main {
+      gap: 10px;
+    }
+
+    .mm-page-produce .mm-product-image-wrap {
+      width: 72px;
+      min-width: 72px;
+      height: 72px;
+      border-radius: 12px;
+    }
+
+    .mm-page-produce .mm-product-name {
+      font-size: 0.96rem;
+    }
+  }
+</style>
+
 <div class="container-fluid py-2 py-md-3 mm-page-produce">
 
   <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2 mb-2">
-    <h1 class="h5 mb-0 fw-semibold text-truncate" style="min-width:0;">🏭 Производство сегодня</h1>
+    <h1 class="h5 mb-0 fw-semibold text-truncate" style="min-width:0;">🏭 {{ t('factory_produce_today_title') }}</h1>
     <span class="badge bg-primary" style="white-space:nowrap;">
       {{ today|default('') }}
     </span>
   </div>
+
+  {# ===== PENDING SHOP ORDERS ===== #}
+  {% if pending_order_rows and pending_order_rows|length %}
+    <div class="card shadow-sm border-0 mb-2 mm-order-card">
+      <div class="card-body p-2 p-md-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+          <div>
+            <div class="mm-order-title">🧾 {{ t('factory_orders_from_shop') }}</div>
+            <div class="mm-order-mini">
+              {{ t('factory_orders_from_shop_hint') }}
+            </div>
+          </div>
+          <span class="badge bg-warning text-dark mm-suggest-badge">
+            {{ pending_order_rows|length }} {{ t('factory_pending_count_suffix') }}
+          </span>
+        </div>
+
+        <div class="row g-2">
+          {% for row in pending_order_rows %}
+            <div class="col-12 col-lg-6">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-2">
+                  <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div style="min-width:0;">
+                      <div class="fw-semibold text-truncate">
+                        {{ row.product_name }}
+                      </div>
+                      <div class="small text-muted text-truncate">
+                        {{ row.category or t('shop_orders_no_category') }}
+                      </div>
+                      <div class="small text-muted mt-1">
+                        {{ t('shop_orders_order_label') }} #{{ row.order_id }}
+                        {% if row.customer_name %}
+                          · {{ row.customer_name }}
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div class="text-end">
+                      <div class="small text-muted">{{ t('shop_orders_remaining') }}</div>
+                      <div class="fw-bold text-danger">{{ row.qty_remaining }} {{ t('pieces_short') }}</div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex justify-content-between mt-2 small">
+                    <span class="text-muted">{{ t('factory_requested_qty') }}: {{ row.qty_requested }}</span>
+                    <span class="text-muted">{{ t('factory_fulfilled_qty') }}: {{ row.qty_from_shop_now }}</span>
+                  </div>
+
+                  <div class="d-grid mt-2">
+                    <a
+                      href="{{ url_for('factory.produce_for_order', item_id=row.item_id) }}"
+                      class="btn btn-warning btn-sm"
+                      style="border-radius: 14px; font-weight: 800;"
+                    >
+                      🏭 {{ t('factory_produce_for_order') }}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+  {% endif %}
+
+  {# ===== PRESELECT / ORDER MODE INFO ===== #}
+  {% if preselect_product_id %}
+    <div class="alert alert-info mb-2">
+      {% if preselect_order_id %}
+        {{ t('factory_order_mode_open') }}
+        <strong>#{{ preselect_order_id }}</strong>.
+      {% else %}
+        {{ t('factory_model_mode_open') }}
+      {% endif %}
+      {% if preselect_qty %}
+        {{ t('factory_recommended_qty') }}:
+        <strong>{{ preselect_qty }} {{ t('pieces_short') }}</strong>.
+      {% endif %}
+    </div>
+  {% endif %}
 
   <!-- Filters -->
   <div class="card shadow-sm border-0 mb-2">
@@ -21,14 +273,14 @@
 
         <!-- SEARCH -->
         <div class="col-12 col-md-7 position-relative">
-          <label class="form-label small mb-1">Поиск модели</label>
+          <label class="form-label small mb-1">{{ t('factory_search_model') }}</label>
 
           <input class="form-control form-control-sm"
                  id="mmSearch"
                  name="q"
                  autocomplete="off"
                  value="{{ q|default('') }}"
-                 placeholder="Напр. Adidas / Адидас / Bodik..." />
+                 placeholder="{{ t('factory_search_model_placeholder') }}" />
 
           <div id="mmSuggestBox"
                class="list-group position-absolute w-100 shadow-sm"
@@ -36,15 +288,15 @@
           </div>
 
           <div class="form-text small" id="mmSuggestHint" style="display:none;">
-            Можно писать латиницей или кириллицей. Можно не полностью.
+            {{ t('factory_search_model_hint') }}
           </div>
         </div>
 
         <!-- CATEGORY -->
         <div class="col-8 col-md-4">
-          <label class="form-label small mb-1">Категория</label>
+          <label class="form-label small mb-1">{{ t('category') }}</label>
           <select class="form-select form-select-sm" name="category">
-            <option value="">Все</option>
+            <option value="">{{ t('factory_all_categories') }}</option>
             {% for cat in categories|default([]) %}
               <option value="{{ cat }}" {% if selected_category|default('') == cat %}selected{% endif %}>
                 {{ cat }}
@@ -57,11 +309,11 @@
         <div class="col-4 col-md-1">
           <button class="btn btn-dark btn-sm w-100 d-flex align-items-center justify-content-center gap-2"
                   type="submit"
-                  title="Показать результаты"
+                  title="{{ t('factory_show_results') }}"
                   style="border-radius:14px; font-weight:800; padding:.6rem .75rem;">
             <i class="bi bi-search"></i>
-            <span class="d-md-none">Найти</span>
-            <span class="d-none d-md-inline">OK</span>
+            <span class="d-md-none">{{ t('shop_list_search_button') }}</span>
+            <span class="d-none d-md-inline">{{ t('apply') }}</span>
           </button>
         </div>
 
@@ -70,7 +322,7 @@
           <a class="btn btn-outline-secondary btn-sm w-100"
              style="border-radius:14px; font-weight:800;"
              href="{{ url_for('factory.produce_today') }}">
-            ♻️ Сбросить
+             ♻️ {{ t('factory_reset_filters') }}
           </a>
         </div>
 
@@ -82,123 +334,81 @@
   <form method="post" action="{{ url_for('factory.produce_today_save') }}">
     <div class="d-grid gap-2 mb-2">
       <button type="submit" class="btn btn-success w-100">
-        ✅ Сохранить производство
+        ✅ {{ t('factory_save_production') }}
       </button>
 
       <a href="{{ url_for('shop.transfer_to_shop', mode='today') }}" class="btn btn-outline-dark w-100">
-        🚚 Передать в магазин (сегодня)
+        🚚 {{ t('factory_transfer_to_shop_today') }}
       </a>
     </div>
 
-    <!-- MOBILE: cards -->
-    <div class="d-md-none" id="mmMobileBlock">
+    <div class="mm-products-list">
       {% for p in products %}
         {% set already = (today_map|default({})).get(p.id, 0) %}
-        <div class="card shadow-sm border-0 mb-2">
-          <div class="card-body p-2">
-            <div class="d-flex justify-content-between align-items-start gap-2">
-              <div style="min-width:0;">
-                <div class="fw-semibold text-truncate">{{ p.name }}</div>
-                <div class="small text-muted text-truncate">{{ p.category or "—" }}</div>
-              </div>
-              <div class="text-end">
-                <div class="small text-muted">Сегодня</div>
-                <div class="fw-semibold">{{ already }}</div>
-              </div>
+        {% set is_preselected = (preselect_product_id and p.id == preselect_product_id) %}
+
+        {% set raw_image = p.image or p.photo or p.image_path or p.photo_path %}
+        {% if raw_image %}
+          {% if raw_image.startswith('http://') or raw_image.startswith('https://') %}
+            {% set product_image = raw_image %}
+          {% elif raw_image.startswith('uploads/') %}
+            {% set product_image = url_for('static', filename=raw_image) %}
+          {% else %}
+            {% set product_image = url_for('static', filename='uploads/products/' ~ raw_image) %}
+          {% endif %}
+        {% else %}
+          {% set product_image = None %}
+        {% endif %}
+
+        <div class="mm-product-card {% if is_preselected %}mm-preselect-row{% endif %}">
+          <div class="mm-product-main">
+            <div class="mm-product-image-wrap">
+              {% if product_image %}
+                <img src="{{ product_image }}" alt="{{ p.name }}" class="mm-product-image">
+              {% else %}
+                <div class="mm-product-image-placeholder">{{ t('factory_no_photo') }}</div>
+              {% endif %}
             </div>
 
-            <div class="mt-2">
-              <label class="form-label small mb-1">Добавить (шт)</label>
-              <input type="number"
-                     class="form-control form-control-sm"
-                     min="0"
-                     name="qty_{{ p.id }}"
-                     placeholder="0">
-            </div>
+            <div class="mm-product-content">
+              <div class="mm-product-top">
+                <div style="min-width:0;">
+                  <div class="mm-product-name">{{ p.name }}</div>
+                  <div class="mm-product-meta">{{ p.category or t('shop_list_only_dash') }}</div>
 
-            <div class="d-flex gap-2 mt-2">
-              <button class="btn btn-outline-secondary btn-sm w-100" type="button"
-                      onclick="mmAdd('qty_{{ p.id }}', 1)">+1</button>
-              <button class="btn btn-outline-secondary btn-sm w-100" type="button"
-                      onclick="mmAdd('qty_{{ p.id }}', 5)">+5</button>
-              <button class="btn btn-outline-secondary btn-sm w-100" type="button"
-                      onclick="mmAdd('qty_{{ p.id }}', 10)">+10</button>
+                  {% if is_preselected and preselect_order_id %}
+                    <div class="mm-product-order-note">
+                      {{ t('shop_orders_order_label') }} #{{ preselect_order_id }}
+                      {% if preselect_qty %}
+                        · {{ t('factory_need_qty') }} {{ preselect_qty }} {{ t('pieces_short') }}
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <div class="mm-product-today">
+                  <div class="mm-product-today-label">{{ t('dashboard_manager_production_today') }}</div>
+                  <div class="mm-product-today-value">{{ already }}</div>
+                </div>
+              </div>
+
+              <div>
+                <label class="mm-qty-label">{{ t('factory_add_qty') }} ({{ t('pieces_short') }})</label>
+                <input type="number"
+                       class="form-control form-control-sm mm-qty-input"
+                       min="0"
+                       name="qty_{{ p.id }}"
+                       placeholder="0"
+                       {% if is_preselected and preselect_qty %}value="{{ preselect_qty }}"{% endif %}>
+              </div>
             </div>
           </div>
         </div>
       {% endfor %}
     </div>
 
-    <!-- DESKTOP: table -->
-    <div class="card shadow-sm border-0 d-none d-md-block" id="mmDesktopBlock">
-      <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Модель</th>
-              <th>Категория</th>
-              <th class="text-end">Сегодня</th>
-              <th style="width:180px;">Добавить</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in products %}
-              {% set already = (today_map|default({})).get(p.id, 0) %}
-              <tr>
-                <td class="fw-semibold">{{ p.name }}</td>
-                <td class="small text-muted">{{ p.category or "—" }}</td>
-                <td class="text-end fw-semibold">{{ already }}</td>
-                <td>
-                  <input type="number"
-                         class="form-control form-control-sm text-end"
-                         min="0"
-                         name="qty_{{ p.id }}"
-                         placeholder="0">
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
   </form>
 </div>
-
-<script>
-function mmAdd(name, inc){
-  const el = document.querySelector(`[name="${name}"]`);
-  if(!el) return;
-  const cur = parseInt(el.value || "0", 10);
-  el.value = (cur + inc);
-}
-
-/**
- * Disable inputs from the hidden block (mobile vs desktop),
- * so POST won’t include duplicate empty fields.
- */
-function mmToggleInputsByViewport(){
-  const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-  const mobileBlock = document.getElementById("mmMobileBlock");
-  const desktopBlock = document.getElementById("mmDesktopBlock");
-
-  if (mobileBlock) {
-    mobileBlock.querySelectorAll("input, select, textarea, button").forEach(el => {
-      el.disabled = isDesktop;
-    });
-  }
-
-  if (desktopBlock) {
-    desktopBlock.querySelectorAll("input, select, textarea").forEach(el => {
-      el.disabled = !isDesktop;
-    });
-    // do NOT disable any table buttons globally (none exist now, but safe)
-  }
-}
-
-document.addEventListener("DOMContentLoaded", mmToggleInputsByViewport);
-window.addEventListener("resize", mmToggleInputsByViewport);
-</script>
 
 <script>
 (function(){
@@ -215,21 +425,32 @@ window.addEventListener("resize", mmToggleInputsByViewport);
     box.innerHTML = '';
   }
 
+  function esc(v){
+    return (v || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function showBox(items){
     if (!items || !items.length){
       hideBox();
       return;
     }
+
     box.innerHTML = items.map(it => {
-      const cat = it.category ? `<div class="small text-muted">${it.category}</div>` : '';
+      const cat = it.category ? `<div class="small text-muted">${esc(it.category)}</div>` : '';
       return `
         <button type="button" class="list-group-item list-group-item-action py-2"
-                data-name="${(it.name || '').replace(/"/g,'&quot;')}">
-          <div class="fw-semibold">${it.name}</div>
+                data-name="${esc(it.name)}">
+          <div class="fw-semibold">${esc(it.name)}</div>
           ${cat}
         </button>
       `;
     }).join('');
+
     box.style.display = 'block';
   }
 
@@ -277,7 +498,7 @@ window.addEventListener("resize", mmToggleInputsByViewport);
 
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideBox();
-    if (e.key === 'Enter') hideBox(); // allow normal submit
+    if (e.key === 'Enter') hideBox();
   });
 })();
 </script>

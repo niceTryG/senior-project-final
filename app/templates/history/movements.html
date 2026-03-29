@@ -1,202 +1,1091 @@
 {% extends "base.html" %}
 
-{% block title %}История движения товара — Mini Moda{% endblock %}
+{% block title %}{{ t('product_movement_history_desc') }} — Mini Moda{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3 py-md-4 mm-page-movement-history">
 
-  {# ===== HEADER ===== #}
-  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-      <h1 class="h5 mb-1">📜 История движения товара</h1>
-      <p class="small text-muted mb-0">
-        Фабрика → Магазин → Клиент. Можно отфильтровать по товару, заказу, типу движения и дате.
-      </p>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-      <a href="{{ url_for('shop.list_shop_orders') }}" class="btn btn-sm btn-outline-info">
-        🧾 Заказы магазина
-      </a>
-      <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
-        ⬅ На дашборд
-      </a>
+{% set ns = namespace(
+    total_records=movements|length,
+    total_in=0,
+    total_out=0,
+    zero_moves=0,
+    order_linked=0,
+    factory_to_shop_count=0,
+    factory_to_shop_for_order_count=0,
+    shop_sale_count=0,
+    adjustment_count=0
+) %}
+
+{% for mv in movements %}
+    {% if mv.qty_change > 0 %}
+        {% set ns.total_in = ns.total_in + mv.qty_change %}
+    {% elif mv.qty_change < 0 %}
+        {% set ns.total_out = ns.total_out + (mv.qty_change * -1) %}
+    {% else %}
+        {% set ns.zero_moves = ns.zero_moves + 1 %}
+    {% endif %}
+
+    {% if mv.order_id %}
+        {% set ns.order_linked = ns.order_linked + 1 %}
+    {% endif %}
+
+    {% if mv.movement_type == 'factory_to_shop' %}
+        {% set ns.factory_to_shop_count = ns.factory_to_shop_count + 1 %}
+    {% elif mv.movement_type == 'factory_to_shop_for_order' %}
+        {% set ns.factory_to_shop_for_order_count = ns.factory_to_shop_for_order_count + 1 %}
+    {% elif mv.movement_type == 'shop_sale' %}
+        {% set ns.shop_sale_count = ns.shop_sale_count + 1 %}
+    {% elif mv.movement_type == 'adjustment' %}
+        {% set ns.adjustment_count = ns.adjustment_count + 1 %}
+    {% endif %}
+{% endfor %}
+
+{% set sales_pressure = ((ns.shop_sale_count / ns.total_records) * 100) if ns.total_records else 0 %}
+{% set order_linked_ratio = ((ns.order_linked / ns.total_records) * 100) if ns.total_records else 0 %}
+
+<div class="mm-movement-history-page">
+
+  <style>
+    .mm-movement-history-page {
+      --surface: rgba(255, 255, 255, 0.88);
+      --surface-strong: #ffffff;
+      --surface-soft: #f8fbff;
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-2: #1d4ed8;
+      --primary-soft: rgba(37, 99, 235, 0.10);
+      --success: #059669;
+      --success-2: #10b981;
+      --success-soft: rgba(5, 150, 105, 0.10);
+      --warning: #d97706;
+      --warning-2: #f59e0b;
+      --warning-soft: rgba(217, 119, 6, 0.10);
+      --danger: #dc2626;
+      --danger-2: #ef4444;
+      --danger-soft: rgba(220, 38, 38, 0.10);
+      --purple: #7c3aed;
+      --purple-soft: rgba(124, 58, 237, 0.10);
+      --cyan: #0891b2;
+      --cyan-soft: rgba(8, 145, 178, 0.10);
+      --dark: #07111f;
+      --dark-2: #0f1a34;
+      --dark-3: #13284d;
+      --shadow-sm: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 18px 40px rgba(15, 23, 42, 0.10);
+      --shadow-lg: 0 24px 64px rgba(15, 23, 42, 0.18);
+      color: var(--text);
+    }
+
+    .mm-mh-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mm-mh-hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 30px;
+      padding: 28px;
+      background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.26), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(124, 58, 237, 0.18), transparent 28%),
+        linear-gradient(135deg, #07111f 0%, #0f1a34 48%, #13284d 100%);
+      box-shadow: var(--shadow-lg);
+      color: #fff;
+    }
+
+    .mm-mh-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.05), transparent 38%);
+      pointer-events: none;
+    }
+
+    .mm-mh-hero-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.85fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .mm-mh-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .mm-mh-title {
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.04;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+
+    .mm-mh-subtitle {
+      max-width: 760px;
+      color: rgba(255,255,255,0.76);
+      font-size: 15px;
+      line-height: 1.65;
+      margin-bottom: 18px;
+    }
+
+    .mm-mh-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .mm-mh-hero-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      transition: 0.2s ease;
+    }
+
+    .mm-mh-hero-btn-primary {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .mm-mh-hero-btn-primary:hover {
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+    }
+
+    .mm-mh-hero-btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.92);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .mm-mh-hero-btn-secondary:hover {
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+    }
+
+    .mm-mh-hero-side {
+      display: grid;
+      gap: 14px;
+    }
+
+    .mm-mh-glass-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 22px;
+      padding: 18px;
+      backdrop-filter: blur(12px);
+    }
+
+    .mm-mh-glass-label {
+      display: block;
+      color: rgba(255,255,255,0.72);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .mm-mh-glass-value {
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .mm-mh-glass-meta {
+      color: rgba(255,255,255,0.72);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .mm-mh-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .mm-mh-metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(14px);
+    }
+
+    .mm-mh-metric-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .mm-mh-metric-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .mm-mh-metric-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .icon-primary { background: var(--primary-soft); color: var(--primary); }
+    .icon-success { background: var(--success-soft); color: var(--success); }
+    .icon-warning { background: var(--warning-soft); color: var(--warning); }
+    .icon-purple  { background: var(--purple-soft); color: var(--purple); }
+
+    .mm-mh-metric-value {
+      font-size: 28px;
+      line-height: 1.05;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .mm-mh-metric-meta {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .mm-mh-insights {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .mm-mh-insight-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,251,255,0.98) 100%);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mm-mh-insight-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .mm-mh-insight-text {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .mm-mh-legend-card,
+    .mm-mh-filter-card,
+    .mm-mh-toolbar-card,
+    .mm-mh-table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mm-mh-legend-card {
+      padding: 16px 18px;
+    }
+
+    .mm-mh-section-title {
+      font-size: 18px;
+      font-weight: 900;
+      margin: 0 0 6px;
+      color: var(--text);
+    }
+
+    .mm-mh-section-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 14px;
+    }
+
+    .mm-mh-legend-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .mm-mh-legend-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: #fff;
+      color: var(--text);
+    }
+
+    .mm-mh-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-cyan { background: var(--cyan); }
+    .dot-primary { background: var(--primary); }
+    .dot-success { background: var(--success); }
+    .dot-muted { background: #64748b; }
+
+    .mm-mh-filter-card {
+      padding: 18px;
+    }
+
+    .mm-mh-filter-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mm-col-3 { grid-column: span 3; }
+    .mm-col-2 { grid-column: span 2; }
+    .mm-col-12 { grid-column: span 12; }
+
+    .mm-mh-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .mm-mh-input,
+    .mm-mh-select {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 16px;
+      padding: 10px 14px;
+      font-size: 14px;
+      outline: none;
+      transition: 0.2s ease;
+      box-shadow: none;
+    }
+
+    .mm-mh-input:focus,
+    .mm-mh-select:focus {
+      border-color: rgba(37, 99, 235, 0.35);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+    }
+
+    .mm-mh-filter-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .mm-mh-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 14px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      transition: 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .mm-mh-btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .mm-mh-btn-primary:hover {
+      background: var(--primary-2);
+      color: #fff;
+    }
+
+    .mm-mh-btn-secondary {
+      background: #fff;
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .mm-mh-btn-secondary:hover {
+      background: #f8fafc;
+      color: var(--text);
+    }
+
+    .mm-mh-toolbar-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 16px 18px;
+    }
+
+    .mm-mh-search {
+      min-width: 260px;
+      max-width: 360px;
+      width: 100%;
+      position: relative;
+    }
+
+    .mm-mh-search input {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 16px;
+      padding: 12px 14px 12px 42px;
+      outline: none;
+      font-size: 14px;
+      transition: 0.2s ease;
+    }
+
+    .mm-mh-search input:focus {
+      border-color: rgba(37, 99, 235, 0.35);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+    }
+
+    .mm-mh-search-icon {
+      position: absolute;
+      top: 50%;
+      left: 14px;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .mm-mh-table-wrap {
+      padding: 0 16px 16px;
+    }
+
+    .mm-mh-table {
+      margin-bottom: 0;
+      vertical-align: middle;
+    }
+
+    .mm-mh-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--surface-soft);
+      color: #475569;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 15px 14px;
+      white-space: nowrap;
+    }
+
+    .mm-mh-table tbody td {
+      padding: 16px 14px;
+      border-top: 1px solid rgba(148, 163, 184, 0.10);
+    }
+
+    .mm-mh-table tbody tr {
+      transition: 0.2s ease;
+    }
+
+    .mm-mh-table tbody tr:hover {
+      background: rgba(37, 99, 235, 0.03);
+    }
+
+    .mm-mh-date {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mm-mh-date-main {
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .mm-mh-date-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .mm-mh-product {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mm-mh-product-name {
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .mm-mh-product-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .mm-mh-qty-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 82px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .qty-plus {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .qty-minus {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .qty-zero {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .mm-mh-route {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mm-mh-route-main {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .mm-mh-route-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .mm-mh-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge-factory {
+      background: var(--cyan-soft);
+      color: var(--cyan);
+    }
+
+    .badge-order {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .badge-sale {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .badge-adjustment {
+      background: #eef2f7;
+      color: #475569;
+    }
+
+    .badge-fallback {
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .mm-mh-order-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 800;
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .mm-mh-order-link:hover {
+      color: var(--primary-2);
+      background: rgba(37, 99, 235, 0.14);
+    }
+
+    .mm-mh-order-empty {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .mm-mh-comment {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 360px;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .mm-mh-empty {
+      background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,251,255,0.98) 100%);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow-sm);
+      padding: 44px 24px;
+      text-align: center;
+    }
+
+    .mm-mh-empty-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .mm-mh-empty-text {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    @media (max-width: 1200px) {
+      .mm-mh-hero-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .mm-mh-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .mm-mh-insights {
+        grid-template-columns: 1fr;
+      }
+
+      .mm-col-3,
+      .mm-col-2 {
+        grid-column: span 6;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mm-mh-hero {
+        padding: 22px;
+        border-radius: 24px;
+      }
+
+      .mm-mh-title {
+        font-size: 28px;
+      }
+
+      .mm-mh-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .mm-mh-legend-card,
+      .mm-mh-filter-card,
+      .mm-mh-toolbar-card,
+      .mm-mh-table-card,
+      .mm-mh-empty,
+      .mm-mh-metric-card,
+      .mm-mh-insight-card {
+        border-radius: 20px;
+      }
+
+      .mm-col-3,
+      .mm-col-2,
+      .mm-col-12 {
+        grid-column: span 12;
+      }
+
+      .mm-mh-search {
+        max-width: 100%;
+      }
+    }
+  </style>
+
+  <div class="container-fluid py-3 py-md-4">
+    <div class="mm-mh-shell">
+
+     
+
+      <section class="mm-mh-metrics">
+        <div class="mm-mh-metric-card">
+          <div class="mm-mh-metric-top">
+            <span class="mm-mh-metric-label">{{ t('movement_total_in_units') }}</span>
+            <span class="mm-mh-metric-icon icon-success">＋</span>
+          </div>
+          <div class="mm-mh-metric-value">{{ ns.total_in }}</div>
+          <div class="mm-mh-metric-meta">
+            {{ t('movement_total_in_meta') }}
+          </div>
+        </div>
+
+        <div class="mm-mh-metric-card">
+          <div class="mm-mh-metric-top">
+            <span class="mm-mh-metric-label">{{ t('movement_total_out_units') }}</span>
+            <span class="mm-mh-metric-icon icon-warning">－</span>
+          </div>
+          <div class="mm-mh-metric-value">{{ ns.total_out }}</div>
+          <div class="mm-mh-metric-meta">
+            {{ t('movement_total_out_meta') }}
+          </div>
+        </div>
+
+        <div class="mm-mh-metric-card">
+          <div class="mm-mh-metric-top">
+            <span class="mm-mh-metric-label">{{ t('movement_sales_in_feed') }}</span>
+            <span class="mm-mh-metric-icon icon-primary">🛒</span>
+          </div>
+          <div class="mm-mh-metric-value">{{ ns.shop_sale_count }}</div>
+          <div class="mm-mh-metric-meta">
+            {{ t('movement_sales_feed_meta').format(percent="%.1f"|format(sales_pressure)) }}
+          </div>
+        </div>
+
+        <div class="mm-mh-metric-card">
+          <div class="mm-mh-metric-top">
+            <span class="mm-mh-metric-label">{{ t('movement_adjustments_short') }}</span>
+            <span class="mm-mh-metric-icon icon-purple">✦</span>
+          </div>
+          <div class="mm-mh-metric-value">{{ ns.adjustment_count }}</div>
+          <div class="mm-mh-metric-meta">
+            {{ t('movement_adjustments_meta') }}
+          </div>
+        </div>
+      </section>
+
+      <section class="mm-mh-insights">
+        <div class="mm-mh-insight-card">
+          <div class="mm-mh-insight-title">{{ t('movement_operational_picture') }}</div>
+          <p class="mm-mh-insight-text">
+            {{ t('movement_operational_picture_body').format(
+              total_records='<strong>' ~ ns.total_records ~ '</strong>',
+              factory_to_shop_count='<strong>' ~ ns.factory_to_shop_count ~ '</strong>',
+              factory_to_shop_for_order_count='<strong>' ~ ns.factory_to_shop_for_order_count ~ '</strong>',
+              shop_sale_count='<strong>' ~ ns.shop_sale_count ~ '</strong>',
+              adjustment_count='<strong>' ~ ns.adjustment_count ~ '</strong>'
+            ) | safe }}
+          </p>
+        </div>
+
+        <div class="mm-mh-insight-card">
+          <div class="mm-mh-insight-title">{{ t('movement_risk_control') }}</div>
+          <p class="mm-mh-insight-text">
+            {% if ns.adjustment_count > 0 %}
+              {{ t('movement_risk_control_with_adjustments') }}
+            {% else %}
+              {{ t('movement_risk_control_without_adjustments') }}
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="mm-mh-insight-card">
+          <div class="mm-mh-insight-title">{{ t('movement_orders_connection') }}</div>
+          <p class="mm-mh-insight-text">
+            {% if ns.order_linked > 0 %}
+              {{ t('movement_orders_connection_with_links').format(count='<strong>' ~ ns.order_linked ~ '</strong>') | safe }}
+            {% else %}
+              {{ t('movement_orders_connection_without_links') }}
+            {% endif %}
+          </p>
+        </div>
+      </section>
+
+      <section class="mm-mh-legend-card">
+        <h3 class="mm-mh-section-title">{{ t('movement_legend_title') }}</h3>
+        <p class="mm-mh-section-subtitle">
+          {{ t('movement_legend_subtitle') }}
+        </p>
+
+        <div class="mm-mh-legend-grid">
+          <div class="mm-mh-legend-pill">
+            <span class="mm-mh-dot dot-cyan"></span>
+            <span>{{ t('movement_factory_to_shop_desc') }}</span>
+          </div>
+          <div class="mm-mh-legend-pill">
+            <span class="mm-mh-dot dot-primary"></span>
+            <span>{{ t('movement_factory_to_shop_for_order_desc') }}</span>
+          </div>
+          <div class="mm-mh-legend-pill">
+            <span class="mm-mh-dot dot-success"></span>
+            <span>{{ t('movement_shop_sale_desc') }}</span>
+          </div>
+          <div class="mm-mh-legend-pill">
+            <span class="mm-mh-dot dot-muted"></span>
+            <span>{{ t('movement_adjustment_desc') }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="mm-mh-filter-card">
+        <h3 class="mm-mh-section-title">{{ t('movement_filters_title') }}</h3>
+        <p class="mm-mh-section-subtitle">
+          {{ t('movement_filters_subtitle') }}
+        </p>
+
+        <form method="get" class="mb-0">
+          <div class="mm-mh-filter-grid">
+            <div class="mm-col-3">
+              <label class="mm-mh-label">{{ t('product') }}</label>
+              <select name="product_id" class="mm-mh-select">
+                <option value="">{{ t('all_products') }}</option>
+                {% for p in products %}
+                  <option value="{{ p.id }}"
+                    {% if filter_product_id and filter_product_id == p.id %}selected{% endif %}>
+                    {{ p.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mm-col-2">
+              <label class="mm-mh-label">{{ t('order_id') }}</label>
+              <input
+                type="number"
+                name="order_id"
+                class="mm-mh-input"
+                value="{{ filter_order_id or '' }}">
+            </div>
+
+            <div class="mm-col-3">
+              <label class="mm-mh-label">{{ t('movement_type') }}</label>
+              <select name="type" class="mm-mh-select">
+                <option value="">{{ t('all_types') }}</option>
+                <option value="factory_to_shop" {% if filter_type == 'factory_to_shop' %}selected{% endif %}>
+                  {{ t('movement_type_factory_to_shop_option') }}
+                </option>
+                <option value="factory_to_shop_for_order" {% if filter_type == 'factory_to_shop_for_order' %}selected{% endif %}>
+                  {{ t('movement_type_factory_to_shop_for_order_option') }}
+                </option>
+                <option value="shop_sale" {% if filter_type == 'shop_sale' %}selected{% endif %}>
+                  {{ t('movement_type_shop_sale_option') }}
+                </option>
+                <option value="adjustment" {% if filter_type == 'adjustment' %}selected{% endif %}>
+                  {{ t('movement_type_adjustment_option') }}
+                </option>
+              </select>
+            </div>
+
+            <div class="mm-col-2">
+              <label class="mm-mh-label">{{ t('from_date') }}</label>
+              <input
+                type="date"
+                name="from"
+                class="mm-mh-input"
+                value="{{ filter_from or '' }}">
+            </div>
+
+            <div class="mm-col-2">
+              <label class="mm-mh-label">{{ t('to_date') }}</label>
+              <input
+                type="date"
+                name="to"
+                class="mm-mh-input"
+                value="{{ filter_to or '' }}">
+            </div>
+
+            <div class="mm-col-12">
+              <div class="mm-mh-filter-actions">
+                <button type="submit" class="mm-mh-btn mm-mh-btn-primary">
+                  🔎 {{ t('apply') }}
+                </button>
+                <a href="{{ url_for('shop.movement_history') }}" class="mm-mh-btn mm-mh-btn-secondary">
+                  ✖ {{ t('clear') }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section class="mm-mh-toolbar-card">
+        <div>
+          <h3 class="mm-mh-section-title mb-0">{{ t('movement_feed_title') }}</h3>
+          <p class="mm-mh-section-subtitle mb-0">
+            {{ t('movement_feed_subtitle') }}
+          </p>
+        </div>
+
+        <div class="mm-mh-search">
+          <span class="mm-mh-search-icon">🔎</span>
+          <input type="text" id="movementSearch" placeholder="{{ t('movement_search_placeholder') }}">
+        </div>
+      </section>
+
+      {% if movements %}
+        <section class="mm-mh-table-card">
+          <div class="mm-mh-table-wrap">
+            <div class="table-responsive">
+              <table class="table mm-mh-table" id="movementHistoryTable">
+                <thead>
+                  <tr>
+                    <th>{{ t('date_time') }}</th>
+                    <th>{{ t('product') }}</th>
+                    <th class="text-end">{{ t('quantity') }}</th>
+                    <th>{{ t('from_to') }}</th>
+                    <th>{{ t('type') }}</th>
+                    <th>{{ t('orders') }}</th>
+                    <th>{{ t('comment') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for mv in movements %}
+                    <tr class="movement-row">
+                      <td>
+                        <div class="mm-mh-date">
+                          <span class="mm-mh-date-main">
+                            {{ mv.timestamp.strftime("%Y-%m-%d %H:%M") if mv.timestamp else "—" }}
+                          </span>
+                          <span class="mm-mh-date-sub">
+                            {{ t('operational_event') }}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td>
+                        <div class="mm-mh-product">
+                          <span class="mm-mh-product-name">{{ mv.product.name if mv.product else "—" }}</span>
+                          <span class="mm-mh-product-meta">
+                            {% if mv.order_id %}
+                              {{ t('linked_to_order').format(order_id=mv.order_id) }}
+                            {% elif mv.movement_type == 'shop_sale' %}
+                              {{ t('shop_sale_short_desc') }}
+                            {% elif mv.movement_type == 'factory_to_shop' %}
+                              {{ t('factory_restock_desc') }}
+                            {% elif mv.movement_type == 'factory_to_shop_for_order' %}
+                              {{ t('order_movement_desc') }}
+                            {% elif mv.movement_type == 'adjustment' %}
+                              {{ t('manual_record_change_desc') }}
+                            {% else %}
+                              {{ t('product_movement_history_desc') }}
+                            {% endif %}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td class="text-end">
+                        {% if mv.qty_change > 0 %}
+                          <span class="mm-mh-qty-pill qty-plus">+{{ mv.qty_change }}</span>
+                        {% elif mv.qty_change < 0 %}
+                          <span class="mm-mh-qty-pill qty-minus">{{ mv.qty_change }}</span>
+                        {% else %}
+                          <span class="mm-mh-qty-pill qty-zero">{{ mv.qty_change }}</span>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        <div class="mm-mh-route">
+                          <span class="mm-mh-route-main">{{ mv.source or "—" }} → {{ mv.destination or "—" }}</span>
+                          <span class="mm-mh-route-sub">{{ t('movement_route_label') }}</span>
+                        </div>
+                      </td>
+
+                      <td>
+                        {% if mv.movement_type == 'factory_to_shop' %}
+                          <span class="mm-mh-badge badge-factory">{{ t('movement_type_factory_to_shop_badge') }}</span>
+                        {% elif mv.movement_type == 'factory_to_shop_for_order' %}
+                          <span class="mm-mh-badge badge-order">{{ t('movement_type_factory_to_shop_for_order_badge') }}</span>
+                        {% elif mv.movement_type == 'shop_sale' %}
+                          <span class="mm-mh-badge badge-sale">{{ t('movement_type_shop_sale_badge') }}</span>
+                        {% elif mv.movement_type == 'adjustment' %}
+                          <span class="mm-mh-badge badge-adjustment">{{ t('movement_type_adjustment_badge') }}</span>
+                        {% else %}
+                          <span class="mm-mh-badge badge-fallback">{{ mv.movement_type or "—" }}</span>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        {% if mv.order_id %}
+                          <a href="{{ url_for('shop.history_by_order', order_id=mv.order_id) }}" class="mm-mh-order-link">
+                            #{{ mv.order_id }}
+                          </a>
+                        {% else %}
+                          <span class="mm-mh-order-empty">—</span>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        <div class="mm-mh-comment">
+                          {{ mv.comment or "—" }}
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      {% else %}
+        <section class="mm-mh-empty">
+          <div class="mm-mh-empty-title">{{ t('movement_empty_filtered_title') }}</div>
+          <p class="mm-mh-empty-text">
+            {{ t('movement_empty_filtered_subtitle') }}
+          </p>
+        </section>
+      {% endif %}
+
     </div>
   </div>
-
-  {# ===== LEGEND ===== #}
-  <div class="card shadow-sm border-0 mb-3">
-    <div class="card-body py-2">
-      <div class="small text-muted">
-        <span class="badge bg-info text-dark me-1">factory_to_shop</span> приход в магазин с фабрики ·
-        <span class="badge bg-primary me-1">factory_to_shop_for_order</span> приход под конкретный заказ ·
-        <span class="badge bg-success me-1">shop_sale</span> продажа клиенту ·
-        <span class="badge bg-secondary me-1">adjustment</span> ручная корректировка
-      </div>
-    </div>
-  </div>
-
-  {# ===== ФОРМА ФИЛЬТРОВ ===== #}
-  <div class="card shadow-sm border-0 mb-3">
-    <div class="card-body">
-      <form method="get" class="row g-2 align-items-end mb-0">
-        <div class="col-12 col-md-3">
-          <label class="form-label small mb-1">Товар</label>
-          <select name="product_id" class="form-select form-select-sm">
-            <option value="">Все товары</option>
-            {% for p in products %}
-              <option value="{{ p.id }}"
-                      {% if filter_product_id and filter_product_id == p.id %}selected{% endif %}>
-                {{ p.name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="col-6 col-md-2">
-          <label class="form-label small mb-1">ID заказа</label>
-          <input
-            type="number"
-            name="order_id"
-            class="form-control form-control-sm"
-            value="{{ filter_order_id or '' }}">
-        </div>
-
-        <div class="col-6 col-md-3">
-          <label class="form-label small mb-1">Тип движения</label>
-          <select name="type" class="form-select form-select-sm">
-            <option value="">Все типы</option>
-            <option value="factory_to_shop"
-              {% if filter_type == 'factory_to_shop' %}selected{% endif %}>
-              Фабрика → Магазин (обычный приход)
-            </option>
-            <option value="factory_to_shop_for_order"
-              {% if filter_type == 'factory_to_shop_for_order' %}selected{% endif %}>
-              Фабрика → Магазин (под заказ)
-            </option>
-            <option value="shop_sale"
-              {% if filter_type == 'shop_sale' %}selected{% endif %}>
-              Продажа из магазина
-            </option>
-            <option value="adjustment"
-              {% if filter_type == 'adjustment' %}selected{% endif %}>
-              Корректировка
-            </option>
-          </select>
-        </div>
-
-        <div class="col-6 col-md-2">
-          <label class="form-label small mb-1">С даты</label>
-          <input
-            type="date"
-            name="from"
-            class="form-control form-control-sm"
-            value="{{ filter_from or '' }}">
-        </div>
-
-        <div class="col-6 col-md-2">
-          <label class="form-label small mb-1">По дату</label>
-          <input
-            type="date"
-            name="to"
-            class="form-control form-control-sm"
-            value="{{ filter_to or '' }}">
-        </div>
-
-        <div class="col-12 mt-2 d-flex flex-wrap gap-2">
-          <button type="submit" class="btn btn-sm btn-primary">
-            🔎 Применить фильтр
-          </button>
-          <a href="{{ url_for('shop.movement_history') }}" class="btn btn-sm btn-outline-secondary">
-            ✖ Очистить
-          </a>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  {# ===== ТАБЛИЦА ДВИЖЕНИЙ ===== #}
-  {% if movements %}
-    <div class="card shadow-sm border-0">
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="text-nowrap">Дата / время</th>
-                <th class="text-nowrap">Товар</th>
-                <th class="text-end text-nowrap">Кол-во</th>
-                <th class="text-nowrap">Откуда → Куда</th>
-                <th class="text-nowrap">Тип</th>
-                <th class="text-nowrap">Заказ</th>
-                <th>Комментарий</th>
-              </tr>
-            </thead>
-            <tbody>
-            {% for mv in movements %}
-              <tr>
-                <td class="small text-nowrap">
-                  {{ mv.timestamp.strftime("%Y-%m-%d %H:%M") if mv.timestamp }}
-                </td>
-
-                <td class="small">
-                  {{ mv.product.name if mv.product else "—" }}
-                </td>
-
-                <td class="text-end small">
-                  {% if mv.qty_change > 0 %}
-                    <span class="text-success">+{{ mv.qty_change }}</span>
-                  {% elif mv.qty_change < 0 %}
-                    <span class="text-danger">{{ mv.qty_change }}</span>
-                  {% else %}
-                    {{ mv.qty_change }}
-                  {% endif %}
-                </td>
-
-                <td class="small">
-                  {{ mv.source or "—" }} → {{ mv.destination or "—" }}
-                </td>
-
-                <td class="small">
-                  {% if mv.movement_type == 'factory_to_shop' %}
-                    <span class="badge bg-info text-dark">factory_to_shop</span>
-                  {% elif mv.movement_type == 'factory_to_shop_for_order' %}
-                    <span class="badge bg-primary">factory_to_shop_for_order</span>
-                  {% elif mv.movement_type == 'shop_sale' %}
-                    <span class="badge bg-success">shop_sale</span>
-                  {% elif mv.movement_type == 'adjustment' %}
-                    <span class="badge bg-secondary">adjustment</span>
-                  {% else %}
-                    <span class="badge bg-light text-dark">
-                      {{ mv.movement_type or "—" }}
-                    </span>
-                  {% endif %}
-                </td>
-
-                <td class="small">
-                  {% if mv.order_id %}
-                    <a href="{{ url_for('shop.history_by_order', order_id=mv.order_id) }}">
-                      #{{ mv.order_id }}
-                    </a>
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-
-                <td class="small">
-                  {{ mv.comment or "" }}
-                </td>
-              </tr>
-            {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  {% else %}
-    <div class="alert alert-light border small mb-0">
-      Нет движений по выбранным фильтрам.
-    </div>
-  {% endif %}
-
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("movementSearch");
+    const rows = document.querySelectorAll("#movementHistoryTable tbody .movement-row");
+
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        const value = this.value.toLowerCase().trim();
+
+        rows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(value) ? "" : "none";
+        });
+      });
+    }
+  });
+</script>
+
 {% endblock %}

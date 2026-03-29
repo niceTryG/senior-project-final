@@ -1,14 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}История продаж{% endblock %}
+{% block title %}{{ t('sales_history_title') }}{% endblock %}
 
 {% block content %}
 <style>
-  /* =========================
-     Mini Moda — Sales History (Neo)
-     Change: Mobile filters as popup modal (not bottom sheet)
-     Scoped: .mm-page-sales-history
-     ========================= */
   .mm-page-sales-history{
     --mm-cardA: rgba(255,255,255,.78);
     --mm-cardB: rgba(255,255,255,.92);
@@ -67,7 +62,41 @@
     border-color: rgba(13,110,253,.35);
   }
 
-  /* ===== Mobile action bar (simple) ===== */
+  .mm-period-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:12px;
+  }
+
+  .mm-period-chip{
+    min-height:38px;
+    padding:0 12px;
+    border-radius:999px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    font-size:.82rem;
+    font-weight:800;
+    border:1px solid var(--mm-line);
+    background: rgba(255,255,255,.82);
+    color: var(--mm-soft);
+    transition:.18s ease;
+  }
+
+  .mm-period-chip:hover{
+    transform:translateY(-1px);
+    color: var(--mm-text, #111827);
+  }
+
+  .mm-period-chip.active{
+    background:#2563eb;
+    color:#fff;
+    border-color:#2563eb;
+    box-shadow: 0 10px 22px rgba(37,99,235,.18);
+  }
+
   .mm-mob-actions{
     position: sticky;
     top: 0;
@@ -89,7 +118,6 @@
     background: rgba(255,255,255,.75);
   }
 
-  /* ===== Mobile popup modal for filters ===== */
   .mm-modal-backdrop{
     position: fixed;
     inset: 0;
@@ -164,7 +192,6 @@
     font-weight: 800;
   }
 
-  /* Totals cards (keep your existing, just a soft lift) */
   .mm-total-soft{
     border:1px solid var(--mm-line);
     border-radius: 18px;
@@ -172,75 +199,90 @@
     box-shadow: 0 10px 22px rgba(0,0,0,.06);
   }
 
-  /* Your existing mobile sale cards can stay; no forced redesign here */
+  @media (max-width: 767.98px){
+    .mm-period-row{
+      gap:6px;
+      margin-bottom:10px;
+    }
+    .mm-period-chip{
+      min-height:34px;
+      padding:0 10px;
+      font-size:.76rem;
+    }
+  }
 </style>
 
 <div class="container-fluid py-2 py-md-3 mm-page-sales-history">
 
-  {# ===== HEADER ===== #}
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
     <div>
       <div class="d-flex align-items-center gap-2 mb-1">
-        <span class="mm-neo-chip">🧾 <span>Sales</span></span>
+        <span class="mm-neo-chip">🧾 <span>{{ t('sales') }}</span></span>
       </div>
-      <h1 class="h4 mb-1 mm-neo-title">История продаж</h1>
+      <h1 class="h4 mb-1 mm-neo-title">{{ t('sales_history_title') }}</h1>
       <p class="mb-0 small mm-neo-sub">
-        Продажи по дням, моделям и клиентам.
+        {{ t('sales_history_subtitle') }}
       </p>
     </div>
 
     <div class="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end d-none d-md-flex">
-      <a href="{{ url_for('shop.list_shop') }}" class="btn btn-sm btn-primary" style="border-radius:999px;font-weight:700;">
-        + Продажа (из магазина)
+      <a href="{{ url_for('sales.shop_sell') }}" class="btn btn-sm btn-primary" style="border-radius:999px;font-weight:700;">
+        + {{ t('sale_action_short') }}
       </a>
-      {% if sales_export_url is defined %}
-        <a href="{{ sales_export_url }}" class="btn btn-sm btn-outline-success" style="border-radius:999px;font-weight:700;">
-          ⬇️ Экспорт CSV
-        </a>
-      {% endif %}
     </div>
   </div>
 
-  {# ===== MOBILE ACTIONS ===== #}
+  <div class="mm-period-row">
+    <a href="{{ url_for('sales.list_sales', period='today') }}"
+       class="mm-period-chip {% if period == 'today' %}active{% endif %}">
+      {{ t('today_label') }}
+    </a>
+    <a href="{{ url_for('sales.list_sales', period='yesterday') }}"
+       class="mm-period-chip {% if period == 'yesterday' %}active{% endif %}">
+      {{ t('yesterday_label') }}
+    </a>
+    <a href="{{ url_for('sales.list_sales', period='week') }}"
+       class="mm-period-chip {% if period == 'week' %}active{% endif %}">
+      {{ t('week_label') }}
+    </a>
+    <a href="{{ url_for('sales.list_sales', period='all') }}"
+       class="mm-period-chip {% if period == 'all' or not period %}active{% endif %}">
+      {{ t('all_option') }}
+    </a>
+  </div>
+
   <div class="d-md-none mb-3 mm-mob-actions">
     <div class="d-flex gap-2">
       <button type="button" class="btn btn-outline-secondary w-50" id="mm-open-filters">
-        ⚙️ Фильтр
+        ⚙️ {{ t('sales_filter_title') }}
       </button>
-      <a href="{{ url_for('shop.list_shop') }}" class="btn btn-primary w-50">
-        + Продажа
+      <a href="{{ url_for('sales.shop_sell') }}" class="btn btn-primary w-50">
+        + {{ t('sale_action_short') }}
       </a>
     </div>
-    {% if sales_export_url is defined %}
-      <div class="mt-2">
-        <a href="{{ sales_export_url }}" class="btn btn-outline-success w-100">
-          ⬇️ Экспорт CSV
-        </a>
-      </div>
-    {% endif %}
   </div>
 
-  {# ===== FILTERS: DESKTOP ONLY (UNCHANGED) ===== #}
   <div class="card shadow-sm mb-3 border-0 d-none d-md-block">
     <div class="card-body py-2">
       <form method="get" class="row g-2 align-items-end">
+        <input type="hidden" name="period" value="{{ period or '' }}">
 
         <div class="col-md-4">
-          <label class="form-label mb-1 small">Поиск</label>
+          <label class="form-label mb-1 small">{{ t('filter_search') }}</label>
           <div class="input-group input-group-sm">
             <span class="input-group-text">🔍</span>
             <input
               type="text"
               class="form-control"
               name="q"
-              placeholder="Имя, телефон, модель, категория"
+              placeholder="{{ t('sales_search_placeholder') }}"
               value="{{ q }}"
             >
           </div>
         </div>
 
         <div class="col-md-2">
-          <label class="form-label mb-1 small">От даты</label>
+          <label class="form-label mb-1 small">{{ t('from_date') }}</label>
           <input
             type="date"
             class="form-control form-control-sm"
@@ -250,7 +292,7 @@
         </div>
 
         <div class="col-md-2">
-          <label class="form-label mb-1 small">До даты</label>
+          <label class="form-label mb-1 small">{{ t('to_date') }}</label>
           <input
             type="date"
             class="form-control form-control-sm"
@@ -260,10 +302,10 @@
         </div>
 
         <div class="col-md-2">
-          <label class="form-label mb-1 small">Валюта</label>
-          {% if sales_currencies is defined and sales_currencies %}
+          <label class="form-label mb-1 small">{{ t('table_currency') }}</label>
+          {% if sales_currencies %}
             <select name="currency" class="form-select form-select-sm">
-              <option value="">Все</option>
+              <option value="">{{ t('all_option') }}</option>
               {% for cur in sales_currencies %}
                 <option value="{{ cur }}" {% if selected_currency == cur %}selected{% endif %}>
                   {{ cur }}
@@ -272,39 +314,37 @@
             </select>
           {% else %}
             <select name="currency" class="form-select form-select-sm">
-              <option value="">Все</option>
-              <option value="UZS" {% if selected_currency == 'UZS' %}selected{% endif %}>UZS</option>
-              <option value="USD" {% if selected_currency == 'USD' %}selected{% endif %}>USD</option>
+              <option value="">{{ t('all_option') }}</option>
             </select>
           {% endif %}
         </div>
 
         <div class="col-md-2">
-          <label class="form-label mb-1 small">Сортировка</label>
+          <label class="form-label mb-1 small">{{ t('fabrics_sorting') }}</label>
           <select name="sort" class="form-select form-select-sm">
             <option value="date_desc" {% if sort == 'date_desc' or not sort %}selected{% endif %}>
-              По дате (новые сверху)
+              {{ t('sort_date_newest') }}
             </option>
             <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>
-              По дате (старые сверху)
+              {{ t('sort_date_oldest') }}
             </option>
             <option value="amount_desc" {% if sort == 'amount_desc' %}selected{% endif %}>
-              По сумме (по убыванию)
+              {{ t('sort_amount_desc') }}
             </option>
             <option value="amount_asc" {% if sort == 'amount_asc' %}selected{% endif %}>
-              По сумме (по возрастанию)
+              {{ t('sort_amount_asc') }}
             </option>
             <option value="profit_desc" {% if sort == 'profit_desc' %}selected{% endif %}>
-              По прибыли (по убыванию)
+              {{ t('sort_profit_desc') }}
             </option>
           </select>
         </div>
 
-        {% if sales_categories is defined and sales_categories %}
+        {% if sales_categories %}
           <div class="col-md-3">
-            <label class="form-label mb-1 small">Категория</label>
+            <label class="form-label mb-1 small">{{ t('filter_category') }}</label>
             <select name="category" class="form-select form-select-sm">
-              <option value="">Все</option>
+              <option value="">{{ t('all_option') }}</option>
               {% for cat in sales_categories %}
                 <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>
                   {{ cat }}
@@ -316,53 +356,63 @@
 
         <div class="col-md-2 d-grid gap-1">
           <button type="submit" class="btn btn-sm btn-outline-primary">
-            Фильтр
+            {{ t('filter_button') }}
           </button>
         </div>
 
         <div class="col-md-2 d-grid gap-1">
           <a href="{{ url_for('sales.list_sales') }}" class="btn btn-sm btn-outline-secondary">
-            Сбросить
+            {{ t('reset') }}
           </a>
         </div>
       </form>
 
-      {% if q or date_from or date_to or selected_currency or (selected_category is defined and selected_category) or (sort and sort != 'date_desc') %}
+      {% if period or q or date_from or date_to or selected_currency or selected_category or (sort and sort != 'date_desc') %}
         <div class="small text-muted d-flex flex-wrap gap-1 mt-2">
-          <span class="me-1">Активные фильтры:</span>
+          <span class="me-1">{{ t('active_filters') }}:</span>
+
+          {% if period == 'today' %}
+            <span class="badge bg-light text-dark border">{{ t('period') }}: {{ t('today_label') }}</span>
+          {% elif period == 'yesterday' %}
+            <span class="badge bg-light text-dark border">{{ t('period') }}: {{ t('yesterday_label') }}</span>
+          {% elif period == 'week' %}
+            <span class="badge bg-light text-dark border">{{ t('period') }}: {{ t('week_label') }}</span>
+          {% elif period == 'all' %}
+            <span class="badge bg-light text-dark border">{{ t('period') }}: {{ t('all_option') }}</span>
+          {% endif %}
 
           {% if q %}
             <span class="badge bg-light text-dark border">
-              Поиск: “{{ q }}”
+              {{ t('filter_search') }}: “{{ q }}”
             </span>
           {% endif %}
           {% if date_from %}
             <span class="badge bg-light text-dark border">
-              От: {{ date_from }}
+              {{ t('from') }}: {{ date_from }}
             </span>
           {% endif %}
           {% if date_to %}
             <span class="badge bg-light text-dark border">
-              До: {{ date_to }}
+              {{ t('to') }}: {{ date_to }}
             </span>
           {% endif %}
           {% if selected_currency %}
             <span class="badge bg-light text-dark border">
-              Валюта: {{ selected_currency }}
+              {{ t('table_currency') }}: {{ selected_currency }}
             </span>
           {% endif %}
-          {% if selected_category is defined and selected_category %}
+          {% if selected_category %}
             <span class="badge bg-light text-dark border">
-              Категория: {{ selected_category }}
+              {{ t('filter_category') }}: {{ selected_category }}
             </span>
           {% endif %}
           {% if sort and sort != 'date_desc' %}
             <span class="badge bg-light text-dark border">
-              Сортировка:
-              {% if sort == 'date_asc' %}Дата ↑
-              {% elif sort == 'amount_desc' %}Сумма ↓
-              {% elif sort == 'amount_asc' %}Сумма ↑
-              {% elif sort == 'profit_desc' %}Прибыль ↓
+              {{ t('fabrics_sorting') }}:
+              {% if sort == 'date_asc' %}{{ t('sort_date_short_up') }}
+              {% elif sort == 'amount_desc' %}{{ t('sort_amount_short_down') }}
+              {% elif sort == 'amount_asc' %}{{ t('sort_amount_short_up') }}
+              {% elif sort == 'profit_desc' %}{{ t('sort_profit_short_down') }}
               {% endif %}
             </span>
           {% endif %}
@@ -371,7 +421,6 @@
     </div>
   </div>
 
-  {# ===== TOTALS CARDS ===== #}
   {% if totals %}
     <div class="row g-2 mb-3">
       {% for cur, t in totals.items() %}
@@ -380,24 +429,24 @@
             <div class="card-body py-2">
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <div class="small text-muted">
-                  Итого по {{ cur }}
+                  {{ t('total_for_currency').format(currency=cur) }}
                 </div>
                 <span class="badge bg-light text-dark border small">{{ cur }}</span>
               </div>
               <div class="small mb-1">
-                <span class="text-muted">Выручка:</span>
+                <span class="text-muted">{{ t('revenue_label') }}:</span>
                 <span class="fw-semibold">
                   {{ format_money(t.sell|default(0), cur) }}
                 </span>
               </div>
               <div class="small mb-1">
-                <span class="text-muted">Себестоимость:</span>
+                <span class="text-muted">{{ t('cost_label') }}:</span>
                 <span class="fw-semibold">
                   {{ format_money(t.cost|default(0), cur) }}
                 </span>
               </div>
               <div class="small">
-                <span class="text-muted">Прибыль:</span>
+                <span class="text-muted">{{ t('profit_label') }}:</span>
                 <span class="fw-bold">
                   {{ format_money(t.profit|default(0), cur) }}
                 </span>
@@ -409,18 +458,16 @@
     </div>
   {% endif %}
 
-  {# ===== MOBILE SALES LIST ===== #}
   <div class="d-md-none mb-3">
     {% if sales|length == 0 %}
       <div class="alert alert-light border small mb-0">
-        Нет продаж для выбранного периода.
+        {{ t('no_sales_for_period') }}
       </div>
     {% endif %}
 
     {% for s in sales %}
       {% set high_profit = s.profit is not none and s.profit > 0 %}
-      <div class="card shadow-sm border-0 mb-2 mm-sale-card
-                  {% if high_profit %}mm-sale-card-profit{% endif %}">
+      <div class="card shadow-sm border-0 mb-2 mm-sale-card {% if high_profit %}mm-sale-card-profit{% endif %}">
         <div class="card-body py-2">
           <div class="d-flex justify-content-between align-items-start mb-1">
             <div>
@@ -443,7 +490,7 @@
               {% endif %}
             </div>
             <div class="text-end">
-              <div class="small text-muted">Кол-во</div>
+              <div class="small text-muted">{{ t('quantity') }}</div>
               <div class="fw-bold mm-sale-card-qty">
                 {{ s.quantity }}
               </div>
@@ -452,13 +499,13 @@
 
           <div class="d-flex justify-content-between small mb-1">
             <div>
-              Цена / 1:
+              {{ t('price_per_item') }}:
               <span class="fw-semibold">
                 {{ format_money(s.sell_price_per_item, s.currency) }}
               </span>
             </div>
             <div>
-              Сумма:
+              {{ t('amount_label') }}:
               <span class="fw-semibold">
                 {{ format_money(s.total_sell, s.currency) }}
               </span>
@@ -467,13 +514,13 @@
 
           <div class="d-flex justify-content-between small text-muted">
             <div>
-              Себестоимость:
+              {{ t('cost_label') }}:
               <span class="fw-semibold">
                 {{ format_money(s.total_cost, s.currency) }}
               </span>
             </div>
             <div>
-              Прибыль:
+              {{ t('profit_label') }}:
               <span class="fw-semibold">
                 {{ format_money(s.profit, s.currency) }}
               </span>
@@ -484,29 +531,28 @@
     {% endfor %}
   </div>
 
-  {# ===== DESKTOP TABLE ===== #}
   <div class="card shadow-sm d-none d-md-block">
     <div class="card-body p-0">
       <div class="table-responsive mb-0">
         <table class="table table-sm table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th class="d-none d-md-table-cell">ID</th>
-              <th>Дата</th>
-              <th>Модель / покупатель</th>
-              <th class="d-none d-lg-table-cell">Категория</th>
-              <th class="text-end text-nowrap">Кол-во</th>
-              <th class="text-end d-none d-md-table-cell text-nowrap">Цена / 1</th>
-              <th class="text-end text-nowrap">Сумма</th>
-              <th class="text-end d-none d-lg-table-cell text-nowrap">Себестоимость</th>
-              <th class="text-end d-none d-lg-table-cell text-nowrap">Прибыль</th>
+              <th class="d-none d-md-table-cell">{{ t('table_id') }}</th>
+              <th>{{ t('table_date') }}</th>
+              <th>{{ t('model_customer_label') }}</th>
+              <th class="d-none d-lg-table-cell">{{ t('filter_category') }}</th>
+              <th class="text-end text-nowrap">{{ t('quantity') }}</th>
+              <th class="text-end d-none d-md-table-cell text-nowrap">{{ t('price_per_item') }}</th>
+              <th class="text-end text-nowrap">{{ t('amount_label') }}</th>
+              <th class="text-end d-none d-lg-table-cell text-nowrap">{{ t('cost_label') }}</th>
+              <th class="text-end d-none d-lg-table-cell text-nowrap">{{ t('profit_label') }}</th>
             </tr>
           </thead>
           <tbody>
           {% if sales|length == 0 %}
             <tr>
               <td colspan="9" class="text-center small text-muted py-3">
-                Нет продаж для выбранных фильтров.
+                {{ t('no_sales_for_filters') }}
               </td>
             </tr>
           {% endif %}
@@ -525,8 +571,7 @@
                   {{ s.product.name }}
                 </div>
                 <div class="small text-muted">
-                  {% if s.product.category %}{{ s.product.category }} · {% endif %}
-                  {% if s.customer_name %}{{ s.customer_name }}{% endif %}
+                  {% if s.customer_name %}{{ s.customer_name }}{% else %}—{% endif %}
                   {% if s.customer_phone %} · {{ s.customer_phone }}{% endif %}
                 </div>
               </td>
@@ -556,139 +601,80 @@
     </div>
   </div>
 
-  {# ===== PAGINATION ===== #}
-  {% if pagination is defined and pagination %}
-    <nav aria-label="Sales pagination" class="mt-2">
-      <ul class="pagination pagination-sm justify-content-center">
-        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-          <a class="page-link"
-             href="{% if pagination.has_prev %}{{ url_for('sales.list_sales',
-                                                         page=pagination.prev_num,
-                                                         q=q,
-                                                         from=date_from,
-                                                         to=date_to,
-                                                         currency=selected_currency,
-                                                         category=selected_category,
-                                                         sort=sort) }}{% else %}#{% endif %}">
-            ‹
-          </a>
-        </li>
-
-        {% for p in pagination.iter_pages(left_edge=1, right_edge=1,
-                                          left_current=1, right_current=1) %}
-          {% if p %}
-            <li class="page-item {% if p == pagination.page %}active{% endif %}">
-              <a class="page-link"
-                 href="{{ url_for('sales.list_sales',
-                                  page=p,
-                                  q=q,
-                                  from=date_from,
-                                  to=date_to,
-                                  currency=selected_currency,
-                                  category=selected_category,
-                                  sort=sort) }}">
-                {{ p }}
-              </a>
-            </li>
-          {% else %}
-            <li class="page-item disabled">
-              <span class="page-link">…</span>
-            </li>
-          {% endif %}
-        {% endfor %}
-
-        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-          <a class="page-link"
-             href="{% if pagination.has_next %}{{ url_for('sales.list_sales',
-                                                         page=pagination.next_num,
-                                                         q=q,
-                                                         from=date_from,
-                                                         to=date_to,
-                                                         currency=selected_currency,
-                                                         category=selected_category,
-                                                         sort=sort) }}{% else %}#{% endif %}">
-            ›
-          </a>
-        </li>
-      </ul>
-    </nav>
-  {% endif %}
-
 </div>
 
-{# ===== MOBILE FILTER POPUP MODAL ===== #}
 <div class="mm-modal-backdrop" id="mm-filter-backdrop" aria-hidden="true"></div>
 
-<div class="mm-modal" id="mm-filter-modal" role="dialog" aria-modal="true" aria-label="Фильтр продаж">
+<div class="mm-modal" id="mm-filter-modal" role="dialog" aria-modal="true" aria-label="{{ t('sales_filter_title') }}">
   <div class="mm-modal-card" id="mm-filter-card">
     <div class="mm-modal-head">
-      <h2 class="mm-modal-title">Фильтр продаж</h2>
+      <h2 class="mm-modal-title">{{ t('sales_filter_title') }}</h2>
       <button type="button" class="btn btn-sm btn-outline-secondary" id="mm-close-filters" style="border-radius:999px;">
         ✕
       </button>
     </div>
 
     <form method="get">
+      <input type="hidden" name="period" value="{{ period or '' }}">
+
       <div class="mm-modal-body">
 
         <div class="mb-3">
-          <label class="form-label small mb-1">Поиск</label>
+          <label class="form-label small mb-1">{{ t('filter_search') }}</label>
           <input
             type="text"
             class="form-control mm-neo-input"
             name="q"
-            placeholder="Имя, телефон, модель, категория"
+            placeholder="{{ t('sales_search_placeholder') }}"
             value="{{ q }}"
           >
         </div>
 
         <div class="row g-2 mb-3">
           <div class="col-6">
-            <label class="form-label small mb-1">От даты</label>
+            <label class="form-label small mb-1">{{ t('from_date') }}</label>
             <input type="date" class="form-control mm-neo-input" name="from" value="{{ date_from }}">
           </div>
           <div class="col-6">
-            <label class="form-label small mb-1">До даты</label>
+            <label class="form-label small mb-1">{{ t('to_date') }}</label>
             <input type="date" class="form-control mm-neo-input" name="to" value="{{ date_to }}">
           </div>
         </div>
 
         <div class="row g-2 mb-3">
           <div class="col-6">
-            <label class="form-label small mb-1">Валюта</label>
-            {% if sales_currencies is defined and sales_currencies %}
+            <label class="form-label small mb-1">{{ t('table_currency') }}</label>
+            {% if sales_currencies %}
               <select name="currency" class="form-select">
-                <option value="">Все</option>
+                <option value="">{{ t('all_option') }}</option>
                 {% for cur in sales_currencies %}
                   <option value="{{ cur }}" {% if selected_currency == cur %}selected{% endif %}>{{ cur }}</option>
                 {% endfor %}
               </select>
             {% else %}
               <select name="currency" class="form-select">
-                <option value="">Все</option>
-                <option value="UZS" {% if selected_currency == 'UZS' %}selected{% endif %}>UZS</option>
-                <option value="USD" {% if selected_currency == 'USD' %}selected{% endif %}>USD</option>
+                <option value="">{{ t('all_option') }}</option>
               </select>
             {% endif %}
           </div>
 
           <div class="col-6">
-            <label class="form-label small mb-1">Сортировка</label>
+            <label class="form-label small mb-1">{{ t('fabrics_sorting') }}</label>
             <select name="sort" class="form-select">
-              <option value="date_desc" {% if sort == 'date_desc' or not sort %}selected{% endif %}>Дата ↓</option>
-              <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>Дата ↑</option>
-              <option value="amount_desc" {% if sort == 'amount_desc' %}selected{% endif %}>Сумма ↓</option>
-              <option value="amount_asc" {% if sort == 'amount_asc' %}selected{% endif %}>Сумма ↑</option>
-              <option value="profit_desc" {% if sort == 'profit_desc' %}selected{% endif %}>Прибыль ↓</option>
+              <option value="date_desc" {% if sort == 'date_desc' or not sort %}selected{% endif %}>{{ t('sort_date_short_down') }}</option>
+              <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>{{ t('sort_date_short_up') }}</option>
+              <option value="amount_desc" {% if sort == 'amount_desc' %}selected{% endif %}>{{ t('sort_amount_short_down') }}</option>
+              <option value="amount_asc" {% if sort == 'amount_asc' %}selected{% endif %}>{{ t('sort_amount_short_up') }}</option>
+              <option value="profit_desc" {% if sort == 'profit_desc' %}selected{% endif %}>{{ t('sort_profit_short_down') }}</option>
             </select>
           </div>
         </div>
 
-        {% if sales_categories is defined and sales_categories %}
+        {% if sales_categories %}
           <div class="mb-3">
-            <label class="form-label small mb-1">Категория</label>
+            <label class="form-label small mb-1">{{ t('filter_category') }}</label>
             <select name="category" class="form-select">
-              <option value="">Все</option>
+              <option value="">{{ t('all_option') }}</option>
               {% for cat in sales_categories %}
                 <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
               {% endfor %}
@@ -700,10 +686,10 @@
 
       <div class="mm-modal-actions">
         <a href="{{ url_for('sales.list_sales') }}" class="btn btn-outline-secondary w-50">
-          Сбросить
+          {{ t('reset') }}
         </a>
         <button type="submit" class="btn btn-primary w-50">
-          Применить
+          {{ t('apply') }}
         </button>
       </div>
     </form>
@@ -729,7 +715,6 @@ document.addEventListener('DOMContentLoaded', function () {
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
 
-    // stop iOS from instantly closing on same tap
     window.setTimeout(() => { ignoreOutside = false; }, 220);
   }
 
@@ -752,7 +737,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // clicking inside card shouldn't close
   if (card) {
     card.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -764,4 +748,4 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 </script>
-{% endblock %}
+{% endblock %}s

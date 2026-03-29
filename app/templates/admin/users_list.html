@@ -1,21 +1,516 @@
 {% extends "base.html" %}
+
+{% block title %}{{ t('admin_users_title') }}{% endblock %}
+
 {% block content %}
-<h2>User Management</h2>
+<style>
+  .mm-users-page{
+    padding-top: 10px;
+    padding-bottom: 96px;
+  }
 
-<a href="{{ url_for('auth.create_user') }}">Create New User</a>
+  .mm-card{
+    border-radius: 20px;
+    border: 0;
+    box-shadow: 0 10px 28px rgba(16,24,40,0.06);
+  }
 
-<table border="1" cellpadding="8">
-    <tr>
-        <th>ID</th>
-        <th>Username</th>
-        <th>Role</th>
-    </tr>
+  .mm-btn{
+    border-radius: 14px;
+    font-weight: 800;
+  }
+
+  .mm-chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:.35rem;
+    padding:.42rem .72rem;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,.10);
+    background:#fff;
+    color:#111;
+    text-decoration:none;
+    font-size:.82rem;
+    font-weight:800;
+    white-space:nowrap;
+  }
+
+  .mm-muted{
+    color:#6c757d;
+  }
+
+  .mm-stat-card{
+    border-radius: 18px;
+    background: rgba(0,0,0,.03);
+    min-height: 96px;
+  }
+
+  .mm-stat-label{
+    font-size: .76rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6c757d;
+    font-weight: 800;
+  }
+
+  .mm-stat-value{
+    font-size: 1.2rem;
+    font-weight: 900;
+    line-height: 1.1;
+    color: #111827;
+    margin-top: .35rem;
+  }
+
+  .mm-user-card{
+    border-radius: 18px;
+    border: 1px solid rgba(0,0,0,.08);
+    background:#fff;
+    padding: .95rem;
+  }
+
+  .mm-avatar{
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: linear-gradient(180deg, rgba(0,0,0,.06), rgba(0,0,0,.03));
+    font-weight: 900;
+    color:#111;
+    flex-shrink:0;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+  }
+
+  .mm-role-badge{
+    border-radius:999px;
+    padding:.3rem .65rem;
+    font-size:.72rem;
+    font-weight:900;
+    white-space:nowrap;
+  }
+
+  .mm-role-admin{ background:#111827; color:#fff; }
+  .mm-role-manager{ background:rgba(37,99,235,.12); color:#2563eb; }
+  .mm-role-viewer{ background:rgba(107,114,128,.14); color:#4b5563; }
+  .mm-role-shop{ background:rgba(245,158,11,.16); color:#b45309; }
+  .mm-role-accountant{ background:rgba(16,185,129,.14); color:#047857; }
+
+  .mm-mini-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:.25rem .55rem;
+    border-radius:999px;
+    font-size:.72rem;
+    font-weight:800;
+    border:1px solid rgba(0,0,0,.08);
+    background:#fff;
+    color:#111;
+    white-space:nowrap;
+  }
+
+  .mm-mini-badge.warn{
+    background: rgba(245,158,11,.14);
+    color: #b45309;
+    border-color: rgba(245,158,11,.18);
+  }
+
+  .mm-mini-badge.dark{
+    background: #111827;
+    color: #fff;
+    border-color: #111827;
+  }
+
+  .mm-kv{
+    display:flex;
+    justify-content:space-between;
+    gap:.75rem;
+    padding:.4rem 0;
+    border-bottom:1px dashed rgba(0,0,0,.10);
+  }
+
+  .mm-kv:last-child{
+    border-bottom:0;
+  }
+
+  .mm-k{
+    color:#6c757d;
+    font-size:.82rem;
+  }
+
+  .mm-v{
+    font-weight:800;
+    text-align:right;
+  }
+
+  .mm-toolbar{
+    display:grid;
+    gap:.75rem;
+  }
+
+  .mm-filter-form .form-control,
+  .mm-filter-form .form-select{
+    border-radius:12px;
+  }
+
+  .mm-table-wrap{
+    display:none;
+  }
+
+  .mm-empty-box{
+    border-radius: 18px;
+    border: 1px dashed rgba(0,0,0,.12);
+    background: rgba(0,0,0,.02);
+    padding: 1rem;
+    text-align: center;
+    color: #6c757d;
+  }
+
+  .mm-action-btn{
+    min-width: 92px;
+  }
+
+  @media (min-width: 768px){
+    .mm-toolbar{
+      grid-template-columns: 1fr auto;
+      align-items:end;
+    }
+
+    .mm-mobile-list{
+      display:none;
+    }
+
+    .mm-table-wrap{
+      display:block;
+    }
+
+    .mm-table thead th{
+      font-size:.75rem;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      color:#6c757d;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .mm-table td{
+      vertical-align:middle;
+    }
+  }
+</style>
+
+{% set admins_count = users|selectattr('role', 'equalto', 'admin')|list|length %}
+{% set managers_count = users|selectattr('role', 'equalto', 'manager')|list|length %}
+{% set shop_count = users|selectattr('role', 'equalto', 'shop')|list|length %}
+{% set accountant_count = users|selectattr('role', 'equalto', 'accountant')|list|length %}
+
+<div class="container-fluid mm-users-page">
+
+  <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="h4 mb-0">{{ t('admin_users_title') }}</h1>
+      <div class="small text-muted">
+        {{ t('admin_users_subtitle') }}
+      </div>
+    </div>
+    <a href="{{ url_for('auth.list_shops') }}" class="btn btn-outline-dark btn-sm mm-btn">
+        {{ t('admin_open_shops') }}
+   </a>
+    <a href="{{ url_for('auth.create_user') }}" class="btn btn-primary btn-sm mm-btn">
+      {{ t('admin_add') }}
+    </a>
+  </div>
+
+  {# ===== TOP SUMMARY ===== #}
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm border-0 mm-card mm-stat-card">
+        <div class="card-body py-2">
+          <div class="mm-stat-label">{{ t('admin_total_users') }}</div>
+          <div class="mm-stat-value">{{ users|length }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm border-0 mm-card mm-stat-card">
+        <div class="card-body py-2">
+          <div class="mm-stat-label">{{ t('label_admins') }}</div>
+          <div class="mm-stat-value">{{ admins_count }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm border-0 mm-card mm-stat-card">
+        <div class="card-body py-2">
+          <div class="mm-stat-label">{{ t('label_managers') }}</div>
+          <div class="mm-stat-value">{{ managers_count }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm border-0 mm-card mm-stat-card">
+        <div class="card-body py-2">
+          <div class="mm-stat-label">{{ t('label_shop_accountant') }}</div>
+          <div class="mm-stat-value">{{ shop_count + accountant_count }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ===== FILTER / TOOLBAR ===== #}
+  <div class="card shadow-sm border-0 mm-card mb-3">
+    <div class="card-body p-2 p-md-3">
+      <div class="mm-toolbar">
+
+        <form method="get" class="row g-2 mm-filter-form">
+          <div class="col-12 col-md-5">
+            <label class="form-label small mb-1">{{ t('filter_search') }}</label>
+            <input type="text"
+                   class="form-control form-control-sm"
+                   name="q"
+                   value="{{ q or '' }}"
+                   placeholder="{{ t('label_username') }}">
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1">{{ t('label_role') }}</label>
+            <select name="role" class="form-select form-select-sm">
+              <option value="">{{ t('all') }}</option>
+              <option value="admin" {% if selected_role == 'admin' %}selected{% endif %}>{{ t('role_admin') }}</option>
+              <option value="manager" {% if selected_role == 'manager' %}selected{% endif %}>{{ t('role_manager') }}</option>
+              <option value="viewer" {% if selected_role == 'viewer' %}selected{% endif %}>{{ t('role_viewer') }}</option>
+              <option value="shop" {% if selected_role == 'shop' %}selected{% endif %}>{{ t('role_shop') }}</option>
+              <option value="accountant" {% if selected_role == 'accountant' %}selected{% endif %}>{{ t('role_accountant') }}</option>
+            </select>
+          </div>
+
+          {% if current_user.is_superadmin %}
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1">{{ t('label_factory') }}</label>
+            <select name="factory_id" class="form-select form-select-sm">
+              <option value="">{{ t('all') }}</option>
+              {% for f in factories %}
+                <option value="{{ f.id }}" {% if selected_factory_id == f.id %}selected{% endif %}>
+                  {{ f.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+
+          <div class="col-12 col-md-1 d-grid">
+            <label class="form-label small mb-1 d-none d-md-block">&nbsp;</label>
+            <button type="submit" class="btn btn-dark btn-sm mm-btn">{{ t('shop_order_big_submit') }}</button>
+          </div>
+        </form>
+
+        <div class="d-flex gap-2 flex-wrap">
+          <span class="mm-chip"><i class="bi bi-people me-1"></i>{{ users|length }} {{ t('admin_users_count') }}</span>
+          {% if current_user.is_superadmin %}
+            <span class="mm-chip"><i class="bi bi-globe-americas me-1"></i>{{ t('admin_superadmin_view') }}</span>
+          {% else %}
+            <span class="mm-chip"><i class="bi bi-building-gear me-1"></i>{{ current_user.factory.name if current_user.factory else t('label_factory') }}</span>
+          {% endif %}
+          {% if selected_role %}
+            <span class="mm-chip"><i class="bi bi-funnel me-1"></i>{{ t('role_' ~ selected_role) if selected_role else '' }}</span>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  {# ================= MOBILE CARDS ================= #}
+  <div class="mm-mobile-list d-md-none">
     {% for user in users %}
-    <tr>
-        <td>{{ user.id }}</td>
-        <td>{{ user.username }}</td>
-        <td>{{ user.role }}</td>
-    </tr>
+      {% set role_class =
+        'mm-role-admin' if user.role == 'admin'
+        else 'mm-role-manager' if user.role == 'manager'
+        else 'mm-role-viewer' if user.role == 'viewer'
+        else 'mm-role-shop' if user.role == 'shop'
+        else 'mm-role-accountant'
+      %}
+      <div class="mm-user-card mb-2">
+        <div class="d-flex align-items-start gap-3">
+          <div class="mm-avatar">
+            {{ (user.username[:1] or '?')|upper }}
+          </div>
+
+          <div class="flex-grow-1" style="min-width:0;">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div style="min-width:0;">
+                <div class="fw-semibold text-truncate">{{ user.username }}</div>
+                <div class="small text-muted">
+                  {{ t('table_id') }}: {{ user.id }}
+                </div>
+              </div>
+
+              <span class="mm-role-badge {{ role_class }}">
+                {{ t('role_' ~ user.role) }}
+              </span>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap mt-2">
+              {% if user.is_superadmin %}
+                <span class="mm-mini-badge dark">{{ t('label_superadmin') }}</span>
+              {% elif user.is_admin %}
+                <span class="mm-mini-badge">{{ t('label_factory_admin') }}</span>
+              {% endif %}
+
+              {% if user.shop %}
+                <span class="mm-mini-badge">{{ t('label_shop_linked') }}</span>
+              {% elif user.role == 'shop' %}
+                <span class="mm-mini-badge warn">{{ t('label_no_shop') }}</span>
+              {% endif %}
+
+              {% if not user.factory and not user.is_superadmin %}
+                <span class="mm-mini-badge warn">{{ t('label_no_factory') }}</span>
+              {% endif %}
+            </div>
+
+            <div class="mt-2">
+              <div class="mm-kv">
+                <div class="mm-k">{{ t('label_factory') }}</div>
+                <div class="mm-v">
+                  {{ user.factory.name if user.factory else '—' }}
+                </div>
+              </div>
+
+              <div class="mm-kv">
+                <div class="mm-k">{{ t('label_shop') }}</div>
+                <div class="mm-v">
+                  {{ user.shop.name if user.shop else '—' }}
+                </div>
+              </div>
+
+              <div class="mm-kv">
+                <div class="mm-k">{{ t('admin_access_type') }}</div>
+                <div class="mm-v">
+                  {% if user.is_superadmin %}
+                    {{ t('admin_access_superadmin') }}
+                  {% elif user.is_admin %}
+                    {{ t('admin_access_admin') }}
+                  {% else %}
+                    {{ t('admin_access_standard') }}
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-2 mt-2">
+              <div class="col-6">
+                <a href="{{ url_for('auth.edit_user', user_id=user.id) }}"
+                   class="btn btn-outline-primary btn-sm w-100 mm-btn">
+                  <i class="bi bi-pencil-square me-1"></i>{{ t('admin_edit') }}
+                </a>
+              </div>
+              <div class="col-6">
+                <a href="{{ url_for('auth.edit_user', user_id=user.id) }}#password"
+                   class="btn btn-outline-dark btn-sm w-100 mm-btn">
+                  <i class="bi bi-key me-1"></i>{{ t('label_password') }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="mm-empty-box">
+        {{ t('admin_users_empty') }}
+      </div>
     {% endfor %}
-</table>
+  </div>
+
+  {# ================= DESKTOP TABLE ================= #}
+  <div class="card shadow-sm border-0 mm-card mm-table-wrap">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 mm-table">
+          <thead class="table-light">
+            <tr>
+              <th>{{ t('table_id') }}</th>
+              <th>{{ t('label_username') }}</th>
+              <th>{{ t('label_role') }}</th>
+              <th>{{ t('label_factory') }}</th>
+              <th>{{ t('role_shop') }}</th>
+              <th>{{ t('label_access') }}</th>
+              <th>{{ t('label_status') }}</th>
+              <th class="text-end">{{ t('label_actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+              {% set role_class =
+                'mm-role-admin' if user.role == 'admin'
+                else 'mm-role-manager' if user.role == 'manager'
+                else 'mm-role-viewer' if user.role == 'viewer'
+                else 'mm-role-shop' if user.role == 'shop'
+                else 'mm-role-accountant'
+              %}
+              <tr>
+                <td class="text-muted small">{{ user.id }}</td>
+                <td>
+                  <div class="fw-semibold">{{ user.username }}</div>
+                </td>
+                <td>
+                  <span class="mm-role-badge {{ role_class }}">
+                    {{ t('role_' ~ user.role) }}
+                  </span>
+                </td>
+                <td>{{ user.factory.name if user.factory else '—' }}</td>
+                <td>{{ user.shop.name if user.shop else '—' }}</td>
+                <td>
+                  {% if user.is_superadmin %}
+                    <span class="badge bg-dark">{{ t('label_superadmin') }}</span>
+                  {% elif user.is_admin %}
+                    <span class="badge bg-primary">{{ t('role_admin') }}</span>
+                  {% else %}
+                    <span class="badge bg-light text-dark border">{{ t('label_standard') }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="d-flex gap-1 flex-wrap justify-content-start">
+                    {% if user.shop %}
+                      <span class="badge bg-light text-dark border">{{ t('label_shop_linked') }}</span>
+                    {% elif user.role == 'shop' %}
+                      <span class="badge bg-warning text-dark">{{ t('label_no_shop') }}</span>
+                    {% endif %}
+
+                    {% if not user.factory and not user.is_superadmin %}
+                      <span class="badge bg-warning text-dark">{{ t('label_no_factory') }}</span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-2">
+                    <a href="{{ url_for('auth.edit_user', user_id=user.id) }}"
+                       class="btn btn-outline-primary btn-sm mm-btn mm-action-btn">
+                      {{ t('admin_edit') }}
+                    </a>
+                    <a href="{{ url_for('auth.edit_user', user_id=user.id) }}#password"
+                       class="btn btn-outline-dark btn-sm mm-btn mm-action-btn">
+                      {{ t('password') }}
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                  {{ t('admin_users_empty') }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
 {% endblock %}

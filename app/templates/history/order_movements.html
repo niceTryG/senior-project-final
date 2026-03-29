@@ -1,25 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}История по заказу #{{ order.id }} — Mini Moda{% endblock %}
+{% block title %}{{ t('order_movement_page_title') }} #{{ order.id }} - Mini Moda{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-3 py-md-4 mm-page-order-history">
-
-  {# ===== HEADER ===== #}
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
     <div>
-      <h1 class="h5 mb-1">История по заказу #{{ order.id }}</h1>
+      <h1 class="h5 mb-1">{{ t('order_movement_page_title') }} #{{ order.id }}</h1>
       <p class="small text-muted mb-0">
-        Здесь показано, как этот заказ двигался между фабрикой, магазином и клиентом.
+        {{ t('order_movement_subtitle') }}
       </p>
     </div>
 
     <div class="d-flex flex-wrap gap-2">
       <a href="{{ url_for('shop.list_shop_orders') }}" class="btn btn-sm btn-outline-secondary">
-        ⬅ К списку заказов
+        {{ t('back_to_orders') }}
       </a>
       <a href="{{ url_for('shop.movement_history') }}" class="btn btn-sm btn-outline-info">
-        📜 Общая история склада
+        {{ t('movement_history') }}
       </a>
     </div>
   </div>
@@ -27,77 +25,66 @@
   {% if movements %}
     <div class="card shadow-sm border-0 rounded-3">
       <div class="card-body py-2 px-3">
-
         <div class="table-responsive">
           <table class="table table-sm align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th class="small text-muted text-uppercase">Время</th>
-                <th class="small text-muted text-uppercase">Товар</th>
-                <th class="small text-muted text-uppercase">Откуда</th>
-                <th class="small text-muted text-uppercase">Куда</th>
-                <th class="small text-muted text-uppercase text-end">К-во</th>
-                <th class="small text-muted text-uppercase">Тип движения</th>
-                <th class="small text-muted text-uppercase">Комментарий</th>
+                <th class="small text-muted text-uppercase">{{ t('time') }}</th>
+                <th class="small text-muted text-uppercase">{{ t('product') }}</th>
+                <th class="small text-muted text-uppercase">{{ t('movement_source') }}</th>
+                <th class="small text-muted text-uppercase">{{ t('movement_destination') }}</th>
+                <th class="small text-muted text-uppercase text-end">{{ t('qty_short') }}</th>
+                <th class="small text-muted text-uppercase">{{ t('movement_type_full') }}</th>
+                <th class="small text-muted text-uppercase">{{ t('comment') }}</th>
               </tr>
             </thead>
             <tbody>
-            {% for m in movements %}
-              <tr>
-                <td class="small text-nowrap">
-                  {{ m.timestamp.strftime("%Y-%m-%d %H:%M") if m.timestamp }}
-                </td>
-
-                <td class="small fw-semibold">
-                  {{ m.product.name if m.product else "—" }}
-                </td>
-
-                <td class="small text-muted">
-                  {{ m.source or "—" }}
-                </td>
-
-                <td class="small text-muted">
-                  {{ m.destination or "—" }}
-                </td>
-
-                <td class="text-end small fw-bold
-                  {% if m.qty_change < 0 %}text-danger{% else %}text-success{% endif %}">
-                  {{ "+" if m.qty_change > 0 }}{{ m.qty_change }}
-                </td>
-
-                <td class="small">
-                  {% if m.movement_type == 'shop_sale' %}
-                    <span class="badge bg-success">shop_sale</span>
-                  {% elif m.movement_type == 'factory_to_shop_for_order' %}
-                    <span class="badge bg-primary">factory_to_shop_for_order</span>
-                  {% elif m.movement_type == 'factory_to_shop' %}
-                    <span class="badge bg-info text-dark">factory_to_shop</span>
-                  {% elif m.movement_type == 'adjustment' %}
-                    <span class="badge bg-secondary">adjustment</span>
-                  {% else %}
-                    <span class="badge bg-light text-dark">
-                      {{ m.movement_type or "—" }}
-                    </span>
-                  {% endif %}
-                </td>
-
-                <td class="small">
-                  {{ m.comment or "" }}
-                </td>
-              </tr>
-            {% endfor %}
+              {% for m in movements %}
+                <tr>
+                  <td class="small text-nowrap">
+                    {{ m.timestamp.strftime("%Y-%m-%d %H:%M") if m.timestamp }}
+                  </td>
+                  <td class="small fw-semibold">
+                    {{ m.product.name if m.product else "-" }}
+                  </td>
+                  <td class="small text-muted">
+                    {{ m.source or "-" }}
+                  </td>
+                  <td class="small text-muted">
+                    {{ m.destination or "-" }}
+                  </td>
+                  <td class="text-end small fw-bold {% if m.qty_change < 0 %}text-danger{% else %}text-success{% endif %}">
+                    {{ "+" if m.qty_change > 0 }}{{ m.qty_change }}
+                  </td>
+                  <td class="small">
+                    {% if m.movement_type == 'shop_sale' %}
+                      <span class="badge bg-success">{{ t('movement_type_shop_sale_badge') }}</span>
+                    {% elif m.movement_type == 'factory_to_shop_for_order' %}
+                      <span class="badge bg-primary">{{ t('movement_type_factory_to_shop_for_order_badge') }}</span>
+                    {% elif m.movement_type == 'factory_to_shop' %}
+                      <span class="badge bg-info text-dark">{{ t('movement_type_factory_to_shop_badge') }}</span>
+                    {% elif m.movement_type == 'adjustment' %}
+                      <span class="badge bg-secondary">{{ t('movement_type_adjustment_badge') }}</span>
+                    {% else %}
+                      <span class="badge bg-light text-dark">
+                        {{ m.movement_type or "-" }}
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td class="small">
+                    {{ m.comment or "" }}
+                  </td>
+                </tr>
+              {% endfor %}
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
-
   {% else %}
     <div class="alert alert-light border small mb-0">
-      По этому заказу пока нет движений склада.
+      {{ t('order_movement_no_data') }}
     </div>
   {% endif %}
-
 </div>
 {% endblock %}

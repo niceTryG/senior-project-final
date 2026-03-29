@@ -2,216 +2,1020 @@
 {% block content %}
 
 <style>
-  .mm-neo-card{
-    background:#fff;
-    border:1px solid rgba(0,0,0,0.06);
-    border-radius:18px;
-    box-shadow: 0 14px 32px rgba(17,17,17,0.08), inset 0 1px 0 rgba(255,255,255,0.65);
+  :root{
+    --mm-bg: #f5f7fb;
+    --mm-surface: #ffffff;
+    --mm-surface-soft: #f8fafc;
+    --mm-border: rgba(17,17,17,0.08);
+    --mm-text: #101828;
+    --mm-muted: rgba(16,24,40,0.64);
+    --mm-muted-2: rgba(16,24,40,0.48);
+    --mm-shadow: 0 12px 28px rgba(16,24,40,0.08), inset 0 1px 0 rgba(255,255,255,0.75);
+    --mm-shadow-soft: 0 8px 18px rgba(16,24,40,0.06), inset 0 1px 0 rgba(255,255,255,0.7);
+    --mm-success: #157347;
+    --mm-success-bg: rgba(25,135,84,0.10);
+    --mm-danger: #b42318;
+    --mm-danger-bg: rgba(220,53,69,0.10);
+    --mm-dark: #111827;
+    --mm-primary: #2563eb;
+    --mm-primary-soft: rgba(37,99,235,0.10);
+    --mm-warning: #d97706;
+    --mm-warning-soft: rgba(217,119,6,0.10);
   }
-  .mm-neo-hero{
-    background:#f6f7fb;
-    border:1px solid rgba(0,0,0,0.06);
+
+  .mm-cash-page{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding-bottom:20px;
+  }
+
+  .mm-card{
+    background:var(--mm-surface);
+    border:1px solid var(--mm-border);
     border-radius:20px;
-    box-shadow: 0 14px 32px rgba(17,17,17,0.08), inset 0 1px 0 rgba(255,255,255,0.65);
+    box-shadow:var(--mm-shadow);
   }
-  .mm-kpi{
-    background:#fff;
-    border:1px solid rgba(0,0,0,0.06);
+
+  .mm-card-soft{
+    background:var(--mm-surface-soft);
+    border:1px solid var(--mm-border);
     border-radius:18px;
-    box-shadow: 0 12px 26px rgba(17,17,17,0.08), inset 0 1px 0 rgba(255,255,255,0.65);
+    box-shadow:var(--mm-shadow-soft);
   }
-  .mm-kpi .label{
-    font-size:.82rem;
-    color:rgba(17,17,17,.65);
-    font-weight:800;
+
+  .mm-hero{
+    padding:16px;
+    background:
+      radial-gradient(circle at top right, rgba(99,102,241,0.10), transparent 30%),
+      radial-gradient(circle at bottom left, rgba(16,185,129,0.08), transparent 25%),
+      linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   }
-  .mm-kpi .value{
-    font-size:1.05rem;
-    font-weight:900;
-    color:#111;
-    letter-spacing:-0.01em;
-  }
+
   .mm-chip{
     display:inline-flex;
     align-items:center;
-    gap:.35rem;
-    padding:.35rem .7rem;
+    gap:.4rem;
+    padding:.42rem .75rem;
     border-radius:999px;
-    border:1px solid rgba(0,0,0,0.10);
     background:#fff;
-    font-size:.85rem;
+    border:1px solid rgba(17,17,17,0.08);
+    font-size:.78rem;
     font-weight:900;
-    color:#111;
+    color:var(--mm-text);
     white-space:nowrap;
   }
-  .mm-table thead th{
-    background: rgba(246,247,251,.95) !important;
-    border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+
+  .mm-chip-muted{
+    color:var(--mm-muted);
+  }
+
+  .mm-title{
+    margin:0;
+    font-size:1.35rem;
+    line-height:1.08;
+    font-weight:900;
+    letter-spacing:-0.03em;
+    color:var(--mm-text);
+  }
+
+  .mm-subtitle{
+    margin:8px 0 0 0;
+    font-size:.92rem;
+    color:var(--mm-muted);
+    line-height:1.45;
+  }
+
+  .mm-main-result{
+    margin-top:14px;
+    padding:14px;
+    border-radius:18px;
+    border:1px solid rgba(17,17,17,0.08);
+    background:rgba(255,255,255,0.88);
+  }
+
+  .mm-main-result-label{
+    font-size:.76rem;
+    color:var(--mm-muted);
+    font-weight:800;
+    margin-bottom:8px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+
+  .mm-main-result-title{
+    font-size:.95rem;
+    color:var(--mm-text);
+    font-weight:800;
+    margin-bottom:10px;
+  }
+
+  .mm-main-amounts{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .mm-main-amount{
+    font-size:1.12rem;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    line-height:1.15;
+  }
+
+  .mm-positive{ color:var(--mm-success); }
+  .mm-negative{ color:var(--mm-danger); }
+
+  .mm-kpi-grid{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap:10px;
+  }
+
+  .mm-kpi{
+    padding:14px;
+    min-height:108px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+
+  .mm-kpi-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+
+  .mm-kpi-label{
+    font-size:.77rem;
+    line-height:1.25;
+    color:var(--mm-muted);
+    font-weight:800;
+  }
+
+  .mm-kpi-icon{
+    width:34px;
+    height:34px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    background:#fff;
+    border:1px solid rgba(17,17,17,0.08);
+    color:var(--mm-dark);
+  }
+
+  .mm-kpi-value{
+    margin-top:12px;
+    font-size:1rem;
+    line-height:1.15;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    color:var(--mm-text);
+    word-break:break-word;
+  }
+
+  .mm-section{
+    padding:14px;
+  }
+
+  .mm-section-title{
+    margin:0;
+    font-size:1rem;
+    font-weight:900;
+    color:var(--mm-text);
+    letter-spacing:-0.02em;
+  }
+
+  .mm-section-subtitle{
+    margin:4px 0 0 0;
+    color:var(--mm-muted);
+    font-size:.86rem;
+    line-height:1.4;
+  }
+
+  .mm-filter-form{
+    margin-top:14px;
+    display:grid;
+    gap:10px;
+  }
+
+  .mm-field label{
+    display:block;
+    margin-bottom:6px;
+    font-size:.78rem;
+    color:var(--mm-muted);
+    font-weight:800;
+  }
+
+  .mm-field .form-control{
+    min-height:46px;
+    border-radius:14px;
+    border:1px solid rgba(17,17,17,0.10);
+    font-weight:700;
+    box-shadow:none !important;
+  }
+
+  .mm-field .form-control:focus{
+    border-color:rgba(17,17,17,0.18);
+  }
+
+  .mm-filter-actions{
+    display:grid;
+    gap:8px;
+  }
+
+  .mm-btn-dark{
+    min-height:46px;
+    border-radius:999px;
+    font-weight:900;
+  }
+
+  .mm-btn-light{
+    min-height:46px;
+    border-radius:999px;
+    font-weight:900;
+    background:#fff;
+    border:1px solid rgba(17,17,17,0.10);
+    color:#111;
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 14px;
+  }
+
+  .mm-filter-summary{
+    margin-top:12px;
+    padding:12px 14px;
+    border-radius:16px;
+    background:linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border:1px solid rgba(17,17,17,0.08);
+  }
+
+  .mm-summary-head{
+    font-size:.76rem;
+    color:var(--mm-muted);
+    font-weight:800;
+    margin-bottom:10px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+
+  .mm-summary-line{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    font-size:.9rem;
+    margin-bottom:8px;
+  }
+
+  .mm-summary-line:last-child{
+    margin-bottom:0;
+  }
+
+  .mm-summary-line span{
+    color:var(--mm-muted);
+    font-weight:700;
+  }
+
+  .mm-summary-line strong{
+    color:var(--mm-text);
+    font-weight:900;
+    text-align:right;
+  }
+
+  .mm-history-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .mm-transaction{
+    padding:14px;
+    border-radius:16px;
+    border:1px solid rgba(17,17,17,0.08);
+    background:#fff;
+    box-shadow:var(--mm-shadow-soft);
+  }
+
+  .mm-transaction-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+  }
+
+  .mm-date{
+    font-size:.86rem;
+    color:var(--mm-text);
+    font-weight:800;
+    line-height:1.25;
+  }
+
+  .mm-id{
+    font-size:.74rem;
+    color:var(--mm-muted-2);
+    margin-top:3px;
+    font-weight:700;
+  }
+
+  .mm-type{
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    padding:.35rem .65rem;
+    border-radius:999px;
+    font-size:.74rem;
+    font-weight:900;
+    white-space:nowrap;
+  }
+
+  .mm-type.income{
+    background:var(--mm-success-bg);
+    color:var(--mm-success);
+  }
+
+  .mm-type.expense{
+    background:var(--mm-danger-bg);
+    color:var(--mm-danger);
+  }
+
+  .mm-note{
+    font-size:.9rem;
+    color:var(--mm-text);
+    font-weight:700;
+    line-height:1.4;
+    margin-bottom:12px;
+  }
+
+  .mm-note-empty{
+    font-size:.88rem;
+    color:var(--mm-muted-2);
+    font-weight:700;
+    margin-bottom:12px;
+  }
+
+  .mm-transaction-bottom{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+
+  .mm-amount{
+    font-size:1rem;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    line-height:1.15;
+  }
+
+  .mm-currency{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:58px;
+    padding:.35rem .65rem;
+    border-radius:999px;
+    border:1px solid rgba(17,17,17,0.08);
+    background:#fff;
+    color:var(--mm-text);
+    font-size:.76rem;
+    font-weight:900;
+  }
+
+  .mm-empty{
+    padding:30px 14px;
+    text-align:center;
+  }
+
+  .mm-empty-icon{
+    width:52px;
+    height:52px;
+    border-radius:16px;
+    margin:0 auto 12px auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fff;
+    border:1px solid rgba(17,17,17,0.08);
+    box-shadow:var(--mm-shadow-soft);
+    font-size:1.25rem;
+  }
+
+  .mm-empty-title{
+    color:var(--mm-text);
+    font-weight:900;
+    margin-bottom:4px;
+  }
+
+  .mm-empty-text{
+    margin:0;
+    color:var(--mm-muted);
+    font-size:.9rem;
+  }
+
+  .mm-desktop-table{
+    display:none;
+  }
+
+  .mm-chart-wrap{
+    position:relative;
+    height:240px;
+    margin-top:14px;
+  }
+
+  .mm-chart-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+
+  .mm-chart-chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:34px;
+    padding:.45rem .8rem;
+    border-radius:999px;
+    background:#fff;
+    border:1px solid rgba(17,17,17,0.08);
+    color:var(--mm-text);
+    font-size:.76rem;
+    font-weight:900;
+  }
+
+  .mm-chart-legend{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+
+  .mm-legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:.8rem;
+    color:var(--mm-muted);
+    font-weight:800;
+  }
+
+  .mm-legend-dot{
+    width:10px;
+    height:10px;
+    border-radius:999px;
+    flex-shrink:0;
+  }
+
+  .mm-legend-dot.net{ background:#2563eb; }
+  .mm-legend-dot.income{ background:#16a34a; }
+  .mm-legend-dot.expense{ background:#dc2626; }
+
+  @media (min-width: 768px){
+    .mm-cash-page{
+      gap:14px;
+    }
+
+    .mm-hero{
+      padding:20px;
+    }
+
+    .mm-title{
+      font-size:1.65rem;
+    }
+
+    .mm-main-result{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:16px;
+      align-items:center;
+    }
+
+    .mm-main-amounts{
+      align-items:flex-end;
+    }
+
+    .mm-kpi-grid{
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap:12px;
+    }
+
+    .mm-filter-desktop{
+      display:grid;
+      grid-template-columns: 1fr 300px;
+      gap:14px;
+      align-items:end;
+    }
+
+    .mm-filter-form{
+      margin-top:0;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      align-items:end;
+    }
+
+    .mm-filter-summary{
+      margin-top:0;
+      height:100%;
+    }
+
+    .mm-mobile-history{
+      display:none;
+    }
+
+    .mm-desktop-table{
+      display:block;
+    }
+
+    .mm-table{
+      margin-bottom:0;
+    }
+
+    .mm-table thead th{
+      background:rgba(248,250,252,.96) !important;
+      border-bottom:1px solid rgba(17,17,17,0.08) !important;
+      color:var(--mm-muted);
+      font-size:.75rem;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      font-weight:900;
+      padding-top:14px;
+      padding-bottom:14px;
+      white-space:nowrap;
+    }
+
+    .mm-table tbody td{
+      vertical-align:middle;
+      padding-top:14px;
+      padding-bottom:14px;
+      border-color:rgba(17,17,17,0.06);
+    }
+
+    .mm-chart-wrap{
+      height:280px;
+    }
   }
 </style>
 
-{# ===== HERO ===== #}
-<div class="mm-neo-hero p-3 p-md-4 mb-3">
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-    <div>
-      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-        <span class="mm-chip">💰 Касса</span>
-        <span class="mm-chip" style="background:rgba(255,255,255,.7); color:rgba(17,17,17,.72);">
-          📅 Последние 7 дней
+{% set net_7d = weekly_cash_net_uzs or 0 %}
+{% set total_uzs_v = total_uzs or 0 %}
+{% set total_usd_v = total_usd or 0 %}
+{% set weekly_items_sold_v = weekly_items_sold or 0 %}
+{% set chart_labels = cash_chart_labels|default([]) %}
+{% set chart_net = cash_chart_net|default([]) %}
+{% set chart_income = cash_chart_income|default([]) %}
+{% set chart_expense = cash_chart_expense|default([]) %}
+
+<div class="mm-cash-page">
+
+  {# ===== HERO ===== #}
+  <section class="mm-card mm-hero">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+      <span class="mm-chip">
+        <i class="bi bi-wallet2"></i>
+        {{ t('cash_financial_control') }}
+      </span>
+
+      {% if date_from or date_to %}
+        <span class="mm-chip mm-chip-muted">
+          <i class="bi bi-calendar-range"></i>
+          {{ date_from or '—' }} → {{ date_to or '—' }}
         </span>
+      {% else %}
+        <span class="mm-chip mm-chip-muted">
+          <i class="bi bi-clock-history"></i>
+          {{ t('full_history') }}
+        </span>
+      {% endif %}
+    </div>
+
+    <h1 class="mm-title">{{ t('cash_main_title') }}</h1>
+    <p class="mm-subtitle">
+      {{ t('cash_main_subtitle') }}
+    </p>
+
+    <div class="mm-main-result">
+      <div>
+        <div class="mm-main-result-label">{{ t('cash_main_result') }}</div>
+        <div class="mm-main-result-title">{{ t('cash_main_result_week') }}</div>
       </div>
-      <h1 class="h4 mb-1" style="font-weight:900;">Касса</h1>
-      <p class="mb-0" style="color:rgba(17,17,17,.68);">
-        Продажи и движение денег. Последние 7 дней + история.
+
+      <div class="mm-main-amounts">
+        <div class="mm-main-amount {% if net_7d >= 0 %}mm-positive{% else %}mm-negative{% endif %}">
+          {{ format_money(net_7d, 'UZS') }}
+        </div>
+        <div class="mm-main-amount">
+          {{ t('filter_total') }}: {{ format_money(total_uzs_v, 'UZS') }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ===== KPI GRID ===== #}
+  <section class="mm-kpi-grid">
+    <div class="mm-card-soft mm-kpi">
+      <div class="mm-kpi-top">
+        <div class="mm-kpi-label">{{ t('cash_sold_last_7_days') }}</div>
+        <div class="mm-kpi-icon"><i class="bi bi-bag-check"></i></div>
+      </div>
+      <div class="mm-kpi-value">{{ weekly_items_sold_v }} {{ t('pieces_short') }}</div>
+    </div>
+
+    <div class="mm-card-soft mm-kpi">
+      <div class="mm-kpi-top">
+        <div class="mm-kpi-label">{{ t('cash_main_result_week') }}</div>
+        <div class="mm-kpi-icon"><i class="bi bi-graph-up-arrow"></i></div>
+      </div>
+      <div class="mm-kpi-value">
+        <div class="{% if net_7d >= 0 %}mm-positive{% else %}mm-negative{% endif %}">
+          {{ format_money(net_7d, 'UZS') }}
+        </div>
+      </div>
+    </div>
+
+    <div class="mm-card-soft mm-kpi">
+      <div class="mm-kpi-top">
+        <div class="mm-kpi-label">{{ t('cash_filter_total_uzs') }}</div>
+        <div class="mm-kpi-icon"><i class="bi bi-cash-stack"></i></div>
+      </div>
+      <div class="mm-kpi-value">{{ format_money(total_uzs_v, 'UZS') }}</div>
+    </div>
+
+    <div class="mm-card-soft mm-kpi">
+      <div class="mm-kpi-top">
+        <div class="mm-kpi-label">{{ t('cash_filter_total_usd') }}</div>
+        <div class="mm-kpi-icon"><i class="bi bi-currency-dollar"></i></div>
+      </div>
+      <div class="mm-kpi-value">{{ format_money(total_usd_v, 'USD') }}</div>
+    </div>
+  </section>
+
+  {# ===== CHART: NET CASH FLOW ===== #}
+  <section class="mm-card">
+    <div class="mm-section">
+      <h2 class="mm-section-title">{{ t('cash_net_flow_chart') }}</h2>
+      <p class="mm-section-subtitle">
+        {{ t('cash_net_flow_sub') }}
+      </p>
+
+      <div class="mm-chart-actions">
+        <span class="mm-chart-chip"><i class="bi bi-bar-chart-line me-1"></i> {{ t('cash_net_by_day') }}</span>
+      </div>
+
+      <div class="mm-chart-wrap">
+        <canvas id="cashNetChart"></canvas>
+      </div>
+
+      <div class="mm-chart-legend">
+        <div class="mm-legend-item">
+          <span class="mm-legend-dot net"></span>
+          <span>{{ t('cash_net_total') }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ===== CHART: INCOME VS EXPENSE ===== #}
+  <section class="mm-card">
+    <div class="mm-section">
+      <h2 class="mm-section-title">{{ t('cash_income_vs_expense') }}</h2>
+      <p class="mm-section-subtitle">
+        {{ t('cash_income_vs_expense_sub') }}
+      </p>
+
+      <div class="mm-chart-actions">
+        <span class="mm-chart-chip"><i class="bi bi-arrow-down-left me-1"></i> {{ t('cash_income_label') }}</span>
+        <span class="mm-chart-chip"><i class="bi bi-arrow-up-right me-1"></i> {{ t('cash_expense_label') }}</span>
+      </div>
+
+      <div class="mm-chart-wrap">
+        <canvas id="cashFlowChart"></canvas>
+      </div>
+
+      <div class="mm-chart-legend">
+        <div class="mm-legend-item">
+          <span class="mm-legend-dot income"></span>
+          <span>{{ t('cash_income_label') }}</span>
+        </div>
+        <div class="mm-legend-item">
+          <span class="mm-legend-dot expense"></span>
+          <span>{{ t('cash_expense_label') }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ===== FILTER ===== #}
+  <section class="mm-card">
+    <div class="mm-section">
+      <h2 class="mm-section-title">{{ t('cash_history_filter') }}</h2>
+
+      <div class="mm-filter-desktop">
+        <form method="get" class="mm-filter-form">
+          <div class="mm-field">
+            <label for="from">{{ t('from_date') }}</label>
+            <input id="from" type="date" name="from" class="form-control" value="{{ date_from }}">
+          </div>
+
+          <div class="mm-field">
+            <label for="to">{{ t('to_date') }}</label>
+            <input id="to" type="date" name="to" class="form-control" value="{{ date_to }}">
+          </div>
+
+          <div class="mm-filter-actions">
+            <button type="submit" class="btn btn-dark mm-btn-dark">
+              <i class="bi bi-funnel me-1"></i> {{ t('apply') }}
+            </button>
+
+            {% if date_from or date_to %}
+              <a href="{{ url_for('cash.list_cash') }}" class="mm-btn-light">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> {{ t('reset') }}
+              </a>
+            {% endif %}
+          </div>
+        </form>
+
+        <div class="mm-filter-summary">
+          <div class="mm-summary-head">{{ t('filter_total') }}</div>
+
+          <div class="mm-summary-line">
+            <span>{{ t('total_uzs') }}</span>
+            <strong>{{ format_money(total_uzs_v, 'UZS') }}</strong>
+          </div>
+
+          <div class="mm-summary-line">
+            <span>{{ t('total_usd') }}</span>
+            <strong>{{ format_money(total_usd_v, 'USD') }}</strong>
+          </div>
+
+          <div class="mm-summary-line">
+            <span>{{ t('period') }}</span>
+            <strong>
+              {% if date_from or date_to %}
+                {{ date_from or '—' }} → {{ date_to or '—' }}
+              {% else %}
+                {{ t('full_history') }}
+              {% endif %}
+            </strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ===== MOBILE HISTORY ===== #}
+  <section class="mm-card mm-mobile-history">
+    <div class="mm-section">
+      <h2 class="mm-section-title">{{ t('operations_history') }}</h2>
+      <p class="mm-section-subtitle">
+        {{ t('cash_mobile_history_sub') }}
+      </p>
+
+      <div class="mm-history-list mt-3">
+        {% for r in records %}
+          <article class="mm-transaction">
+            <div class="mm-transaction-top">
+              <div>
+                <div class="mm-date">{{ r.date }}</div>
+                <div class="mm-id">ID: {{ r.id }}</div>
+              </div>
+
+              {% if r.amount >= 0 %}
+                <span class="mm-type income">
+                  <i class="bi bi-arrow-down-left"></i>
+                  {{ t('cash_income_label') }}
+                </span>
+              {% else %}
+                <span class="mm-type expense">
+                  <i class="bi bi-arrow-up-right"></i>
+                  {{ t('cash_expense_label') }}
+                </span>
+              {% endif %}
+            </div>
+
+            {% if r.note %}
+              <div class="mm-note">{{ r.note }}</div>
+            {% else %}
+              <div class="mm-note-empty">{{ t('no_comment') }}</div>
+            {% endif %}
+
+            <div class="mm-transaction-bottom">
+              <div class="mm-amount {% if r.amount >= 0 %}mm-positive{% else %}mm-negative{% endif %}">
+                {% if r.amount >= 0 %}+ {% endif %}{{ format_money(r.amount, r.currency) }}
+              </div>
+              <span class="mm-currency">{{ r.currency }}</span>
+            </div>
+          </article>
+        {% else %}
+          <div class="mm-empty">
+            <div class="mm-empty-icon">
+              <i class="bi bi-inbox"></i>
+            </div>
+            <div class="mm-empty-title">{{ t('no_records') }}</div>
+            <p class="mm-empty-text">{{ t('cash_no_records_for_period') }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# ===== DESKTOP HISTORY ===== #}
+  <section class="mm-card mm-desktop-table">
+    <div class="mm-section pb-0">
+      <h2 class="mm-section-title">{{ t('operations_history') }}</h2>
+      <p class="mm-section-subtitle">
+        {{ t('cash_desktop_history_sub') }}
       </p>
     </div>
 
-    <div class="d-flex flex-wrap gap-2 justify-content-md-end">
-      <span class="mm-chip" style="background:rgba(255,255,255,.7); color:rgba(17,17,17,.72);">
-        📦 Шт за 7д: <strong>{{ weekly_items_sold }}</strong>
-      </span>
-      <span class="mm-chip" style="background:rgba(255,255,255,.7); color:rgba(17,17,17,.72);">
-        🟢 Итог UZS: <strong>{{ format_money(weekly_cash_net_uzs or 0, 'UZS') }}</strong>
-      </span>
-      <span class="mm-chip" style="background:rgba(255,255,255,.7); color:rgba(17,17,17,.72);">
-        🔵 Итог USD: <strong>{{ format_money(weekly_cash_net_usd or 0, 'USD') }}</strong>
-      </span>
-    </div>
-  </div>
-</div>
-
-{# ===== KPI ROW ===== #}
-<div class="row g-2 g-md-3 mb-3">
-  <div class="col-6 col-md-3">
-    <div class="mm-kpi h-100">
-      <div class="p-3 text-center">
-        <div class="label mb-1">Продано за 7 дней (шт.)</div>
-        <div class="value">{{ weekly_items_sold }}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-6 col-md-3">
-    <div class="mm-kpi h-100">
-      <div class="p-3 text-center">
-        <div class="label mb-1">Продажи за 7 дней (UZS)</div>
-        <div class="value">{{ format_money(weekly_sales_uzs or 0, 'UZS') }}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-6 col-md-3">
-    <div class="mm-kpi h-100">
-      <div class="p-3 text-center">
-        <div class="label mb-1">Продажи за 7 дней (USD)</div>
-        <div class="value">{{ format_money(weekly_sales_usd or 0, 'USD') }}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-6 col-md-3">
-    <div class="mm-kpi h-100">
-      <div class="p-3 text-center">
-        <div class="label mb-1">Итог cash за 7 дней</div>
-        <div class="value">
-          <span class="{% if (weekly_cash_net_uzs or 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
-            {{ format_money(weekly_cash_net_uzs or 0, 'UZS') }}
-          </span>
-          <span class="text-muted" style="font-weight:800;"> / </span>
-          <span class="{% if (weekly_cash_net_usd or 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
-            {{ format_money(weekly_cash_net_usd or 0, 'USD') }}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-{# ===== FILTERS + PERIOD TOTALS ===== #}
-<div class="mm-neo-card mb-3">
-  <div class="p-3">
-    <form method="get" class="row g-2 align-items-end">
-      <div class="col-6 col-md-3">
-        <label class="form-label mb-1 small text-muted">От даты</label>
-        <input type="date" name="from" class="form-control form-control-sm" value="{{ date_from }}">
-      </div>
-
-      <div class="col-6 col-md-3">
-        <label class="form-label mb-1 small text-muted">До даты</label>
-        <input type="date" name="to" class="form-control form-control-sm" value="{{ date_to }}">
-      </div>
-
-      <div class="col-12 col-md-3 d-grid">
-        <button type="submit" class="btn btn-dark btn-sm" style="border-radius:999px;font-weight:900;">
-          <i class="bi bi-funnel me-1"></i> Фильтр
-        </button>
-      </div>
-
-      <div class="col-12 col-md-3">
-        <div class="small text-md-end" style="color:rgba(17,17,17,.70);">
-          <div>Итого по фильтру (UZS): <strong>{{ format_money(total_uzs or 0, 'UZS') }}</strong></div>
-          <div>Итого по фильтру (USD): <strong>{{ format_money(total_usd or 0, 'USD') }}</strong></div>
-
-          {% if date_from or date_to %}
-          <div class="mt-1">
-            <a class="small text-decoration-none" href="{{ url_for('cash.list_cash') }}" style="color:rgba(17,17,17,.70);">
-              ✖ Сбросить фильтр
-            </a>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-{# ===== HISTORY TABLE ===== #}
-<div class="mm-neo-card">
-  <div class="p-0">
-    <div class="table-responsive mb-0">
-      <table class="table table-sm table-hover align-middle mb-0 mm-table">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mm-table">
         <thead>
           <tr>
-            <th class="d-none d-md-table-cell text-nowrap">ID</th>
-            <th class="text-nowrap">Дата</th>
-            <th>Комментарий</th>
-            <th class="text-end text-nowrap">Сумма</th>
-            <th class="d-none d-lg-table-cell text-nowrap">Валюта</th>
+            <th class="text-nowrap">{{ t('table_id') }}</th>
+            <th class="text-nowrap">{{ t('table_date') }}</th>
+            <th class="text-nowrap">{{ t('type') }}</th>
+            <th>{{ t('comment') }}</th>
+            <th class="text-end text-nowrap">{{ t('amount_label') }}</th>
+            <th class="text-nowrap">{{ t('table_currency') }}</th>
           </tr>
         </thead>
         <tbody>
-        {% for r in records %}
-          <tr>
-            <td class="d-none d-md-table-cell text-muted small">{{ r.id }}</td>
-            <td class="text-nowrap">{{ r.date }}</td>
-            <td>
-              {% if r.note %}
-                <div class="small">{{ r.note }}</div>
-              {% else %}
-                <div class="small text-muted">Без комментария</div>
-              {% endif %}
-            </td>
-            <td class="text-end text-nowrap">
-              {% if r.amount >= 0 %}
-                <span class="text-success">+ {{ format_money(r.amount, r.currency) }}</span>
-              {% else %}
-                <span class="text-danger">{{ format_money(r.amount, r.currency) }}</span>
-              {% endif %}
-              <span class="d-inline d-lg-none text-muted small ms-1">{{ r.currency }}</span>
-            </td>
-            <td class="d-none d-lg-table-cell">{{ r.currency }}</td>
-          </tr>
-        {% else %}
-          <tr>
-            <td colspan="5" class="text-center text-muted py-4">
-              Нет записей
-            </td>
-          </tr>
-        {% endfor %}
+          {% for r in records %}
+            <tr>
+              <td class="text-muted small">{{ r.id }}</td>
+              <td class="fw-bold text-nowrap">{{ r.date }}</td>
+              <td>
+                {% if r.amount >= 0 %}
+                  <span class="mm-type income">
+                    <i class="bi bi-arrow-down-left"></i>
+                    {{ t('cash_income_label') }}
+                  </span>
+                {% else %}
+                  <span class="mm-type expense">
+                    <i class="bi bi-arrow-up-right"></i>
+                    {{ t('cash_expense_label') }}
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.note %}
+                  <div class="fw-semibold">{{ r.note }}</div>
+                {% else %}
+                  <div class="text-muted small">{{ t('no_comment') }}</div>
+                {% endif %}
+              </td>
+              <td class="text-end text-nowrap">
+                <span class="{% if r.amount >= 0 %}mm-positive{% else %}mm-negative{% endif %}" style="font-weight:900;">
+                  {% if r.amount >= 0 %}+ {% endif %}{{ format_money(r.amount, r.currency) }}
+                </span>
+              </td>
+              <td><span class="mm-currency">{{ r.currency }}</span></td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">{{ t('no_records') }}</td>
+            </tr>
+          {% endfor %}
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
+
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const cashLabels = {{ chart_labels|tojson }};
+  const cashNetData = {{ chart_net|tojson }};
+  const cashIncomeData = {{ chart_income|tojson }};
+  const cashExpenseData = {{ chart_expense|tojson }};
+
+  const netCanvas = document.getElementById('cashNetChart');
+  if (netCanvas) {
+    new Chart(netCanvas, {
+      type: 'bar',
+      data: {
+        labels: cashLabels,
+        datasets: [{
+          label: {{ t('cash_net_total')|tojson }},
+          data: cashNetData,
+          backgroundColor: cashNetData.map(v => v >= 0 ? 'rgba(37,99,235,0.75)' : 'rgba(220,38,38,0.75)'),
+          borderColor: cashNetData.map(v => v >= 0 ? 'rgba(37,99,235,1)' : 'rgba(220,38,38,1)'),
+          borderWidth: 1,
+          borderRadius: 8,
+          maxBarThickness: 34
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return ' ' + new Intl.NumberFormat('ru-RU').format(context.raw || 0) + ' UZS';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#667085', font: { weight: '700' } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(16,24,40,0.08)' },
+            ticks: {
+              color: '#667085',
+              font: { weight: '700' },
+              callback: function(value) {
+                return new Intl.NumberFormat('ru-RU', {
+                  notation: 'compact',
+                  maximumFractionDigits: 1
+                }).format(value);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  const flowCanvas = document.getElementById('cashFlowChart');
+  if (flowCanvas) {
+    new Chart(flowCanvas, {
+      type: 'line',
+      data: {
+        labels: cashLabels,
+        datasets: [
+          {
+            label: {{ t('cash_income_label')|tojson }},
+            data: cashIncomeData,
+            borderColor: 'rgba(22,163,74,1)',
+            backgroundColor: 'rgba(22,163,74,0.10)',
+            tension: 0.35,
+            fill: false,
+            borderWidth: 3,
+            pointRadius: 3,
+            pointHoverRadius: 4
+          },
+          {
+            label: {{ t('cash_expense_label')|tojson }},
+            data: cashExpenseData,
+            borderColor: 'rgba(220,38,38,1)',
+            backgroundColor: 'rgba(220,38,38,0.10)',
+            tension: 0.35,
+            fill: false,
+            borderWidth: 3,
+            pointRadius: 3,
+            pointHoverRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return ' ' + context.dataset.label + ': ' + new Intl.NumberFormat('ru-RU').format(context.raw || 0) + ' UZS';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#667085', font: { weight: '700' } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(16,24,40,0.08)' },
+            ticks: {
+              color: '#667085',
+              font: { weight: '700' },
+              callback: function(value) {
+                return new Intl.NumberFormat('ru-RU', {
+                  notation: 'compact',
+                  maximumFractionDigits: 1
+                }).format(value);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+</script>
 
 {% endblock %}

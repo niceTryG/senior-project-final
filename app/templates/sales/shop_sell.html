@@ -1,66 +1,387 @@
 {% extends "base.html" %}
+{% block title %}{{ t('shop_sell_title') }} - Mini Moda{% endblock %}
+
 {% block content %}
+<style>
+  .mm-page-shop-sell-picker {
+    --mm-cardA: rgba(255,255,255,.84);
+    --mm-cardB: rgba(255,255,255,.96);
+    --mm-line: rgba(0,0,0,.08);
+    --mm-muted: rgba(0,0,0,.52);
+    --mm-soft: rgba(0,0,0,.76);
+    --mm-shadow: 0 14px 36px rgba(0,0,0,.10);
+    --mm-shadow-soft: 0 8px 20px rgba(0,0,0,.07);
+    --mm-glow: 0 0 0 .22rem rgba(13,110,253,.14);
+    --mm-radius: 20px;
+    position: relative;
+  }
 
-<div class="container py-3 py-md-4">
-  <h1 class="h5 mb-2">{{ t('shop_sell_title') }}</h1>
+  .mm-page-shop-sell-picker::before {
+    content: "";
+    position: absolute;
+    inset: -16px -10px -16px -10px;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 14%, rgba(13,110,253,.10), transparent 34%),
+      radial-gradient(circle at 88% 18%, rgba(111,66,193,.08), transparent 36%),
+      radial-gradient(circle at 24% 92%, rgba(32,201,151,.08), transparent 40%);
+    opacity: .95;
+  }
 
-  <p class="small text-muted">
-    {{ t('shop_sell_subtitle') }}
-  </p>
+  .mm-page-shop-sell-picker > * {
+    position: relative;
+    z-index: 1;
+  }
 
-  <form method="post">
-    <div class="mb-3">
-      <label class="form-label">{{ t('shop_sell_product_label') }}</label>
-      <select name="product_id" class="form-select" required>
-        <option value="">{{ t('shop_sell_select_placeholder') }}</option>
-        {% for p in products %}
-          <option value="{{ p.id }}">
-            {{ p.name }} — {{ p.sell_price_per_item or 0 }} UZS
-          </option>
-        {% endfor %}
-      </select>
+  .mm-shell {
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: linear-gradient(180deg, var(--mm-cardA), var(--mm-cardB));
+    box-shadow: var(--mm-shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow: hidden;
+  }
+
+  .mm-hero { padding: 16px; }
+  .mm-neo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .35rem .72rem;
+    border-radius: 999px;
+    border: 1px solid var(--mm-line);
+    background: rgba(255,255,255,.72);
+    font-size: .78rem;
+    color: var(--mm-soft);
+    white-space: nowrap;
+  }
+  .mm-title { font-weight: 900; margin: 0; letter-spacing: .2px; }
+  .mm-sub { margin: 0; color: var(--mm-muted); }
+  .mm-form-wrap {
+    padding: 14px;
+    border-top: 1px solid var(--mm-line);
+    background: rgba(255,255,255,.56);
+  }
+  .mm-label {
+    font-size: .82rem;
+    color: var(--mm-muted);
+    margin-bottom: .35rem;
+    font-weight: 700;
+  }
+  .mm-page-shop-sell-picker .form-control,
+  .mm-page-shop-sell-picker .form-select,
+  .mm-page-shop-sell-picker .form-check-input { border-radius: 14px; }
+  .mm-page-shop-sell-picker .form-control:focus,
+  .mm-page-shop-sell-picker .form-select:focus,
+  .mm-page-shop-sell-picker .form-check-input:focus {
+    box-shadow: var(--mm-glow);
+    border-color: rgba(13,110,253,.35);
+  }
+  .mm-info-box {
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 16px;
+    background: rgba(255,255,255,.72);
+    padding: 12px;
+  }
+  .mm-info-k {
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--mm-muted);
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+  .mm-info-v {
+    font-size: 1rem;
+    font-weight: 900;
+    color: rgba(0,0,0,.82);
+    line-height: 1.2;
+  }
+  .mm-total-box {
+    border: 1px solid rgba(25,135,84,.18);
+    background: rgba(243,252,247,.95);
+    border-radius: 18px;
+    padding: 12px;
+  }
+  .mm-total-label {
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--mm-muted);
+    font-weight: 800;
+  }
+  .mm-total-value {
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #146c43;
+    line-height: 1.15;
+  }
+  .mm-note-box {
+    border: 1px dashed rgba(0,0,0,.12);
+    border-radius: 16px;
+    background: rgba(255,255,255,.65);
+    padding: 10px 12px;
+    color: var(--mm-muted);
+    font-size: .88rem;
+  }
+  .mm-btn {
+    border-radius: 999px !important;
+    min-height: 46px;
+    font-weight: 900 !important;
+  }
+  .mm-empty-box {
+    border: 1px solid rgba(255,193,7,.25);
+    background: rgba(255,250,235,.96);
+    border-radius: 18px;
+    padding: 14px;
+    color: #8a6500;
+  }
+  @media (max-width: 767.98px) {
+    .mm-page-shop-sell-picker::before { display: none; }
+    .mm-shell {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+</style>
+
+<div class="container-fluid py-3 py-md-4 mm-page-shop-sell-picker">
+  <div class="mm-shell">
+    <div class="mm-hero">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <span class="mm-neo-chip">🧾 <span>{{ t('shop_sell_title') }}</span></span>
+            <span class="mm-neo-chip">🏪 <span>{{ t('shop_title') }}</span></span>
+          </div>
+          <h1 class="h4 mm-title mb-1">{{ t('shop_sell_title') }}</h1>
+          <p class="small mm-sub">{{ t('shop_sell_subtitle') }}</p>
+        </div>
+
+        <a href="{{ url_for('shop.dashboard_shop') }}" class="btn btn-sm btn-outline-secondary rounded-pill">
+          {{ t('shop_sell_back') }}
+        </a>
+      </div>
     </div>
 
-    <div class="mb-3">
-      <label class="form-label">{{ t('shop_sell_quantity_label') }}</label>
-      <input type="number" name="quantity" class="form-control" min="1" required>
-    </div>
+    <div class="mm-form-wrap">
+      {% if not shop_items %}
+        <div class="mm-empty-box">
+          {{ t('shop_sell_empty_stock') }}
+        </div>
+      {% else %}
+        <form method="post" id="shop-sell-form">
+          <div class="row g-3">
+            <div class="col-12 col-lg-7">
+              <label for="shop_stock_id" class="mm-label d-block">{{ t('shop_sell_product_label') }}</label>
+              <select name="shop_stock_id" id="shop_stock_id" class="form-select" required>
+                <option value="">{{ t('shop_sell_select_placeholder') }}</option>
+                {% for item in shop_items %}
+                  {% set p = item.product %}
+                  {% set qty = item.quantity or 0 %}
+                  {% set source_factory_name = item.source_factory.name if item.source_factory else '' %}
+                  <option
+                    value="{{ item.id }}"
+                    data-product-id="{{ p.id }}"
+                    data-name="{{ p.name }}"
+                    data-category="{{ p.category or '' }}"
+                    data-qty="{{ qty }}"
+                    data-price="{{ p.sell_price_per_item or 0 }}"
+                    data-currency="{{ p.currency or 'UZS' }}"
+                    data-factory="{{ source_factory_name }}"
+                  >
+                    {{ p.name }}
+                    {% if source_factory_name %} • {{ source_factory_name }}{% endif %}
+                    — {{ qty }} {{ t('pieces_short') }}.
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
 
-    <div class="mb-3">
-      <label class="form-label">{{ t('shop_sell_customer_name_label') }}</label>
-      <input type="text" name="customer_name" class="form-control">
-    </div>
+            <div class="col-12 col-lg-5">
+              <label for="quantity" class="mm-label d-block">{{ t('shop_sell_quantity_label') }}</label>
+              <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="1" required>
+              <div class="small text-muted mt-2" id="qty-hint">{{ t('shop_sell_qty_hint_default') }}</div>
+            </div>
 
-    <div class="mb-3">
-      <label class="form-label">{{ t('shop_sell_customer_phone_label') }}</label>
-      <input type="text" name="customer_phone" class="form-control">
-    </div>
+            <div class="col-12">
+              <div class="row g-2">
+                <div class="col-6 col-md-3">
+                  <div class="mm-info-box">
+                    <div class="mm-info-k">{{ t('products_details_model') }}</div>
+                    <div class="mm-info-v" id="info-name">-</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="mm-info-box">
+                    <div class="mm-info-k">{{ t('category') }}</div>
+                    <div class="mm-info-v" id="info-category">-</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="mm-info-box">
+                    <div class="mm-info-k">{{ t('shop_product_info_stock') }}</div>
+                    <div class="mm-info-v" id="info-qty">-</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="mm-info-box">
+                    <div class="mm-info-k">{{ t('shop_product_info_price') }}</div>
+                    <div class="mm-info-v" id="info-price">-</div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-    <div class="mb-3">
-      <label class="form-label">{{ t('shop_sell_note_label') }}</label>
-      <textarea name="note"
-                class="form-control"
+            <div class="col-12">
+              <div class="mm-total-box">
+                <div class="mm-total-label">{{ t('total') }}</div>
+                <div class="mm-total-value" id="sale-total">0 UZS</div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label for="customer_name" class="mm-label d-block">{{ t('shop_sell_customer_name_label') }}</label>
+              <input type="text" name="customer_name" id="customer_name" class="form-control">
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label for="customer_phone" class="mm-label d-block">{{ t('shop_sell_customer_phone_label') }}</label>
+              <input type="text" name="customer_phone" id="customer_phone" class="form-control">
+            </div>
+
+            <div class="col-12">
+              <label for="note" class="mm-label d-block">{{ t('shop_sell_note_label') }}</label>
+              <textarea
+                name="note"
+                id="note"
                 rows="2"
-                placeholder="{{ t('shop_sell_note_placeholder') }}"></textarea>
-    </div>
+                class="form-control"
+                placeholder="{{ t('shop_sell_note_placeholder') }}"
+              ></textarea>
+            </div>
 
-    <div class="form-check mb-3">
-      <input class="form-check-input"
-             type="checkbox"
-             value="1"
-             id="allow_partial"
-             name="allow_partial"
-             checked>
-      <label class="form-check-label" for="allow_partial">
-        {{ t('shop_sell_allow_partial_label') }}
-      </label>
-    </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="allow_partial" id="allow_partial" checked>
+                <label class="form-check-label" for="allow_partial">
+                  {{ t('shop_sell_allow_partial_label') }}
+                </label>
+              </div>
+            </div>
 
-    <button type="submit" class="btn btn-primary">💸 {{ t('shop_sell_submit') }}</button>
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-sm ms-2">
-      ← {{ t('shop_sell_back') }}
-    </a>
-  </form>
+            <div class="col-12">
+              <div class="mm-note-box">
+                {{ t('shop_sell_note_box') }}
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="d-flex flex-column flex-md-row gap-2">
+                <button type="submit" class="btn btn-success mm-btn">
+                  {{ t('shop_sell_submit') }}
+                </button>
+                <a href="{{ url_for('shop.dashboard_shop') }}" class="btn btn-outline-secondary mm-btn">
+                  {{ t('shop_sell_back') }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const select = document.getElementById('shop_stock_id');
+  const qtyInput = document.getElementById('quantity');
+  const totalEl = document.getElementById('sale-total');
+  const qtyHintEl = document.getElementById('qty-hint');
+  const allowPartialEl = document.getElementById('allow_partial');
+
+  const infoName = document.getElementById('info-name');
+  const infoCategory = document.getElementById('info-category');
+  const infoQty = document.getElementById('info-qty');
+  const infoPrice = document.getElementById('info-price');
+
+  if (!select || !qtyInput || !totalEl) return;
+
+  const qtyHintDefault = {{ t('shop_sell_qty_hint_default')|tojson }};
+  const qtyInShop = {{ t('shop_sell_qty_in_shop_js')|tojson }};
+  const qtyWillOrder = {{ t('shop_sell_will_be_ordered_js')|tojson }};
+  const qtyTooMuch = {{ t('shop_sell_too_much_js')|tojson }};
+  const qtyAvailable = {{ t('shop_sell_available_js')|tojson }};
+  const pcsLabel = {{ t('pieces_short')|tojson }};
+
+  function formatMoney(amount, currency) {
+    return new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount) + ' ' + currency;
+  }
+
+  function getSelectedOption() {
+    return select.options[select.selectedIndex];
+  }
+
+  function clampQty(value) {
+    let v = parseInt(value || 0, 10);
+    if (isNaN(v) || v < 1) v = 1;
+    return v;
+  }
+
+  function updateInfo() {
+    const opt = getSelectedOption();
+
+    if (!opt || !opt.value) {
+      infoName.textContent = '-';
+      infoCategory.textContent = '-';
+      infoQty.textContent = '-';
+      infoPrice.textContent = '-';
+      totalEl.textContent = '0 UZS';
+      qtyHintEl.textContent = qtyHintDefault;
+      qtyHintEl.className = 'small text-muted mt-2';
+      return;
+    }
+
+    const name = opt.dataset.name || '-';
+    const category = opt.dataset.category || '-';
+    const qty = parseInt(opt.dataset.qty || '0', 10) || 0;
+    const price = parseFloat(opt.dataset.price || '0') || 0;
+    const currency = opt.dataset.currency || 'UZS';
+    const factory = opt.dataset.factory || '';
+
+    infoName.textContent = factory ? `${name} • ${factory}` : name;
+    infoCategory.textContent = category || '-';
+    infoQty.textContent = qty + ' ' + pcsLabel + '.';
+    infoPrice.textContent = formatMoney(price, currency);
+
+    const requested = clampQty(qtyInput.value);
+    qtyInput.value = requested;
+    totalEl.textContent = formatMoney(requested * price, currency);
+
+    if (requested > qty) {
+      const missing = requested - qty;
+      if (allowPartialEl && allowPartialEl.checked) {
+        qtyHintEl.textContent = qtyInShop + ' ' + qty + ' ' + pcsLabel + '. ' + qtyWillOrder + ' ' + missing + ' ' + pcsLabel + '.';
+        qtyHintEl.className = 'small text-warning mt-2';
+      } else {
+        qtyHintEl.textContent = qtyTooMuch + ' ' + qty + ' ' + pcsLabel + '.';
+        qtyHintEl.className = 'small text-danger mt-2';
+      }
+    } else {
+      qtyHintEl.textContent = qtyAvailable + ' ' + qty + ' ' + pcsLabel + '.';
+      qtyHintEl.className = 'small text-muted mt-2';
+    }
+  }
+
+  select.addEventListener('change', updateInfo);
+  qtyInput.addEventListener('input', updateInfo);
+  if (allowPartialEl) allowPartialEl.addEventListener('change', updateInfo);
+  updateInfo();
+});
+</script>
 {% endblock %}

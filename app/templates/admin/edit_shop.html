@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('admin_edit_shop_title') }}{% endblock %}
+
+{% block content %}
+<style>
+  .mm-shop-form-page{
+    padding-top:10px;
+    padding-bottom:96px;
+  }
+
+  .mm-card{
+    border-radius:18px;
+    border:0;
+    box-shadow:0 10px 28px rgba(16,24,40,0.06);
+  }
+
+  .mm-btn{
+    border-radius:14px;
+    font-weight:800;
+  }
+
+  .form-control, .form-select, .form-check-input{
+    border-radius:12px;
+  }
+
+  .mm-factory-box{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    padding:.9rem;
+    background:#fff;
+  }
+</style>
+
+<div class="container-fluid mm-shop-form-page">
+  <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="h4 mb-0">{{ t('admin_edit_shop_title') }}</h1>
+      <div class="small text-muted">
+        {{ shop.name }} · ID {{ shop.id }}
+      </div>
+    </div>
+
+    <a href="{{ url_for('auth.list_shops') }}" class="btn btn-outline-secondary btn-sm mm-btn">
+      {{ t('btn_back') }}
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0 mm-card">
+    <div class="card-body p-3 p-md-4">
+      <form method="post" class="row g-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">{{ t('admin_shop_name') }}</label>
+          <input type="text" name="name" class="form-control" value="{{ shop.name }}" required>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">{{ t('admin_shop_location') }}</label>
+          <input type="text" name="location" class="form-control" value="{{ shop.location or '' }}">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label small mb-1">{{ t('note') }}</label>
+          <textarea name="note" rows="3" class="form-control">{{ shop.note or '' }}</textarea>
+        </div>
+
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   name="is_active"
+                   id="isActive"
+                   value="1"
+                   {% if shop.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="isActive">
+              {{ t('admin_shop_active') }}
+            </label>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label small mb-2">{{ t('admin_linked_factories') }}</label>
+
+          <div class="mm-factory-box">
+            <div class="row g-2">
+              {% for f in factories %}
+                <div class="col-12 col-md-6">
+                  <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="factory_ids"
+                           id="factory_{{ f.id }}"
+                           value="{{ f.id }}"
+                           {% if f.id in selected_factory_ids %}checked{% endif %}>
+                    <label class="form-check-label" for="factory_{{ f.id }}">
+                      {{ f.name }}
+                    </label>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="form-text">
+            {{ t('admin_shop_multi_factory_hint') }}
+          </div>
+        </div>
+
+        <div class="col-12 d-flex gap-2 flex-wrap">
+          <button type="submit" class="btn btn-primary mm-btn">
+            {{ t('admin_save_changes') }}
+          </button>
+          <a href="{{ url_for('auth.list_shops') }}" class="btn btn-outline-secondary mm-btn">
+            {{ t('btn_cancel') }}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

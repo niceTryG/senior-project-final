@@ -4,12 +4,11 @@
 
 {% block extra_css %}
 <style>
-  /* Prevent fixed bottom nav from covering page content */
   .mm-page-products { padding-bottom: 96px; padding-top: 10px; }
 
-  /* Neo actions */
   .mm-actions .btn { border-radius: 14px; font-weight: 700; }
   .mm-actions .btn-sm { padding: .60rem .75rem; }
+
   .mm-chip {
     display:inline-flex; align-items:center; justify-content:center;
     border-radius: 999px;
@@ -23,18 +22,15 @@
     width: 100%;
   }
 
-  /* Filters collapse button */
   .mm-filter-btn {
     border-radius: 14px;
     font-weight: 700;
     padding: .60rem .75rem;
   }
 
-  /* Mobile product card polish */
   .mm-product-card { border-radius: 18px; }
   .mm-product-card-title { line-height: 1.15; }
 
-  /* Total badge */
   .mm-total-pill {
     border-radius: 14px;
     padding: .55rem .75rem;
@@ -44,7 +40,6 @@
     text-align: center;
   }
 
-  /* Key rows inside cards */
   .mm-kv {
     display: flex;
     justify-content: space-between;
@@ -56,26 +51,98 @@
   .mm-k { color: #6c757d; font-size: .82rem; }
   .mm-v { font-weight: 700; text-align: right; }
 
-  /* Compact action buttons inside card */
   .mm-card-btn {
     border-radius: 14px;
     padding: .60rem .75rem;
     font-weight: 700;
   }
 
-  /* Accordion compact */
   .mm-acc-btn { padding: .55rem .75rem; border-radius: 14px; }
   .accordion-item { border-radius: 14px; }
 
-  /* Make forms feel less heavy */
-  .form-control, .form-select { border-radius: 12px; }
+  .form-control, .form-select, textarea.form-control { border-radius: 12px; }
+
+  .mm-info-btn {
+    border-radius: 14px;
+    padding: .60rem .75rem;
+    font-weight: 700;
+  }
+
+  .mm-media-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+  }
+
+  .mm-media-card {
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 14px;
+    padding: .5rem;
+    background: #fff;
+  }
+
+  .mm-media-label {
+    font-size: .78rem;
+    color: #6c757d;
+    margin-bottom: .35rem;
+    font-weight: 600;
+  }
+
+  .mm-media-image {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #f8f9fa;
+    border: 1px solid rgba(0,0,0,.06);
+    display: block;
+  }
+
+  .mm-media-placeholder {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    background: #f8f9fa;
+    border: 1px dashed rgba(0,0,0,.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-size: .8rem;
+    text-align: center;
+    padding: .5rem;
+  }
+
+  .mm-info-box {
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 14px;
+    background: #fff;
+    padding: .75rem;
+  }
+
+  .mm-info-title {
+    font-size: .82rem;
+    color: #6c757d;
+    margin-bottom: .35rem;
+  }
+
+  .mm-info-value {
+    font-weight: 700;
+    color: #111;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .mm-notes-value {
+    white-space: pre-line;
+    font-weight: 600;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid mm-page-products">
 
-  <!-- HEADER + ACTIONS (NEO) -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h1 class="h5 fw-semibold mb-0">{{ t('products_page_header') }}</h1>
   </div>
@@ -114,15 +181,13 @@
     </div>
   </div>
 
-  <!-- FILTERS (COLLAPSE ON MOBILE) -->
   <div class="card shadow-sm border-0 mb-3">
     <div class="card-body p-2 p-md-3">
 
-      <!-- Mobile toggle -->
       <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mm-filter-btn"
               type="button" data-bs-toggle="collapse" data-bs-target="#mmFilters"
               aria-expanded="false" aria-controls="mmFilters">
-        🔎 Поиск / фильтр
+        <i class="bi bi-search me-1"></i>{{ t('products_search_filter') }}
       </button>
 
       <div class="collapse d-md-block mt-2 mt-md-0" id="mmFilters">
@@ -159,11 +224,11 @@
     </div>
   </div>
 
-  {# ================= MOBILE CARDS (NEO EASY) ================= #}
+  {# ================= MOBILE CARDS ================= #}
   <div class="d-md-none mb-3">
     {% if not products %}
       <div class="alert alert-light border small mb-0">
-        {{ t('products_empty_state') if t else 'Пока нет товаров.' }}
+        {{ t('products_empty_state') }}
       </div>
     {% endif %}
 
@@ -179,11 +244,11 @@
       {% set toshop_id = "m-toshop-" ~ p.id %}
       {% set sell_id = "m-sell-" ~ p.id %}
       {% set produce_id = "m-produce-" ~ p.id %}
+      {% set info_id = "m-info-" ~ p.id %}
 
       <div class="card shadow-sm border-0 mb-2 mm-product-card">
         <div class="card-body">
 
-          <!-- Top row -->
           <div class="d-flex justify-content-between align-items-start gap-2">
             <div class="flex-grow-1" style="min-width:0;">
               <div class="small text-muted">MM-{{ "%05d"|format(p.id) }}</div>
@@ -193,11 +258,10 @@
               </div>
 
               <div class="mt-2">
-                {# 🌍 Public visibility badge #}
                 {% if p.is_published %}
-                  <span class="badge bg-success me-1">🌍 On website</span>
+                  <span class="badge bg-success me-1"><i class="bi bi-globe-americas me-1"></i>{{ t('products_publish') }}</span>
                 {% else %}
-                  <span class="badge bg-secondary me-1">🙈 Hidden</span>
+                  <span class="badge bg-secondary me-1"><i class="bi bi-eye-slash me-1"></i>{{ t('products_unpublish') }}</span>
                 {% endif %}
 
                 {% if total_qty == 0 %}
@@ -220,14 +284,13 @@
             </div>
           </div>
 
-          <!-- Quick info -->
           <div class="mt-3">
             <div class="mm-kv">
-              <div class="mm-k">Фабрика</div>
+              <div class="mm-k">{{ t('products_table_col_factory') }}</div>
               <div class="mm-v">{{ factory_qty }}</div>
             </div>
             <div class="mm-kv">
-              <div class="mm-k">Магазин</div>
+              <div class="mm-k">{{ t('products_table_col_in_shop') }}</div>
               <div class="mm-v">{{ shop_qty }}</div>
             </div>
             <div class="mm-kv">
@@ -240,7 +303,6 @@
             </div>
           </div>
 
-          <!-- Split -->
           <div class="mt-3">
             {% if total_qty %}
               <div class="progress" style="height: 8px; border-radius: 999px;">
@@ -254,14 +316,13 @@
                 {% endif %}
               </div>
               <div class="small text-muted mt-1">
-                Ф: {{ fpct }}% • М: {{ spct }}%
+                {{ t('products_split_factory_short') }}: {{ fpct }}% &middot; {{ t('products_split_shop_short') }}: {{ spct }}%
               </div>
             {% else %}
               <div class="small text-muted">{{ t('products_split_no_data') }}</div>
             {% endif %}
           </div>
 
-          <!-- Main actions (simple) -->
           <div class="row g-2 mt-3">
             <div class="col-6">
               <button class="btn btn-outline-secondary w-100 mm-card-btn"
@@ -270,9 +331,10 @@
                       data-bs-target="#{{ toshop_id }}"
                       aria-expanded="false"
                       aria-controls="{{ toshop_id }}">
-                🚚 В магазин
+                <i class="bi bi-truck me-1"></i>{{ t('products_transfer_to_shop_short') }}
               </button>
             </div>
+
             <div class="col-6">
               <button class="btn btn-outline-primary w-100 mm-card-btn"
                       type="button"
@@ -280,11 +342,10 @@
                       data-bs-target="#{{ sell_id }}"
                       aria-expanded="false"
                       aria-controls="{{ sell_id }}">
-                💸 Продать
+                <i class="bi bi-cash-coin me-1"></i>{{ t('products_sell_short') }}
               </button>
             </div>
 
-            {# ✅ NEW: PRODUCE BUTTON #}
             <div class="col-12">
               <button class="btn btn-dark w-100 mm-card-btn"
                       type="button"
@@ -292,30 +353,101 @@
                       data-bs-target="#{{ produce_id }}"
                       aria-expanded="false"
                       aria-controls="{{ produce_id }}">
-                🏭 Produce (fabric → product)
+                <i class="bi bi-building-gear me-1"></i>{{ t('products_produce_title') }}
+              </button>
+            </div>
+
+            <div class="col-12">
+              <button class="btn btn-outline-dark w-100 mm-info-btn"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#{{ info_id }}"
+                      aria-expanded="false"
+                      aria-controls="{{ info_id }}">
+                <i class="bi bi-info-circle me-1"></i>{{ t('products_info_short') }}
               </button>
             </div>
 
             <div class="col-12">
               <a href="{{ url_for('products.product_cost', product_id=p.id) }}"
                  class="btn btn-outline-warning w-100 mm-card-btn">
-                🧮 Себестоимость
+                <i class="bi bi-calculator me-1"></i>{{ t('products_cost_short') }}
               </a>
             </div>
 
-            {# ✅ Publish / Unpublish #}
             <div class="col-12">
               <form method="post" action="{{ url_for('products.toggle_publish', product_id=p.id) }}">
                 <button type="submit"
                         class="btn w-100 mm-card-btn {% if p.is_published %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
-                  {% if p.is_published %}🙈 Unpublish{% else %}🌍 Publish to website{% endif %}
+                  {% if p.is_published %}<i class="bi bi-eye-slash me-1"></i>{{ t('products_unpublish') }}{% else %}<i class="bi bi-globe-americas me-1"></i>{{ t('products_publish') }}{% endif %}
                 </button>
               </form>
             </div>
           </div>
 
-          <!-- Hidden forms -->
           <div class="mt-2">
+
+            <div class="collapse" id="{{ info_id }}">
+              <div class="border rounded-3 p-2 bg-white mt-2">
+                <div class="mm-media-grid mb-2">
+                  <div class="mm-media-card">
+                    <div class="mm-media-label">{{ t('products_photo_product') }}</div>
+                    {% if p.image_path %}
+                      <img src="{{ url_for('static', filename=p.image_path) }}"
+                           alt="{{ p.name }}"
+                           class="mm-media-image">
+                    {% else %}
+                      <div class="mm-media-placeholder">{{ t('products_no_photo_product') }}</div>
+                    {% endif %}
+                  </div>
+
+                  <div class="mm-media-card">
+                    <div class="mm-media-label">{{ t('products_photo_website') }}</div>
+                    {% if p.website_image %}
+                      <img src="{{ url_for('static', filename=p.website_image) }}"
+                           alt="{{ p.name }}"
+                           class="mm-media-image">
+                    {% else %}
+                      <div class="mm-media-placeholder">{{ t('products_no_photo_website') }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2">
+                  <div class="mm-info-box">
+                    <div class="mm-info-title">{{ t('products_fabric') }}</div>
+                    <div class="mm-info-value">{{ p.fabric_used or t('products_not_specified') }}</div>
+                  </div>
+
+                  <div class="mm-info-box">
+                    <div class="mm-info-title">{{ t('products_notes_description') }}</div>
+                    <div class="mm-info-value mm-notes-value">{{ p.notes or t('products_no_notes') }}</div>
+                  </div>
+
+                  <div class="mm-info-box">
+                    <div class="mm-info-title">{{ t('products_table_col_category') }}</div>
+                    <div class="mm-info-value">{{ p.category or t('products_not_specified') }}</div>
+                  </div>
+
+                  <div class="mm-info-box">
+                    <div class="mm-info-title">{{ t('products_article_code') }}</div>
+                    <div class="mm-info-value">MM-{{ "%05d"|format(p.id) }}</div>
+                  </div>
+                </div>
+
+                {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
+                  <div class="mt-2">
+                    <button type="button"
+                            class="btn btn-outline-primary w-100 mm-card-btn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editInfoModal{{ p.id }}">
+                      <i class="bi bi-pencil-square me-1"></i>{{ t('products_edit_info') }}
+                    </button>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
             <div class="collapse" id="{{ toshop_id }}">
               <div class="border rounded-3 p-2 bg-white mt-2">
                 <form method="post"
@@ -332,7 +464,7 @@
                     <div class="form-text small">{{ t('products_table_col_factory') }}: {{ factory_qty }}</div>
                   </div>
                   <button type="submit" class="btn btn-secondary btn-sm w-100 mm-card-btn">
-                    ✅ Передать
+                    ? {{ t('products_details_move_to_shop_button') }}
                   </button>
                 </form>
               </div>
@@ -374,13 +506,12 @@
                          placeholder="{{ t('products_details_customer_phone_placeholder') }}">
 
                   <button type="submit" class="btn btn-primary btn-sm w-100 mm-card-btn">
-                    ✅ Продать
+                    ? {{ t('products_details_sell_button') }}
                   </button>
                 </form>
               </div>
             </div>
 
-            {# ✅ NEW: PRODUCE COLLAPSE FORM #}
             <div class="collapse" id="{{ produce_id }}">
               <div class="border rounded-3 p-2 bg-white mt-2">
                 <form method="post"
@@ -389,18 +520,18 @@
 
                   <div class="row g-2">
                     <div class="col-6">
-                      <label class="form-label small mb-1">Produced qty</label>
+                      <label class="form-label small mb-1">{{ t('products_produce_qty') }}</label>
                       <input type="number"
-                             name="quantity"
+                      <label class="form-label small mb-1">{{ t('products_produce_qty') }}</label>
                              class="form-control form-control-sm text-end"
                              min="1"
                              required>
                     </div>
 
                     <div class="col-6">
-                      <label class="form-label small mb-1">Fabric used</label>
+                      <label class="form-label small mb-1">{{ t('products_produce_used') }}</label>
                       <input type="number"
-                             step="0.01"
+                      <label class="form-label small mb-1">{{ t('products_produce_used') }}</label>
                              name="used_amount"
                              class="form-control form-control-sm text-end"
                              min="0.01"
@@ -409,9 +540,9 @@
                   </div>
 
                   <div>
-                    <label class="form-label small mb-1">Fabric</label>
+                    <label class="form-label small mb-1">{{ t('products_produce_fabric') }}</label>
                     <select name="fabric_id" class="form-select form-select-sm" required>
-                      <option value="" selected disabled>Choose fabric...</option>
+                      <option value="" selected disabled>{{ t('products_produce_choose_fabric') }}</option>
                       {% for f in fabrics %}
                         <option value="{{ f.id }}">
                           {{ f.name }}{% if f.color %} / {{ f.color }}{% endif %}
@@ -425,10 +556,10 @@
                          name="note"
                          class="form-control form-control-sm"
                          maxlength="255"
-                         placeholder="Note (optional)">
+                         placeholder="{{ t('products_produce_note_placeholder') }}">
 
                   <button type="submit" class="btn btn-dark btn-sm w-100 mm-card-btn">
-                    ✅ Save production
+                    ✅ {{ t('products_produce_save') }}
                   </button>
                 </form>
               </div>
@@ -483,11 +614,10 @@
                   <div>
                     <span class="fw-semibold small">{{ p.name }}</span>
 
-                    {# 🌍 Published badge (tiny) #}
                     {% if p.is_published %}
-                      <span class="badge bg-success ms-1" title="On website">🌍</span>
+                      <span class="badge bg-success ms-1" title="{{ t('products_publish') }}">🌍</span>
                     {% else %}
-                      <span class="badge bg-secondary ms-1" title="Hidden">🙈</span>
+                      <span class="badge bg-secondary ms-1" title="{{ t('products_unpublish') }}">🙈</span>
                     {% endif %}
 
                     {% if total_qty == 0 %}
@@ -540,10 +670,33 @@
                 <div class="p-2 p-md-3">
                   <div class="row g-2 g-md-3">
 
-                    <!-- LEFT: Info -->
                     <div class="col-12 col-md-3">
                       <div class="border rounded-3 p-2 h-100 bg-white">
-                        <p class="small text-muted mb-1">{{ t('products_details_title_info') }}</p>
+                        <p class="small text-muted mb-2">{{ t('products_details_title_info') }}</p>
+
+                        <div class="mm-media-grid mb-3">
+                          <div class="mm-media-card">
+                            <div class="mm-media-label">{{ t('products_photo_product') }}</div>
+                            {% if p.image_path %}
+                              <img src="{{ url_for('static', filename=p.image_path) }}"
+                                   alt="{{ p.name }}"
+                                   class="mm-media-image">
+                            {% else %}
+                              <div class="mm-media-placeholder">{{ t('products_no_photo_product') }}</div>
+                            {% endif %}
+                          </div>
+
+                          <div class="mm-media-card">
+                            <div class="mm-media-label">{{ t('products_photo_website') }}</div>
+                            {% if p.website_image %}
+                              <img src="{{ url_for('static', filename=p.website_image) }}"
+                                   alt="{{ p.name }}"
+                                   class="mm-media-image">
+                            {% else %}
+                              <div class="mm-media-placeholder">{{ t('products_no_photo_website') }}</div>
+                            {% endif %}
+                          </div>
+                        </div>
 
                         <p class="small mb-1">
                           <span class="text-muted">{{ t('products_details_code') }}:</span>
@@ -557,7 +710,12 @@
 
                         <p class="small mb-1">
                           <span class="text-muted">{{ t('products_details_category') }}:</span>
-                          <span>{{ p.category or '—' }}</span>
+                          <span>{{ p.category or t('products_not_specified') }}</span>
+                        </p>
+
+                        <p class="small mb-1">
+                          <span class="text-muted">{{ t('products_fabric') }}:</span>
+                          <span class="fw-semibold">{{ p.fabric_used or t('products_not_specified') }}</span>
                         </p>
 
                         <p class="small mb-1">
@@ -594,36 +752,34 @@
                           </span>
                         </p>
 
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_total_cost_factory') }}:</span>
-                          <span class="fw-semibold">
-                            {{ format_money(p.stock_value_cost() or 0, p.currency) }}
-                          </span>
+                        <p class="small mb-2">
+                          <span class="text-muted">{{ t('products_notes_description') }}:</span>
+                          <span class="fw-semibold mm-notes-value">{{ p.notes or t('products_no_notes') }}</span>
                         </p>
 
-                        <p class="small mb-2">
-                          <span class="text-muted">{{ t('products_details_total_sell_factory') }}:</span>
-                          <span class="fw-semibold">
-                            {{ format_money(p.stock_value_sell() or 0, p.currency) }}
-                          </span>
-                        </p>
+                        {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
+                          <button type="button"
+                                  class="btn btn-sm btn-outline-primary w-100 mt-2"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#editInfoModal{{ p.id }}">
+                            <i class="bi bi-pencil-square me-1"></i>{{ t('products_edit_info') }}
+                          </button>
+                        {% endif %}
 
                         <a href="{{ url_for('products.product_cost', product_id=p.id) }}"
                            class="btn btn-sm btn-outline-warning w-100 mt-1">
-                          🧮 Расчёт себестоимости
+                          <i class="bi bi-calculator me-1"></i>{{ t('products_cost_short') }}
                         </a>
 
-                        {# ✅ Publish / Unpublish #}
                         <form method="post" action="{{ url_for('products.toggle_publish', product_id=p.id) }}" class="mt-2">
                           <button type="submit"
                                   class="btn btn-sm w-100 {% if p.is_published %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
-                            {% if p.is_published %}🙈 Unpublish (hide from website){% else %}🌍 Publish (show on website){% endif %}
+                            {% if p.is_published %}<i class="bi bi-eye-slash me-1"></i>{{ t('products_unpublish_hide') }}{% else %}<i class="bi bi-globe-americas me-1"></i>{{ t('products_publish_show') }}{% endif %}
                           </button>
                         </form>
                       </div>
                     </div>
 
-                    <!-- MIDDLE: TO SHOP -->
                     <div class="col-12 col-md-3">
                       <div class="border rounded-3 p-2 h-100 bg-white">
                         <p class="small text-muted mb-2 mb-md-2">
@@ -653,7 +809,6 @@
                       </div>
                     </div>
 
-                    <!-- RIGHT: SELL -->
                     <div class="col-12 col-md-3">
                       <div class="border rounded-3 p-2 h-100 bg-white">
                         <p class="small text-muted mb-2">
@@ -718,11 +873,10 @@
                       </div>
                     </div>
 
-                    <!-- ✅ NEW: PRODUCE -->
                     <div class="col-12 col-md-3">
                       <div class="border rounded-3 p-2 h-100 bg-white">
                         <p class="small text-muted mb-2">
-                          🏭 Produce (fabric → product)
+                          <i class="bi bi-building-gear me-1"></i>{{ t('products_produce_title') }}
                         </p>
 
                         <form method="post"
@@ -731,7 +885,7 @@
 
                           <div class="row g-2">
                             <div class="col-6">
-                              <label class="form-label small mb-1">Qty</label>
+                              <label class="form-label small mb-1">{{ t('products_produce_qty') }}</label>
                               <input type="number"
                                      name="quantity"
                                      class="form-control form-control-sm text-end"
@@ -740,7 +894,7 @@
                             </div>
 
                             <div class="col-6">
-                              <label class="form-label small mb-1">Used</label>
+                              <label class="form-label small mb-1">{{ t('products_produce_used') }}</label>
                               <input type="number"
                                      step="0.01"
                                      name="used_amount"
@@ -751,9 +905,9 @@
                           </div>
 
                           <div>
-                            <label class="form-label small mb-1">Fabric</label>
+                            <label class="form-label small mb-1">{{ t('products_produce_fabric') }}</label>
                             <select name="fabric_id" class="form-select form-select-sm" required>
-                              <option value="" selected disabled>Choose fabric...</option>
+                              <option value="" selected disabled>{{ t('products_produce_choose_fabric') }}</option>
                               {% for f in fabrics %}
                                 <option value="{{ f.id }}">
                                   {{ f.name }}{% if f.color %} / {{ f.color }}{% endif %}
@@ -767,10 +921,10 @@
                                  name="note"
                                  class="form-control form-control-sm"
                                  maxlength="255"
-                                 placeholder="Note (optional)">
+                                 placeholder="{{ t('products_produce_note_placeholder') }}">
 
                           <button type="submit" class="btn btn-sm btn-dark w-100">
-                            ✅ Save production
+                            ✅ {{ t('products_produce_save') }}
                           </button>
                         </form>
                       </div>
@@ -784,7 +938,7 @@
           {% else %}
             <tr>
               <td colspan="10" class="text-center text-muted small py-3">
-                {{ t('products_empty_state') if t else 'Пока нет товаров.' }}
+                {{ t('products_empty_state') }}
               </td>
             </tr>
           {% endfor %}
@@ -796,7 +950,6 @@
 
 </div>
 
-<!-- IMPORT EXCEL MODAL (UNCHANGED) -->
 <div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -841,7 +994,6 @@
   </div>
 </div>
 
-<!-- ADD PRODUCT MODAL (AI UPGRADE) -->
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -858,15 +1010,28 @@
         <div class="modal-body p-2 p-md-3">
           <div class="row g-2">
 
-           
-
-            <!-- Normal product photo (your existing) -->
             <div class="col-12 col-md-4">
-              <label class="form-label small mb-1">Фото товара</label>
+              <label class="form-label small mb-1">{{ t('products_photo_product') }}</label>
               <input type="file" name="image" accept="image/*" class="form-control form-control-sm">
               <div class="form-text small text-muted">
-                Это фото сохранится в карточке товара.
+                {{ t('products_photo_product_help') }}
               </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1">{{ t('products_photo_website') }}</label>
+              <input type="file" name="website_image" accept="image/*" class="form-control form-control-sm">
+              <div class="form-text small text-muted">
+                {{ t('products_photo_website_help') }}
+              </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1">{{ t('products_fabric') }}</label>
+              <input type="text"
+                     name="fabric_used"
+                     class="form-control form-control-sm"
+                     placeholder="{{ t('products_fabric_placeholder') }}">
             </div>
 
             <div class="col-12">
@@ -905,13 +1070,13 @@
               </select>
             </div>
 
-            <!-- OPTIONAL: if you later add notes in Product model -->
-            {# 
             <div class="col-12">
-              <label class="form-label small mb-1">Заметки</label>
-              <textarea name="notes" class="form-control form-control-sm" rows="2"></textarea>
+              <label class="form-label small mb-1">{{ t('products_notes_description') }}</label>
+              <textarea name="notes"
+                        class="form-control form-control-sm"
+                        rows="2"
+                        placeholder="{{ t('products_notes_placeholder') }}"></textarea>
             </div>
-            #}
 
           </div>
         </div>
@@ -931,5 +1096,85 @@
   </div>
 </div>
 
+{% for row in products %}
+  {% set p = row.p %}
+
+  {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
+  <div class="modal fade" id="editInfoModal{{ p.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+
+        <div class="modal-header py-2">
+          <h5 class="modal-title fs-6">{{ t('products_edit_info_title') }} - {{ p.name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form method="post"
+              action="{{ url_for('products.update_product_info', product_id=p.id) }}"
+              enctype="multipart/form-data">
+
+          <div class="modal-body p-2 p-md-3">
+            <div class="row g-2">
+
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1">{{ t('products_photo_product') }}</label>
+                <input type="file" name="image" accept="image/*" class="form-control form-control-sm">
+                <div class="form-text small text-muted">
+                  {{ t('products_leave_empty_keep') }}
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1">{{ t('products_photo_website') }}</label>
+                <input type="file" name="website_image" accept="image/*" class="form-control form-control-sm">
+                <div class="form-text small text-muted">
+                  {{ t('products_leave_empty_keep') }}
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small mb-1">{{ t('products_table_col_category') }}</label>
+                <input type="text"
+                       name="category"
+                       class="form-control form-control-sm"
+                       value="{{ p.category or '' }}">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small mb-1">{{ t('products_fabric') }}</label>
+                <input type="text"
+                       name="fabric_used"
+                       class="form-control form-control-sm"
+                       value="{{ p.fabric_used or '' }}"
+                       placeholder="{{ t('products_fabric_placeholder') }}">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small mb-1">{{ t('products_notes_description') }}</label>
+                <textarea name="notes"
+                          class="form-control form-control-sm"
+                          rows="3"
+                          placeholder="{{ t('products_notes_placeholder') }}">{{ p.notes or '' }}</textarea>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="modal-footer py-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+              {{ t('products_modal_cancel_button') }}
+            </button>
+
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="bi bi-save me-1"></i> {{ t('products_save_changes') }}
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}
 
 {% endblock %}

@@ -1,0 +1,727 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('sales_overview_title') }} — Mini Moda{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mm-sales-overview {
+    --mm-bg: #f4f7fb;
+    --mm-card: rgba(255,255,255,.98);
+    --mm-line: rgba(15,23,42,.08);
+    --mm-line-strong: rgba(15,23,42,.14);
+    --mm-text: #0f172a;
+    --mm-muted: #64748b;
+    --mm-primary: #2563eb;
+    --mm-primary-soft: rgba(37,99,235,.10);
+    --mm-success: #059669;
+    --mm-success-soft: rgba(5,150,105,.12);
+    --mm-warning: #d97706;
+    --mm-warning-soft: rgba(217,119,6,.12);
+    --mm-purple: #7c3aed;
+    --mm-purple-soft: rgba(124,58,237,.10);
+    --mm-danger: #dc2626;
+    --mm-danger-soft: rgba(220,38,38,.10);
+    --mm-radius-2xl: 28px;
+    --mm-radius-xl: 22px;
+    --mm-radius-lg: 18px;
+    --mm-shadow: 0 18px 44px rgba(15,23,42,.08);
+    --mm-shadow-soft: 0 10px 24px rgba(15,23,42,.06);
+    color: var(--mm-text);
+  }
+
+  .mm-sales-overview .mm-shell {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 12px 10px 100px;
+  }
+
+  .mm-sales-overview .mm-actions-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .mm-sales-overview .mm-actions-top-right {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .mm-sales-overview .mm-btn {
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    font-weight: 800;
+    border: 1px solid transparent;
+    box-shadow: var(--mm-shadow-soft);
+    transition: .18s ease;
+    cursor: pointer;
+  }
+
+  .mm-sales-overview .mm-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .mm-sales-overview .mm-btn-light {
+    background: #fff;
+    color: var(--mm-text);
+    border-color: var(--mm-line);
+  }
+
+  .mm-sales-overview .mm-btn-primary {
+    background: var(--mm-primary);
+    color: #fff;
+  }
+
+  .mm-sales-overview .mm-btn-warning-light {
+    background: #fff;
+    color: var(--mm-warning);
+    border-color: rgba(217,119,6,.20);
+  }
+
+  .mm-sales-overview .mm-section {
+    background: var(--mm-card);
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius-xl);
+    box-shadow: var(--mm-shadow-soft);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .mm-sales-overview .mm-section-head {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--mm-line);
+  }
+
+  .mm-sales-overview .mm-section-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .mm-sales-overview .mm-section-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: -.02em;
+  }
+
+  .mm-sales-overview .mm-section-subtitle {
+    margin-top: 4px;
+    color: var(--mm-muted);
+    font-size: .84rem;
+    line-height: 1.45;
+  }
+
+  .mm-sales-overview .mm-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .mm-sales-overview .mm-pill-primary {
+    background: var(--mm-primary-soft);
+    color: var(--mm-primary);
+  }
+
+  .mm-sales-overview .mm-pill-success {
+    background: var(--mm-success-soft);
+    color: var(--mm-success);
+  }
+
+  .mm-sales-overview .mm-section-body {
+    padding: 12px 16px 14px;
+  }
+
+  /* =========================
+     SALES BY PERIOD - compact
+     ========================= */
+  .mm-sales-overview .mm-period-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 8px;
+  }
+
+  .mm-sales-overview .mm-period-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+  }
+
+  .mm-sales-overview .mm-period-card {
+    border: 1px solid var(--mm-line);
+    border-radius: 16px;
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,.05), transparent 42%),
+      linear-gradient(180deg, #fff, #fbfdff);
+    padding: 10px;
+    min-width: 0;
+    transition: .18s ease;
+  }
+
+  .mm-sales-overview .mm-period-link:hover .mm-period-card {
+    transform: translateY(-1px);
+    box-shadow: var(--mm-shadow-soft);
+    border-color: rgba(37,99,235,.18);
+  }
+
+  .mm-sales-overview .mm-period-card.is-today {
+    border-color: rgba(37,99,235,.16);
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,.09), transparent 42%),
+      linear-gradient(180deg, #ffffff, #f8fbff);
+  }
+
+  .mm-sales-overview .mm-period-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+
+  .mm-sales-overview .mm-period-label {
+    color: var(--mm-muted);
+    font-size: .71rem;
+    font-weight: 900;
+    letter-spacing: .01em;
+    margin: 0;
+  }
+
+  .mm-sales-overview .mm-period-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 22px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--mm-primary-soft);
+    color: var(--mm-primary);
+    font-size: .64rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .mm-sales-overview .mm-period-main {
+    font-size: .96rem;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -.02em;
+    word-break: break-word;
+  }
+
+  .mm-sales-overview .mm-period-sub {
+    margin-top: 7px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .mm-sales-overview .mm-period-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    border: 1px solid var(--mm-line);
+    background: #fff;
+    color: var(--mm-muted);
+    font-size: .67rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  /* =========================
+     FACTORY GRID
+     ========================= */
+  .mm-sales-overview .mm-factory-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 10px;
+  }
+
+  .mm-sales-overview .mm-factory-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .mm-sales-overview .mm-factory-card {
+    border: 1px solid var(--mm-line);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,.06), transparent 38%),
+      linear-gradient(180deg, #ffffff, #fbfdff);
+    padding: 11px;
+    min-height: 100%;
+    transition: .18s ease;
+  }
+
+  .mm-sales-overview .mm-factory-link:hover .mm-factory-card {
+    transform: translateY(-1px);
+    box-shadow: var(--mm-shadow-soft);
+    border-color: rgba(37,99,235,.18);
+  }
+
+  .mm-sales-overview .mm-factory-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  .mm-sales-overview .mm-factory-name {
+    margin: 0;
+    font-size: .9rem;
+    font-weight: 900;
+    line-height: 1.24;
+    word-break: break-word;
+  }
+
+  .mm-sales-overview .mm-factory-badge {
+    flex-shrink: 0;
+    max-width: 54%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 27px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .mm-sales-overview .mm-factory-badge-danger {
+    background: var(--mm-danger-soft);
+    color: var(--mm-danger);
+  }
+
+  .mm-sales-overview .mm-factory-badge-success {
+    background: var(--mm-success-soft);
+    color: var(--mm-success);
+  }
+
+  .mm-sales-overview .mm-factory-main {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  .mm-sales-overview .mm-mini-stat {
+    border: 1px solid var(--mm-line);
+    border-radius: 13px;
+    background: rgba(255,255,255,.92);
+    padding: 8px 9px;
+    min-width: 0;
+  }
+
+  .mm-sales-overview .mm-mini-stat-k {
+    font-size: .66rem;
+    color: var(--mm-muted);
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .mm-sales-overview .mm-mini-stat-v {
+    font-size: .82rem;
+    font-weight: 900;
+    line-height: 1.18;
+    word-break: break-word;
+  }
+
+  .mm-sales-overview .mm-mini-stat-v.mm-profit {
+    color: var(--mm-success);
+  }
+
+  .mm-sales-overview .mm-mini-stat-v.mm-due {
+    color: var(--mm-purple);
+  }
+
+  .mm-sales-overview .mm-factory-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 9px;
+  }
+
+  .mm-sales-overview .mm-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 27px;
+    padding: 0 8px;
+    border-radius: 999px;
+    border: 1px solid var(--mm-line);
+    background: #fff;
+    color: var(--mm-muted);
+    font-size: .68rem;
+    font-weight: 800;
+  }
+
+  .mm-sales-overview .mm-factory-open {
+    font-size: .74rem;
+    font-weight: 900;
+    color: var(--mm-primary);
+  }
+
+  .mm-sales-overview .mm-empty {
+    text-align: center;
+    padding: 24px 14px;
+    color: var(--mm-muted);
+  }
+
+  .mm-sales-overview .mm-empty-emoji {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+
+  .mm-sales-overview .mm-empty-title {
+    font-size: .95rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    margin-bottom: 4px;
+  }
+
+  .mm-sales-overview .mm-empty-text {
+    margin: 0 auto;
+    max-width: 520px;
+    font-size: .84rem;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 900px) {
+    .mm-sales-overview .mm-period-grid {
+      grid-template-columns: repeat(3, minmax(0,1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .mm-sales-overview .mm-shell {
+      padding: 10px 10px 96px;
+    }
+
+    .mm-sales-overview .mm-actions-top {
+      align-items: stretch;
+    }
+
+    .mm-sales-overview .mm-actions-top-right {
+      width: 100%;
+      justify-content: stretch;
+    }
+
+    .mm-sales-overview .mm-actions-top-right .mm-btn {
+      flex: 1 1 0;
+    }
+
+    .mm-sales-overview .mm-section {
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    .mm-sales-overview .mm-section-head {
+      padding: 13px 14px 9px;
+    }
+
+    .mm-sales-overview .mm-section-body {
+      padding: 11px 14px 13px;
+    }
+
+    .mm-sales-overview .mm-section-title {
+      font-size: .95rem;
+    }
+
+    .mm-sales-overview .mm-section-subtitle {
+      font-size: .8rem;
+    }
+
+    .mm-sales-overview .mm-period-grid {
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 8px;
+    }
+
+    .mm-sales-overview .mm-period-card {
+      padding: 9px;
+      border-radius: 14px;
+    }
+
+    .mm-sales-overview .mm-period-label {
+      font-size: .67rem;
+    }
+
+    .mm-sales-overview .mm-period-mini {
+      font-size: .61rem;
+      min-height: 20px;
+      padding: 0 6px;
+    }
+
+    .mm-sales-overview .mm-period-main {
+      font-size: .86rem;
+    }
+
+    .mm-sales-overview .mm-period-chip {
+      font-size: .63rem;
+      min-height: 22px;
+      padding: 0 7px;
+    }
+
+    .mm-sales-overview .mm-factory-grid {
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 8px;
+    }
+
+    .mm-sales-overview .mm-factory-card {
+      padding: 10px;
+      border-radius: 16px;
+    }
+
+    .mm-sales-overview .mm-factory-name {
+      font-size: .84rem;
+    }
+
+    .mm-sales-overview .mm-factory-badge {
+      font-size: .64rem;
+      padding: 0 8px;
+      min-height: 25px;
+    }
+
+    .mm-sales-overview .mm-mini-stat {
+      padding: 8px;
+      border-radius: 12px;
+    }
+
+    .mm-sales-overview .mm-mini-stat-k {
+      font-size: .62rem;
+    }
+
+    .mm-sales-overview .mm-mini-stat-v {
+      font-size: .78rem;
+    }
+
+    .mm-sales-overview .mm-chip {
+      font-size: .66rem;
+      min-height: 25px;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .mm-sales-overview .mm-period-grid,
+    .mm-sales-overview .mm-factory-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-sales-overview .mm-actions-top-right {
+      flex-direction: column;
+    }
+
+    .mm-sales-overview .mm-actions-top-right .mm-btn {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set summary = summary if summary is defined and summary else {} %}
+{% set factory_groups = factory_groups if factory_groups is defined and factory_groups else [] %}
+
+<div class="mm-sales-overview">
+  <div class="mm-shell">
+
+    <div class="mm-actions-top">
+      <div></div>
+      <div class="mm-actions-top-right">
+        <a href="{{ url_for('sales.shop_sales_log') }}" class="mm-btn mm-btn-light">
+          <span>🕘</span><span>{{ t('sales_log_title') }}</span>
+        </a>
+
+        <a href="{{ url_for('sales.shop_realizatsiya') }}" class="mm-btn mm-btn-warning-light">
+          <span>💳</span><span>{{ t('realizatsiya_title') }}</span>
+        </a>
+      </div>
+    </div>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('sales_overview_period_title') }}</h2>
+          <span class="mm-pill mm-pill-primary">{{ t('sales_overview_quick_view') }}</span>
+        </div>
+        <div class="mm-section-subtitle">
+          {{ t('sales_overview_period_subtitle') }}
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        <div class="mm-period-grid">
+          <a href="{{ url_for('sales.shop_sales_log', period='today') }}" class="mm-period-link">
+            <div class="mm-period-card is-today">
+              <div class="mm-period-top">
+                <div class="mm-period-label">{{ t('today_label') }}</div>
+                <span class="mm-period-mini">{{ t('sales_overview_live') }}</span>
+              </div>
+
+              <div class="mm-period-main">
+                {{ summary.today_sales_amount if summary.today_sales_amount is defined else 0 }}
+                {{ summary.currency if summary.currency is defined else 'UZS' }}
+              </div>
+
+              <div class="mm-period-sub">
+                <span class="mm-period-chip">{{ t('quantity') }}: {{ summary.today_qty if summary.today_qty is defined else 0 }}</span>
+                <span class="mm-period-chip">{{ t('profit_label') }}: {{ summary.today_profit if summary.today_profit is defined else 0 }}</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="{{ url_for('sales.shop_sales_log', period='yesterday') }}" class="mm-period-link">
+            <div class="mm-period-card">
+              <div class="mm-period-top">
+                <div class="mm-period-label">{{ t('yesterday_label') }}</div>
+                <span class="mm-period-mini">{{ t('sales_overview_past') }}</span>
+              </div>
+
+              <div class="mm-period-main">
+                {{ summary.yesterday_sales_amount if summary.yesterday_sales_amount is defined else 0 }}
+                {{ summary.currency if summary.currency is defined else 'UZS' }}
+              </div>
+
+              <div class="mm-period-sub">
+                <span class="mm-period-chip">{{ t('quantity') }}: {{ summary.yesterday_qty if summary.yesterday_qty is defined else 0 }}</span>
+                <span class="mm-period-chip">{{ t('profit_label') }}: {{ summary.yesterday_profit if summary.yesterday_profit is defined else 0 }}</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="{{ url_for('sales.shop_sales_log', period='week') }}" class="mm-period-link">
+            <div class="mm-period-card">
+              <div class="mm-period-top">
+                <div class="mm-period-label">{{ t('week_label') }}</div>
+                <span class="mm-period-mini">7d</span>
+              </div>
+
+              <div class="mm-period-main">
+                {{ summary.week_sales_amount if summary.week_sales_amount is defined else 0 }}
+                {{ summary.currency if summary.currency is defined else 'UZS' }}
+              </div>
+
+              <div class="mm-period-sub">
+                <span class="mm-period-chip">{{ t('quantity') }}: {{ summary.week_qty if summary.week_qty is defined else 0 }}</span>
+                <span class="mm-period-chip">{{ t('profit_label') }}: {{ summary.week_profit if summary.week_profit is defined else 0 }}</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('sales_overview_factory_title') }}</h2>
+          <span class="mm-pill mm-pill-success">{{ t('sales_overview_factories_count').format(count=factory_groups|length) }}</span>
+        </div>
+        <div class="mm-section-subtitle">
+          {{ t('sales_overview_factory_subtitle') }}
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        {% if factory_groups %}
+          <div class="mm-factory-grid">
+            {% for group in factory_groups %}
+              <a href="{{ url_for('sales.shop_sales_factory_detail', factory_id=group.factory_id) }}" class="mm-factory-link">
+                <article class="mm-factory-card">
+                  <div class="mm-factory-top">
+                    <h3 class="mm-factory-name">🏭 {{ group.factory_name if group.factory_name is defined else t('factory_badge') }}</h3>
+
+                    {% set remaining_value = group.remaining_amount if group.remaining_amount is defined else 0 %}
+                    <span class="mm-factory-badge {% if remaining_value > 0 %}mm-factory-badge-danger{% else %}mm-factory-badge-success{% endif %}">
+                      {% if remaining_value > 0 %}
+                        {{ t('remaining_label') }}
+                      {% else %}
+                        {{ t('settled_label') }}
+                      {% endif %}
+                    </span>
+                  </div>
+
+                  <div class="mm-factory-main">
+                    <div class="mm-mini-stat">
+                      <div class="mm-mini-stat-k">{{ t('revenue_label') }}</div>
+                      <div class="mm-mini-stat-v">
+                        {{ group.total_sales_amount if group.total_sales_amount is defined else 0 }}
+                        {{ group.currency if group.currency is defined else 'UZS' }}
+                      </div>
+                    </div>
+
+                    <div class="mm-mini-stat">
+                      <div class="mm-mini-stat-k">{{ t('profit_label') }}</div>
+                      <div class="mm-mini-stat-v mm-profit">
+                        {{ group.total_profit if group.total_profit is defined else 0 }}
+                        {{ group.currency if group.currency is defined else 'UZS' }}
+                      </div>
+                    </div>
+
+                    <div class="mm-mini-stat">
+                      <div class="mm-mini-stat-k">{{ t('due_label') }}</div>
+                      <div class="mm-mini-stat-v mm-due">
+                        {{ group.realizatsiya_due_amount if group.realizatsiya_due_amount is defined else 0 }}
+                        {{ group.currency if group.currency is defined else 'UZS' }}
+                      </div>
+                    </div>
+
+                    <div class="mm-mini-stat">
+                      <div class="mm-mini-stat-k">{{ t('remaining_label') }}</div>
+                      <div class="mm-mini-stat-v {% if remaining_value > 0 %}mm-remaining{% else %}mm-remaining-ok{% endif %}">
+                        {{ remaining_value }}
+                        {{ group.currency if group.currency is defined else 'UZS' }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mm-factory-meta">
+                    <span class="mm-chip">{{ t('sold_label') }}: {{ group.total_qty if group.total_qty is defined else 0 }} {{ t('pieces_short') }}</span>
+                    <span class="mm-chip">{{ t('in_shop_label') }}: {{ group.qty_in_shop if group.qty_in_shop is defined else 0 }} {{ t('pieces_short') }}</span>
+                    <span class="mm-chip">{{ t('skus_label') }}: {{ group.total_skus if group.total_skus is defined else 0 }}</span>
+                  </div>
+
+                  <div class="mm-factory-open">{{ t('sales_overview_open_factory_detail') }}</div>
+                </article>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="mm-empty">
+            <div class="mm-empty-emoji">📭</div>
+            <div class="mm-empty-title">{{ t('sales_overview_empty_title') }}</div>
+            <p class="mm-empty-text">
+              {{ t('sales_overview_empty_subtitle') }}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+  </div>
+</div>
+
+{% endblock %}

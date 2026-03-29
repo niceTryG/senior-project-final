@@ -100,6 +100,38 @@ def list_fabrics():
         "value_uzs": total_value_uzs,
     }
 
+    # --------------------------------------------------
+    # CHART 1: TOP FABRICS BY QUANTITY
+    # --------------------------------------------------
+    fabrics_for_chart = sorted(
+        fabrics,
+        key=lambda f: float(f.quantity or 0),
+        reverse=True
+    )[:8]
+
+    fabric_chart_labels = [
+        f"{f.name}" + (f" ({f.color})" if f.color else "")
+        for f in fabrics_for_chart
+    ]
+    fabric_chart_quantities = [
+        float(f.quantity or 0)
+        for f in fabrics_for_chart
+    ]
+
+    # --------------------------------------------------
+    # CHART 2: RECENT CUTS USAGE
+    # --------------------------------------------------
+    recent_cuts_for_chart = cuts[:8]
+
+    fabric_cut_chart_labels = [
+        c.fabric.name if c.fabric else f"ID {c.fabric_id}"
+        for c in recent_cuts_for_chart
+    ]
+    fabric_cut_chart_values = [
+        float(c.used_amount or 0)
+        for c in recent_cuts_for_chart
+    ]
+
     return render_template(
         "fabrics/list.html",
         fabrics=fabrics,
@@ -114,8 +146,13 @@ def list_fabrics():
         usd_uzs_rate=usd_uzs_rate,
         is_latest_view=is_latest_view,
         view_stats=view_stats,
-    )
 
+        # chart data
+        fabric_chart_labels=fabric_chart_labels,
+        fabric_chart_quantities=fabric_chart_quantities,
+        fabric_cut_chart_labels=fabric_cut_chart_labels,
+        fabric_cut_chart_values=fabric_cut_chart_values,
+    )
 
 @fabrics_bp.route("/add", methods=["POST"])
 @login_required

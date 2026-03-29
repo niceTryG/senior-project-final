@@ -30,49 +30,49 @@
 </head>
 <body>
 
-<h1>Отчёт руководителя — Mini Moda</h1>
+<h1>{{ t('manager_report_title') }} - Mini Moda</h1>
 <h2>{{ period }}</h2>
 
 <div class="section">
-    <h3>1. Стоимость складов</h3>
+    <h3>1. {{ t('manager_summary_warehouses') }}</h3>
     <table>
-        <tr><th>Показатель</th><th>Сумма (UZS)</th></tr>
-        <tr><td>Склад фабрики</td><td>{{ factory_uzs }}</td></tr>
-        <tr><td>Склад магазина</td><td>{{ shop_uzs }}</td></tr>
-        <tr><td><strong>Итого</strong></td><td><strong>{{ total_uzs }}</strong></td></tr>
+        <tr><th>{{ t('label_metric') }}</th><th>{{ t('label_amount_uzs') }}</th></tr>
+        <tr><td>{{ t('manager_factory_stock_value') }}</td><td>{{ factory_uzs }}</td></tr>
+        <tr><td>{{ t('manager_shop_stock_value') }}</td><td>{{ shop_uzs }}</td></tr>
+        <tr><td><strong>{{ t('label_total') }}</strong></td><td><strong>{{ total_uzs }}</strong></td></tr>
     </table>
 </div>
 
 <div class="section">
-    <h3>2. Продажи</h3>
+    <h3>2. {{ t('sales') }}</h3>
     <table>
-        <tr><th>Период</th><th>Сумма (UZS)</th></tr>
-        <tr><td>Сегодня</td><td>{{ today_sales }}</td></tr>
-        <tr><td>Этот месяц</td><td>{{ month_sales }}</td></tr>
+        <tr><th>{{ t('label_period') }}</th><th>{{ t('label_amount_uzs') }}</th></tr>
+        <tr><td>{{ t('dashboard_manager_production_today') }}</td><td>{{ today_sales }}</td></tr>
+        <tr><td>{{ t('label_this_month') }}</td><td>{{ month_sales }}</td></tr>
     </table>
 </div>
 
 <div class="section">
-    <h3>3. Производство</h3>
+    <h3>3. {{ t('dashboard_manager_production_title') }}</h3>
     <table>
-        <tr><th>Показатель</th><th>Количество</th></tr>
-        <tr><td>Сегодня</td><td>{{ produced_today }}</td></tr>
-        <tr><td>Всего</td><td>{{ produced_total }}</td></tr>
+        <tr><th>{{ t('label_metric') }}</th><th>{{ t('quantity') }}</th></tr>
+        <tr><td>{{ t('dashboard_manager_production_today') }}</td><td>{{ produced_today }}</td></tr>
+        <tr><td>{{ t('dashboard_manager_production_total') }}</td><td>{{ produced_total }}</td></tr>
     </table>
 </div>
 
 <div class="section">
-    <h3>4. Материалы</h3>
+    <h3>4. {{ t('menu_fabrics') }}</h3>
     <table>
-        <tr><th>Показатель</th><th>Значение</th></tr>
-        <tr><td>Всего тканей</td><td>{{ fabric_count }}</td></tr>
-        <tr><td>Стоимость тканей</td><td>{{ fabric_value }}</td></tr>
-        <tr><td>Мало ткани</td><td>{{ fabric_low }}</td></tr>
+        <tr><th>{{ t('label_metric') }}</th><th>{{ t('label_value') }}</th></tr>
+        <tr><td>{{ t('manager_total_fabrics') }}</td><td>{{ fabric_count }}</td></tr>
+        <tr><td>{{ t('manager_fabric_value') }}</td><td>{{ fabric_value }}</td></tr>
+        <tr><td>{{ t('manager_low_fabric_stock') }}</td><td>{{ fabric_low }}</td></tr>
     </table>
 </div>
 
 <p style="text-align:center; margin-top:40px;">
-    <em>Автоматически сгенерировано системой Mini Moda</em>
+    <em>{{ t('manager_auto_generated_note') }}</em>
 </p>
 
 </body>

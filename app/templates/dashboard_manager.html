@@ -1,29 +1,14 @@
 {% extends "base.html" %}
 
-{# =========================
-   TOP BANNER (optional)
-   If you prefer greeting inside content only, delete this block.
-   ========================= #}
 {% block top_banner %}
-  {% set uname = (current_user.username or '')|lower %}
-  {% if 'muzaffar' in uname %}
-    {% set display_name = "Muzaffar" %}
-  {% elif 'rano' in uname or "ra'no" in uname %}
-    {% set display_name = "Ra'no" %}
-  {% elif 'ibro' in uname or 'ibrahim' in uname %}
-    {% set display_name = "Ibrokhim" %}
-  {% elif 'doniyor' in uname %}
-    {% set display_name = "Doniyor" %}
-  {% else %}
-    {% set display_name = current_user.username %}
-  {% endif %}
+  {% set display_name = current_user.full_name or current_user.username or t('generic_user') %}
 
   <div class="mm-top-banner">
     <div class="container-fluid">
       <div class="container-lg">
         <div class="d-flex justify-content-between align-items-center gap-2">
           <div class="mm-top-banner-greet">
-            السلام عليكم, {{ display_name }} 👋
+            {{ t('dashboard_greeting') }}, {{ display_name }} 👋
           </div>
           <span class="badge bg-primary mm-pill" style="white-space:nowrap;">
             {{ current_date|default('') }}
@@ -34,13 +19,7 @@
   </div>
 {% endblock %}
 
-
-{% block content %}
-
-{# =========================================================
-  Dad-friendly Factory Dashboard (Manager) — PRODUCT-FIRST
-========================================================= #}
-
+{% block extra_css %}
 <style>
   .mm-dash { padding-top: 10px; padding-bottom: 96px; }
   .mm-card { border-radius: 18px; }
@@ -81,6 +60,9 @@
   .mm-progress { height: 9px; border-radius: 999px; overflow:hidden; }
   .mm-progress .progress-bar { border-radius: 999px; }
 </style>
+{% endblock %}
+
+{% block content %}
 
 {% set factory_uzs_v = factory_uzs|default(0) %}
 {% set shop_uzs_v = shop_uzs|default(0) %}
@@ -90,43 +72,38 @@
 
 <div class="container-fluid mm-dash dad-padding">
 
-  {# ===== HEADER (small subtitle only; greeting is in top_banner) ===== #}
-  
-
-  {# ===== QUICK ACTIONS ===== #}
   <div class="card shadow-sm border-0 mb-3 mm-card">
     <div class="card-body py-2">
-      <div class="mm-kpi-title mb-2">Главные действия</div>
+      <div class="mm-kpi-title mb-2">{{ t('dashboard_main_actions') }}</div>
 
       <div class="row g-2">
         <div class="col-12 col-md-4">
           <a href="{{ url_for('factory.produce_today') }}" class="btn btn-primary w-100 mm-btn-neo">
-            🏭 Производство сегодня
+            🏭 {{ t('dashboard_production_today') }}
           </a>
         </div>
 
         <div class="col-12 col-md-4">
           <a href="{{ url_for('shop.transfer_to_shop') }}" class="btn btn-warning w-100 mm-btn-neo">
-            🚚 Передать в магазин
+            🚚 {{ t('dashboard_transfer_to_shop') }}
           </a>
         </div>
 
         <div class="col-12 col-md-4">
           <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-primary w-100 mm-btn-neo">
-            ➕ Товары (добавить / цены)
+            ➕ {{ t('dashboard_products_add_prices') }}
           </a>
         </div>
 
         <div class="col-12">
           <a href="{{ url_for('shop.list_shop') }}" class="mm-chip">
-            🏪 Склад магазина (остатки)
+            🏪 {{ t('dashboard_shop_stock_remaining') }}
           </a>
         </div>
       </div>
     </div>
   </div>
 
-  {# ===== TOP KPI CARDS ===== #}
   <div class="row g-2 g-md-3 mb-3">
 
     <div class="col-6 col-md-3">
@@ -134,10 +111,10 @@
         <div class="card shadow-sm border-0 h-100 mm-card">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="mm-kpi-title">Вчера передано</span>
+              <span class="mm-kpi-title">{{ t('dashboard_yesterday_transferred') }}</span>
             </div>
-            <div class="mm-kpi-value">{{ yesterday_transfer_total|default(0) }} шт</div>
-            <div class="mm-mini mm-muted">фабрика → магазин</div>
+            <div class="mm-kpi-value">{{ yesterday_transfer_total|default(0) }} {{ t('pieces_short') }}</div>
+            <div class="mm-mini mm-muted">{{ t('dashboard_factory_to_shop') }}</div>
           </div>
         </div>
       </a>
@@ -148,12 +125,12 @@
         <div class="card shadow-sm border-0 h-100 mm-card">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="mm-kpi-title">Магазин: мало</span>
+              <span class="mm-kpi-title">{{ t('dashboard_shop_low') }}</span>
             </div>
             <div class="mm-kpi-value {% if (shop_low_stock_count|default(0))|int > 0 %}text-danger{% else %}text-success{% endif %}">
               {{ shop_low_stock_count|default(0) }}
             </div>
-            <div class="mm-mini mm-muted">товаров &lt; 5 шт</div>
+            <div class="mm-mini mm-muted">{{ t('dashboard_items_less_than_5') }}</div>
           </div>
         </div>
       </a>
@@ -164,10 +141,10 @@
         <div class="card shadow-sm border-0 h-100 mm-card">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="mm-kpi-title">Сегодня произведено</span>
+              <span class="mm-kpi-title">{{ t('dashboard_produced_today') }}</span>
             </div>
-            <div class="mm-kpi-value">{{ produced_today_total|default(0) }} шт</div>
-            <div class="mm-mini mm-muted">моделей: {{ produced_today_models|default(0) }}</div>
+            <div class="mm-kpi-value">{{ produced_today_total|default(0) }} {{ t('pieces_short') }}</div>
+            <div class="mm-mini mm-muted">{{ t('dashboard_models_count') }}: {{ produced_today_models|default(0) }}</div>
           </div>
         </div>
       </a>
@@ -178,10 +155,10 @@
         <div class="card shadow-sm border-0 h-100 mm-card">
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="mm-kpi-title">Товары всего</span>
+              <span class="mm-kpi-title">{{ t('dashboard_total_goods') }}</span>
             </div>
             <div class="mm-kpi-value">{{ format_money(total_uzs|default(0), 'UZS') }}</div>
-            <div class="mm-mini mm-muted">фабрика + магазин</div>
+            <div class="mm-mini mm-muted">{{ t('dashboard_factory_plus_shop') }}</div>
           </div>
         </div>
       </a>
@@ -189,21 +166,20 @@
 
   </div>
 
-  {# ===== STOCK SPLIT (Factory vs Shop) ===== #}
   <div class="card shadow-sm border-0 mb-3 mm-card">
     <div class="card-body py-2">
       <div class="d-flex justify-content-between align-items-center mb-1">
-        <div class="fw-semibold">📦 Остатки по складам</div>
-        <a href="{{ url_for('products.factory_stock') }}" class="mm-mini text-decoration-none">открыть отчёт →</a>
+        <div class="fw-semibold">📦 {{ t('dashboard_stock_split') }}</div>
+        <a href="{{ url_for('products.factory_stock') }}" class="mm-mini text-decoration-none">{{ t('dashboard_open_report') }}</a>
       </div>
 
       <div class="mt-2">
         <div class="mm-rowline">
-          <div class="mm-mini mm-muted">Фабрика</div>
+          <div class="mm-mini mm-muted">{{ t('dashboard_factory') }}</div>
           <div class="fw-bold">{{ format_money(factory_uzs_v, 'UZS') }}</div>
         </div>
         <div class="mm-rowline">
-          <div class="mm-mini mm-muted">Магазин</div>
+          <div class="mm-mini mm-muted">{{ t('dashboard_shop') }}</div>
           <div class="fw-bold">{{ format_money(shop_uzs_v, 'UZS') }}</div>
         </div>
       </div>
@@ -215,19 +191,20 @@
           <div class="progress-bar bg-warning" role="progressbar" style="width: {{ shop_pct }}%;"
                aria-valuenow="{{ shop_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
-        <div class="mm-mini mm-muted mt-1">Фабрика: {{ factory_pct }}% • Магазин: {{ shop_pct }}%</div>
+        <div class="mm-mini mm-muted mt-1">
+          {{ t('dashboard_factory') }}: {{ factory_pct }}% • {{ t('dashboard_shop') }}: {{ shop_pct }}%
+        </div>
       {% else %}
-        <div class="mm-mini mm-muted mt-2">Пока нет данных по складу.</div>
+        <div class="mm-mini mm-muted mt-2">{{ t('dashboard_no_stock_data') }}</div>
       {% endif %}
     </div>
   </div>
 
-  {# ===== SHOP LOW STOCK LIST ===== #}
   <div class="card shadow-sm border-0 mb-3 mm-card">
     <div class="card-body py-2">
       <div class="d-flex justify-content-between align-items-center mb-1">
-        <div class="fw-semibold">⚠️ Магазин: товары заканчиваются</div>
-        <a href="{{ url_for('shop.list_shop') }}" class="mm-mini text-decoration-none">открыть склад →</a>
+        <div class="fw-semibold">⚠️ {{ t('dashboard_shop_running_out') }}</div>
+        <a href="{{ url_for('shop.list_shop') }}" class="mm-mini text-decoration-none">{{ t('dashboard_open_stock') }}</a>
       </div>
 
       {% if shop_low_stock_items and shop_low_stock_items|length %}
@@ -235,28 +212,29 @@
           {% for it in shop_low_stock_items %}
             <div class="d-flex justify-content-between align-items-center mm-topitem">
               <div class="text-truncate" style="min-width:0;">{{ it.name }}</div>
-              <div class="fw-bold {% if (it.qty|int) <= 0 %}text-danger{% endif %}">{{ it.qty }} шт</div>
+              <div class="fw-bold {% if (it.qty|int) <= 0 %}text-danger{% endif %}">
+                {{ it.qty }} {{ t('pieces_short') }}
+              </div>
             </div>
           {% endfor %}
         </div>
 
         <div class="d-grid mt-2">
           <a href="{{ url_for('shop.transfer_to_shop') }}" class="btn btn-warning mm-btn-neo-sm w-100">
-            🚚 Быстро пополнить магазин
+            🚚 {{ t('dashboard_restock_shop_fast') }}
           </a>
         </div>
       {% else %}
-        <div class="mm-mini mm-muted mt-2">Отлично 👍 В магазине нет товаров с остатком меньше 5.</div>
+        <div class="mm-mini mm-muted mt-2">{{ t('dashboard_no_low_stock') }}</div>
       {% endif %}
     </div>
   </div>
 
-  {# ===== CASH ===== #}
   <div class="card shadow-sm border-0 mb-3 mm-card">
     <div class="card-body py-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
       <div>
-        <div class="fw-semibold">💰 Касса</div>
-        <div class="mm-mini mm-muted">для контроля денег</div>
+        <div class="fw-semibold">💰 {{ t('dashboard_cash') }}</div>
+        <div class="mm-mini mm-muted">{{ t('dashboard_cash_control') }}</div>
       </div>
       <div class="text-md-end">
         <div class="fw-bold">{{ format_money(cash_total_uzs|default(0), 'UZS') }}</div>
@@ -264,7 +242,7 @@
       </div>
       <div class="d-grid d-md-block">
         <a href="{{ url_for('cash.list_cash') }}" class="btn btn-outline-dark mm-btn-neo-sm w-100">
-          Открыть кассу
+          {{ t('dashboard_open_cash') }}
         </a>
       </div>
     </div>

@@ -1,22 +1,180 @@
 {% extends "base.html" %}
+
+{% block title %}{{ t('admin_create_user_title') }}{% endblock %}
+
 {% block content %}
-<h2>Create User</h2>
+<style>
+  .mm-user-form-page{
+    padding-top:10px;
+    padding-bottom:96px;
+  }
 
-<form method="POST">
-    <label>Username:</label><br>
-    <input type="text" name="username"><br><br>
+  .mm-card{
+    border-radius:18px;
+    border:0;
+    box-shadow:0 10px 28px rgba(16,24,40,0.06);
+  }
 
-    <label>Password:</label><br>
-    <input type="password" name="password"><br><br>
+  .mm-btn{
+    border-radius:14px;
+    font-weight:800;
+  }
 
-    <label>Role:</label><br>
-    <select name="role">
-        <option value="manager">Manager</option>
-        <option value="shop">Shop</option>
-        <option value="accountant">Accountant</option>
-        <option value="viewer">Viewer</option>
-    </select><br><br>
+  .form-control, .form-select{
+    border-radius:12px;
+  }
+</style>
 
-    <button type="submit">Create</button>
-</form>
+<div class="container-fluid mm-user-form-page">
+  <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="h4 mb-0">{{ t('admin_create_user_title') }}</h1>
+      <div class="small text-muted">
+        {{ t('admin_create_user_subtitle') }}
+      </div>
+    </div>
+
+    <a href="{{ url_for('auth.list_users') }}" class="btn btn-outline-secondary btn-sm mm-btn">
+      ? {{ t('btn_back') }}
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0 mm-card">
+    <div class="card-body p-3 p-md-4">
+      <form method="post" class="row g-3">
+
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">{{ t('label_username') }}</label>
+          <input type="text" name="username" class="form-control" required>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">{{ t('label_password') }}</label>
+          <input type="password" name="password" class="form-control" required>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <label class="form-label small mb-1">{{ t('label_role') }}</label>
+          <select name="role" id="roleSelect" class="form-select" required>
+            {% if current_user.is_superadmin %}
+              <option value="admin">{{ t('role_admin') }}</option>
+            {% endif %}
+            <option value="manager" selected>{{ t('role_manager') }}</option>
+            <option value="viewer">{{ t('role_viewer') }}</option>
+            <option value="shop">{{ t('role_shop') }}</option>
+            <option value="accountant">{{ t('role_accountant') }}</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <label class="form-label small mb-1">{{ t('label_factory') }}</label>
+          <select name="factory_id"
+                  id="factorySelect"
+                  class="form-select"
+                  {% if not current_user.is_superadmin %}disabled{% endif %}>
+            <option value="">{{ t('shop_list_only_dash') }}</option>
+            {% for f in factories %}
+              <option value="{{ f.id }}" {% if selected_factory_id == f.id %}selected{% endif %}>
+                {{ f.name }}
+              </option>
+            {% endfor %}
+          </select>
+          {% if not current_user.is_superadmin %}
+            <input type="hidden" name="factory_id" value="{{ selected_factory_id }}">
+          {% endif %}
+        </div>
+
+        <div class="col-12 col-md-4">
+          <label class="form-label small mb-1">{{ t('label_shop') }}</label>
+          <select name="shop_id" id="shopSelect" class="form-select">
+            <option value="">{{ t('shop_list_only_dash') }}</option>
+            {% for s in shops %}
+              <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">
+            {{ t('admin_create_user_shop_hint') }}
+          </div>
+        </div>
+
+        <div class="col-12 d-flex gap-2 flex-wrap">
+          <button type="submit" class="btn btn-success mm-btn">
+            ? {{ t('admin_create_user_title') }}
+          </button>
+          <a href="{{ url_for('auth.list_users') }}" class="btn btn-outline-secondary mm-btn">
+            {{ t('btn_cancel') }}
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const factorySelect = document.getElementById("factorySelect");
+  const shopSelect = document.getElementById("shopSelect");
+  const roleSelect = document.getElementById("roleSelect");
+
+  async function loadShops(factoryId, selectedShopId = "") {
+    if (!shopSelect) return;
+
+    shopSelect.innerHTML = '<option value=>{{ t('shop_list_only_dash') }}</option>';
+
+    if (!factoryId) return;
+
+    try {
+      const res = await fetch(`{{ url_for('auth.shops_by_factory') }}?factory_id=${factoryId}`, {
+        headers: { "Accept": "application/json" }
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const items = data.items || [];
+
+      items.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = String(item.id);
+        opt.textContent = item.name;
+        if (selectedShopId && String(item.id) === String(selectedShopId)) {
+          opt.selected = true;
+        }
+        shopSelect.appendChild(opt);
+      });
+    } catch (e) {
+      console.error("Failed to load shops", e);
+    }
+  }
+
+  function syncShopState() {
+    const role = roleSelect ? roleSelect.value : "";
+    if (!shopSelect) return;
+
+    if (role === "shop") {
+      shopSelect.disabled = false;
+    } else {
+      shopSelect.value = "";
+      shopSelect.disabled = true;
+    }
+  }
+
+  if (factorySelect) {
+    factorySelect.addEventListener("change", function () {
+      loadShops(factorySelect.value);
+    });
+  }
+
+  if (roleSelect) {
+    roleSelect.addEventListener("change", syncShopState);
+  }
+
+  syncShopState();
+
+  if (factorySelect && factorySelect.value) {
+    loadShops(factorySelect.value);
+  }
+});
+</script>
 {% endblock %}

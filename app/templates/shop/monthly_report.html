@@ -1,73 +1,787 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="mb-3">📅 Месячный отчёт (магазин)</h2>
+{% set ns = namespace(
+    max_daily_total=0,
+    best_day_total=0,
+    best_day_date='—',
+    max_product_qty=0,
+    best_product_name='—',
+    best_product_qty=0,
+    top10_qty_sum=0
+) %}
 
-<div class="row g-3 mb-4">
+{% for row in daily_totals %}
+    {% if row.total > ns.max_daily_total %}
+        {% set ns.max_daily_total = row.total %}
+    {% endif %}
+    {% if row.total > ns.best_day_total %}
+        {% set ns.best_day_total = row.total %}
+        {% set ns.best_day_date = row.date %}
+    {% endif %}
+{% endfor %}
 
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-body text-center">
-                <div class="small text-muted">Выручка за месяц</div>
-                <div class="fs-4 fw-bold">{{ format_money(total_revenue, 'UZS') }}</div>
+{% for p in top_products %}
+    {% set ns.top10_qty_sum = ns.top10_qty_sum + p.qty %}
+    {% if p.qty > ns.max_product_qty %}
+        {% set ns.max_product_qty = p.qty %}
+    {% endif %}
+    {% if p.qty > ns.best_product_qty %}
+        {% set ns.best_product_qty = p.qty %}
+        {% set ns.best_product_name = p.name %}
+    {% endif %}
+{% endfor %}
+
+{% set active_days = daily_totals|length %}
+{% set avg_daily_revenue = (total_revenue / active_days) if active_days else 0 %}
+{% set profit_margin = ((profit / total_revenue) * 100) if total_revenue else 0 %}
+{% set cost_ratio = ((total_cost / total_revenue) * 100) if total_revenue else 0 %}
+
+<div class="shop-monthly-report-page">
+
+    <style>
+        .shop-monthly-report-page {
+            --bg: #f4f7fb;
+            --surface: rgba(255, 255, 255, 0.84);
+            --surface-strong: #ffffff;
+            --surface-soft: #f8fbff;
+            --border: rgba(148, 163, 184, 0.16);
+            --text: #0f172a;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-2: #1d4ed8;
+            --primary-soft: rgba(37, 99, 235, 0.10);
+            --success: #059669;
+            --success-2: #10b981;
+            --success-soft: rgba(5, 150, 105, 0.10);
+            --warning: #d97706;
+            --warning-2: #f59e0b;
+            --warning-soft: rgba(217, 119, 6, 0.10);
+            --danger: #dc2626;
+            --danger-soft: rgba(220, 38, 38, 0.10);
+            --purple: #7c3aed;
+            --purple-soft: rgba(124, 58, 237, 0.10);
+            --dark: #081225;
+            --dark-2: #0f1b36;
+            --shadow-sm: 0 10px 30px rgba(15, 23, 42, 0.06);
+            --shadow-md: 0 18px 40px rgba(15, 23, 42, 0.10);
+            --shadow-lg: 0 24px 64px rgba(15, 23, 42, 0.18);
+            color: var(--text);
+        }
+
+        .shop-monthly-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .shop-hero {
+            position: relative;
+            overflow: hidden;
+            border-radius: 30px;
+            padding: 28px;
+            background:
+                radial-gradient(circle at top right, rgba(59, 130, 246, 0.28), transparent 30%),
+                radial-gradient(circle at bottom left, rgba(124, 58, 237, 0.18), transparent 28%),
+                linear-gradient(135deg, #07111f 0%, #0e1a33 45%, #11264b 100%);
+            box-shadow: var(--shadow-lg);
+            color: #fff;
+        }
+
+        .shop-hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(255,255,255,0.05), transparent 36%);
+            pointer-events: none;
+        }
+
+        .shop-hero-inner {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .shop-hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.12);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        .shop-hero-title {
+            font-size: clamp(28px, 4vw, 42px);
+            line-height: 1.04;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .shop-hero-subtitle {
+            max-width: 740px;
+            color: rgba(255,255,255,0.76);
+            font-size: 15px;
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        .shop-hero-side {
+            display: grid;
+            gap: 14px;
+        }
+
+        .hero-glass-card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 22px;
+            padding: 18px;
+            backdrop-filter: blur(12px);
+        }
+
+        .hero-glass-label {
+            display: block;
+            color: rgba(255,255,255,0.72);
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .hero-glass-value {
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .hero-glass-meta {
+            color: rgba(255,255,255,0.72);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(14px);
+        }
+
+        .metric-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .metric-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .metric-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .icon-primary { background: var(--primary-soft); color: var(--primary); }
+        .icon-success { background: var(--success-soft); color: var(--success); }
+        .icon-warning { background: var(--warning-soft); color: var(--warning); }
+        .icon-purple { background: var(--purple-soft); color: var(--purple); }
+
+        .metric-value {
+            font-size: 28px;
+            line-height: 1.05;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .metric-meta {
+            font-size: 13px;
+            line-height: 1.55;
+            color: var(--muted);
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .insight-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(248,251,255,0.98) 100%);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .insight-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .insight-text {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+            gap: 18px;
+        }
+
+        .panel-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 26px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 20px 22px 0;
+            margin-bottom: 14px;
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--text);
+        }
+
+        .panel-subtitle {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .panel-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .chip-primary {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .chip-success {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+
+        .chip-warning {
+            background: var(--warning-soft);
+            color: var(--warning);
+        }
+
+        .table-wrap {
+            padding: 0 16px 16px;
+        }
+
+        .premium-table {
+            margin-bottom: 0;
+            vertical-align: middle;
+        }
+
+        .premium-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: var(--surface-soft);
+            color: #475569;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 15px 14px;
+            white-space: nowrap;
+        }
+
+        .premium-table tbody td {
+            padding: 16px 14px;
+            border-top: 1px solid rgba(148, 163, 184, 0.10);
+        }
+
+        .premium-table tbody tr {
+            transition: 0.2s ease;
+        }
+
+        .premium-table tbody tr:hover {
+            background: rgba(37, 99, 235, 0.03);
+        }
+
+        .value-strong {
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .date-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .date-main {
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .date-sub {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .bar-cell {
+            min-width: 180px;
+        }
+
+        .bar-track {
+            width: 100%;
+            height: 10px;
+            background: #e9eef6;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        .bar-blue {
+            background: linear-gradient(90deg, var(--primary), #60a5fa);
+        }
+
+        .bar-green {
+            background: linear-gradient(90deg, var(--success), var(--success-2));
+        }
+
+        .row-note {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .product-ranking {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 6px 20px 20px;
+        }
+
+        .product-rank-item {
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            border-radius: 20px;
+            padding: 16px;
+        }
+
+        .product-rank-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .product-rank-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .rank-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 900;
+            background: var(--primary-soft);
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .product-name {
+            font-weight: 800;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 240px;
+        }
+
+        .product-sub {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .product-qty {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            padding: 44px 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-state h5 {
+            margin-bottom: 8px;
+            font-weight: 900;
+            color: var(--text);
+        }
+
+        .footer-note {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        @media (max-width: 1200px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .shop-hero-inner,
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .shop-hero {
+                padding: 22px;
+                border-radius: 24px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metric-card,
+            .insight-card,
+            .panel-card {
+                border-radius: 20px;
+            }
+
+            .shop-hero-title {
+                font-size: 28px;
+            }
+
+            .panel-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .product-name {
+                max-width: 160px;
+            }
+        }
+    </style>
+
+    <div class="shop-monthly-shell">
+
+        <section class="shop-hero">
+            <div class="shop-hero-inner">
+                <div>
+                    <div class="shop-hero-kicker">{{ t('shop_monthly_kicker') }}</div>
+                    <h1 class="shop-hero-title">{{ t('shop_monthly_title') }}</h1>
+                    <p class="shop-hero-subtitle">
+                        {{ t('shop_monthly_subtitle_line_1') }}
+                        {{ t('shop_monthly_subtitle_line_2') }}
+                        {{ t('shop_monthly_subtitle_line_3') }}
+                    </p>
+                </div>
+
+                <div class="shop-hero-side">
+                    <div class="hero-glass-card">
+                        <span class="hero-glass-label">{{ t('shop_monthly_profitability_label') }}</span>
+                        <div class="hero-glass-value">{{ "%.1f"|format(profit_margin) }}%</div>
+                        <div class="hero-glass-meta">
+                            {% if profit_margin >= 35 %}
+                                {{ t('shop_monthly_profitability_high') }}
+                            {% elif profit_margin >= 20 %}
+                                {{ t('shop_monthly_profitability_mid') }}
+                            {% elif profit_margin >= 10 %}
+                                {{ t('shop_monthly_profitability_low_positive') }}
+                            {% else %}
+                                {{ t('shop_monthly_profitability_low') }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hero-glass-card">
+                        <span class="hero-glass-label">{{ t('shop_monthly_best_day_label') }}</span>
+                        <div class="hero-glass-value">{{ format_money(ns.best_day_total, 'UZS') }}</div>
+                        <div class="hero-glass-meta">
+                            {{ t('label_date') }}: {{ ns.best_day_date }}
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-body text-center">
-                <div class="small text-muted">Себестоимость</div>
-                <div class="fs-4 fw-bold">{{ format_money(total_cost, 'UZS') }}</div>
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-card-top">
+                    <span class="metric-label">{{ t('shop_monthly_metric_revenue') }}</span>
+                    <span class="metric-icon icon-primary">₿</span>
+                </div>
+                <div class="metric-value">{{ format_money(total_revenue, 'UZS') }}</div>
+                <div class="metric-meta">
+                    {{ t('shop_monthly_metric_revenue_meta') }}
+                </div>
             </div>
-        </div>
-    </div>
 
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-body text-center">
-                <div class="small text-muted">Прибыль</div>
-                <div class="fs-4 fw-bold text-success">{{ format_money(profit, 'UZS') }}</div>
+            <div class="metric-card">
+                <div class="metric-card-top">
+                    <span class="metric-label">{{ t('shop_monthly_metric_cost') }}</span>
+                    <span class="metric-icon icon-warning">◎</span>
+                </div>
+                <div class="metric-value">{{ format_money(total_cost, 'UZS') }}</div>
+                <div class="metric-meta">
+                    {% if total_revenue %}
+                        {{ "%.1f"|format(cost_ratio) }}% {{ t('shop_monthly_metric_cost_ratio_suffix') }}
+                    {% else %}
+                        {{ t('shop_monthly_metric_cost_no_revenue') }}
+                    {% endif %}
+                </div>
             </div>
-        </div>
-    </div>
 
+            <div class="metric-card">
+                <div class="metric-card-top">
+                    <span class="metric-label">{{ t('shop_monthly_metric_profit') }}</span>
+                    <span class="metric-icon icon-success">▲</span>
+                </div>
+                <div class="metric-value">{{ format_money(profit, 'UZS') }}</div>
+                <div class="metric-meta">
+                    {{ t('shop_monthly_metric_profit_meta') }}
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-card-top">
+                    <span class="metric-label">{{ t('shop_monthly_metric_avg_day') }}</span>
+                    <span class="metric-icon icon-purple">◌</span>
+                </div>
+                <div class="metric-value">{{ format_money(avg_daily_revenue, 'UZS') }}</div>
+                <div class="metric-meta">
+                    {{ active_days }} {{ t('shop_monthly_metric_active_days_suffix') }}
+                </div>
+            </div>
+        </section>
+
+        <section class="insights-grid">
+            <div class="insight-card">
+                <div class="insight-title">{{ t('shop_monthly_insight_finance_title') }}</div>
+                <p class="insight-text">
+                    {% if profit > 0 %}
+                        {{ t('shop_monthly_insight_finance_positive') }}
+                    {% elif profit == 0 %}
+                        {{ t('shop_monthly_insight_finance_zero') }}
+                    {% else %}
+                        {{ t('shop_monthly_insight_finance_negative') }}
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="insight-card">
+                <div class="insight-title">{{ t('shop_monthly_insight_ops_title') }}</div>
+                <p class="insight-text">
+                    {% if cost_ratio <= 55 %}
+                        {{ t('shop_monthly_insight_ops_low') }}
+                    {% elif cost_ratio <= 75 %}
+                        {{ t('shop_monthly_insight_ops_mid') }}
+                    {% else %}
+                        {{ t('shop_monthly_insight_ops_high') }}
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="insight-card">
+                <div class="insight-title">{{ t('shop_monthly_insight_assortment_title') }}</div>
+                <p class="insight-text">
+                    {{ t('shop_monthly_best_product_prefix') }} <strong>{{ ns.best_product_name }}</strong>
+                    {% if ns.best_product_qty %}
+                        {{ t('shop_monthly_best_product_qty_prefix') }} {{ ns.best_product_qty }} {{ t('pieces_short') }}.
+                    {% else %}
+                        {{ t('shop_monthly_best_product_no_qty') }}
+                    {% endif %}
+                    {{ t('shop_monthly_top10_sold_prefix') }} {{ ns.top10_qty_sum }} {{ t('pieces_short') }}.
+                </p>
+            </div>
+        </section>
+
+        <section class="content-grid">
+
+            <div class="panel-card">
+                <div class="panel-header">
+                    <div>
+                        <h3 class="panel-title">{{ t('shop_monthly_daily_sales_title') }}</h3>
+                        <p class="panel-subtitle">
+                            {{ t('shop_monthly_daily_sales_subtitle') }}
+                        </p>
+                    </div>
+                    <span class="panel-chip chip-primary">{{ t('shop_monthly_daily_sales_chip') }}</span>
+                </div>
+
+                {% if daily_totals %}
+                <div class="table-wrap">
+                    <div class="table-responsive">
+                        <table class="table premium-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('label_date') }}</th>
+                                    <th>{{ t('shop_monthly_table_sales_amount') }}</th>
+                                    <th>{{ t('shop_monthly_table_day_intensity') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in daily_totals %}
+                                    {% set day_percent = ((row.total / ns.max_daily_total) * 100) if ns.max_daily_total else 0 %}
+                                    <tr>
+                                        <td>
+                                            <div class="date-stack">
+                                                <span class="date-main">{{ row.date }}</span>
+                                                <span class="date-sub">
+                                                    {% if row.total == ns.best_day_total %}
+                                                        {{ t('shop_monthly_peak_day') }}
+                                                    {% else %}
+                                                        {{ t('shop_monthly_regular_day') }}
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="value-strong">{{ format_money(row.total, 'UZS') }}</span>
+                                        </td>
+                                        <td class="bar-cell">
+                                            <div class="bar-track">
+                                                <div class="bar-fill bar-blue" style="width: {{ day_percent if day_percent <= 100 else 100 }}%;"></div>
+                                            </div>
+                                            <div class="row-note">{{ "%.1f"|format(day_percent) }}% {{ t('shop_monthly_day_vs_best_suffix') }}</div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <h5>{{ t('shop_monthly_empty_sales_title') }}</h5>
+                    <p class="mb-0">{{ t('shop_monthly_empty_sales_text') }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-header">
+                    <div>
+                        <h3 class="panel-title">{{ t('shop_monthly_top_products_title') }}</h3>
+                        <p class="panel-subtitle">
+                            {{ t('shop_monthly_top_products_subtitle') }}
+                        </p>
+                    </div>
+                    <span class="panel-chip chip-success">{{ t('shop_monthly_top_products_chip') }}</span>
+                </div>
+
+                {% if top_products %}
+                <div class="product-ranking">
+                    {% for p in top_products %}
+                        {% set product_percent = ((p.qty / ns.max_product_qty) * 100) if ns.max_product_qty else 0 %}
+                        <div class="product-rank-item">
+                            <div class="product-rank-top">
+                                <div class="product-rank-left">
+                                    <span class="rank-badge">#{{ loop.index }}</span>
+                                    <div>
+                                        <div class="product-name">{{ p.name }}</div>
+                                        <div class="product-sub">
+                                            {% if loop.index == 1 %}
+                                                {{ t('shop_monthly_rank_main_driver') }}
+                                            {% elif loop.index <= 3 %}
+                                                {{ t('shop_monthly_rank_top_leader') }}
+                                            {% else %}
+                                                {{ t('shop_monthly_rank_stable') }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="product-qty">{{ p.qty }} {{ t('pieces_short') }}</div>
+                            </div>
+
+                            <div class="bar-track">
+                                <div class="bar-fill bar-green" style="width: {{ product_percent if product_percent <= 100 else 100 }}%;"></div>
+                            </div>
+                            <div class="row-note">{{ "%.1f"|format(product_percent) }}% {{ t('shop_monthly_vs_category_leader_suffix') }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <h5>{{ t('shop_monthly_empty_products_title') }}</h5>
+                    <p class="mb-0">{{ t('shop_monthly_empty_products_text') }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+        </section>
+
+    </div>
 </div>
-
-<h4>📈 Продажи по дням</h4>
-<table class="table table-sm table-striped">
-    <thead>
-        <tr>
-            <th>Дата</th>
-            <th>Сумма продаж</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in daily_totals %}
-        <tr>
-            <td>{{ row.date }}</td>
-            <td>{{ format_money(row.total, 'UZS') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<h4 class="mt-4">🏆 Топ-10 товаров</h4>
-<table class="table table-sm table-bordered">
-    <thead>
-        <tr>
-            <th>Товар</th>
-            <th>Продано</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for p in top_products %}
-        <tr>
-            <td>{{ p.name }}</td>
-            <td>{{ p.qty }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
 
 {% endblock %}

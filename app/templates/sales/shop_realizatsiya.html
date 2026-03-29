@@ -1,0 +1,761 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('realizatsiya_title') }} — Mini Moda{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mm-real-page {
+    --mm-bg: #f4f7fb;
+    --mm-card: rgba(255,255,255,.98);
+    --mm-line: rgba(15,23,42,.08);
+    --mm-text: #0f172a;
+    --mm-muted: #64748b;
+    --mm-primary: #2563eb;
+    --mm-primary-soft: rgba(37,99,235,.10);
+    --mm-success: #059669;
+    --mm-success-soft: rgba(5,150,105,.12);
+    --mm-warning: #d97706;
+    --mm-warning-soft: rgba(217,119,6,.12);
+    --mm-purple: #7c3aed;
+    --mm-purple-soft: rgba(124,58,237,.10);
+    --mm-danger: #dc2626;
+    --mm-danger-soft: rgba(220,38,38,.10);
+    --mm-radius-xl: 22px;
+    --mm-radius-lg: 18px;
+    --mm-shadow-soft: 0 10px 24px rgba(15,23,42,.06);
+    color: var(--mm-text);
+  }
+
+  .mm-real-page .mm-shell {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 12px 10px 100px;
+  }
+
+  .mm-real-page .mm-actions-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .mm-real-page .mm-actions-right {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .mm-real-page .mm-btn {
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    font-weight: 800;
+    border: 1px solid transparent;
+    box-shadow: var(--mm-shadow-soft);
+    transition: .18s ease;
+    cursor: pointer;
+  }
+
+  .mm-real-page .mm-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .mm-real-page .mm-btn-light {
+    background: #fff;
+    color: var(--mm-text);
+    border-color: var(--mm-line);
+  }
+
+  .mm-real-page .mm-btn-primary {
+    background: var(--mm-primary);
+    color: #fff;
+  }
+
+  .mm-real-page .mm-btn-danger-light {
+    background: #fff;
+    color: var(--mm-danger);
+    border-color: rgba(220,38,38,.18);
+  }
+
+  .mm-real-page .mm-section {
+    background: var(--mm-card);
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius-xl);
+    box-shadow: var(--mm-shadow-soft);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .mm-real-page .mm-section-head {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--mm-line);
+  }
+
+  .mm-real-page .mm-section-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .mm-real-page .mm-section-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: -.02em;
+  }
+
+  .mm-real-page .mm-section-subtitle {
+    margin-top: 4px;
+    color: var(--mm-muted);
+    font-size: .84rem;
+    line-height: 1.45;
+  }
+
+  .mm-real-page .mm-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .mm-real-page .mm-pill-primary {
+    background: var(--mm-primary-soft);
+    color: var(--mm-primary);
+  }
+
+  .mm-real-page .mm-pill-success {
+    background: var(--mm-success-soft);
+    color: var(--mm-success);
+  }
+
+  .mm-real-page .mm-pill-warning {
+    background: var(--mm-warning-soft);
+    color: var(--mm-warning);
+  }
+
+  .mm-real-page .mm-pill-purple {
+    background: var(--mm-purple-soft);
+    color: var(--mm-purple);
+  }
+
+  .mm-real-page .mm-section-body {
+    padding: 12px 16px 14px;
+  }
+
+  .mm-real-page .mm-real-box {
+    border: 1px dashed rgba(124,58,237,.22);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at top left, rgba(124,58,237,.07), transparent 34%),
+      linear-gradient(180deg, #ffffff, #fdfcff);
+    padding: 12px;
+  }
+
+  .mm-real-page .mm-real-note {
+    color: var(--mm-muted);
+    font-size: .8rem;
+    line-height: 1.45;
+  }
+
+  .mm-real-page .mm-real-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .mm-real-page .mm-stat {
+    border: 1px solid var(--mm-line);
+    border-radius: 14px;
+    padding: 10px;
+    background: #fff;
+    min-width: 0;
+  }
+
+  .mm-real-page .mm-stat-k {
+    color: var(--mm-muted);
+    font-size: .69rem;
+    font-weight: 800;
+    margin-bottom: 5px;
+    line-height: 1.2;
+  }
+
+  .mm-real-page .mm-stat-v {
+    font-size: .88rem;
+    font-weight: 900;
+    line-height: 1.22;
+    word-break: break-word;
+    letter-spacing: -.01em;
+  }
+
+  .mm-real-page .mm-remaining {
+    color: var(--mm-danger);
+  }
+
+  .mm-real-page .mm-remaining-ok {
+    color: var(--mm-success);
+  }
+
+  .mm-real-page .mm-settle-layout {
+    display: grid;
+    grid-template-columns: 1.02fr .98fr;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .mm-real-page .mm-panel {
+    border: 1px solid var(--mm-line);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #fff, #fbfdff);
+    padding: 11px;
+    min-width: 0;
+  }
+
+  .mm-real-page .mm-panel-title {
+    font-size: .76rem;
+    font-weight: 900;
+    color: var(--mm-muted);
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+
+  .mm-real-page .mm-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 9px;
+  }
+
+  .mm-real-page .mm-field-full {
+    grid-column: 1 / -1;
+  }
+
+  .mm-real-page .mm-label {
+    display: block;
+    font-size: .75rem;
+    font-weight: 800;
+    color: var(--mm-muted);
+    margin-bottom: 6px;
+  }
+
+  .mm-real-page .mm-input,
+  .mm-real-page .mm-select,
+  .mm-real-page .mm-textarea {
+    width: 100%;
+    min-height: 43px;
+    border-radius: 13px;
+    border: 1px solid var(--mm-line);
+    background: #fff;
+    padding: 0 13px;
+    font-size: .91rem;
+    color: var(--mm-text);
+    outline: none;
+    transition: .18s ease;
+  }
+
+  .mm-real-page .mm-input:focus,
+  .mm-real-page .mm-select:focus,
+  .mm-real-page .mm-textarea:focus {
+    border-color: rgba(37,99,235,.45);
+    box-shadow: 0 0 0 4px rgba(37,99,235,.10);
+  }
+
+  .mm-real-page .mm-textarea {
+    min-height: 86px;
+    padding: 11px 13px;
+    resize: vertical;
+  }
+
+  .mm-real-page .mm-form-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .mm-real-page .mm-mini-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mm-real-page .mm-mini-item {
+    border: 1px solid var(--mm-line);
+    border-radius: 14px;
+    background: #fff;
+    padding: 10px;
+  }
+
+  .mm-real-page .mm-mini-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .mm-real-page .mm-mini-name {
+    font-size: .86rem;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .mm-real-page .mm-mini-meta {
+    margin-top: 4px;
+    color: var(--mm-muted);
+    font-size: .75rem;
+    line-height: 1.4;
+  }
+
+  .mm-real-page .mm-mini-amount {
+    font-size: .88rem;
+    font-weight: 900;
+    white-space: nowrap;
+    line-height: 1.2;
+    text-align: right;
+  }
+
+  .mm-real-page .mm-history-stack {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mm-real-page .mm-history-item {
+    border: 1px solid var(--mm-line);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fff, #fbfdff);
+    padding: 10px;
+  }
+
+  .mm-real-page .mm-history-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .mm-real-page .mm-history-name {
+    font-size: .88rem;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .mm-real-page .mm-history-meta {
+    margin-top: 4px;
+    color: var(--mm-muted);
+    font-size: .75rem;
+    line-height: 1.4;
+  }
+
+  .mm-real-page .mm-history-amount {
+    font-size: .89rem;
+    font-weight: 900;
+    color: var(--mm-success);
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .mm-real-page .mm-history-actions {
+    margin-top: 9px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .mm-real-page .mm-inline-form {
+    margin: 0;
+  }
+
+  .mm-real-page .mm-empty {
+    text-align: center;
+    padding: 24px 14px;
+    color: var(--mm-muted);
+  }
+
+  .mm-real-page .mm-empty-emoji {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+
+  .mm-real-page .mm-empty-title {
+    font-size: .95rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    margin-bottom: 4px;
+  }
+
+  .mm-real-page .mm-empty-text {
+    margin: 0 auto;
+    max-width: 520px;
+    font-size: .84rem;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 900px) {
+    .mm-real-page .mm-real-grid,
+    .mm-real-page .mm-form-grid {
+      grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+
+    .mm-real-page .mm-settle-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .mm-real-page .mm-shell {
+      padding: 10px 10px 96px;
+    }
+
+    .mm-real-page .mm-actions-top {
+      align-items: stretch;
+    }
+
+    .mm-real-page .mm-actions-right {
+      width: 100%;
+      justify-content: stretch;
+    }
+
+    .mm-real-page .mm-actions-right .mm-btn {
+      flex: 1 1 0;
+    }
+
+    .mm-real-page .mm-section {
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    .mm-real-page .mm-section-head {
+      padding: 13px 14px 9px;
+    }
+
+    .mm-real-page .mm-section-body {
+      padding: 11px 14px 13px;
+    }
+
+    .mm-real-page .mm-section-title {
+      font-size: .95rem;
+    }
+
+    .mm-real-page .mm-section-subtitle {
+      font-size: .8rem;
+    }
+
+    .mm-real-page .mm-real-box {
+      padding: 10px;
+      border-radius: 16px;
+    }
+
+    .mm-real-page .mm-real-note {
+      font-size: .77rem;
+    }
+
+    .mm-real-page .mm-real-grid,
+    .mm-real-page .mm-form-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .mm-real-page .mm-stat {
+      padding: 9px 10px;
+      border-radius: 13px;
+    }
+
+    .mm-real-page .mm-stat-k {
+      font-size: .65rem;
+    }
+
+    .mm-real-page .mm-stat-v {
+      font-size: .83rem;
+    }
+
+    .mm-real-page .mm-panel {
+      padding: 10px;
+      border-radius: 14px;
+    }
+
+    .mm-real-page .mm-panel-title {
+      font-size: .74rem;
+      margin-bottom: 9px;
+    }
+
+    .mm-real-page .mm-mini-top,
+    .mm-real-page .mm-history-top {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .mm-real-page .mm-mini-amount,
+    .mm-real-page .mm-history-amount {
+      white-space: normal;
+      text-align: left;
+      font-size: .84rem;
+    }
+
+    .mm-real-page .mm-history-actions {
+      margin-top: 8px;
+      justify-content: stretch;
+    }
+
+    .mm-real-page .mm-history-actions .mm-btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .mm-real-page .mm-actions-right {
+      flex-direction: column;
+    }
+
+    .mm-real-page .mm-actions-right .mm-btn {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set summary = summary if summary is defined and summary else {} %}
+{% set factory_groups = factory_groups if factory_groups is defined and factory_groups else [] %}
+{% set realizatsiya = realizatsiya if realizatsiya is defined and realizatsiya else {} %}
+{% set settlement_rows = settlement_rows if settlement_rows is defined and settlement_rows else [] %}
+
+<div class="mm-real-page">
+  <div class="mm-shell">
+
+    <div class="mm-actions-top">
+      <div></div>
+      <div class="mm-actions-right">
+        <a href="{{ url_for('sales.shop_sales_overview') }}" class="mm-btn mm-btn-light">
+          <span>←</span><span>{{ t('overview_label') }}</span>
+        </a>
+        <a href="{{ url_for('sales.shop_sales_log') }}" class="mm-btn mm-btn-light">
+          <span>🕘</span><span>{{ t('sales_log_title') }}</span>
+        </a>
+      </div>
+    </div>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('realizatsiya_title') }}</h2>
+          <span class="mm-pill mm-pill-warning">{{ t('factory_settlement_view_label') }}</span>
+        </div>
+        <div class="mm-section-subtitle">
+          {{ t('realizatsiya_subtitle') }}
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        <div class="mm-real-box">
+          <div class="mm-real-note">
+            <strong>{{ t('current_meaning_label') }}</strong>
+            {{ t('realizatsiya_meaning_on') }}
+            {{ t('realizatsiya_meaning_collected') }}
+            {{ t('realizatsiya_meaning_remaining') }}
+          </div>
+
+          <div class="mm-real-grid">
+            <div class="mm-stat">
+              <div class="mm-stat-k">{{ t('on_realizatsiya_label') }}</div>
+              <div class="mm-stat-v">
+                {{ realizatsiya.sent_amount if realizatsiya.sent_amount is defined else 0 }}
+                {{ realizatsiya.currency if realizatsiya.currency is defined else summary.currency if summary.currency is defined else 'UZS' }}
+              </div>
+            </div>
+
+            <div class="mm-stat">
+              <div class="mm-stat-k">{{ t('collected_label') }}</div>
+              <div class="mm-stat-v">
+                {{ realizatsiya.collected_amount if realizatsiya.collected_amount is defined else 0 }}
+                {{ realizatsiya.currency if realizatsiya.currency is defined else summary.currency if summary.currency is defined else 'UZS' }}
+              </div>
+            </div>
+
+            <div class="mm-stat">
+              <div class="mm-stat-k">{{ t('remaining_label') }}</div>
+              <div class="mm-stat-v {% if (realizatsiya.remaining_amount if realizatsiya.remaining_amount is defined else 0) > 0 %}mm-remaining{% else %}mm-remaining-ok{% endif %}">
+                {{ realizatsiya.remaining_amount if realizatsiya.remaining_amount is defined else 0 }}
+                {{ realizatsiya.currency if realizatsiya.currency is defined else summary.currency if summary.currency is defined else 'UZS' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('record_settlement_title') }}</h2>
+          <span class="mm-pill mm-pill-success">{{ t('shop_to_factory_label') }}</span>
+        </div>
+        <div class="mm-section-subtitle">
+          {{ t('record_settlement_subtitle') }}
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        <div class="mm-settle-layout">
+          <div class="mm-panel">
+            <form method="POST" action="{{ url_for('sales.create_realizatsiya_settlement') }}">
+              <div class="mm-form-grid">
+                <div class="mm-field-full">
+                  <label class="mm-label" for="factory_id">{{ t('factory_badge') }}</label>
+                  <select id="factory_id" name="factory_id" class="mm-select" required>
+                    <option value="">{{ t('select_factory_label') }}</option>
+                    {% for group in factory_groups %}
+                      <option value="{{ group.factory_id }}">{{ group.factory_name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div>
+                  <label class="mm-label" for="amount">{{ t('amount_label') }}</label>
+                  <input id="amount" type="number" step="0.01" min="0.01" name="amount" class="mm-input" placeholder="0.00" required>
+                </div>
+
+                <div>
+                  <label class="mm-label" for="currency">{{ t('table_currency') }}</label>
+                  <input id="currency" type="text" name="currency" class="mm-input" value="{{ realizatsiya.currency if realizatsiya.currency is defined else summary.currency if summary.currency is defined else 'UZS' }}" required>
+                </div>
+
+                <div>
+                  <label class="mm-label" for="settlement_date">{{ t('settlement_date_label') }}</label>
+                  <input id="settlement_date" type="date" name="settlement_date" class="mm-input" required>
+                </div>
+
+                <div class="mm-field-full">
+                  <label class="mm-label" for="note">{{ t('note') }}</label>
+                  <textarea id="note" name="note" class="mm-textarea" placeholder="{{ t('optional_payment_note_placeholder') }}"></textarea>
+                </div>
+              </div>
+
+              <div class="mm-form-actions">
+                <button type="submit" class="mm-btn mm-btn-primary">
+                  <span>💳</span><span>{{ t('save_settlement_label') }}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="mm-panel">
+            <div class="mm-panel-title">{{ t('factory_balances_now_title') }}</div>
+
+            {% if factory_groups %}
+              <div class="mm-mini-list">
+                {% for group in factory_groups %}
+                  <div class="mm-mini-item">
+                    <div class="mm-mini-top">
+                      <div>
+                        <div class="mm-mini-name">{{ group.factory_name }}</div>
+                        <div class="mm-mini-meta">
+                          {{ t('due_label') }}: {{ group.realizatsiya_due_amount if group.realizatsiya_due_amount is defined else 0 }} {{ group.currency if group.currency is defined else 'UZS' }}
+                          • {{ t('settled_label') }}: {{ group.settled_amount if group.settled_amount is defined else 0 }} {{ group.currency if group.currency is defined else 'UZS' }}
+                        </div>
+                      </div>
+                      <div class="mm-mini-amount {% if (group.remaining_amount if group.remaining_amount is defined else 0) > 0 %}mm-remaining{% else %}mm-remaining-ok{% endif %}">
+                        {{ group.remaining_amount if group.remaining_amount is defined else 0 }}
+                        {{ group.currency if group.currency is defined else 'UZS' }}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="mm-empty" style="padding:16px 8px;">
+                <div class="mm-empty-title">{{ t('no_factory_balances_yet') }}</div>
+                <p class="mm-empty-text">
+                  {{ t('factory_balances_empty_subtitle') }}
+                </p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('settlement_history_title') }}</h2>
+          <span class="mm-pill mm-pill-primary">{{ t('entries_count_label').format(count=settlement_rows|length) }}</span>
+        </div>
+        <div class="mm-section-subtitle">
+          {{ t('settlement_history_subtitle') }}
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        {% if settlement_rows %}
+          <div class="mm-history-stack">
+            {% for row in settlement_rows %}
+              <article class="mm-history-item">
+                <div class="mm-history-top">
+                  <div>
+                    <div class="mm-history-name">{{ row.factory_name }}</div>
+                    <div class="mm-history-meta">
+                      {{ row.settlement_date }}
+                      {% if row.created_by_name %} • {{ t('by_label') }} {{ row.created_by_name }}{% endif %}
+                      {% if row.note %} • {{ row.note }}{% endif %}
+                    </div>
+                  </div>
+
+                  <div class="mm-history-amount">
+                    {{ row.amount }} {{ row.currency }}
+                  </div>
+                </div>
+
+                <div class="mm-history-actions">
+                  <form method="POST"
+                        action="{{ url_for('sales.delete_realizatsiya_settlement', settlement_id=row.id) }}"
+                        class="mm-inline-form"
+                        onsubmit="return confirm({{ t('delete_settlement_confirm')|tojson }});">
+                    <button type="submit" class="mm-btn mm-btn-danger-light">
+                      <span>🗑</span><span>{{ t('delete_label') }}</span>
+                    </button>
+                  </form>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="mm-empty">
+            <div class="mm-empty-emoji">💳</div>
+            <div class="mm-empty-title">{{ t('no_settlement_history_yet') }}</div>
+            <p class="mm-empty-text">
+              {{ t('settlement_history_empty_subtitle') }}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    const dateInput = document.getElementById('settlement_date');
+    if (dateInput && !dateInput.value) {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      dateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+  })();
+</script>
+{% endblock %}

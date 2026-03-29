@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, date
 import io
+
 from flask import (
     Blueprint,
     render_template,
@@ -7,39 +8,35 @@ from flask import (
     redirect,
     url_for,
     flash,
-    Response,
     jsonify,
     session,
-    send_file
+    send_file,
+    abort,
 )
 from flask_login import login_required, current_user
-
-from app.telegram_notify import send_telegram_message
+from sqlalchemy import or_
 
 from ..extensions import db
 from ..auth_utils import roles_required
 from ..models import (
+    Factory,
     Product,
     Production,
+    Shop,
     ShopStock,
+    ShopFactoryLink,
     ShopOrder,
     ShopOrderItem,
-    Movement,
     StockMovement,
-    CashRecord,
-    # Sale is needed for dashboard stats. If your model name differs, tell me.
     Sale,
 )
 from ..services.shop_service import ShopService
+from app.telegram_notify import send_telegram_message
 
 
 shop_bp = Blueprint("shop", __name__, url_prefix="/shop")
 shop_service = ShopService()
 
-
-# =========================
-# Helpers (Shop dashboard)
-# =========================
 
 RU_MONTHS = {
     "January": "января",
@@ -90,31 +87,91 @@ def _get_current_date_for_lang():
     return f"{day} {month} {year}"
 
 
-def _sum_shop_stock_value_uzs(factory_id: int) -> float:
+def _is_shared_shop_user() -> bool:
+    return bool(
+        current_user.is_shop and not (current_user.is_manager or current_user.is_admin)
+    )
+
+
+def _scope_factory_id():
+    if _is_shared_shop_user():
+        return None
+    return current_user.factory_id
+
+
+def _accessible_shop_ids() -> list[int]:
     """
-    Sums shop stock value using product.sell_price_per_item (assumed UZS).
+    Shop-only user:
+      - only their assigned shop_id
+
+    Manager/admin:
+      - all shops linked to their current factory_id
     """
+    if _is_shared_shop_user():
+        return [current_user.shop_id] if current_user.shop_id else []
+
+    if not current_user.factory_id:
+        return []
+
     rows = (
-        db.session.query(ShopStock.quantity, Product.sell_price_per_item)
-        .join(Product, Product.id == ShopStock.product_id)
-        .filter(Product.factory_id == factory_id)
+        ShopFactoryLink.query.filter_by(factory_id=current_user.factory_id)
+        .with_entities(ShopFactoryLink.shop_id)
         .all()
     )
+    return [shop_id for (shop_id,) in rows]
+
+
+def _require_shop_scope_or_redirect():
+    """
+    Returns:
+      - int shop_id for shop-only users
+      - list[int] shop_ids for manager/admin users
+      - None if access is not possible
+    """
+    if _is_shared_shop_user():
+        if not current_user.shop_id:
+            flash("Пользователь не привязан к магазину.", "danger")
+            return None
+        return current_user.shop_id
+
+    shop_ids = _accessible_shop_ids()
+    if not shop_ids:
+        flash("Для текущей фабрики нет привязанных магазинов.", "danger")
+        return None
+
+    return shop_ids
+
+
+def _sum_shop_stock_value_uzs(factory_id=None) -> float:
+    rows = db.session.query(ShopStock.quantity, Product.sell_price_per_item).join(
+        Product, Product.id == ShopStock.product_id
+    )
+
+    if factory_id is not None:
+        rows = rows.filter(ShopStock.source_factory_id == factory_id)
+
+    if _is_shared_shop_user() and current_user.shop_id:
+        rows = rows.filter(ShopStock.shop_id == current_user.shop_id)
+
+    rows = rows.all()
+
     total = 0.0
     for qty, price in rows:
         total += float(qty or 0) * float(price or 0)
     return total
 
 
-def _sum_factory_stock_value_uzs(factory_id: int) -> float:
-    """
-    Sums factory stock value using Product.quantity * Product.sell_price_per_item (assumed UZS).
-    """
-    rows = (
-        db.session.query(Product.quantity, Product.sell_price_per_item)
-        .filter(Product.factory_id == factory_id)
-        .all()
-    )
+def _sum_factory_stock_value_uzs(factory_id=None) -> float:
+    rows = db.session.query(Product.quantity, Product.sell_price_per_item)
+
+    if factory_id is not None:
+        rows = rows.filter(Product.factory_id == factory_id)
+    else:
+        if _is_shared_shop_user():
+            return 0.0
+
+    rows = rows.all()
+
     total = 0.0
     for qty, price in rows:
         total += float(qty or 0) * float(price or 0)
@@ -122,10 +179,6 @@ def _sum_factory_stock_value_uzs(factory_id: int) -> float:
 
 
 def _sale_amount_uzs(sale, product) -> float:
-    """
-    Robust: uses Sale.total_sell if present, otherwise quantity * sell_price_per_item.
-    Treats as UZS for dashboard totals.
-    """
     if hasattr(sale, "total_sell") and sale.total_sell is not None:
         try:
             return float(sale.total_sell or 0)
@@ -143,82 +196,234 @@ def _sale_amount_uzs(sale, product) -> float:
         return 0.0
 
 
-def _get_sales_totals(factory_id: int):
+def _visible_shop_stock_rows_query(factory_id=None):
     """
-    Returns:
-      yesterday_sales_uzs
-      week_sales_uzs (last 7 days including today)
-    Tries to filter by factory_id using:
-      - Sale.factory_id if exists
-      - else join Sale.product_id -> Product.factory_id
-    Date uses:
-      - Sale.date if exists
-      - else Sale.created_at if exists
-      - else falls back to 0
+    Returns a query of visible shop stock rows as:
+      (ShopStock, Product, Factory)
+
+    Shared shop user:
+      - only their assigned shop
+
+    Manager/admin:
+      - all accessible shops linked to current factory
+      - if factory_id is provided, restrict to that factory's stock rows
+    """
+    q = (
+        db.session.query(ShopStock, Product, Factory)
+        .join(Product, Product.id == ShopStock.product_id)
+        .join(Factory, Factory.id == ShopStock.source_factory_id)
+    )
+
+    if _is_shared_shop_user():
+        if not current_user.shop_id:
+            return q.filter(ShopStock.id == -1)
+        q = q.filter(ShopStock.shop_id == current_user.shop_id)
+    else:
+        shop_ids = _accessible_shop_ids()
+        if not shop_ids:
+            return q.filter(ShopStock.id == -1)
+
+        q = q.filter(ShopStock.shop_id.in_(shop_ids))
+
+        if factory_id is not None:
+            q = q.filter(ShopStock.source_factory_id == factory_id)
+
+    return q
+
+
+def _get_shop_sales_dashboard_stats(factory_id=None):
+    """
+    Sales totals for shop dashboard.
+
+    Notes:
+    - If Sale has factory_id, use it directly.
+    - Otherwise fallback to Product.factory_id.
+    - If Sale has shop_id and current user is a shared shop user, scope by shop_id too.
     """
     today = date.today()
-    y = today - timedelta(days=1)
+    yesterday = today - timedelta(days=1)
     week_start = today - timedelta(days=6)
+    month_start = today.replace(day=1)
 
-    # Build base query
     q = db.session.query(Sale, Product).join(Product, Product.id == Sale.product_id)
 
-    # Filter by factory
-    if hasattr(Sale, "factory_id"):
-        q = q.filter(Sale.factory_id == factory_id)
-    else:
-        q = q.filter(Product.factory_id == factory_id)
+    if factory_id is not None:
+        if hasattr(Sale, "factory_id"):
+            q = q.filter(Sale.factory_id == factory_id)
+        else:
+            q = q.filter(Product.factory_id == factory_id)
+    elif _is_shared_shop_user():
+        if hasattr(Sale, "shop_id") and current_user.shop_id:
+            q = q.filter(Sale.shop_id == current_user.shop_id)
 
-    sales = q.all()
+    rows = q.all()
 
-    yesterday_total = 0.0
-    week_total = 0.0
+    today_sales_uzs = 0.0
+    yesterday_sales_uzs = 0.0
+    week_sales_uzs = 0.0
+    month_sales_uzs = 0.0
 
-    for sale, product in sales:
-        # Determine sale date
-        s_date = None
-        if hasattr(sale, "date") and sale.date:
-            s_date = sale.date
-        elif hasattr(sale, "created_at") and sale.created_at:
-            try:
-                s_date = sale.created_at.date()
-            except Exception:
-                s_date = None
+    for sale, product in rows:
+        raw_sale_date = getattr(sale, "date", None)
 
-        if not s_date:
+        if not raw_sale_date and hasattr(sale, "created_at"):
+            raw_sale_date = getattr(sale, "created_at", None)
+
+        if not raw_sale_date:
             continue
 
-        amt = _sale_amount_uzs(sale, product)
+        if isinstance(raw_sale_date, datetime):
+            s_date = raw_sale_date.date()
+        else:
+            s_date = raw_sale_date
 
-        if s_date == y:
-            yesterday_total += amt
+        amount = _sale_amount_uzs(sale, product)
 
+        if s_date == today:
+            today_sales_uzs += amount
+        if s_date == yesterday:
+            yesterday_sales_uzs += amount
         if week_start <= s_date <= today:
-            week_total += amt
+            week_sales_uzs += amount
+        if month_start <= s_date <= today:
+            month_sales_uzs += amount
 
-    return yesterday_total, week_total
+    return {
+        "today_sales_uzs": today_sales_uzs,
+        "yesterday_sales_uzs": yesterday_sales_uzs,
+        "week_sales_uzs": week_sales_uzs,
+        "month_sales_uzs": month_sales_uzs,
+    }
 
 
-# =========================
-# 0. SHOP DASHBOARD (HOME)
-# =========================
+def _build_shop_dashboard_stats(factory_id=None):
+    """
+    Rich shop dashboard stats, including:
+    - shop stock totals
+    - low stock count
+    - total SKUs / qty
+    - per-factory stock breakdown
+    - today/yesterday/week/month sales
+    """
+    rows = _visible_shop_stock_rows_query(factory_id=factory_id).all()
+
+    total_shop_value_uzs = 0.0
+    total_shop_qty = 0
+    low_stock_count = 0
+
+    sku_keys = set()
+    by_factory = {}
+
+    for stock, product, factory in rows:
+        qty = int(stock.quantity or 0)
+        price = float(product.sell_price_per_item or 0)
+        value = qty * price
+
+        total_shop_qty += qty
+        total_shop_value_uzs += value
+
+        if qty < 5:
+            low_stock_count += 1
+
+        sku_keys.add((stock.product_id, stock.source_factory_id))
+
+        fid = factory.id
+        if fid not in by_factory:
+            by_factory[fid] = {
+                "factory_id": fid,
+                "factory_name": factory.name,
+                "sku_set": set(),
+                "total_qty": 0,
+                "total_value_uzs": 0.0,
+                "low_stock_count": 0,
+            }
+
+        by_factory[fid]["sku_set"].add(stock.product_id)
+        by_factory[fid]["total_qty"] += qty
+        by_factory[fid]["total_value_uzs"] += value
+
+        if qty < 5:
+            by_factory[fid]["low_stock_count"] += 1
+
+    factory_breakdown = []
+    for item in by_factory.values():
+        factory_breakdown.append(
+            {
+                "factory_id": item["factory_id"],
+                "factory_name": item["factory_name"],
+                "sku_count": len(item["sku_set"]),
+                "total_qty": item["total_qty"],
+                "total_value_uzs": item["total_value_uzs"],
+                "low_stock_count": item["low_stock_count"],
+            }
+        )
+
+    factory_breakdown.sort(
+        key=lambda x: (x["total_value_uzs"], x["total_qty"]),
+        reverse=True,
+    )
+
+    sales_stats = _get_shop_sales_dashboard_stats(factory_id=factory_id)
+
+    return {
+        "shop_total_value_uzs": total_shop_value_uzs,
+        "shop_total_skus": len(sku_keys),
+        "shop_total_qty": total_shop_qty,
+        "low_stock_count": low_stock_count,
+        "factory_breakdown": factory_breakdown,
+        "today_sales_uzs": sales_stats["today_sales_uzs"],
+        "yesterday_sales_uzs": sales_stats["yesterday_sales_uzs"],
+        "week_sales_uzs": sales_stats["week_sales_uzs"],
+        "month_sales_uzs": sales_stats["month_sales_uzs"],
+    }
+
+
+def _shop_orders_base_query(factory_id=None):
+    q = ShopOrder.query
+    if factory_id is not None:
+        q = q.filter(ShopOrder.factory_id == factory_id)
+    return q
+
+
+def _shared_shop_product_or_404(product_id: int):
+    if _is_shared_shop_user():
+        product = (
+            Product.query.join(ShopStock, ShopStock.product_id == Product.id)
+            .filter(Product.id == product_id, ShopStock.shop_id == current_user.shop_id)
+            .first_or_404()
+        )
+        return product
+
+    return Product.query.filter_by(
+        id=product_id,
+        factory_id=current_user.factory_id,
+    ).first_or_404()
+
 
 @shop_bp.route("/dashboard", methods=["GET"])
 @login_required
 @roles_required("shop", "manager", "admin")
 def dashboard_shop():
-    factory_id = current_user.factory_id
+    factory_id = _scope_factory_id()
     current_date = _get_current_date_for_lang()
 
-    # Sales stats (UZS)
     try:
-        yesterday_sales_uzs, week_sales_uzs = _get_sales_totals(factory_id=factory_id)
+        dashboard_stats = _build_shop_dashboard_stats(factory_id=factory_id)
     except Exception:
-        yesterday_sales_uzs, week_sales_uzs = 0.0, 0.0
+        dashboard_stats = {
+            "shop_total_value_uzs": 0.0,
+            "shop_total_skus": 0,
+            "shop_total_qty": 0,
+            "low_stock_count": 0,
+            "factory_breakdown": [],
+            "today_sales_uzs": 0.0,
+            "yesterday_sales_uzs": 0.0,
+            "week_sales_uzs": 0.0,
+            "month_sales_uzs": 0.0,
+        }
 
-    # Stock values (UZS)
     try:
-        shop_uzs = _sum_shop_stock_value_uzs(factory_id=factory_id)
+        shop_uzs = float(dashboard_stats.get("shop_total_value_uzs", 0.0) or 0.0)
     except Exception:
         shop_uzs = 0.0
 
@@ -229,39 +434,57 @@ def dashboard_shop():
 
     total_uzs = float(factory_uzs or 0) + float(shop_uzs or 0)
 
-    # Orders summary
-    shop_orders_pending = (
-        ShopOrder.query
-        .filter_by(factory_id=factory_id, status="pending")
-        .count()
-    )
-    shop_orders_ready = (
-        ShopOrder.query
-        .filter_by(factory_id=factory_id, status="ready")
-        .count()
-    )
+    orders_q = _shop_orders_base_query(factory_id=factory_id)
 
-    # stats object for template compatibility
-    class _Stats:
-        def __init__(self, y, w):
-            self.yesterday_sales_uzs = y
-            self.week_sales_uzs = w
+    if _is_shared_shop_user():
+        orders_q = orders_q.filter(ShopOrder.created_by_id == current_user.id)
 
-    stats = _Stats(yesterday_sales_uzs, week_sales_uzs)
+    shop_orders_pending = orders_q.filter(ShopOrder.status == "pending").count()
+    shop_orders_ready = orders_q.filter(ShopOrder.status == "ready").count()
+    shop_orders_completed = orders_q.filter(ShopOrder.status == "completed").count()
+
+    counts = {
+        "pending": shop_orders_pending,
+        "ready": shop_orders_ready,
+        "completed": shop_orders_completed,
+    }
+    try:
+        daily_sales_labels, daily_sales_values = _get_daily_sales_chart_data(
+            factory_id=factory_id,
+            days=7,
+        )
+    except Exception:
+        daily_sales_labels, daily_sales_values = [], []
+
+    try:
+        factory_sales_labels, factory_sales_values = _get_factory_sales_chart_data(
+            factory_id=factory_id
+        )
+    except Exception:
+        factory_sales_labels, factory_sales_values = [], []
+
+    dashboard_stats["orders_pending"] = shop_orders_pending
+    dashboard_stats["orders_ready"] = shop_orders_ready
+    dashboard_stats["orders_completed"] = shop_orders_completed
+    
 
     return render_template(
         "shop/dashboard_shop.html",
-        stats=stats,
+        stats=dashboard_stats,
         shop_uzs=shop_uzs,
         factory_uzs=factory_uzs,
         total_uzs=total_uzs,
         shop_orders_pending=shop_orders_pending,
         shop_orders_ready=shop_orders_ready,
         current_date=current_date,
+        counts=counts,
+        daily_sales_labels=daily_sales_labels,
+        daily_sales_values=daily_sales_values,
+        factory_sales_labels=factory_sales_labels,
+        factory_sales_values=factory_sales_values,
+        shop_factory_breakdown=dashboard_stats.get("factory_breakdown", []),
     )
 
-
-# ---------- 1. СКЛАД МАГАЗИНА (ЛИСТ) ----------
 
 @shop_bp.route("/", methods=["GET"])
 @login_required
@@ -269,24 +492,186 @@ def list_shop():
     q_raw = request.args.get("q") or ""
     q = q_raw.strip()
     sort = request.args.get("sort", "name")
+    stock_filter = (request.args.get("stock_filter") or "").strip().lower()
+    factory_filter = request.args.get("factory_id", type=int)
 
-    data = shop_service.list_items(
-        q=q or None,
-        sort=sort,
-        factory_id=current_user.factory_id,
+    shop_scope = _require_shop_scope_or_redirect()
+    if shop_scope is None:
+        return redirect(url_for("main.dashboard"))
+
+    base_query = (
+        db.session.query(ShopStock)
+        .join(Product, Product.id == ShopStock.product_id)
+        .join(Factory, Factory.id == ShopStock.source_factory_id)
     )
 
-    return render_template(
-        "shop/list.html",
-        items=data["items"],
-        total_qty=data["total_qty"],
-        total_value_uzs=data["total_value_uzs"],
+    if _is_shared_shop_user():
+        base_query = base_query.filter(ShopStock.shop_id == shop_scope)
+    else:
+        base_query = base_query.filter(ShopStock.shop_id.in_(shop_scope))
+
+        if current_user.factory_id:
+            base_query = base_query.filter(
+                ShopStock.source_factory_id == current_user.factory_id
+            )
+
+    all_visible_items = base_query.order_by(
+        Factory.name.asc(), Product.name.asc()
+    ).all()
+
+    overall_total_qty = 0
+    overall_total_value_uzs = 0
+    overall_low_stock_count = 0
+    overall_out_of_stock_count = 0
+    overall_available_count = 0
+
+    factory_summary_map = {}
+
+    for row in all_visible_items:
+        qty = row.quantity or 0
+        price = row.product.sell_price_per_item or 0
+        row_value = qty * price
+
+        overall_total_qty += qty
+        overall_total_value_uzs += row_value
+
+        if qty <= 0:
+            overall_out_of_stock_count += 1
+        else:
+            overall_available_count += 1
+            if qty < 5:
+                overall_low_stock_count += 1
+
+        fid = row.source_factory_id or 0
+        if fid not in factory_summary_map:
+            factory_summary_map[fid] = {
+                "factory_id": fid,
+                "factory_name": row.source_factory.name if row.source_factory else "—",
+                "items_count": 0,
+                "total_qty": 0,
+                "total_value_uzs": 0,
+                "low_stock_count": 0,
+                "out_of_stock_count": 0,
+            }
+
+        factory_summary_map[fid]["items_count"] += 1
+        factory_summary_map[fid]["total_qty"] += qty
+        factory_summary_map[fid]["total_value_uzs"] += row_value
+
+        if qty <= 0:
+            factory_summary_map[fid]["out_of_stock_count"] += 1
+        elif qty < 5:
+            factory_summary_map[fid]["low_stock_count"] += 1
+
+    factory_summary = sorted(
+        factory_summary_map.values(),
+        key=lambda x: (x["total_value_uzs"], x["total_qty"]),
+        reverse=True,
+    )
+
+    for item in factory_summary:
+        if overall_total_value_uzs > 0:
+            item["share_pct"] = round(
+                (item["total_value_uzs"] / overall_total_value_uzs) * 100
+            )
+        else:
+            item["share_pct"] = 0
+
+    selected_factory = None
+    if factory_filter:
+        selected_factory = next(
+            (f for f in factory_summary if f["factory_id"] == factory_filter),
+            None,
+        )
+
+    items_query = base_query
+
+    if factory_filter:
+        items_query = items_query.filter(ShopStock.source_factory_id == factory_filter)
+
+    if q:
+        like = f"%{q}%"
+        items_query = items_query.filter(
+            or_(
+                Product.name.ilike(like),
+                Product.category.ilike(like),
+                Factory.name.ilike(like),
+            )
+        )
+
+    if stock_filter == "low":
+        items_query = items_query.filter(ShopStock.quantity > 0, ShopStock.quantity < 5)
+    elif stock_filter == "out":
+        items_query = items_query.filter(ShopStock.quantity <= 0)
+    elif stock_filter == "available":
+        items_query = items_query.filter(ShopStock.quantity > 0)
+
+    if sort == "qty":
+        items_query = items_query.order_by(
+            ShopStock.quantity.desc(), Product.name.asc()
+        )
+    elif sort == "factory":
+        items_query = items_query.order_by(Factory.name.asc(), Product.name.asc())
+    else:
+        items_query = items_query.order_by(Product.name.asc(), Factory.name.asc())
+
+    items = items_query.all()
+
+    total_qty = sum((row.quantity or 0) for row in items)
+    total_value_uzs = 0
+    low_stock_count = 0
+    out_of_stock_count = 0
+    available_count = 0
+
+    for row in items:
+        qty = row.quantity or 0
+        price = row.product.sell_price_per_item or 0
+        total_value_uzs += qty * price
+
+        if qty <= 0:
+            out_of_stock_count += 1
+        else:
+            available_count += 1
+            if qty < 5:
+                low_stock_count += 1
+
+    accessible_factories = sorted(
+        {
+            row.source_factory
+            for row in all_visible_items
+            if row.source_factory is not None
+        },
+        key=lambda f: f.name.lower(),
+    )
+
+    common_context = dict(
+        items=items,
+        total_qty=total_qty,
+        total_value_uzs=total_value_uzs,
         q=q,
         sort=sort,
+        stock_filter=stock_filter,
+        factory_filter=factory_filter,
+        low_stock_count=low_stock_count,
+        out_of_stock_count=out_of_stock_count,
+        available_count=available_count,
+        factory_summary=factory_summary,
+        accessible_factories=accessible_factories,
+        selected_factory=selected_factory,
+        show_factory_overview=(factory_filter is None),
+        show_factory_products=(factory_filter is not None),
+        overall_total_qty=overall_total_qty,
+        overall_total_value_uzs=overall_total_value_uzs,
+        overall_low_stock_count=overall_low_stock_count,
+        overall_out_of_stock_count=overall_out_of_stock_count,
+        overall_available_count=overall_available_count,
     )
 
+    if _is_shared_shop_user():
+        return render_template("shop/list_staff.html", **common_context)
 
-# ---------- 2. ПЕРЕДАЧА С ФАБРИКИ В МАГАЗИН ----------
+    return render_template("shop/list.html", **common_context)
+
 
 @shop_bp.route("/transfer", methods=["GET", "POST"])
 @login_required
@@ -298,6 +683,7 @@ def transfer_to_shop():
         try:
             product_id = int(request.form.get("product_id") or 0)
             quantity = int(request.form.get("quantity") or 0)
+            shop_id = int(request.form.get("shop_id") or 0)
         except ValueError:
             flash("Ошибка в данных формы.", "danger")
             return redirect(url_for("shop.transfer_to_shop"))
@@ -312,48 +698,69 @@ def transfer_to_shop():
                 flash("Неверная цена продажи.", "warning")
                 return redirect(url_for("shop.transfer_to_shop"))
 
-        product = (
-            Product.query
-            .filter_by(id=product_id, factory_id=factory_id)
-            .first()
-        )
+        product = Product.query.filter_by(id=product_id, factory_id=factory_id).first()
         if not product:
             flash("Товар не найден.", "danger")
             return redirect(url_for("shop.transfer_to_shop"))
 
+        link_exists = ShopFactoryLink.query.filter_by(
+            shop_id=shop_id,
+            factory_id=factory_id,
+        ).first()
+
+        if not link_exists:
+            flash("Этот магазин не привязан к текущей фабрике.", "danger")
+            return redirect(url_for("shop.transfer_to_shop"))
+
         try:
-            shop_service.transfer_to_shop(
+            result = shop_service.transfer_factory_to_shop(
                 factory_id=factory_id,
+                shop_id=shop_id,
                 product_id=product.id,
                 quantity=quantity,
                 sell_price_per_item=sell_price_per_item,
+                created_by=current_user,
             )
+            fulfilled_order_ids = result["fulfilled_order_ids"]
         except ValueError as e:
             flash(str(e), "danger")
             return redirect(url_for("shop.transfer_to_shop"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ошибка передачи: {str(e)}", "danger")
+            return redirect(url_for("shop.transfer_to_shop"))
 
-        move = Movement(
-            factory_id=factory_id,
-            product_id=product.id,
-            source="factory",
-            destination="shop",
-            change=quantity,
-            note=f"Фабрика передала в магазин {quantity} шт.",
-            created_by_id=current_user.id,
-            timestamp=datetime.utcnow(),
-        )
-        db.session.add(move)
-        db.session.commit()
+        try:
+            msg = (
+                "🚚 <b>Передача в магазин</b>\n"
+                f"Модель: <b>{product.name}</b>\n"
+                f"Количество: <b>{quantity}</b> шт.\n"
+                f"Фабрика: <b>{product.factory_id}</b>"
+            )
+            send_telegram_message(
+                msg,
+                factory_id=product.factory_id,
+                include_manager_chats=False,
+            )
+        except Exception:
+            pass
 
-        flash("Товар успешно передан в магазин.", "success")
+        if fulfilled_order_ids:
+            flash(
+                "Товар успешно передан в магазин. "
+                f"Обновлены заказы: {', '.join('#' + str(x) for x in sorted(fulfilled_order_ids))}.",
+                "success",
+            )
+        else:
+            flash("Товар успешно передан в магазин.", "success")
+
         return redirect(url_for("shop.list_shop"))
 
     mode = (request.args.get("mode") or "today").strip().lower()
 
     if mode == "all":
         products = (
-            Product.query
-            .filter_by(factory_id=factory_id)
+            Product.query.filter_by(factory_id=factory_id)
             .order_by(Product.name.asc())
             .all()
         )
@@ -370,8 +777,7 @@ def transfer_to_shop():
 
         if produced_ids:
             products = (
-                Product.query
-                .filter(
+                Product.query.filter(
                     Product.factory_id == factory_id,
                     Product.id.in_(produced_ids),
                 )
@@ -380,8 +786,7 @@ def transfer_to_shop():
             )
         else:
             products = (
-                Product.query
-                .filter(
+                Product.query.filter(
                     Product.factory_id == factory_id,
                     Product.quantity > 0,
                 )
@@ -389,24 +794,58 @@ def transfer_to_shop():
                 .all()
             )
 
+    linked_shop_ids = [
+        row.shop_id
+        for row in ShopFactoryLink.query.filter_by(factory_id=factory_id).all()
+    ]
+
+    shops = (
+        Shop.query.filter(Shop.id.in_(linked_shop_ids)).order_by(Shop.name.asc()).all()
+        if linked_shop_ids
+        else []
+    )
+
     return render_template(
         "shop/transfer.html",
         products=products,
         mode=mode,
+        shops=shops,
     )
 
 
-# ---------- 3. ЭКСПОРТ СКЛАДА МАГАЗИНА (XLSX) ----------
 @shop_bp.route("/export", methods=["GET"])
 @login_required
 def export_shop():
+    if _is_shared_shop_user():
+        if not current_user.shop_id:
+            flash("Пользователь не привязан к магазину.", "danger")
+            return redirect(url_for("main.dashboard"))
+        shop_id = current_user.shop_id
+    else:
+        accessible_shop_ids = _accessible_shop_ids()
+        if not accessible_shop_ids:
+            flash("Для текущей фабрики нет привязанных магазинов.", "danger")
+            return redirect(url_for("main.dashboard"))
+
+        requested_shop_id = request.args.get("shop_id", type=int)
+
+        if requested_shop_id:
+            if requested_shop_id not in accessible_shop_ids:
+                flash("Нет доступа к выбранному магазину.", "danger")
+                return redirect(url_for("main.dashboard"))
+            shop_id = requested_shop_id
+        elif len(accessible_shop_ids) == 1:
+            shop_id = accessible_shop_ids[0]
+        else:
+            flash("Укажите shop_id для экспорта магазина.", "warning")
+            return redirect(url_for("shop.list_shop"))
+
     xlsx_bytes = shop_service.export_full_report_xlsx(
-        factory_id=current_user.factory_id,
+        shop_id=shop_id,
         q=request.args.get("q"),
         sort=request.args.get("sort", "name"),
     )
 
-    # Ensure bytes-like
     if isinstance(xlsx_bytes, str):
         xlsx_bytes = xlsx_bytes.encode("utf-8")
 
@@ -416,23 +855,22 @@ def export_shop():
     return send_file(
         buf,
         as_attachment=True,
-        download_name="mini_moda_report.xlsx",
+        download_name="mini_moda_shop_report.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         max_age=0,
     )
 
-# ---------- 4. ЗАКАЗЫ МАГАЗИНА (СПИСОК) ----------
 
 @shop_bp.route("/orders", methods=["GET"])
 @login_required
 @roles_required("shop", "manager", "admin")
 def list_shop_orders():
-    factory_id = current_user.factory_id
+    factory_id = _scope_factory_id()
     status = (request.args.get("status") or "").strip().lower()
 
-    query = ShopOrder.query.filter_by(factory_id=factory_id)
+    query = _shop_orders_base_query(factory_id=factory_id)
 
-    if current_user.is_shop and not (current_user.is_manager or current_user.is_admin):
+    if _is_shared_shop_user():
         query = query.filter(ShopOrder.created_by_id == current_user.id)
 
     if status in ("pending", "ready", "completed", "cancelled"):
@@ -440,8 +878,8 @@ def list_shop_orders():
 
     orders = query.order_by(ShopOrder.created_at.desc()).all()
 
-    base_query = ShopOrder.query.filter_by(factory_id=factory_id)
-    if current_user.is_shop and not (current_user.is_manager or current_user.is_admin):
+    base_query = _shop_orders_base_query(factory_id=factory_id)
+    if _is_shared_shop_user():
         base_query = base_query.filter(ShopOrder.created_by_id == current_user.id)
 
     counts = {
@@ -463,20 +901,20 @@ def list_shop_orders():
 @login_required
 @roles_required("shop", "manager", "admin")
 def update_shop_order_status(order_id: int):
-    factory_id = current_user.factory_id
+    factory_id = _scope_factory_id()
 
-    order = (
-        ShopOrder.query
-        .filter_by(id=order_id, factory_id=factory_id)
-        .first_or_404()
-    )
+    order_q = ShopOrder.query.filter(ShopOrder.id == order_id)
+    if factory_id is not None:
+        order_q = order_q.filter(ShopOrder.factory_id == factory_id)
+
+    order = order_q.first_or_404()
     new_status = (request.form.get("status") or "").strip().lower()
 
     if new_status not in ("pending", "ready", "completed", "cancelled"):
         flash("Неверный статус заказа.", "warning")
         return redirect(url_for("shop.list_shop_orders"))
 
-    if current_user.is_shop and not (current_user.is_manager or current_user.is_admin):
+    if _is_shared_shop_user():
         if order.created_by_id != current_user.id:
             flash("Вы можете менять статус только своих заказов.", "danger")
             return redirect(url_for("shop.list_shop_orders"))
@@ -498,8 +936,7 @@ def update_shop_order_status(order_id: int):
 @roles_required("admin", "manager")
 def factory_pending_orders():
     orders = (
-        ShopOrder.query
-        .filter_by(factory_id=current_user.factory_id, status="pending")
+        ShopOrder.query.filter_by(factory_id=current_user.factory_id, status="pending")
         .order_by(ShopOrder.created_at.asc())
         .all()
     )
@@ -512,75 +949,24 @@ def factory_pending_orders():
 def ship_order_item(item_id: int):
     factory_id = current_user.factory_id
 
-    item = (
-        ShopOrderItem.query
-        .join(Product, Product.id == ShopOrderItem.product_id)
-        .filter(
-            ShopOrderItem.id == item_id,
-            Product.factory_id == factory_id,
-        )
-        .first_or_404()
-    )
-
-    order = item.order
-    product = item.product
-
     try:
         ship_qty = int(request.form.get("ship_qty") or 0)
     except (TypeError, ValueError):
         ship_qty = 0
 
-    if ship_qty <= 0:
-        flash("Количество должно быть больше нуля.", "warning")
+    try:
+        result = shop_service.ship_order_item_to_shop(
+            item_id=item_id,
+            ship_qty=ship_qty,
+            factory_id=factory_id,
+            created_by=current_user,
+        )
+    except ValueError as e:
+        flash(str(e), "danger")
         return redirect(url_for("shop.factory_pending_orders"))
 
-    if ship_qty > item.qty_remaining:
-        flash("Нельзя отправить больше, чем осталось по заказу.", "danger")
-        return redirect(url_for("shop.factory_pending_orders"))
-
-    if product.quantity < ship_qty:
-        flash("На фабрике нет такого количества на складе.", "danger")
-        return redirect(url_for("shop.factory_pending_orders"))
-
-    product.quantity -= ship_qty
-
-    shop_row = ShopStock.query.filter_by(product_id=product.id).first()
-    if not shop_row:
-        shop_row = ShopStock(product_id=product.id, quantity=0)
-        db.session.add(shop_row)
-
-    shop_row.quantity += ship_qty
-
-    item.qty_from_shop_now += ship_qty
-    item.qty_remaining -= ship_qty
-
-    order.recalc_status()
-
-    move = Movement(
-        factory_id=factory_id,
-        product_id=product.id,
-        source=f"factory (order #{order.id})",
-        destination="shop",
-        change=ship_qty,
-        note=f"Отгружено в магазин {ship_qty} шт. по заказу #{order.id}",
-        created_by_id=current_user.id,
-        timestamp=datetime.utcnow(),
-    )
-    db.session.add(move)
-
-    stock_mv = StockMovement(
-        factory_id=factory_id,
-        product_id=product.id,
-        qty_change=ship_qty,
-        source="factory",
-        destination="shop",
-        movement_type="factory_to_shop_for_order",
-        order_id=order.id,
-        comment=f"Shipped {ship_qty} pcs for order #{order.id} from factory to shop",
-    )
-    db.session.add(stock_mv)
-
-    db.session.commit()
+    order = result["order"]
+    ship_qty = result["ship_qty"]
 
     flash(f"Отправлено в магазин {ship_qty} шт. для заказа #{order.id}.", "success")
     return redirect(url_for("shop.factory_pending_orders"))
@@ -589,7 +975,7 @@ def ship_order_item(item_id: int):
 @shop_bp.route("/history", methods=["GET"])
 @login_required
 def movement_history():
-    factory_id = current_user.factory_id
+    factory_id = _scope_factory_id()
 
     product_id = request.args.get("product_id", type=int)
     order_id = request.args.get("order_id", type=int)
@@ -612,11 +998,10 @@ def movement_history():
         except ValueError:
             date_to = None
 
-    query = (
-        StockMovement.query
-        .join(Product)
-        .filter(Product.factory_id == factory_id)
-    )
+    query = StockMovement.query.join(Product)
+
+    if factory_id is not None:
+        query = query.filter(Product.factory_id == factory_id)
 
     if product_id:
         query = query.filter(StockMovement.product_id == product_id)
@@ -640,12 +1025,11 @@ def movement_history():
 
     movements = query.order_by(StockMovement.timestamp.desc()).all()
 
-    products = (
-        Product.query
-        .filter_by(factory_id=factory_id)
-        .order_by(Product.name.asc())
-        .all()
-    )
+    products_q = Product.query
+    if factory_id is not None:
+        products_q = products_q.filter_by(factory_id=factory_id)
+
+    products = products_q.order_by(Product.name.asc()).all()
 
     return render_template(
         "history/movements.html",
@@ -662,15 +1046,17 @@ def movement_history():
 @shop_bp.route("/api/stock-low")
 @login_required
 def shop_stock_low():
-    low = (
-        ShopStock.query
-        .join(Product)
-        .filter(
-            Product.factory_id == current_user.factory_id,
-            ShopStock.quantity < 5,
-        )
-        .all()
-    )
+    q = ShopStock.query.join(Product)
+
+    factory_id = _scope_factory_id()
+    if factory_id is not None:
+        q = q.filter(ShopStock.source_factory_id == factory_id)
+
+    if current_user.shop_id:
+        q = q.filter(ShopStock.shop_id == current_user.shop_id)
+
+    low = q.filter(ShopStock.quantity < 5).all()
+
     return jsonify(
         {
             "low_stock": [
@@ -685,21 +1071,20 @@ def shop_stock_low():
 @login_required
 @roles_required("shop", "manager", "admin")
 def history_by_order(order_id: int):
-    order = (
-        ShopOrder.query
-        .filter_by(id=order_id, factory_id=current_user.factory_id)
-        .first_or_404()
-    )
+    factory_id = _scope_factory_id()
 
-    movements = (
-        StockMovement.query
-        .filter(
-            StockMovement.order_id == order_id,
-            StockMovement.factory_id == current_user.factory_id,
-        )
-        .order_by(StockMovement.timestamp.desc())
-        .all()
-    )
+    order_q = ShopOrder.query.filter(ShopOrder.id == order_id)
+    if factory_id is not None:
+        order_q = order_q.filter(ShopOrder.factory_id == factory_id)
+
+    order = order_q.first_or_404()
+
+    movements_q = StockMovement.query.filter(StockMovement.order_id == order_id)
+
+    if factory_id is not None:
+        movements_q = movements_q.filter(StockMovement.factory_id == factory_id)
+
+    movements = movements_q.order_by(StockMovement.timestamp.desc()).all()
 
     return render_template(
         "history/order_movements.html",
@@ -708,30 +1093,40 @@ def history_by_order(order_id: int):
     )
 
 
-@shop_bp.route("/sell/<int:product_id>", methods=["GET", "POST"])
+@shop_bp.route("/sell/<int:shop_stock_id>", methods=["GET", "POST"])
 @login_required
 @roles_required("shop", "manager", "admin")
-def sell_product(product_id: int):
-    factory_id = current_user.factory_id
+def sell_product(shop_stock_id: int):
+    stock = ShopStock.query.get_or_404(shop_stock_id)
 
-    product = (
-        Product.query
-        .filter_by(id=product_id, factory_id=factory_id)
-        .first_or_404()
-    )
-    stock = ShopStock.query.filter_by(product_id=product.id).first()
-    available = stock.quantity if stock else 0
+    if _is_shared_shop_user():
+        if not current_user.shop_id or stock.shop_id != current_user.shop_id:
+            abort(403)
+    else:
+        accessible_shop_ids = _accessible_shop_ids()
+        if stock.shop_id not in accessible_shop_ids:
+            abort(403)
+
+        if (
+            current_user.factory_id
+            and stock.source_factory_id != current_user.factory_id
+        ):
+            abort(403)
+
+    product = stock.product
+    available = stock.quantity or 0
+    effective_factory_id = stock.source_factory_id
 
     if request.method == "POST":
         try:
             requested_qty = int(request.form.get("quantity") or 0)
         except ValueError:
             flash("Неверное количество.", "danger")
-            return redirect(url_for("shop.sell_product", product_id=product.id))
+            return redirect(url_for("shop.sell_product", shop_stock_id=stock.id))
 
         if requested_qty <= 0:
             flash("Количество должно быть больше нуля.", "warning")
-            return redirect(url_for("shop.sell_product", product_id=product.id))
+            return redirect(url_for("shop.sell_product", shop_stock_id=stock.id))
 
         customer_name = (request.form.get("customer_name") or "").strip() or None
         customer_phone = (request.form.get("customer_phone") or "").strip() or None
@@ -740,7 +1135,7 @@ def sell_product(product_id: int):
 
         try:
             result = shop_service.sell_from_shop_or_create_order(
-                factory_id=factory_id,
+                factory_id=effective_factory_id,
                 product_id=product.id,
                 requested_qty=requested_qty,
                 customer_name=customer_name,
@@ -748,10 +1143,11 @@ def sell_product(product_id: int):
                 note=note,
                 allow_partial_sale=allow_partial_sale,
                 created_by=current_user,
+                shop_stock_id=stock.id,
             )
         except ValueError as e:
             flash(str(e), "danger")
-            return redirect(url_for("shop.sell_product", product_id=product.id))
+            return redirect(url_for("shop.sell_product", shop_stock_id=stock.id))
 
         sale = result["sale"]
         order = result["order"]
@@ -760,9 +1156,10 @@ def sell_product(product_id: int):
 
         if sale:
             qty = sale.quantity or 0
-            currency = getattr(sale, "currency", None) or getattr(product, "currency", "UZS")
+            currency = getattr(sale, "currency", None) or getattr(
+                product, "currency", "UZS"
+            )
 
-            # total_sell robust
             if getattr(sale, "total_sell", None) is not None:
                 total_sell = sale.total_sell
             else:
@@ -771,49 +1168,6 @@ def sell_product(product_id: int):
                     price = getattr(product, "sell_price_per_item", 0) or 0
                 total_sell = qty * price
 
-            # 1) Stock movement
-            mv = StockMovement(
-                factory_id=factory_id,
-                product_id=product.id,
-                qty_change=-qty,
-                source="shop",
-                destination="customer",
-                movement_type="shop_sale",
-                order_id=order.id if order else None,
-                comment=f"Продажа {qty} шт. клиенту {customer_name or ''}".strip(),
-            )
-            db.session.add(mv)
-
-            # 2) ✅ CashRecord so it appears in /cash/
-            sale_date = getattr(sale, "date", None) or date.today()
-
-            cash_note = f"Продажа (магазин) #{sale.id}: {product.name} x{qty}"
-            if customer_name:
-                cash_note += f" — {customer_name}"
-            if note:
-                cash_note += f" ({note})"
-
-            # duplicate protection (double submit)
-            existing_cash = (
-                CashRecord.query
-                .filter_by(factory_id=factory_id, currency=currency)
-                .filter(CashRecord.date == sale_date)
-                .filter(CashRecord.amount == total_sell)
-                .filter(CashRecord.note.ilike(f"%#{sale.id}%"))
-                .first()
-            )
-            if not existing_cash:
-                db.session.add(CashRecord(
-                    factory_id=factory_id,
-                    date=sale_date,
-                    amount=total_sell,   # + = приход
-                    currency=currency,
-                    note=cash_note,
-                ))
-
-            db.session.commit()
-
-            # Telegram notify
             try:
                 msg = (
                     "💸 <b>Новая продажа (магазин)</b>\n"
@@ -821,9 +1175,14 @@ def sell_product(product_id: int):
                     f"Категория: {product.category or '-'}\n"
                     f"Кол-во: <b>{qty}</b> шт.\n"
                     f"Сумма: <b>{total_sell:.2f} {currency}</b>\n"
-                    f"Клиент: {customer_name or '-'}"
+                    f"Клиент: {customer_name or '-'}\n"
+                    f"Фабрика-источник: <b>{stock.source_factory.name if stock.source_factory else '-'}</b>"
                 )
-                send_telegram_message(msg)
+                send_telegram_message(
+                    msg,
+                    factory_id=effective_factory_id,
+                    include_manager_chats=False,
+                )
             except Exception:
                 pass
 
@@ -835,7 +1194,11 @@ def sell_product(product_id: int):
                     f"Нужно произвести: <b>{missing}</b> шт.\n"
                     f"Номер заказа: <b>{order.id}</b>"
                 )
-                send_telegram_message(msg)
+                send_telegram_message(
+                    msg,
+                    factory_id=effective_factory_id,
+                    include_manager_chats=False,
+                )
             except Exception:
                 pass
 
@@ -858,4 +1221,146 @@ def sell_product(product_id: int):
         "shop/sell.html",
         product=product,
         stock_qty=available,
+        shop_stock=stock,
     )
+
+
+@shop_bp.route("/orders/<int:order_id>/complete", methods=["POST"])
+@login_required
+@roles_required("shop", "manager", "admin")
+def complete_shop_order(order_id: int):
+    factory_id = _scope_factory_id()
+
+    order_q = ShopOrder.query.filter(ShopOrder.id == order_id)
+    if factory_id is not None:
+        order_q = order_q.filter(ShopOrder.factory_id == factory_id)
+
+    order = order_q.first_or_404()
+
+    if _is_shared_shop_user():
+        if order.created_by_id != current_user.id:
+            flash("Вы можете завершать только свои заказы.", "danger")
+            return redirect(url_for("shop.list_shop_orders"))
+
+    if order.status != "ready":
+        flash("Завершить можно только заказ со статусом 'Готов к выдаче'.", "warning")
+        return redirect(url_for("shop.list_shop_orders"))
+
+    order.status = "completed"
+    if order.completed_at is None:
+        order.completed_at = datetime.utcnow()
+
+    db.session.commit()
+
+    try:
+        items_text = []
+        for item in order.items[:10]:
+            items_text.append(f"• {item.product.name}: {item.qty_requested} шт.")
+
+        msg = (
+            "✔ <b>Заказ выдан клиенту</b>\n"
+            f"Заказ: <b>#{order.id}</b>\n"
+            f"Клиент: <b>{order.customer_name or '-'}</b>\n"
+            f"Телефон: {order.customer_phone or '-'}\n\n" + "\n".join(items_text)
+        )
+        send_telegram_message(
+            msg,
+            factory_id=order.factory_id,
+            include_manager_chats=False,
+        )
+    except Exception:
+        pass
+
+    flash(f"Заказ #{order.id} отмечен как выданный клиенту.", "success")
+    return redirect(url_for("shop.list_shop_orders"))
+
+
+def _get_daily_sales_chart_data(factory_id=None, days: int = 7):
+    today = date.today()
+    start_date = today - timedelta(days=days - 1)
+
+    q = db.session.query(Sale, Product).join(Product, Product.id == Sale.product_id)
+
+    if factory_id is not None:
+        q = q.filter(Product.factory_id == factory_id)
+    elif _is_shared_shop_user():
+        if hasattr(Sale, "shop_id") and current_user.shop_id:
+            q = q.filter(Sale.shop_id == current_user.shop_id)
+
+    rows = q.all()
+
+    totals_by_day = {}
+    for i in range(days):
+        d = start_date + timedelta(days=i)
+        totals_by_day[d] = 0.0
+
+    for sale, product in rows:
+        raw_sale_date = getattr(sale, "date", None)
+
+        if not raw_sale_date and hasattr(sale, "created_at"):
+            raw_sale_date = getattr(sale, "created_at", None)
+
+        if not raw_sale_date:
+            continue
+
+        if isinstance(raw_sale_date, datetime):
+            s_date = raw_sale_date.date()
+        else:
+            s_date = raw_sale_date
+
+        if s_date < start_date or s_date > today:
+            continue
+
+        totals_by_day[s_date] += _sale_amount_uzs(sale, product)
+
+    labels = []
+    values = []
+
+    for i in range(days):
+        d = start_date + timedelta(days=i)
+        labels.append(d.strftime("%d.%m"))
+        values.append(float(totals_by_day.get(d, 0.0) or 0.0))
+
+    return labels, values
+
+
+def _get_factory_sales_chart_data(factory_id=None):
+    q = db.session.query(Sale, Product).join(Product, Product.id == Sale.product_id)
+
+    if factory_id is not None:
+        q = q.filter(Product.factory_id == factory_id)
+    elif _is_shared_shop_user():
+        if hasattr(Sale, "shop_id") and current_user.shop_id:
+            q = q.filter(Sale.shop_id == current_user.shop_id)
+
+    rows = q.all()
+
+    by_factory = {}
+
+    for sale, product in rows:
+        fid = getattr(product, "factory_id", None)
+        if not fid:
+            continue
+
+        factory_name = "-"
+        if getattr(product, "factory", None) and getattr(product.factory, "name", None):
+            factory_name = product.factory.name
+
+        if fid not in by_factory:
+            by_factory[fid] = {
+                "factory_name": factory_name,
+                "amount_uzs": 0.0,
+            }
+
+        by_factory[fid]["amount_uzs"] += _sale_amount_uzs(sale, product)
+
+    sorted_rows = sorted(
+        by_factory.values(),
+        key=lambda x: x["amount_uzs"],
+        reverse=True,
+    )
+
+    labels = [row["factory_name"] for row in sorted_rows]
+    values = [float(row["amount_uzs"] or 0.0) for row in sorted_rows]
+
+    return labels, values

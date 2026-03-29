@@ -6,13 +6,13 @@
   {# ===== HEADER ===== #}
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
     <div>
-      <h1 class="h4 mb-0">Склад фабрики</h1>
+      <h1 class="h4 mb-0">{{ t('factory_stock') }}</h1>
       <small class="text-muted">
-        Обзор готовой продукции: сколько штук на фабрике и в магазине.
+        {{ t('factory_stock_subtitle') }}
       </small>
     </div>
     <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
-      ← На дашборд
+      ← {{ t('back_to_dashboard') }}
     </a>
   </div>
 
@@ -26,11 +26,11 @@
     <div class="col-12 col-md-4">
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body py-3 text-center">
-          <div class="small text-uppercase text-muted mb-1">Всего изделий</div>
+          <div class="small text-uppercase text-muted mb-1">{{ t('factory_stock_total_items') }}</div>
           <div class="display-6 fw-semibold mb-1" style="font-size: 1.9rem;">
             {{ total_all }}
           </div>
-          <div class="small text-muted">Фабрика + магазин</div>
+          <div class="small text-muted">{{ t('factory_stock_factory_plus_shop') }}</div>
         </div>
       </div>
     </div>
@@ -38,7 +38,7 @@
     <div class="col-6 col-md-4">
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body py-3 text-center">
-          <div class="small text-uppercase text-muted mb-1">На фабрике</div>
+          <div class="small text-uppercase text-muted mb-1">{{ t('factory_stock_on_factory') }}</div>
           <div class="fs-4 fw-semibold mb-1">{{ total_factory }}</div>
           {% if total_all %}
             {% set factory_pct = (total_factory * 100 // total_all) %}
@@ -47,9 +47,9 @@
                    style="width: {{ factory_pct }}%;"
                    aria-valuenow="{{ factory_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
-            <div class="small text-muted mt-1">{{ factory_pct }}% от общего количества</div>
+            <div class="small text-muted mt-1">{{ t('share_of_total').format(percent=factory_pct) }}</div>
           {% else %}
-            <div class="small text-muted">Нет данных</div>
+            <div class="small text-muted">{{ t('no_data') }}</div>
           {% endif %}
         </div>
       </div>
@@ -58,7 +58,7 @@
     <div class="col-6 col-md-4">
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body py-3 text-center">
-          <div class="small text-uppercase text-muted mb-1">В магазине</div>
+          <div class="small text-uppercase text-muted mb-1">{{ t('factory_stock_in_shop') }}</div>
           <div class="fs-4 fw-semibold mb-1">{{ total_shop }}</div>
           {% if total_all %}
             {% set shop_pct = (total_shop * 100 // total_all) %}
@@ -67,9 +67,9 @@
                    style="width: {{ shop_pct }}%;"
                    aria-valuenow="{{ shop_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
-            <div class="small text-muted mt-1">{{ shop_pct }}% от общего количества</div>
+            <div class="small text-muted mt-1">{{ t('share_of_total').format(percent=shop_pct) }}</div>
           {% else %}
-            <div class="small text-muted">Нет данных</div>
+            <div class="small text-muted">{{ t('no_data') }}</div>
           {% endif %}
         </div>
       </div>
@@ -81,15 +81,15 @@
     <div class="col-md-6">
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body">
-          <h6 class="mb-3 text-center">Распределение товаров на фабрике</h6>
+          <h6 class="mb-3 text-center">{{ t('factory_stock_distribution_title') }}</h6>
           {% if chart_labels and chart_labels|length > 0 %}
             <canvas id="factoryPie" height="160"></canvas>
             <div class="small text-muted mt-2 text-center">
-              Показывает долю каждого товара в общем количестве на фабрике.
+              {{ t('factory_stock_distribution_subtitle') }}
             </div>
           {% else %}
             <p class="small text-muted mb-0 text-center">
-              Пока нет данных для построения диаграммы.
+              {{ t('factory_stock_chart_no_data') }}
             </p>
           {% endif %}
         </div>
@@ -99,15 +99,15 @@
     <div class="col-md-6">
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body">
-          <h6 class="mb-3 text-center">Топ товаров по количеству на фабрике</h6>
+          <h6 class="mb-3 text-center">{{ t('factory_stock_top_title') }}</h6>
           {% if chart_labels and chart_labels|length > 0 %}
             <canvas id="factoryBar" height="160"></canvas>
             <div class="small text-muted mt-2 text-center">
-              Сортировка по количеству на складе фабрики (только позиции &gt; 0).
+              {{ t('factory_stock_top_subtitle') }}
             </div>
           {% else %}
             <p class="small text-muted mb-0 text-center">
-              Пока нет товаров с остатком на фабрике.
+              {{ t('factory_stock_top_empty') }}
             </p>
           {% endif %}
         </div>
@@ -120,18 +120,18 @@
     <div class="card-body p-2 p-md-3">
       <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
         <div>
-          <h6 class="mb-0">Товары на складе фабрики</h6>
+          <h6 class="mb-0">{{ t('factory_stock_table_title') }}</h6>
           <small class="text-muted">
-            Позиции: {{ products|length }}
-            {% if total_factory %} • На фабрике: {{ total_factory }} шт.{% endif %}
+            {{ t('positions_label') }}: {{ products|length }}
+            {% if total_factory %} • {{ t('factory_stock_on_factory') }}: {{ total_factory }} {{ t('pieces_short') }}.{% endif %}
           </small>
         </div>
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-light text-muted">
-            <span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#0d6efd;"></span> Фабрика
+            <span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#0d6efd;"></span> {{ t('factory_badge') }}
           </span>
           <span class="badge bg-light text-muted">
-            <span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#ffc107;"></span> Магазин
+            <span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#ffc107;"></span> {{ t('shop_badge') }}
           </span>
         </div>
       </div>
@@ -140,11 +140,11 @@
         <table class="table table-sm align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th>Товар</th>
-              <th class="text-end">Всего (шт.)</th>
-              <th class="text-end">На фабрике</th>
-              <th class="text-end">В магазине</th>
-              <th style="width: 180px;">Распределение</th>
+              <th>{{ t('product') }}</th>
+              <th class="text-end">{{ t('factory_stock_total_pcs') }}</th>
+              <th class="text-end">{{ t('factory_stock_on_factory') }}</th>
+              <th class="text-end">{{ t('factory_stock_in_shop') }}</th>
+              <th style="width: 180px;">{{ t('factory_stock_distribution_label') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -159,9 +159,9 @@
                 <td class="fw-semibold">
                   {{ p.name }}
                   {% if f == 0 and total > 0 %}
-                    <span class="badge bg-warning text-dark ms-1">только в магазине</span>
+                    <span class="badge bg-warning text-dark ms-1">{{ t('factory_stock_only_in_shop') }}</span>
                   {% elif f > 0 and s == 0 %}
-                    <span class="badge bg-primary ms-1">только на фабрике</span>
+                    <span class="badge bg-primary ms-1">{{ t('factory_stock_only_in_factory') }}</span>
                   {% endif %}
                 </td>
                 <td class="text-end fw-semibold">{{ total }}</td>
@@ -180,17 +180,17 @@
                       {% endif %}
                     </div>
                     <div class="small text-muted mt-1">
-                      Фабрика: {{ fpct }}% • Магазин: {{ spct }}%
+                      {{ t('factory_stock_split_summary').format(factory=fpct, shop=spct) }}
                     </div>
                   {% else %}
-                    <span class="small text-muted">Нет остатков</span>
+                    <span class="small text-muted">{{ t('factory_stock_no_stock_left') }}</span>
                   {% endif %}
                 </td>
               </tr>
             {% else %}
               <tr>
                 <td colspan="5" class="text-center text-muted py-3">
-                  На складе фабрики нет товаров.
+                  {{ t('factory_stock_no_products') }}
                 </td>
               </tr>
             {% endfor %}
@@ -209,7 +209,7 @@
     const data = {{ chart_values|tojson }};
 
     if (!labels || labels.length === 0) {
-      return; // нет данных — не инициализируем графики
+      return; // no data: skip chart init
     }
 
     const pieCanvas = document.getElementById('factoryPie');
@@ -235,7 +235,7 @@
     }
 
     if (barCanvas) {
-      // Берём первые 8 позиций (или все, если их мало), отсортированные по количеству
+      // Take the first 8 items (or all of them if there are fewer), sorted by quantity
       const combined = labels.map((name, i) => ({ name, value: data[i] || 0 }));
       combined.sort((a, b) => b.value - a.value);
       const top = combined.slice(0, 8);
@@ -248,7 +248,7 @@
         data: {
           labels: barLabels,
           datasets: [{
-            label: 'Штук на фабрике',
+            label: {{ t('factory_stock_chart_series')|tojson }},
             data: barData,
             borderWidth: 1,
           }]

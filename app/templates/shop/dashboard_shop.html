@@ -1,0 +1,746 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('dashboard_shop_title') }} — Mini Moda{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mm-page-shop-dashboard {
+    --mm-cardA: rgba(255, 255, 255, 0.84);
+    --mm-cardB: rgba(255, 255, 255, 0.97);
+    --mm-line: rgba(0, 0, 0, 0.08);
+    --mm-muted: rgba(0, 0, 0, 0.56);
+    --mm-soft: rgba(0, 0, 0, 0.78);
+    --mm-strong: rgba(0, 0, 0, 0.9);
+    --mm-shadow: 0 16px 42px rgba(0, 0, 0, 0.1);
+    --mm-shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.07);
+    --mm-radius: 22px;
+    position: relative;
+  }
+
+  .mm-page-shop-dashboard::before {
+    content: "";
+    position: absolute;
+    inset: -16px -10px -16px -10px;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 14%, rgba(13, 110, 253, 0.1), transparent 34%),
+      radial-gradient(circle at 88% 20%, rgba(111, 66, 193, 0.08), transparent 36%),
+      radial-gradient(circle at 26% 92%, rgba(32, 201, 151, 0.08), transparent 40%);
+    opacity: 0.95;
+  }
+
+  .mm-page-shop-dashboard > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mm-card-soft,
+  .mm-section,
+  .mm-kpi-card,
+  .mm-chart-card {
+    border: 1px solid var(--mm-line);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.84);
+    box-shadow: var(--mm-shadow-soft);
+  }
+
+  .mm-kpi-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    width: 100%;
+    margin: 0;
+  }
+
+  .mm-kpi-card {
+    width: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    border-radius: 16px;
+    margin: 0;
+  }
+
+  .mm-kpi-card:hover,
+  .mm-chart-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.09);
+  }
+
+  .mm-kpi-row-4 {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    margin: 0;
+  }
+
+  .mm-kpi-row-4 > .col-12 {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .mm-kpi-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0.58rem 0.82rem;
+    min-height: 50px;
+    width: 100%;
+  }
+
+  .mm-kpi-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mm-muted);
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: 0.18rem;
+  }
+
+  .mm-kpi-value {
+    font-size: 1rem;
+    font-weight: 900;
+    color: rgba(0, 0, 0, 0.88);
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .mm-kpi-foot {
+    font-size: 0.73rem;
+    color: var(--mm-muted);
+    line-height: 1.05;
+    margin: 0;
+  }
+
+  .mm-kpi-group-head {
+    margin: 0.15rem 0 0.35rem;
+  }
+
+  .mm-kpi-group-title {
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mm-muted);
+    padding-left: 2px;
+  }
+
+  .mm-orders-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    margin: 0 0 1rem 0;
+  }
+
+  .mm-orders-kpi-card {
+    border-radius: 14px;
+    height: 100%;
+  }
+
+  .mm-orders-kpi-inner {
+    padding: 0.56rem 0.4rem;
+    min-height: 62px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .mm-orders-kpi-card .mm-kpi-label {
+    font-size: 0.5rem;
+    line-height: 1.02;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.12rem;
+  }
+
+  .mm-orders-kpi-card .mm-kpi-value {
+    font-size: 0.82rem;
+    line-height: 1;
+    margin-bottom: 0.08rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+  }
+
+  .mm-orders-kpi-card .mm-kpi-foot {
+    font-size: 0.54rem;
+    line-height: 1.02;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mm-action-btn {
+    border-radius: 16px !important;
+    min-height: 52px;
+    font-weight: 800 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .mm-action-btn-main {
+    min-height: 58px;
+    font-size: 1rem;
+  }
+
+  .mm-mini-note {
+    font-size: 0.83rem;
+    color: var(--mm-muted);
+  }
+
+  .mm-factory-head {
+    margin: 0.15rem 0 0.45rem;
+  }
+
+  .mm-factory-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .mm-factory-box {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    background: #fff;
+    padding: 0.85rem;
+    width: 100%;
+    box-shadow: var(--mm-shadow-soft);
+  }
+
+  .mm-factory-name {
+    font-size: 0.88rem;
+    font-weight: 900;
+    color: #111;
+    margin-bottom: 0.45rem;
+  }
+
+  .mm-inline-stat {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    background: #fff;
+    padding: 0.7rem 0.8rem;
+  }
+
+  .mm-inline-stat-k {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
+  }
+
+  .mm-inline-stat-v {
+    font-weight: 900;
+    font-size: 1rem;
+    color: #111;
+  }
+
+  .mm-factory-share {
+    margin-top: 0.65rem;
+  }
+
+  .mm-factory-share-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--mm-soft);
+  }
+
+  .mm-factory-share-label {
+    font-weight: 700;
+    color: var(--mm-soft);
+  }
+
+  .mm-factory-share-value {
+    font-weight: 900;
+    color: var(--mm-strong);
+    white-space: nowrap;
+  }
+
+  .mm-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+  }
+
+  .mm-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(13, 110, 253, 0.78), rgba(111, 66, 193, 0.66));
+  }
+
+  .mm-chart-headline {
+    margin: 0.15rem 0 0.45rem;
+  }
+
+  .mm-chart-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .mm-chart-card {
+    padding: 0.9rem;
+  }
+
+  .mm-chart-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .mm-chart-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 900;
+    color: var(--mm-muted);
+    margin: 0 0 0.18rem 0;
+  }
+
+  .mm-chart-sub {
+    font-size: 0.72rem;
+    color: var(--mm-muted);
+    margin: 0;
+  }
+
+  .mm-chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 280px;
+  }
+
+  .mm-empty-card {
+    border: 1px dashed rgba(0, 0, 0, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.78);
+    padding: 0.9rem;
+  }
+
+  @media (max-width: 767.98px) {
+    .mm-page-shop-dashboard::before {
+      display: none;
+    }
+
+    .mm-kpi-inner {
+      padding: 0.54rem 0.72rem;
+      min-height: 48px;
+      gap: 8px;
+    }
+
+    .mm-kpi-label {
+      font-size: 0.62rem;
+    }
+
+    .mm-kpi-value {
+      font-size: 0.88rem;
+    }
+
+    .mm-kpi-foot {
+      font-size: 0.68rem;
+    }
+
+    .mm-orders-kpi-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .mm-orders-kpi-inner {
+      padding: 0.5rem 0.34rem;
+      min-height: 60px;
+    }
+
+    .mm-orders-kpi-card .mm-kpi-label {
+      font-size: 0.48rem;
+    }
+
+    .mm-orders-kpi-card .mm-kpi-value {
+      font-size: 0.8rem;
+    }
+
+    .mm-orders-kpi-card .mm-kpi-foot {
+      font-size: 0.52rem;
+    }
+
+    .mm-chart-card {
+      padding: 0.75rem;
+    }
+
+    .mm-chart-wrap {
+      height: 230px;
+    }
+
+    .mm-action-btn {
+      width: 100%;
+    }
+
+    .mm-factory-grid {
+      gap: 6px;
+    }
+
+    .mm-factory-box {
+      padding: 0.78rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4 mm-page-shop-dashboard">
+  {% set display_name = current_user.full_name or current_user.username or t('generic_user') %}
+  {% set ds = stats if stats is defined and stats else {} %}
+  {% set pending_count = shop_orders_pending|default(ds.get('orders_pending', 0)) %}
+  {% set ready_count = shop_orders_ready|default(ds.get('orders_ready', 0)) %}
+  {% set completed_count = counts.completed if counts is defined and counts.completed is not none else ds.get('orders_completed', 0) %}
+  {% set low_stock_count = ds.get('low_stock_count', 0) %}
+  {% set total_shop_skus = ds.get('shop_total_skus', ds.get('shop_items_count', 0)) %}
+  {% set total_shop_qty = ds.get('shop_total_qty', 0) %}
+  {% set today_sales_uzs = ds.get('today_sales_uzs', 0) %}
+  {% set yesterday_sales_uzs = ds.get('yesterday_sales_uzs', 0) %}
+  {% set week_sales_uzs = ds.get('week_sales_uzs', 0) %}
+  {% set month_sales_uzs = ds.get('month_sales_uzs', 0) %}
+  {% set shop_uzs = shop_uzs|default(ds.get('shop_total_value_uzs', 0)) %}
+  {% set factory_breakdown = shop_factory_breakdown if shop_factory_breakdown is defined and shop_factory_breakdown else ds.get('factory_breakdown', []) %}
+
+  {% set daily_sales_labels = daily_sales_labels if daily_sales_labels is defined and daily_sales_labels else [] %}
+  {% set daily_sales_values = daily_sales_values if daily_sales_values is defined and daily_sales_values else [] %}
+  {% set factory_sales_labels = factory_sales_labels if factory_sales_labels is defined and factory_sales_labels else [] %}
+  {% set factory_sales_values = factory_sales_values if factory_sales_values is defined and factory_sales_values else [] %}
+
+  <div class="mm-shop-top mb-3">
+    <div class="mm-shop-top-actions mb-3">
+      <div class="d-grid gap-2 d-md-flex">
+        <a href="{{ url_for('sales.shop_sell') }}" class="btn btn-success mm-action-btn mm-action-btn-main">
+          🧾 {{ t('dashboard_shop_action_sell_btn') }}
+        </a>
+        <a href="{{ url_for('sales.wholesale_create') }}" class="btn btn-primary mm-action-btn mm-action-btn-main">
+          📦 {{ t('dashboard_shop_action_big_sale') }}
+        </a>
+      </div>
+    </div>
+  </div>
+
+    <div class="row g-2 mm-kpi-row-4">
+      <div class="col-12">
+        <a href="{{ url_for('sales.list_sales') }}" class="mm-kpi-link">
+          <div class="mm-kpi-card">
+            <div class="mm-kpi-inner">
+              <div>
+                <div class="mm-kpi-label">{{ t('dashboard_today_sales_uzs') }}</div>
+                <div class="mm-kpi-foot">{{ t('dashboard_shop_today_sales_hint') }}</div>
+              </div>
+              <div class="mm-kpi-value">{{ format_money_compact(today_sales_uzs or 0, 'UZS') }}</div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-12">
+        <a href="{{ url_for('sales.list_sales') }}" class="mm-kpi-link">
+          <div class="mm-kpi-card">
+            <div class="mm-kpi-inner">
+              <div>
+                <div class="mm-kpi-label">{{ t('dashboard_manager_card_yesterday_sales') }}</div>
+                <div class="mm-kpi-foot">{{ t('dashboard_shop_card_yesterday_hint') }}</div>
+              </div>
+              <div class="mm-kpi-value">{{ format_money_compact(yesterday_sales_uzs or 0, 'UZS') }}</div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-12">
+        <a href="{{ url_for('sales.list_sales') }}" class="mm-kpi-link">
+          <div class="mm-kpi-card">
+            <div class="mm-kpi-inner">
+              <div>
+                <div class="mm-kpi-label">{{ t('dashboard_manager_card_week_sales') }}</div>
+                <div class="mm-kpi-foot">{{ t('dashboard_manager_card_week_sales_hint') }}</div>
+              </div>
+              <div class="mm-kpi-value">{{ format_money_compact(week_sales_uzs or 0, 'UZS') }}</div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-12">
+        <a href="{{ url_for('shop.list_shop') }}" class="mm-kpi-link">
+          <div class="mm-kpi-card">
+            <div class="mm-kpi-inner">
+              <div>
+                <div class="mm-kpi-label">{{ t('dashboard_shop_card_stock_shop_title') }}</div>
+                <div class="mm-kpi-foot">{{ t('dashboard_shop_card_stock_shop_hint') }}</div>
+              </div>
+              <div class="mm-kpi-value">{{ format_money_compact(shop_uzs or 0, 'UZS') }}</div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="mm-kpi-group-head">
+    <div class="mm-kpi-group-title">{{ t('dashboard_shop_orders') }}</div>
+  </div>
+
+  <div class="mm-orders-kpi-grid mb-3">
+    <a href="{{ url_for('shop.list_shop_orders') }}" class="mm-kpi-link">
+      <div class="mm-kpi-card mm-orders-kpi-card">
+        <div class="mm-orders-kpi-inner">
+          <div class="mm-kpi-label">{{ t('dashboard_shop_orders_summary_pending') }}</div>
+          <div class="mm-kpi-value">{{ pending_count }}</div>
+          <div class="mm-kpi-foot">{{ t('dashboard_shop_pending_orders_hint') }}</div>
+        </div>
+      </div>
+    </a>
+
+    <a href="{{ url_for('shop.list_shop_orders', status='ready') }}" class="mm-kpi-link">
+      <div class="mm-kpi-card mm-orders-kpi-card">
+        <div class="mm-orders-kpi-inner">
+          <div class="mm-kpi-label">{{ t('dashboard_shop_orders_summary_ready') }}</div>
+          <div class="mm-kpi-value text-info">{{ ready_count }}</div>
+          <div class="mm-kpi-foot">{{ t('dashboard_shop_ready_orders_hint') }}</div>
+        </div>
+      </div>
+    </a>
+
+    <a href="{{ url_for('shop.list_shop_orders', status='completed') }}" class="mm-kpi-link">
+      <div class="mm-kpi-card mm-orders-kpi-card">
+        <div class="mm-orders-kpi-inner">
+          <div class="mm-kpi-label">{{ t('dashboard_shop_completed_orders') }}</div>
+          <div class="mm-kpi-value text-success">{{ completed_count }}</div>
+          <div class="mm-kpi-foot">{{ t('dashboard_shop_completed_orders_hint') }}</div>
+        </div>
+      </div>
+    </a>
+
+    <a href="{{ url_for('shop.list_shop') }}" class="mm-kpi-link">
+      <div class="mm-kpi-card mm-orders-kpi-card">
+        <div class="mm-orders-kpi-inner">
+          <div class="mm-kpi-label">{{ t('dashboard_shop_low_stock_count') }}</div>
+          <div class="mm-kpi-value {% if low_stock_count > 0 %}text-danger{% endif %}">{{ low_stock_count }}</div>
+          <div class="mm-kpi-foot">{{ t('dashboard_shop_low_stock_hint') }}</div>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="mm-factory-head">
+    <div class="mm-kpi-group-title">{{ t('dashboard_shop_factory_breakdown_title') }}</div>
+  </div>
+
+  {% if factory_breakdown %}
+  <div class="mm-factory-grid">
+    {% for f in factory_breakdown %}
+      {% set factory_value = f.total_value_uzs or 0 %}
+      {% set factory_share = ((factory_value / shop_uzs) * 100) if shop_uzs else 0 %}
+      <div class="mm-factory-box">
+        <div class="mm-factory-name">
+          🏭 {{ f.factory_name or f.name or t('dashboard_factory') }}
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="mm-inline-stat">
+              <div class="mm-inline-stat-k">{{ t('dashboard_shop_total_skus') }}</div>
+              <div class="mm-inline-stat-v">{{ f.sku_count or f.items_count or 0 }}</div>
+            </div>
+          </div>
+
+          <div class="col-6">
+            <div class="mm-inline-stat">
+              <div class="mm-inline-stat-k">{{ t('dashboard_shop_total_qty') }}</div>
+              <div class="mm-inline-stat-v">{{ f.total_qty or 0 }}</div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="mm-inline-stat">
+              <div class="mm-inline-stat-k">{{ t('dashboard_shop_factory_value') }}</div>
+              <div class="mm-inline-stat-v">{{ format_money_compact(factory_value, 'UZS') }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mm-factory-share">
+          <div class="mm-factory-share-top">
+            <div class="mm-factory-share-label">{{ t('dashboard_shop_factory_share_label') }}</div>
+            <div class="mm-factory-share-value">{{ '%.1f'|format(factory_share or 0) }}%</div>
+          </div>
+          <div class="mm-bar">
+            <div class="mm-bar-fill" style="width: {{ '%.2f'|format(factory_share if factory_share < 100 else 100) }}%;"></div>
+          </div>
+        </div>
+
+        {% if f.low_stock_count is defined %}
+        <div class="mm-mini-note mt-2">
+          {{ t('dashboard_shop_low_stock_count') }}: {{ f.low_stock_count or 0 }}
+        </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="mm-empty-card mb-3">
+    <div class="mm-mini-note">{{ t('dashboard_shop_factory_breakdown_empty') }}</div>
+  </div>
+  {% endif %}
+
+  <div class="mm-chart-headline">
+    <div class="mm-kpi-group-title">{{ t('dashboard_shop_analytics_title') }}</div>
+  </div>
+
+  <div class="mm-chart-grid">
+    <div class="mm-chart-card">
+      <div class="mm-chart-head">
+        <div>
+          <h3 class="mm-chart-title">{{ t('dashboard_shop_daily_sales_trend_title') }}</h3>
+          <p class="mm-chart-sub">{{ t('dashboard_shop_daily_sales_trend_subtitle') }}</p>
+        </div>
+      </div>
+      <div class="mm-chart-wrap">
+        <canvas id="mmDailySalesChart"></canvas>
+      </div>
+    </div>
+
+    <div class="mm-chart-card">
+      <div class="mm-chart-head">
+        <div>
+          <h3 class="mm-chart-title">{{ t('dashboard_shop_factory_contribution_title') }}</h3>
+          <p class="mm-chart-sub">{{ t('dashboard_shop_factory_contribution_subtitle') }}</p>
+        </div>
+      </div>
+      <div class="mm-chart-wrap">
+        <canvas id="mmFactorySalesChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  (() => {
+    const moneyTick = (value) => {
+      const n = Number(value || 0);
+      const abs = Math.abs(n);
+      if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1) + "B";
+      if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+      if (abs >= 1_000) return (n / 1_000).toFixed(0) + "K";
+      return String(Math.round(n));
+    };
+
+    const dailySalesLabels = {{ daily_sales_labels|tojson }};
+    const dailySalesValues = {{ daily_sales_values|tojson }};
+    const factorySalesLabels = {{ factory_sales_labels|tojson }};
+    const factorySalesValues = {{ factory_sales_values|tojson }};
+
+    const salesCtx = document.getElementById("mmDailySalesChart");
+    if (salesCtx) {
+      new Chart(salesCtx, {
+        type: "bar",
+        data: {
+          labels: dailySalesLabels,
+          datasets: [{
+            data: dailySalesValues,
+            borderWidth: 1.2,
+            borderRadius: 10
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return moneyTick(context.parsed.y || context.parsed) + " UZS";
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11 } }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) { return moneyTick(value); },
+                font: { size: 11 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    const factoryCtx = document.getElementById("mmFactorySalesChart");
+    if (factoryCtx) {
+      new Chart(factoryCtx, {
+        type: "bar",
+        data: {
+          labels: factorySalesLabels,
+          datasets: [{
+            data: factorySalesValues,
+            borderWidth: 1.2,
+            borderRadius: 10,
+            barThickness: 24
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return moneyTick(context.parsed.x || context.parsed) + " UZS";
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              grid: { display: false },
+              ticks: { font: { size: 11 } }
+            },
+            x: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) { return moneyTick(value); },
+                font: { size: 11 }
+              }
+            }
+          }
+        }
+      });
+    }
+  })();
+</script>
+{% endblock %}

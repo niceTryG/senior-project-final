@@ -1,41 +1,189 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container py-3">
-  <div class="d-flex justify-content-between flex-wrap align-items-center mb-3">
-    <h1 class="h5">Мои заказы (Shop Manager)</h1>
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">⬅ Назад</a>
+<style>
+  .mm-orders-page .mm-order-card {
+    border-radius: 18px;
+    border: 1px solid rgba(0,0,0,.08);
+    background: rgba(255,255,255,.96);
+  }
+
+  .mm-orders-page .mm-order-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .mm-orders-page .mm-order-title {
+    font-weight: 900;
+    font-size: 1rem;
+  }
+
+  .mm-orders-page .mm-order-meta {
+    font-size: .84rem;
+    color: #6c757d;
+  }
+
+  .mm-orders-page .mm-item-box {
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 14px;
+    background: #fff;
+    padding: 10px 12px;
+  }
+
+  .mm-orders-page .mm-item-name {
+    font-weight: 800;
+  }
+
+  .mm-orders-page .mm-progress-line {
+    height: 10px;
+    border-radius: 999px;
+    background: #eef1f4;
+    overflow: hidden;
+  }
+
+  .mm-orders-page .mm-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0d6efd, #20c997);
+  }
+
+  .mm-orders-page .mm-mini {
+    font-size: .83rem;
+    color: #6c757d;
+  }
+
+  .mm-orders-page .mm-status {
+    border-radius: 999px;
+    font-weight: 800;
+    padding: .42rem .75rem;
+  }
+</style>
+
+<div class="container py-3 mm-orders-page">
+  <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 mb-3">
+    <div>
+      <h1 class="h5 mb-1">{{ t('shop_orders_title') }}</h1>
+      <div class="text-muted small">
+        {{ t('shop_orders_subtitle') }}
+      </div>
+    </div>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary rounded-pill">{{ t('shop_orders_back') }}</a>
   </div>
 
   {% if orders %}
     {% for order in orders %}
-      <div class="card shadow-sm border-0 mb-2">
-        <div class="card-body py-2 small">
-          <div class="mb-1 fw-bold">Заказ #{{ order.id }} — {{ order.status }}</div>
-          <div class="text-muted mb-1">{{ order.created_at }}</div>
-          <div><b>Клиент:</b> {{ order.customer_name }}</div>
-          <div><b>Телефон:</b> {{ order.customer_phone }}</div>
+      <div class="card shadow-sm border-0 mb-3 mm-order-card">
+        <div class="card-body py-3">
+          <div class="mm-order-head mb-2">
+            <div>
+              <div class="mm-order-title">{{ t('shop_orders_order_label') }} #{{ order.id }}</div>
+              <div class="mm-order-meta">
+                {{ order.created_at }}
+                {% if order.customer_name %} · {{ order.customer_name }}{% endif %}
+                {% if order.customer_phone %} · {{ order.customer_phone }}{% endif %}
+              </div>
+            </div>
 
-          <ul class="mt-2 ps-3 mb-1">
+            <div>
+              {% if order.status == "pending" %}
+                <span class="badge bg-warning text-dark mm-status">{{ t('shop_orders_status_pending') }}</span>
+              {% elif order.status == "ready" %}
+                <span class="badge bg-info text-dark mm-status">{{ t('shop_orders_status_ready') }}</span>
+              {% elif order.status == "completed" %}
+                <span class="badge bg-success mm-status">{{ t('shop_orders_status_completed') }}</span>
+              {% elif order.status == "cancelled" %}
+                <span class="badge bg-secondary mm-status">{{ t('shop_orders_status_cancelled') }}</span>
+              {% else %}
+                <span class="badge bg-light text-dark mm-status">{{ order.status }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if order.note %}
+            <div class="small text-muted mb-2">
+              <b>{{ t('comment') }}:</b> {{ order.note }}
+            </div>
+          {% endif %}
+
+          <div class="d-grid gap-2 mt-2">
             {% for item in order.items %}
-              <li>{{ item.product.name }} → {{ item.qty_requested }} шт.</li>
-            {% endfor %}
-          </ul>
+              {% set requested = item.qty_requested or 0 %}
+              {% set fulfilled = item.qty_from_shop_now or 0 %}
+              {% set remaining = item.qty_remaining or 0 %}
+              {% set done_pct = ((fulfilled * 100 / requested) if requested else 0) %}
 
-          {% if order.status == "pending" %}
-            <span class="badge bg-warning text-dark">⏳ Ждёт производство</span>
-          {% elif order.status == "ready" %}
-            <span class="badge bg-info text-dark">✅ Готов к выдаче</span>
+              <div class="mm-item-box">
+                <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                  <div>
+                    <div class="mm-item-name">{{ item.product.name }}</div>
+                    <div class="mm-mini">
+                      {% if item.product.category %}
+                        {{ item.product.category }}
+                      {% else %}
+                        {{ t('products_no_category') }}
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="text-end">
+                    {% if remaining <= 0 %}
+                      <span class="badge bg-success">{{ t('shop_orders_item_ready') }}</span>
+                    {% elif fulfilled > 0 %}
+                      <span class="badge bg-info text-dark">{{ t('shop_orders_item_partial') }}</span>
+                    {% else %}
+                      <span class="badge bg-warning text-dark">{{ t('shop_orders_item_waiting') }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="row g-2 mt-1">
+                  <div class="col-4">
+                    <div class="mm-mini">{{ t('shop_orders_needed') }}</div>
+                    <div class="fw-bold">{{ requested }} {{ t('pieces_short') }}</div>
+                  </div>
+                  <div class="col-4">
+                    <div class="mm-mini">{{ t('shop_orders_already_in_shop') }}</div>
+                    <div class="fw-bold text-primary">{{ fulfilled }} {{ t('pieces_short') }}</div>
+                  </div>
+                  <div class="col-4">
+                    <div class="mm-mini">{{ t('shop_orders_remaining') }}</div>
+                    <div class="fw-bold {% if remaining > 0 %}text-danger{% else %}text-success{% endif %}">
+                      {{ remaining }} {{ t('pieces_short') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mm-progress-line mt-2">
+                  <div class="mm-progress-fill" style="width: {{ done_pct }}%;"></div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          {% if order.status == "ready" %}
+            <div class="alert alert-info py-2 small mt-3 mb-2">
+              {{ t('shop_orders_ready_notice') }}
+            </div>
+
+            <form method="post" action="{{ url_for('shop.complete_shop_order', order_id=order.id) }}">
+              <button type="submit" class="btn btn-success btn-sm w-100">
+                {{ t('shop_orders_complete_button') }}
+              </button>
+            </form>
+
           {% elif order.status == "completed" %}
-            <span class="badge bg-success">✔ Заказ выдан</span>
-          {% elif order.status == "cancelled" %}
-            <span class="badge bg-secondary">✖ Заказ отменён</span>
+            <div class="alert alert-success py-2 small mt-3 mb-0">
+              {{ t('shop_orders_completed_notice') }}
+            </div>
           {% endif %}
         </div>
       </div>
     {% endfor %}
   {% else %}
-    <p class="text-muted small">Пока нет заказов</p>
+    <p class="text-muted small">{{ t('shop_orders_no_orders') }}</p>
   {% endif %}
 </div>
 

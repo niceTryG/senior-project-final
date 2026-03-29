@@ -1,6 +1,6 @@
-# ==== app/models.py (REPLACE FULL FILE) ====
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import uuid
+import secrets
 
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -27,8 +27,19 @@ class Factory(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     # relations
+    realizatsiya_settlements_received = db.relationship(
+        "RealizatsiyaSettlement",
+        back_populates="factory",
+        cascade="all, delete-orphan",
+        foreign_keys="RealizatsiyaSettlement.factory_id",
+    )
     users = db.relationship(
         "User",
+        back_populates="factory",
+        cascade="all, delete-orphan",
+    )
+    shop_links = db.relationship(
+        "ShopFactoryLink",
         back_populates="factory",
         cascade="all, delete-orphan",
     )
@@ -62,9 +73,104 @@ class Factory(db.Model):
         back_populates="factory",
         cascade="all, delete-orphan",
     )
+    wholesale_sales = db.relationship(
+        "WholesaleSale",
+        back_populates="factory",
+        cascade="all, delete-orphan",
+    )
+    shops = db.relationship(
+        "Shop",
+        foreign_keys="Shop.factory_id",
+        overlaps="factory",
+        lazy=True,
+    )
 
     def __repr__(self) -> str:
         return f"<Factory id={self.id} name={self.name!r}>"
+
+
+class Shop(db.Model):
+    __tablename__ = "shops"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Legacy compatibility column.
+    # The current DB schema still has shops.factory_id as NOT NULL.
+    # Real factory membership should be handled through ShopFactoryLink.
+    factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id"),
+        nullable=False,
+        index=True,
+    )
+
+    name = db.Column(db.String(128), nullable=False)
+    location = db.Column(db.String(128), nullable=True)
+    note = db.Column(db.String(255), nullable=True)
+
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Optional legacy direct relationship
+    realizatsiya_settlements = db.relationship(
+        "RealizatsiyaSettlement",
+        back_populates="shop",
+        cascade="all, delete-orphan",
+    )
+    factory = db.relationship("Factory", foreign_keys=[factory_id], overlaps="shops")
+
+    users = db.relationship("User", back_populates="shop")
+    stock_rows = db.relationship("ShopStock", back_populates="shop")
+    wholesale_sales = db.relationship(
+        "WholesaleSale",
+        back_populates="shop",
+        cascade="all, delete-orphan",
+    )
+    sales = db.relationship(
+        "Sale",
+        back_populates="shop",
+        cascade="all, delete-orphan",
+    )
+    factory_links = db.relationship(
+        "ShopFactoryLink",
+        back_populates="shop",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Shop id={self.id} name={self.name!r}>"
+
+
+class ShopFactoryLink(db.Model):
+    __tablename__ = "shop_factory_links"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    shop_id = db.Column(
+        db.Integer,
+        db.ForeignKey("shops.id"),
+        nullable=False,
+        index=True,
+    )
+
+    factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id"),
+        nullable=False,
+        index=True,
+    )
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    shop = db.relationship("Shop", back_populates="factory_links")
+    factory = db.relationship("Factory", back_populates="shop_links")
+
+    __table_args__ = (
+        db.UniqueConstraint("shop_id", "factory_id", name="uq_shop_factory_link"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<ShopFactoryLink shop_id={self.shop_id} factory_id={self.factory_id}>"
 
 
 # ==========================
@@ -80,12 +186,43 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
 
-    # each user belongs to one factory (tenant)
+    # admin/manager/accountant usually belong to one factory
     factory_id = db.Column(db.Integer, db.ForeignKey("factories.id"), nullable=True)
     factory = db.relationship("Factory", back_populates="users")
 
+    # shop users belong to one shop
+    shop_id = db.Column(db.Integer, db.ForeignKey("shops.id"), nullable=True, index=True)
+    shop = db.relationship("Shop", back_populates="users")
+
     # roles: admin, manager, viewer, shop, accountant
     role = db.Column(db.String(32), default="manager", nullable=False)
+
+    # telegram linking relations
+    realizatsiya_settlements_created = db.relationship(
+        "RealizatsiyaSettlement",
+        back_populates="created_by",
+        foreign_keys="RealizatsiyaSettlement.created_by_id",
+    )
+    telegram_links = db.relationship(
+        "TelegramLink",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    telegram_link_codes = db.relationship(
+        "TelegramLinkCode",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    sales_created = db.relationship(
+        "Sale",
+        back_populates="created_by",
+        foreign_keys="Sale.created_by_id",
+    )
+    wholesale_sales_created = db.relationship(
+        "WholesaleSale",
+        back_populates="created_by",
+        foreign_keys="WholesaleSale.created_by_id",
+    )
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -115,10 +252,6 @@ class User(UserMixin, db.Model):
 
     @property
     def is_superadmin(self) -> bool:
-        """
-        Superadmin can see all factories if factory_id is NULL.
-        Normal admins/managers have factory_id set.
-        """
         return self.role == "admin" and self.factory_id is None
 
     def __repr__(self) -> str:
@@ -131,7 +264,6 @@ class User(UserMixin, db.Model):
 
 
 def generate_fabric_code() -> str:
-    """Generate a public-facing fabric code, e.g. FAB-8F3A12C9."""
     return "FAB-" + uuid.uuid4().hex[:8].upper()
 
 
@@ -140,16 +272,15 @@ class Fabric(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # factory owner of this fabric
     factory_id = db.Column(db.Integer, db.ForeignKey("factories.id"), nullable=False)
     factory = db.relationship("Factory", back_populates="fabrics")
+
     consumptions = db.relationship(
         "FabricConsumption",
         back_populates="fabric",
         cascade="all, delete-orphan",
     )
 
-    # public-facing unique code for QR, UI, etc.
     public_id = db.Column(
         db.String(32),
         unique=True,
@@ -175,10 +306,6 @@ class Fabric(db.Model):
     )
 
     def total_value(self) -> float:
-        """
-        Total value of this fabric in its native currency
-        (quantity * price_per_unit). If price is None → 0.
-        """
         if not self.price_per_unit:
             return 0.0
         return (self.quantity or 0.0) * float(self.price_per_unit)
@@ -212,21 +339,21 @@ class Product(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # each product belongs to a factory
     factory_id = db.Column(db.Integer, db.ForeignKey("factories.id"), nullable=False)
     factory = db.relationship("Factory", back_populates="products")
 
     name = db.Column(db.String(128), nullable=False)
     category = db.Column(db.String(64))
 
-    # prices
     cost_price_per_item = db.Column(db.Float, nullable=False, default=0.0)
     sell_price_per_item = db.Column(db.Float, nullable=False, default=0.0)
-
+    website_image = db.Column(db.String(255))
+    fabric_used = db.Column(db.String(255))
+    notes = db.Column(db.Text)
     quantity = db.Column(db.Integer, nullable=False, default=0)
     currency = db.Column(db.String(3), default="UZS")
     image_path = db.Column(db.String(255), nullable=True)
-    # PUBLIC SIDE
+
     is_published = db.Column(db.Boolean, default=False)
     public_description = db.Column(db.Text)
 
@@ -242,7 +369,11 @@ class Product(db.Model):
     )
     shop_stock = db.relationship(
         "ShopStock",
-        uselist=False,
+        back_populates="product",
+        cascade="all, delete-orphan",
+    )
+    wholesale_sale_items = db.relationship(
+        "WholesaleSaleItem",
         back_populates="product",
         cascade="all, delete-orphan",
     )
@@ -267,20 +398,25 @@ class Sale(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    shop_id = db.Column(db.Integer, db.ForeignKey("shops.id"), nullable=True, index=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
+
     date = db.Column(db.Date, default=date.today, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     customer_name = db.Column(db.String(128))
     customer_phone = db.Column(db.String(64))
 
     quantity = db.Column(db.Integer, nullable=False)
 
-    # prices at the moment of sale
     sell_price_per_item = db.Column(db.Float, nullable=False)
     cost_price_per_item = db.Column(db.Float, nullable=False)
 
     currency = db.Column(db.String(3), default="UZS")
 
     product = db.relationship("Product", back_populates="sales")
+    shop = db.relationship("Shop", back_populates="sales")
+    created_by = db.relationship("User", back_populates="sales_created", foreign_keys=[created_by_id])
 
     @property
     def total_sell(self) -> float:
@@ -296,7 +432,148 @@ class Sale(db.Model):
 
     def __repr__(self) -> str:
         return (
-            f"<Sale id={self.id} product_id={self.product_id} quantity={self.quantity}>"
+            f"<Sale id={self.id} product_id={self.product_id} "
+            f"shop_id={self.shop_id} quantity={self.quantity}>"
+        )
+
+class WholesaleSale(db.Model):
+    __tablename__ = "wholesale_sales"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # For mixed-factory wholesale carts this is optional.
+    # If all lines belong to one factory, it may be filled.
+    factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id"),
+        nullable=True,
+        index=True,
+    )
+
+    shop_id = db.Column(
+        db.Integer,
+        db.ForeignKey("shops.id"),
+        nullable=False,
+        index=True,
+    )
+
+    created_by_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    sale_date = db.Column(db.Date, default=date.today, nullable=False)
+
+    customer_name = db.Column(db.String(128), nullable=True)
+    customer_phone = db.Column(db.String(64), nullable=True)
+    note = db.Column(db.String(255), nullable=True)
+
+    total_skus = db.Column(db.Integer, nullable=False, default=0)
+    total_qty = db.Column(db.Integer, nullable=False, default=0)
+
+    subtotal_amount = db.Column(db.Float, nullable=False, default=0.0)
+    discount_amount = db.Column(db.Float, nullable=False, default=0.0)
+    total_amount = db.Column(db.Float, nullable=False, default=0.0)
+
+    currency = db.Column(db.String(3), nullable=False, default="UZS")
+
+    payment_status = db.Column(db.String(32), nullable=False, default="paid")
+    payment_method = db.Column(db.String(32), nullable=True)
+
+    factory = db.relationship("Factory", back_populates="wholesale_sales")
+    shop = db.relationship("Shop", back_populates="wholesale_sales")
+    created_by = db.relationship(
+        "User",
+        back_populates="wholesale_sales_created",
+        foreign_keys=[created_by_id],
+    )
+
+    items = db.relationship(
+        "WholesaleSaleItem",
+        back_populates="wholesale_sale",
+        cascade="all, delete-orphan",
+        order_by="WholesaleSaleItem.id.asc()",
+    )
+
+    def recalc_totals(self) -> None:
+        self.total_skus = len(self.items or [])
+        self.total_qty = sum((item.quantity or 0) for item in (self.items or []))
+        self.subtotal_amount = sum((item.line_total or 0.0) for item in (self.items or []))
+        self.total_amount = max((self.subtotal_amount or 0.0) - (self.discount_amount or 0.0), 0.0)
+
+        source_factory_ids = sorted({
+            item.source_factory_id
+            for item in (self.items or [])
+            if item.source_factory_id
+        })
+        self.factory_id = source_factory_ids[0] if len(source_factory_ids) == 1 else None
+
+    def __repr__(self) -> str:
+        return (
+            f"<WholesaleSale id={self.id} factory_id={self.factory_id} "
+            f"shop_id={self.shop_id} total_qty={self.total_qty} total_amount={self.total_amount}>"
+        )
+
+
+class WholesaleSaleItem(db.Model):
+    __tablename__ = "wholesale_sale_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    wholesale_sale_id = db.Column(
+        db.Integer,
+        db.ForeignKey("wholesale_sales.id"),
+        nullable=False,
+        index=True,
+    )
+
+    product_id = db.Column(
+        db.Integer,
+        db.ForeignKey("products.id"),
+        nullable=False,
+        index=True,
+    )
+
+    shop_stock_id = db.Column(
+        db.Integer,
+        db.ForeignKey("shop_stock.id"),
+        nullable=False,
+        index=True,
+    )
+
+    source_factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id"),
+        nullable=False,
+        index=True,
+    )
+
+    quantity = db.Column(db.Integer, nullable=False)
+    unit_price = db.Column(db.Float, nullable=False, default=0.0)
+    cost_price_per_item = db.Column(db.Float, nullable=False, default=0.0)
+    line_total = db.Column(db.Float, nullable=False, default=0.0)
+
+    product_name_snapshot = db.Column(db.String(128), nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default="UZS")
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    wholesale_sale = db.relationship("WholesaleSale", back_populates="items")
+    product = db.relationship("Product", back_populates="wholesale_sale_items")
+    shop_stock = db.relationship("ShopStock", back_populates="wholesale_sale_items")
+    source_factory = db.relationship("Factory")
+
+    __table_args__ = (
+        db.CheckConstraint("quantity > 0", name="ck_wholesale_sale_items_quantity_positive"),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<WholesaleSaleItem id={self.id} wholesale_sale_id={self.wholesale_sale_id} "
+            f"product_id={self.product_id} quantity={self.quantity}>"
         )
 
 
@@ -313,10 +590,10 @@ class Production(db.Model):
 
     product = db.relationship("Product", back_populates="productions")
     consumptions = db.relationship(
-    "FabricConsumption",
-    back_populates="production",
-    cascade="all, delete-orphan",
-)
+        "FabricConsumption",
+        back_populates="production",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Production id={self.id} product_id={self.product_id} quantity={self.quantity}>"
@@ -327,23 +604,53 @@ class ShopStock(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
+    shop_id = db.Column(
+        db.Integer,
+        db.ForeignKey("shops.id"),
+        nullable=False,
+        index=True,
+    )
+
     product_id = db.Column(
         db.Integer,
         db.ForeignKey("products.id"),
-        unique=True,
         nullable=False,
+        index=True,
     )
+
+    source_factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id"),
+        nullable=False,
+        index=True,
+    )
+
     quantity = db.Column(db.Integer, nullable=False, default=0)
 
+    shop = db.relationship("Shop", back_populates="stock_rows")
     product = db.relationship("Product", back_populates="shop_stock")
+    source_factory = db.relationship("Factory")
+    wholesale_sale_items = db.relationship(
+        "WholesaleSaleItem",
+        back_populates="shop_stock",
+        cascade="all, delete-orphan",
+    )
 
-    @property
-    def total_value(self) -> float:
-        price = self.product.sell_price_per_item or 0.0
-        return self.quantity * price
+    __table_args__ = (
+        db.UniqueConstraint(
+            "shop_id",
+            "product_id",
+            "source_factory_id",
+            name="uq_shop_stock_shop_product_factory",
+        ),
+    )
 
     def __repr__(self) -> str:
-        return f"<ShopStock id={self.id} product_id={self.product_id} quantity={self.quantity}>"
+        return (
+            f"<ShopStock id={self.id} shop_id={self.shop_id} "
+            f"product_id={self.product_id} source_factory_id={self.source_factory_id} "
+            f"quantity={self.quantity}>"
+        )
 
 
 # ==========================
@@ -507,8 +814,6 @@ class Movement(db.Model):
 #   ✅ EXCEL IMPORT HISTORY
 # ==========================
 
-# models.py (or wherever ExcelImportBatch is defined)
-
 
 class ExcelImportBatch(db.Model):
     __tablename__ = "excel_import_batches"
@@ -520,25 +825,17 @@ class ExcelImportBatch(db.Model):
     filename = db.Column(db.String(255), nullable=False)
     file_hash = db.Column(db.String(64), nullable=False, index=True)
 
-    # ✅ Store Excel bytes in DB (Render-safe)
-    # IMPORTANT: make nullable=True for smooth migration on existing rows.
-    # After migration + backfill you can change to nullable=False if you want.
     file_bytes = db.Column(db.LargeBinary, nullable=True)
     file_size = db.Column(db.Integer, nullable=False, default=0)
-
-    # Legacy disk path (optional)
     stored_path = db.Column(db.String(512), nullable=True)
 
     uploaded_by_id = db.Column(db.Integer, nullable=True)
 
-    status = db.Column(
-        db.String(32), nullable=False, default="uploaded"
-    )  # uploaded/imported/failed
+    status = db.Column(db.String(32), nullable=False, default="uploaded")
     error = db.Column(db.Text, nullable=True)
 
-    # What user selected + result stats
-    sheets_selected = db.Column(db.Text, nullable=True)  # json list
-    stats_json = db.Column(db.Text, nullable=True)  # json dict
+    sheets_selected = db.Column(db.Text, nullable=True)
+    stats_json = db.Column(db.Text, nullable=True)
 
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     imported_at = db.Column(db.DateTime, nullable=True)
@@ -551,17 +848,12 @@ class ExcelImportBatch(db.Model):
 
 
 class ExcelImportRow(db.Model):
-    """
-    Small dedupe table: remembers imported rows by hash.
-    Prevents importing the same sale/cash line twice.
-    """
-
     __tablename__ = "excel_import_rows"
 
     id = db.Column(db.Integer, primary_key=True)
     factory_id = db.Column(db.Integer, db.ForeignKey("factories.id"), nullable=False)
 
-    kind = db.Column(db.String(32), nullable=False)  # "sale" / "cash"
+    kind = db.Column(db.String(32), nullable=False)
     row_hash = db.Column(db.String(64), nullable=False)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -592,9 +884,7 @@ class CustomerOrder(db.Model):
     customer_city = db.Column(db.String(64), nullable=True)
 
     note = db.Column(db.String(255), nullable=True)
-    status = db.Column(
-        db.String(16), default="new", nullable=False
-    )  # new/confirmed/done/cancelled
+    status = db.Column(db.String(16), default="new", nullable=False)
 
     items = db.relationship(
         "CustomerOrderItem",
@@ -621,13 +911,20 @@ class CustomerOrderItem(db.Model):
 
     qty = db.Column(db.Integer, nullable=False, default=1)
 
-    # snapshot (so history doesn't break if product name changes)
     product_name = db.Column(db.String(128), nullable=False)
     price = db.Column(db.Float, nullable=False, default=0.0)
     currency = db.Column(db.String(3), default="UZS")
 
     def __repr__(self) -> str:
-        return f"<CustomerOrderItem id={self.id} order_id={self.order_id} product_id={self.product_id} qty={self.qty}>"
+        return (
+            f"<CustomerOrderItem id={self.id} order_id={self.order_id} "
+            f"product_id={self.product_id} qty={self.qty}>"
+        )
+
+
+# ==========================
+#   🧵 FABRIC CONSUMPTION
+# ==========================
 
 
 class FabricConsumption(db.Model):
@@ -635,7 +932,6 @@ class FabricConsumption(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # keep factory_id for strict tenant correctness + easy reporting
     factory_id = db.Column(
         db.Integer, db.ForeignKey("factories.id"), nullable=False, index=True
     )
@@ -651,57 +947,156 @@ class FabricConsumption(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    # relationships
     fabric = db.relationship("Fabric", back_populates="consumptions")
     production = db.relationship("Production", back_populates="consumptions")
 
     def __repr__(self) -> str:
         return (
             f"<FabricConsumption id={self.id} factory_id={self.factory_id} "
-            f"fabric_id={self.fabric_id} production_id={self.production_id} used_amount={self.used_amount}>"
+            f"fabric_id={self.fabric_id} production_id={self.production_id} "
+            f"used_amount={self.used_amount}>"
         )
-from datetime import datetime, timedelta
-import secrets
 
-# -------------------------------------------------------------------------
-# Telegram linking
-# -------------------------------------------------------------------------
+
+# ==========================
+#   🤖 TELEGRAM LINKING
+# ==========================
+
 
 class TelegramLink(db.Model):
     __tablename__ = "telegram_links"
 
     id = db.Column(db.Integer, primary_key=True)
-    telegram_chat_id = db.Column(db.BigInteger, unique=True, nullable=False, index=True)
 
-    # if your user table name is different, change "users.id"
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    telegram_chat_id = db.Column(
+        db.BigInteger,
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+    user = db.relationship("User", back_populates="telegram_links")
 
     factory_id = db.Column(db.Integer, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self) -> str:
+        return (
+            f"<TelegramLink id={self.id} telegram_chat_id={self.telegram_chat_id} "
+            f"user_id={self.user_id} factory_id={self.factory_id}>"
+        )
 
 
 class TelegramLinkCode(db.Model):
     __tablename__ = "telegram_link_codes"
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(12), unique=True, nullable=False, index=True)
 
-    # if your user table name is different, change "users.id"
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    code = db.Column(
+        db.String(32),
+        unique=True,
+        nullable=False,
+        index=True,
+        default=lambda: secrets.token_urlsafe(8),
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+    user = db.relationship("User", back_populates="telegram_link_codes")
 
     factory_id = db.Column(db.Integer, nullable=False, index=True)
 
-    expires_at = db.Column(db.DateTime, nullable=False)
+    expires_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.utcnow() + timedelta(minutes=10),
+    )
     used_at = db.Column(db.DateTime, nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     @staticmethod
     def generate(user_id: int, factory_id: int, minutes: int = 10) -> "TelegramLinkCode":
-        code = secrets.token_hex(3).upper()  # 6 chars like 'A1B2C3'
+        code = secrets.token_hex(3).upper()
         return TelegramLinkCode(
             code=code,
             user_id=user_id,
             factory_id=factory_id,
             expires_at=datetime.utcnow() + timedelta(minutes=minutes),
+        )
+
+    def is_expired(self) -> bool:
+        return datetime.utcnow() > self.expires_at
+
+    def is_used(self) -> bool:
+        return self.used_at is not None
+
+    def __repr__(self) -> str:
+        return (
+            f"<TelegramLinkCode id={self.id} code={self.code!r} "
+            f"user_id={self.user_id} factory_id={self.factory_id}>"
+        )
+class RealizatsiyaSettlement(db.Model):
+    __tablename__ = "realizatsiya_settlements"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    shop_id = db.Column(
+        db.Integer,
+        db.ForeignKey("shops.id"),
+        nullable=False,
+        index=True,
+    )
+
+    factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id"),
+        nullable=False,
+        index=True,
+    )
+
+    settlement_date = db.Column(db.Date, default=date.today, nullable=False)
+    amount = db.Column(db.Float, nullable=False, default=0.0)
+    currency = db.Column(db.String(3), nullable=False, default="UZS")
+    note = db.Column(db.String(255), nullable=True)
+
+    created_by_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    shop = db.relationship("Shop", back_populates="realizatsiya_settlements")
+    factory = db.relationship(
+        "Factory",
+        back_populates="realizatsiya_settlements_received",
+        foreign_keys=[factory_id],
+    )
+    created_by = db.relationship(
+        "User",
+        back_populates="realizatsiya_settlements_created",
+        foreign_keys=[created_by_id],
+    )
+
+    __table_args__ = (
+        db.CheckConstraint("amount > 0", name="ck_realizatsiya_settlements_amount_positive"),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<RealizatsiyaSettlement id={self.id} shop_id={self.shop_id} "
+            f"factory_id={self.factory_id} amount={self.amount}>"
         )

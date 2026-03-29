@@ -1,58 +1,860 @@
-{% extends "base.html" %}
+ {% extends "base.html" %}
 {% block content %}
 
-<div class="container py-3">
+<style>
+  .mm-orders-page{
+    --mm-bg:#f6f8fc;
+    --mm-card:rgba(255,255,255,.98);
+    --mm-card-soft:#fbfdff;
+    --mm-line:rgba(15,23,42,.08);
+    --mm-line-strong:rgba(15,23,42,.12);
+    --mm-text:#0f172a;
+    --mm-muted:#64748b;
+    --mm-primary:#2563eb;
+    --mm-primary-soft:rgba(37,99,235,.10);
+    --mm-success:#059669;
+    --mm-success-soft:rgba(5,150,105,.12);
+    --mm-warning:#d97706;
+    --mm-warning-soft:rgba(217,119,6,.12);
+    --mm-danger:#dc2626;
+    --mm-danger-soft:rgba(220,38,38,.10);
+    --mm-radius-xl:22px;
+    --mm-radius-lg:18px;
+    --mm-radius-md:14px;
+    --mm-radius-sm:12px;
+    --mm-shadow:0 18px 44px rgba(15,23,42,.08);
+    --mm-shadow-soft:0 10px 24px rgba(15,23,42,.06);
+    --mm-shadow-xs:0 6px 14px rgba(15,23,42,.05);
+    color:var(--mm-text);
+  }
 
-  <div class="d-flex justify-content-between flex-wrap align-items-center mb-3">
-    <h1 class="h5 mb-1">{{ t('shop_orders_title') }}</h1>
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
-      ⬅ {{ t('shop_orders_back') }}
-    </a>
-  </div>
+  .mm-orders-page .mm-shell{
+    max-width:1120px;
+    margin:0 auto;
+    padding:14px 10px 100px;
+  }
 
-  {% if orders %}
-    {% for order in orders %}
-      <div class="card shadow-sm border-0 mb-2">
-        <div class="card-body py-2 small">
+  .mm-orders-page .mm-topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
 
-          <div class="mb-1 fw-bold">
-            Заказ #{{ order.id }} —
-            {% if order.status == "pending" %}
-              {{ t('shop_orders_status_pending') }}
-            {% elif order.status == "ready" %}
-              {{ t('shop_orders_status_ready') }}
-            {% elif order.status == "completed" %}
-              {{ t('shop_orders_status_completed') }}
-            {% elif order.status == "cancelled" %}
-              {{ t('shop_orders_status_cancelled') }}
-            {% else %}
-              {{ order.status }}
-            {% endif %}
-          </div>
+  .mm-orders-page .mm-page-title{
+    margin:0;
+    font-size:1.18rem;
+    font-weight:900;
+    letter-spacing:-.02em;
+  }
 
-          <div class="text-muted mb-1">{{ order.created_at }}</div>
+  .mm-orders-page .mm-page-subtitle{
+    margin-top:5px;
+    color:var(--mm-muted);
+    font-size:.9rem;
+    line-height:1.55;
+    max-width:700px;
+  }
 
-          <div>
-            <b>{{ t('shop_orders_customer_label') }}:</b> {{ order.customer_name or '-' }}
-          </div>
-          <div>
-            <b>{{ t('shop_orders_phone_label') }}:</b> {{ order.customer_phone or '-' }}
-          </div>
+  .mm-orders-page .mm-btn{
+    min-height:42px;
+    padding:0 14px;
+    border-radius:14px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    text-decoration:none;
+    font-weight:800;
+    border:1px solid transparent;
+    box-shadow:var(--mm-shadow-soft);
+    transition:.18s ease;
+    cursor:pointer;
+    white-space:nowrap;
+  }
 
-          <ul class="mt-2 ps-3 mb-1">
-            {% for item in order.items %}
-              <li>{{ item.product.name }} → {{ item.qty_requested }} шт.</li>
-            {% endfor %}
-          </ul>
+  .mm-orders-page .mm-btn:hover{
+    transform:translateY(-1px);
+  }
 
+  .mm-orders-page .mm-btn-light{
+    background:#fff;
+    color:var(--mm-text);
+    border-color:var(--mm-line);
+  }
+
+  .mm-orders-page .mm-btn-primary{
+    background:var(--mm-primary);
+    color:#fff;
+  }
+
+  .mm-orders-page .mm-section{
+    background:var(--mm-card);
+    border:1px solid var(--mm-line);
+    border-radius:var(--mm-radius-xl);
+    box-shadow:var(--mm-shadow-soft);
+    overflow:hidden;
+    margin-bottom:14px;
+  }
+
+  .mm-orders-page .mm-section-head{
+    padding:16px 16px 12px;
+    border-bottom:1px solid var(--mm-line);
+  }
+
+  .mm-orders-page .mm-section-title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .mm-orders-page .mm-section-title{
+    margin:0;
+    font-size:1rem;
+    font-weight:900;
+    letter-spacing:-.02em;
+  }
+
+  .mm-orders-page .mm-section-subtitle{
+    margin-top:5px;
+    color:var(--mm-muted);
+    font-size:.88rem;
+    line-height:1.5;
+  }
+
+  .mm-orders-page .mm-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    min-height:30px;
+    padding:0 10px;
+    border-radius:999px;
+    font-size:.76rem;
+    font-weight:900;
+    white-space:nowrap;
+  }
+
+  .mm-orders-page .mm-pill-primary{
+    background:var(--mm-primary-soft);
+    color:var(--mm-primary);
+  }
+
+  .mm-orders-page .mm-pill-success{
+    background:var(--mm-success-soft);
+    color:var(--mm-success);
+  }
+
+  .mm-orders-page .mm-pill-warning{
+    background:var(--mm-warning-soft);
+    color:var(--mm-warning);
+  }
+
+  .mm-orders-page .mm-pill-danger{
+    background:var(--mm-danger-soft);
+    color:var(--mm-danger);
+  }
+
+  .mm-orders-page .mm-section-body{
+    padding:14px 16px 16px;
+  }
+
+  /* FACTORY GRID */
+  .mm-orders-page .mm-factory-grid{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0,1fr));
+    gap:12px;
+  }
+
+  .mm-orders-page .mm-factory-link{
+    text-decoration:none;
+    color:inherit;
+    display:block;
+  }
+
+  .mm-orders-page .mm-factory-card{
+    border:1px solid var(--mm-line);
+    border-radius:18px;
+    background:linear-gradient(180deg,#ffffff 0%, #fbfdff 100%);
+    padding:12px;
+    box-shadow:var(--mm-shadow-xs);
+    transition:.18s ease;
+    min-height:100%;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .mm-orders-page .mm-factory-card::after{
+    content:"";
+    position:absolute;
+    inset:auto -20px -30px auto;
+    width:86px;
+    height:86px;
+    background:radial-gradient(circle, rgba(37,99,235,.09), transparent 68%);
+    pointer-events:none;
+  }
+
+  .mm-orders-page .mm-factory-link:hover .mm-factory-card{
+    transform:translateY(-1px);
+    border-color:rgba(37,99,235,.18);
+  }
+
+  .mm-orders-page .mm-factory-card.active{
+    border-color:rgba(37,99,235,.30);
+    box-shadow:0 0 0 4px rgba(37,99,235,.08), var(--mm-shadow-xs);
+  }
+
+  .mm-orders-page .mm-factory-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+  }
+
+  .mm-orders-page .mm-factory-name{
+    margin:0;
+    font-size:.96rem;
+    font-weight:900;
+    line-height:1.2;
+    letter-spacing:-.01em;
+  }
+
+  .mm-orders-page .mm-factory-meta{
+    color:var(--mm-muted);
+    font-size:.77rem;
+    margin-top:4px;
+    line-height:1.4;
+  }
+
+  .mm-orders-page .mm-factory-status{
+    flex-shrink:0;
+  }
+
+  .mm-orders-page .mm-factory-stats{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  .mm-orders-page .mm-stat-chip{
+    min-width:calc(50% - 4px);
+    border:1px solid var(--mm-line);
+    background:#fff;
+    border-radius:13px;
+    padding:9px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+
+  .mm-orders-page .mm-stat-chip-k{
+    font-size:.69rem;
+    font-weight:800;
+    color:var(--mm-muted);
+    line-height:1.1;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+
+  .mm-orders-page .mm-stat-chip-v{
+    font-size:.9rem;
+    font-weight:900;
+    line-height:1.15;
+  }
+
+  .mm-orders-page .mm-stat-chip-v.danger{
+    color:var(--mm-danger);
+  }
+
+  .mm-orders-page .mm-stat-chip-v.success{
+    color:var(--mm-success);
+  }
+
+  /* ORDER LIST */
+  .mm-orders-page .mm-order-stack{
+    display:grid;
+    gap:12px;
+  }
+
+  .mm-orders-page .mm-order-card{
+    border-radius:18px;
+    border:1px solid var(--mm-line);
+    background:linear-gradient(180deg,#fff,#fbfdff);
+    box-shadow:var(--mm-shadow-xs);
+    overflow:hidden;
+  }
+
+  .mm-orders-page .mm-order-body{
+    padding:14px;
+  }
+
+  .mm-orders-page .mm-order-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+
+  .mm-orders-page .mm-order-title{
+    font-weight:900;
+    font-size:1rem;
+    line-height:1.2;
+    letter-spacing:-.01em;
+  }
+
+  .mm-orders-page .mm-order-meta{
+    font-size:.84rem;
+    color:var(--mm-muted);
+    margin-top:4px;
+    line-height:1.45;
+  }
+
+  .mm-orders-page .mm-status{
+    border-radius:999px;
+    font-weight:800;
+    padding:.42rem .75rem;
+    white-space:nowrap;
+  }
+
+  .mm-orders-page .mm-note-box{
+    border:1px dashed var(--mm-line-strong);
+    background:#fff;
+    border-radius:13px;
+    padding:10px 12px;
+    font-size:.84rem;
+    color:var(--mm-text);
+    margin-bottom:10px;
+  }
+
+  .mm-orders-page .mm-note-label{
+    font-weight:900;
+    margin-right:6px;
+  }
+
+  .mm-orders-page .mm-items-grid{
+    display:grid;
+    gap:10px;
+    margin-top:2px;
+  }
+
+  .mm-orders-page .mm-item-box{
+    border:1px solid rgba(0,0,0,.06);
+    border-radius:15px;
+    background:#fff;
+    padding:10px 11px;
+  }
+
+  .mm-orders-page .mm-item-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+
+  .mm-orders-page .mm-item-name{
+    font-weight:900;
+    line-height:1.25;
+    font-size:.93rem;
+  }
+
+  .mm-orders-page .mm-item-sub{
+    font-size:.78rem;
+    color:var(--mm-muted);
+    margin-top:3px;
+  }
+
+  .mm-orders-page .mm-mini-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:28px;
+    padding:0 10px;
+    border-radius:999px;
+    font-size:.74rem;
+    font-weight:900;
+    white-space:nowrap;
+  }
+
+  .mm-orders-page .mm-mini-badge.wait{
+    background:var(--mm-warning-soft);
+    color:var(--mm-warning);
+  }
+
+  .mm-orders-page .mm-mini-badge.partial{
+    background:rgba(13,110,253,.10);
+    color:#0d6efd;
+  }
+
+  .mm-orders-page .mm-mini-badge.done{
+    background:var(--mm-success-soft);
+    color:var(--mm-success);
+  }
+
+  .mm-orders-page .mm-item-stats{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0,1fr));
+    gap:8px;
+  }
+
+  .mm-orders-page .mm-item-stat{
+    background:#f8fafc;
+    border:1px solid rgba(15,23,42,.05);
+    border-radius:12px;
+    padding:8px 9px;
+  }
+
+  .mm-orders-page .mm-item-stat-k{
+    font-size:.68rem;
+    color:var(--mm-muted);
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    line-height:1.1;
+  }
+
+  .mm-orders-page .mm-item-stat-v{
+    margin-top:4px;
+    font-size:.86rem;
+    font-weight:900;
+    line-height:1.15;
+  }
+
+  .mm-orders-page .mm-item-stat-v.danger{
+    color:var(--mm-danger);
+  }
+
+  .mm-orders-page .mm-item-stat-v.success{
+    color:var(--mm-success);
+  }
+
+  .mm-orders-page .mm-progress-line{
+    height:8px;
+    border-radius:999px;
+    background:#eef1f4;
+    overflow:hidden;
+    margin-top:9px;
+  }
+
+  .mm-orders-page .mm-progress-fill{
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg,#0d6efd,#20c997);
+  }
+
+  .mm-orders-page .mm-mini{
+    font-size:.83rem;
+    color:var(--mm-muted);
+  }
+
+  .mm-orders-page .mm-empty{
+    text-align:center;
+    padding:28px 14px;
+    color:var(--mm-muted);
+  }
+
+  .mm-orders-page .mm-empty-title{
+    font-size:1rem;
+    font-weight:900;
+    color:var(--mm-text);
+    margin-bottom:4px;
+  }
+
+  .mm-orders-page .mm-empty-text{
+    margin:0 auto;
+    max-width:520px;
+    font-size:.9rem;
+    line-height:1.55;
+  }
+
+  @media (max-width:900px){
+    .mm-orders-page .mm-factory-grid{
+      grid-template-columns:repeat(2, minmax(0,1fr));
+    }
+  }
+
+  @media (max-width:640px){
+    .mm-orders-page .mm-shell{
+      padding:12px 10px 96px;
+    }
+
+    .mm-orders-page .mm-page-title{
+      font-size:1.08rem;
+    }
+
+    .mm-orders-page .mm-page-subtitle,
+    .mm-orders-page .mm-section-subtitle{
+      font-size:.84rem;
+    }
+
+    .mm-orders-page .mm-factory-grid{
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:10px;
+    }
+
+    .mm-orders-page .mm-factory-card{
+      padding:11px;
+      border-radius:16px;
+    }
+
+    .mm-orders-page .mm-factory-top{
+      gap:8px;
+      margin-bottom:8px;
+    }
+
+    .mm-orders-page .mm-factory-name{
+      font-size:.88rem;
+    }
+
+    .mm-orders-page .mm-factory-meta{
+      font-size:.72rem;
+    }
+
+    .mm-orders-page .mm-stat-chip{
+      min-width:calc(50% - 4px);
+      padding:8px 9px;
+      border-radius:11px;
+    }
+
+    .mm-orders-page .mm-stat-chip-k{
+      font-size:.62rem;
+    }
+
+    .mm-orders-page .mm-stat-chip-v{
+      font-size:.82rem;
+    }
+
+    .mm-orders-page .mm-order-body{
+      padding:12px;
+    }
+
+    .mm-orders-page .mm-order-title{
+      font-size:.95rem;
+    }
+
+    .mm-orders-page .mm-order-meta{
+      font-size:.79rem;
+    }
+
+    .mm-orders-page .mm-item-box{
+      padding:9px 10px;
+    }
+
+    .mm-orders-page .mm-item-name{
+      font-size:.88rem;
+    }
+
+    .mm-orders-page .mm-item-sub{
+      font-size:.74rem;
+    }
+
+    .mm-orders-page .mm-item-stats{
+      gap:6px;
+    }
+
+    .mm-orders-page .mm-item-stat{
+      padding:7px 8px;
+    }
+
+    .mm-orders-page .mm-item-stat-k{
+      font-size:.61rem;
+    }
+
+    .mm-orders-page .mm-item-stat-v{
+      font-size:.8rem;
+    }
+
+    .mm-orders-page .mm-status{
+      padding:.38rem .64rem;
+      font-size:.74rem;
+    }
+  }
+
+  @media (max-width:400px){
+    .mm-orders-page .mm-factory-grid{
+      grid-template-columns:repeat(2, minmax(0,1fr));
+    }
+
+    .mm-orders-page .mm-stat-chip{
+      min-width:100%;
+    }
+  }
+</style>
+
+{% set selected_factory_id = request.args.get('factory_id', '') %}
+{% set grouped_orders = orders|groupby('factory.name') %}
+
+<div class="mm-orders-page">
+  <div class="mm-shell">
+
+    <div class="mm-topbar">
+      <div>
+        <h1 class="mm-page-title">{{ t('shop_orders_manager_title') }}</h1>
+        <div class="mm-page-subtitle">
+          {{ t('shop_orders_choose_factory_hint') }}
         </div>
       </div>
-    {% endfor %}
-  {% else %}
-    <p class="text-muted small">
-      {{ t('shop_orders_no_orders') }}
-    </p>
-  {% endif %}
+
+      <div class="d-flex gap-2 flex-wrap">
+        {% if selected_factory_id %}
+          <a href="{{ url_for(request.endpoint) }}" class="mm-btn mm-btn-primary">{{ t('shop_orders_show_all_factories') }}</a>
+        {% endif %}
+        <a href="{{ url_for('main.dashboard') }}" class="mm-btn mm-btn-light"><i class="bi bi-arrow-left"></i>{{ t('shop_orders_back') }}</a>
+      </div>
+    </div>
+
+    <section class="mm-section">
+      <div class="mm-section-head">
+        <div class="mm-section-title-row">
+          <h2 class="mm-section-title">{{ t('shop_orders_factories_title') }}</h2>
+          <span class="mm-pill mm-pill-primary">{{ grouped_orders|length }} {{ t('shop_orders_factories_count') }}</span>
+        </div>
+        <div class="mm-section-subtitle">
+          {{ t('shop_orders_factories_overview') }}
+        </div>
+      </div>
+
+      <div class="mm-section-body">
+        {% if orders %}
+          <div class="mm-factory-grid">
+            {% for group in grouped_orders %}
+              {% set factory_orders = group.list %}
+              {% set factory_id = factory_orders[0].factory_id %}
+              {% set ns = namespace(
+                pending_count=0,
+                ready_count=0,
+                completed_count=0,
+                remaining_qty=0,
+                requested_qty=0
+              ) %}
+
+              {% for order in factory_orders %}
+                {% if order.status == "pending" %}
+                  {% set ns.pending_count = ns.pending_count + 1 %}
+                {% elif order.status == "ready" %}
+                  {% set ns.ready_count = ns.ready_count + 1 %}
+                {% elif order.status == "completed" %}
+                  {% set ns.completed_count = ns.completed_count + 1 %}
+                {% endif %}
+
+                {% for item in order.items %}
+                  {% set ns.remaining_qty = ns.remaining_qty + (item.qty_remaining or 0) %}
+                  {% set ns.requested_qty = ns.requested_qty + (item.qty_requested or 0) %}
+                {% endfor %}
+              {% endfor %}
+
+              <a href="{{ url_for(request.endpoint, factory_id=factory_id) }}" class="mm-factory-link">
+                <article class="mm-factory-card {% if selected_factory_id and selected_factory_id == (factory_id|string) %}active{% endif %}">
+                  <div class="mm-factory-top">
+                    <div>
+                      <h3 class="mm-factory-name"><i class="bi bi-building-gear me-1"></i>{{ group.grouper or t('label_factory') }}</h3>
+                      <div class="mm-factory-meta">
+                        {{ factory_orders|length }} {{ t('shop_orders_order_count_suffix') }}
+                      </div>
+                    </div>
+
+                    <div class="mm-factory-status">
+                      {% if ns.pending_count > 0 %}
+                        <span class="mm-pill mm-pill-warning"><i class="bi bi-hourglass-split me-1"></i>{{ ns.pending_count }} {{ t('shop_orders_waiting_count') }}</span>
+                      {% elif ns.ready_count > 0 %}
+                        <span class="mm-pill mm-pill-success"><i class="bi bi-check-circle me-1"></i>{{ ns.ready_count }} {{ t('shop_orders_ready_count') }}</span>
+                      {% else %}
+                        <span class="mm-pill mm-pill-primary"><i class="bi bi-box-seam me-1"></i>{{ factory_orders|length }}</span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="mm-factory-stats">
+                    <div class="mm-stat-chip">
+                      <div class="mm-stat-chip-k">{{ t('shop_orders_in_progress') }}</div>
+                      <div class="mm-stat-chip-v">{{ ns.pending_count }}</div>
+                    </div>
+
+                    <div class="mm-stat-chip">
+                      <div class="mm-stat-chip-k">{{ t('shop_orders_done') }}</div>
+                      <div class="mm-stat-chip-v">{{ ns.ready_count }}</div>
+                    </div>
+
+                    <div class="mm-stat-chip">
+                      <div class="mm-stat-chip-k">{{ t('shop_orders_closed') }}</div>
+                      <div class="mm-stat-chip-v">{{ ns.completed_count }}</div>
+                    </div>
+
+                    <div class="mm-stat-chip">
+                      <div class="mm-stat-chip-k">{{ t('shop_orders_remaining') }}</div>
+                      <div class="mm-stat-chip-v {% if ns.remaining_qty > 0 %}danger{% else %}success{% endif %}">
+                        {{ ns.remaining_qty }} {{ t('pieces_short') }}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="mm-empty">
+            <div class="mm-empty-title">{{ t('shop_orders_no_orders_title') }}</div>
+            <p class="mm-empty-text">
+              {{ t('shop_orders_no_orders_text') }}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+    {% if selected_factory_id %}
+      {% set selected_ns = namespace(found=false, selected_name='') %}
+      {% for group in grouped_orders %}
+        {% set factory_orders = group.list %}
+        {% set factory_id = factory_orders[0].factory_id %}
+        {% if selected_factory_id == (factory_id|string) %}
+          {% set selected_ns.found = true %}
+          {% set selected_ns.selected_name = group.grouper %}
+        {% endif %}
+      {% endfor %}
+
+      <section class="mm-section">
+        <div class="mm-section-head">
+          <div class="mm-section-title-row">
+            <h2 class="mm-section-title">
+              {{ t('shop_orders_factory_orders_title') }}: {{ selected_ns.selected_name or t('label_factory') }}
+            </h2>
+            <span class="mm-pill mm-pill-primary">{{ t('shop_orders_filter_enabled') }}</span>
+          </div>
+          <div class="mm-section-subtitle">
+            {{ t('shop_orders_selected_factory_only') }}
+          </div>
+        </div>
+
+        <div class="mm-section-body">
+          <div class="mm-order-stack">
+            {% for order in orders %}
+              {% if selected_factory_id == (order.factory_id|string) %}
+                <article class="mm-order-card">
+                  <div class="mm-order-body">
+
+                    <div class="mm-order-head">
+                      <div>
+                        <div class="mm-order-title">{{ t('shop_orders_order_label') }} #{{ order.id }}</div>
+                        <div class="mm-order-meta">
+                          {{ order.created_at }}
+                          {% if order.customer_name %} &middot; {{ order.customer_name }}{% endif %}
+                          {% if order.customer_phone %} &middot; {{ order.customer_phone }}{% endif %}
+                        </div>
+                      </div>
+
+                      <div>
+                        {% if order.status == "pending" %}
+                          <span class="badge bg-warning text-dark mm-status">{{ t('shop_orders_status_pending') }}</span>
+                        {% elif order.status == "ready" %}
+                          <span class="badge bg-info text-dark mm-status">{{ t('shop_orders_status_ready') }}</span>
+                        {% elif order.status == "completed" %}
+                          <span class="badge bg-success mm-status">{{ t('shop_orders_status_completed') }}</span>
+                        {% elif order.status == "cancelled" %}
+                          <span class="badge bg-secondary mm-status">{{ t('shop_orders_status_cancelled') }}</span>
+                        {% else %}
+                          <span class="badge bg-light text-dark mm-status">{{ order.status }}</span>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    {% if order.note %}
+                      <div class="mm-note-box">
+                        <span class="mm-note-label">{{ t('shop_orders_comment_label') }}:</span>{{ order.note }}
+                      </div>
+                    {% endif %}
+
+                    <div class="mm-items-grid">
+                      {% for item in order.items %}
+                        {% set requested = item.qty_requested or 0 %}
+                        {% set fulfilled = item.qty_from_shop_now or 0 %}
+                        {% set remaining = item.qty_remaining or 0 %}
+                        {% set done_pct = ((fulfilled * 100 / requested) if requested else 0) %}
+
+                        <div class="mm-item-box">
+                          <div class="mm-item-top">
+                            <div>
+                              <div class="mm-item-name">{{ item.product.name }}</div>
+                              <div class="mm-item-sub">
+                                {% if item.product.category %}
+                                  {{ item.product.category }}
+                                {% else %}
+                                  {{ t('shop_orders_no_category') }}
+                                {% endif %}
+                              </div>
+                            </div>
+
+                            <div>
+                              {% if remaining <= 0 %}
+                                <span class="mm-mini-badge done">{{ t('shop_orders_item_ready') }}</span>
+                              {% elif fulfilled > 0 %}
+                                <span class="mm-mini-badge partial">{{ t('shop_orders_item_partial') }}</span>
+                              {% else %}
+                                <span class="mm-mini-badge wait">{{ t('shop_orders_item_waiting') }}</span>
+                              {% endif %}
+                            </div>
+                          </div>
+
+                          <div class="mm-item-stats">
+                            <div class="mm-item-stat">
+                              <div class="mm-item-stat-k">{{ t('shop_orders_needed') }}</div>
+                              <div class="mm-item-stat-v">{{ requested }} {{ t('pieces_short') }}</div>
+                            </div>
+
+                            <div class="mm-item-stat">
+                              <div class="mm-item-stat-k">{{ t('shop_orders_already_in_shop') }}</div>
+                              <div class="mm-item-stat-v">{{ fulfilled }} {{ t('pieces_short') }}</div>
+                            </div>
+
+                            <div class="mm-item-stat">
+                              <div class="mm-item-stat-k">{{ t('shop_orders_remaining') }}</div>
+                              <div class="mm-item-stat-v {% if remaining > 0 %}danger{% else %}success{% endif %}">
+                                {{ remaining }} {{ t('pieces_short') }}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="mm-progress-line">
+                            <div class="mm-progress-fill" style="width: {{ done_pct }}%;"></div>
+                          </div>
+                        </div>
+                      {% endfor %}
+                    </div>
+
+                    {% if order.status == "ready" %}
+                      <div class="alert alert-info py-2 small mt-3 mb-2">
+                        {{ t('shop_orders_ready_notice') }}
+                      </div>
+
+                      <form method="post" action="{{ url_for('shop.complete_shop_order', order_id=order.id) }}">
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                          {{ t('shop_orders_complete_button') }}
+                        </button>
+                      </form>
+
+                    {% elif order.status == "completed" %}
+                      <div class="alert alert-success py-2 small mt-3 mb-0">
+                        {{ t('shop_orders_completed_notice') }}
+                      </div>
+                    {% endif %}
+
+                  </div>
+                </article>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+  </div>
 </div>
 
 {% endblock %}

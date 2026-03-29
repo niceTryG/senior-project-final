@@ -1,58 +1,274 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ session.get('lang', 'ru') }}">
 <head>
-<meta charset="utf-8">
-<style>
-body { font-family: DejaVu Sans, sans-serif; font-size: 11pt; }
-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-th, td { border: 1px solid #444; padding: 6px; }
-th { background: #eee; }
-h2 { text-align: center; }
-</style>
+    <meta charset="UTF-8">
+    <title>{{ t('manager_report_title') }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 24pt;
+        }
+
+        @font-face {
+            font-family: "DejaVuSans";
+            src: url("/static/fonts/DejaVuSans.ttf");
+        }
+
+        @font-face {
+            font-family: "DejaVuSansBold";
+            src: url("/static/fonts/DejaVuSans-Bold.ttf");
+        }
+
+        body {
+            font-family: "DejaVuSans";
+            font-size: 10pt;
+            color: #1f2937;
+            line-height: 1.4;
+        }
+
+        .page-title {
+            font-family: "DejaVuSansBold";
+            font-size: 20pt;
+            color: #0f172a;
+            margin-bottom: 6pt;
+        }
+
+        .subtitle {
+            font-size: 10pt;
+            color: #6b7280;
+            margin-bottom: 18pt;
+        }
+
+        .section {
+            margin-bottom: 16pt;
+        }
+
+        .section-title {
+            font-family: "DejaVuSansBold";
+            font-size: 12pt;
+            color: #0f172a;
+            margin-bottom: 8pt;
+            padding-bottom: 4pt;
+            border-bottom: 1pt solid #dbe3ef;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12pt;
+        }
+
+        .summary-table td {
+            width: 50%;
+            border: 1pt solid #dbe3ef;
+            padding: 10pt;
+            vertical-align: top;
+            background-color: #f8fbff;
+        }
+
+        .label {
+            font-size: 9pt;
+            color: #64748b;
+            margin-bottom: 4pt;
+        }
+
+        .value {
+            font-family: "DejaVuSansBold";
+            font-size: 14pt;
+            color: #0f172a;
+        }
+
+        .info-box {
+            border: 1pt solid #dbe3ef;
+            background-color: #f8fbff;
+            padding: 10pt;
+            margin-bottom: 10pt;
+        }
+
+        .info-line {
+            margin-bottom: 5pt;
+        }
+
+        .bold {
+            font-family: "DejaVuSansBold";
+        }
+
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+
+        .product-table thead th {
+            background-color: #eef4ff;
+            border: 1pt solid #dbe3ef;
+            padding: 7pt;
+            text-align: left;
+            font-family: "DejaVuSansBold";
+            color: #334155;
+        }
+
+        .product-table tbody td {
+            border: 1pt solid #e5e7eb;
+            padding: 7pt;
+            vertical-align: top;
+        }
+
+        .num {
+            text-align: right;
+        }
+
+        .low-stock-box {
+            border: 1pt solid #f3d19c;
+            background-color: #fff8ef;
+            padding: 10pt;
+        }
+
+        .low-stock-item {
+            margin-bottom: 4pt;
+        }
+
+        .footer-note {
+            margin-top: 14pt;
+            font-size: 8pt;
+            color: #64748b;
+            text-align: right;
+        }
+    </style>
 </head>
 <body>
 
-<h2>Финансовый отчёт Mini Moda</h2>
-<p><strong>Дата:</strong> {{ current_year }}</p>
+    {% set factory_cost = report.factory_cost_uzs or 0 %}
+    {% set shop_value = report.shop_sell_uzs or report.transferred_to_shop_uzs or 0 %}
+    {% set fabric_value = report.fabric_value_uzs or 0 %}
+    {% set unrealized_profit = report.unrealized_profit or report.stock_profit_uzs or 0 %}
+    {% set realized_profit = report.realized_profit or report.realized_profit_uzs or report.profit_uzs or 0 %}
+    {% set products = report.product_rows or report.products or [] %}
+    {% set low_stock = report.low_stock or [] %}
+    {% set total_assets = factory_cost + shop_value + fabric_value %}
 
-<h3>Сводка</h3>
-<p>Инвестиции (фабрика): {{ format_money(report.factory_cost_uzs, 'UZS') }}</p>
-<p>Стоимость в магазине: {{ format_money(report.shop_sell_uzs, 'UZS') }}</p>
-<p>Потенциальная прибыль: {{ format_money(report.unrealized_profit, 'UZS') }}</p>
-<p>Полученная прибыль: {{ format_money(report.realized_profit, 'UZS') }}</p>
+    <div class="page-title">{{ t('manager_report_title') }}</div>
+    <div class="subtitle">
+        {{ t('manager_report_subtitle') }}
+    </div>
 
-<h3>Детали товаров</h3>
-<table>
-    <thead>
-        <tr>
-            <th>Товар</th>
-            <th>Фабрика</th>
-            <th>Магазин</th>
-            <th>Себестоимость</th>
-            <th>Продажа</th>
-            <th>Потенц. прибыль</th>
-            <th>Продано</th>
-            <th>Получено</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for p in report.products %}
-        <tr>
-            <td>{{ p.name }}</td>
-            <td>{{ p.factory_qty }}</td>
-            <td>{{ p.shop_qty }}</td>
-            <td>{{ p.cost_price }}</td>
-            <td>{{ p.sell_price }}</td>
-            <td>{{ p.potential_profit }}</td>
-            <td>{{ p.sold_units }}</td>
-            <td>{{ p.realized_profit }}</td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
+    <div class="section">
+        <div class="section-title">{{ t('manager_key_metrics') }}</div>
 
-<br><br>
-<p>______________  Подпись руководителя</p>
+        <table class="summary-table">
+            <tr>
+                <td>
+                    <div class="label">{{ t('manager_factory_investment') }}</div>
+                    <div class="value">{{ format_money(factory_cost, 'UZS') }}</div>
+                </td>
+                <td>
+                    <div class="label">{{ t('manager_shop_stock_value') }}</div>
+                    <div class="value">{{ format_money(shop_value, 'UZS') }}</div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label">{{ t('manager_fabric_value') }}</div>
+                    <div class="value">{{ format_money(fabric_value, 'UZS') }}</div>
+                </td>
+                <td>
+                    <div class="label">{{ t('manager_total_assets') }}</div>
+                    <div class="value">{{ format_money(total_assets, 'UZS') }}</div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label">{{ t('manager_potential_profit') }}</div>
+                    <div class="value">{{ format_money(unrealized_profit, 'UZS') }}</div>
+                </td>
+                <td>
+                    <div class="label">{{ t('manager_realized_profit') }}</div>
+                    <div class="value">{{ format_money(realized_profit, 'UZS') }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">{{ t('manager_brief_conclusion') }}</div>
+
+        <div class="info-box">
+            <div class="info-line">
+                <span class="bold">{{ t('label_factory') }}:</span>
+                {{ t('manager_factory_line') }}
+                {{ format_money(factory_cost, 'UZS') }}.
+            </div>
+            <div class="info-line">
+                <span class="bold">{{ t('label_shop') }}:</span>
+                {{ t('manager_shop_line') }}
+                {{ format_money(shop_value, 'UZS') }}.
+            </div>
+            <div class="info-line">
+                <span class="bold">{{ t('manager_unrealized_potential') }}:</span>
+                {{ t('manager_unrealized_line') }}
+                {{ format_money(unrealized_profit, 'UZS') }}.
+            </div>
+            <div class="info-line">
+                <span class="bold">{{ t('manager_already_earned') }}:</span>
+                {{ t('manager_earned_line') }}
+                {{ format_money(realized_profit, 'UZS') }}.
+            </div>
+        </div>
+    </div>
+
+    {% if low_stock %}
+    <div class="section">
+        <div class="section-title">{{ t('dashboard_low_stock_products') }}</div>
+        <div class="low-stock-box">
+            {% for p in low_stock %}
+                <div class="low-stock-item">• {{ p.name }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <div class="section-title">{{ t('manager_product_details') }}</div>
+
+        {% if products %}
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>{{ t('table_name') }}</th>
+                    <th>{{ t('label_factory') }}</th>
+                    <th>{{ t('label_shop') }}</th>
+                    <th>{{ t('shop_monthly_metric_cost') }}</th>
+                    <th>{{ t('sale_price') }}</th>
+                    <th>{{ t('manager_potential_profit') }}</th>
+                    <th>{{ t('shop_weekly_metric_sold') }}</th>
+                    <th>{{ t('manager_realized_profit') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>{{ p.name }}</td>
+                    <td class="num">{{ p.factory_qty or 0 }}</td>
+                    <td class="num">{{ p.shop_qty or 0 }}</td>
+                    <td class="num">{{ format_money(p.cost_price or 0, 'UZS') }}</td>
+                    <td class="num">{{ format_money(p.sell_price or 0, 'UZS') }}</td>
+                    <td class="num">{{ format_money(p.potential_profit or 0, 'UZS') }}</td>
+                    <td class="num">{{ p.sold_units or 0 }}</td>
+                    <td class="num">{{ format_money(p.realized_profit or 0, 'UZS') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="info-box">
+            {{ t('manager_no_product_data') }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer-note">
+        Mini Moda — manager report
+    </div>
 
 </body>
 </html>

@@ -1,15 +1,16 @@
 from flask import Blueprint, render_template, abort, current_app, request
 from urllib.parse import quote
 
-from sqlalchemy import or_
+from sqlalchemy import or_, text, inspect
+
 from ..models import Product
+from ..extensions import db
 
 public_bp = Blueprint("public", __name__)
 
 
 def _telegram_url() -> str:
     return (current_app.config.get("PUBLIC_TELEGRAM_URL") or "").strip()
-
 
 
 def _tg_order_link(product=None, qty=1):
@@ -32,12 +33,13 @@ def _tg_order_link(product=None, qty=1):
         qty_int = int(qty)
     except Exception:
         qty_int = 1
+
     if qty_int < 1:
         qty_int = 1
     if qty_int > 999:
         qty_int = 999
 
-    text = (
+    text_value = (
         "🧾 Mini Moda order\n"
         f"📌 Code: {code}\n"
         f"👕 Name: {name}\n"
@@ -46,37 +48,62 @@ def _tg_order_link(product=None, qty=1):
         "📍 Address:"
     )
 
-    return f"{base}?text={quote(text)}"
+    return f"{base}?text={quote(text_value)}"
+
+
+def _product_column_exists(column_name: str) -> bool:
+    """
+    Cross-db safe check:
+    - SQLite: PRAGMA table_info(products)
+    - Postgres/MySQL/others: SQLAlchemy inspector
+    """
+    try:
+        dialect = db.engine.dialect.name
+
+        if dialect == "sqlite":
+            cols = db.session.execute(text("PRAGMA table_info(products)")).fetchall()
+            col_names = [c[1] for c in cols]
+            return column_name in col_names
+
+        inspector = inspect(db.engine)
+        columns = inspector.get_columns("products")
+        col_names = [c["name"] for c in columns]
+        return column_name in col_names
+
+    except Exception:
+        return False
+
 
 # ======================
 #   🏠 HOME
 # ======================
-from sqlalchemy import text
-from app import db
-
 @public_bp.route("/")
 def home():
-    # check if column exists (Postgres)
-    col_exists = db.session.execute(
-        text("""
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_name='products' AND column_name='is_published'
-            LIMIT 1
-        """)
-    ).first() is not None
+    col_exists = _product_column_exists("is_published")
 
     if not col_exists:
-        return render_template("public/home.html", products=[])
+        return render_template(
+            "public/home.html",
+            products=[],
+            public_telegram_url=_telegram_url(),
+            tg_order_link=_tg_order_link,
+        )
 
     products = (
         Product.query
-        .filter_by(is_published=True)
+        .filter(Product.is_published.is_(True))
         .order_by(Product.id.desc())
         .limit(6)
         .all()
     )
-    return render_template("public/home.html", products=products)
+
+    return render_template(
+        "public/home.html",
+        products=products,
+        public_telegram_url=_telegram_url(),
+        tg_order_link=_tg_order_link,
+    )
+
 
 # ======================
 #   📦 CATALOG
@@ -86,9 +113,19 @@ def catalog():
     q = (request.args.get("q") or "").strip()
     category = (request.args.get("category") or "").strip()
 
-    base_q = Product.query.filter_by(is_published=True)
+    if not _product_column_exists("is_published"):
+        return render_template(
+            "public/catalog.html",
+            products=[],
+            categories=[],
+            q=q,
+            selected_category=category,
+            public_telegram_url=_telegram_url(),
+            tg_order_link=_tg_order_link,
+        )
 
-    # categories (published only)
+    base_q = Product.query.filter(Product.is_published.is_(True))
+
     categories_rows = (
         Product.query
         .with_entities(Product.category)
@@ -131,7 +168,14 @@ def catalog():
 # ======================
 @public_bp.route("/p/<int:product_id>")
 def product_detail(product_id: int):
-    product = Product.query.filter_by(id=product_id, is_published=True).first()
+    if not _product_column_exists("is_published"):
+        abort(404)
+
+    product = Product.query.filter(
+        Product.id == product_id,
+        Product.is_published.is_(True),
+    ).first()
+
     if not product:
         abort(404)
 
@@ -151,4 +195,5 @@ def contact():
     return render_template(
         "public/contact.html",
         public_telegram_url=_telegram_url(),
+        tg_order_link=_tg_order_link,
     )

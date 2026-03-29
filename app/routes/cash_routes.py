@@ -11,7 +11,7 @@ cash_bp = Blueprint("cash", __name__, url_prefix="/cash")
 
 @cash_bp.route("/")
 @login_required
-@roles_required("admin", "manager", "accountant")
+@roles_required("admin", "manager", "accountant", "shop")
 def list_cash():
     factory_id = current_user.factory_id
 
@@ -135,6 +135,31 @@ def list_cash():
     weekly_cash_net_usd = weekly_cash_in_usd - weekly_cash_out_usd
 
     # --------------------------------------------------
+    # CHART DATA (LAST 7 DAYS, UZS ONLY)
+    # --------------------------------------------------
+
+    days = [week_start + timedelta(days=i) for i in range(7)]
+    cash_chart_labels = [d.strftime("%d %b") for d in days]
+
+    cash_chart_income = []
+    cash_chart_expense = []
+    cash_chart_net = []
+
+    for d in days:
+        day_records = [
+            r for r in weekly_cash_records_all
+            if r.date == d and r.currency == "UZS"
+        ]
+
+        day_income = sum((r.amount or 0) for r in day_records if (r.amount or 0) > 0)
+        day_expense = -sum((r.amount or 0) for r in day_records if (r.amount or 0) < 0)
+        day_net = day_income - day_expense
+
+        cash_chart_income.append(day_income)
+        cash_chart_expense.append(day_expense)
+        cash_chart_net.append(day_net)
+
+    # --------------------------------------------------
     # RENDER
     # --------------------------------------------------
 
@@ -160,4 +185,10 @@ def list_cash():
         weekly_cash_in_usd=weekly_cash_in_usd,
         weekly_cash_out_usd=weekly_cash_out_usd,
         weekly_cash_net_usd=weekly_cash_net_usd,
+
+        # Chart data
+        cash_chart_labels=cash_chart_labels,
+        cash_chart_income=cash_chart_income,
+        cash_chart_expense=cash_chart_expense,
+        cash_chart_net=cash_chart_net,
     )

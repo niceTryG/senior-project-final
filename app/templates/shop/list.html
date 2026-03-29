@@ -1,47 +1,30 @@
-{% extends "base.html" %} {% block title %}Склад магазина — Mini Moda{% endblock
-%} {% block content %}
-<style>
-  /* =========================
-     Mini Moda — Shop Stock (Hybrid Mobile)
-     Scoped: .mm-page-shop-stock
-     ========================= */
+{% extends "base.html" %}
+{% block title %}{{ t('shop_list_title') }} - Mini Moda{% endblock %}
 
+{% block content %}
+<style>
   .mm-page-shop-stock {
-    --mm-cardA: rgba(255, 255, 255, 0.78);
-    --mm-cardB: rgba(255, 255, 255, 0.92);
+    --mm-cardA: rgba(255, 255, 255, 0.82);
+    --mm-cardB: rgba(255, 255, 255, 0.95);
     --mm-line: rgba(0, 0, 0, 0.08);
     --mm-muted: rgba(0, 0, 0, 0.5);
-    --mm-soft: rgba(0, 0, 0, 0.68);
-    --mm-shadow: 0 14px 36px rgba(0, 0, 0, 0.12);
-    --mm-shadow-soft: 0 10px 22px rgba(0, 0, 0, 0.07);
+    --mm-soft: rgba(0, 0, 0, 0.72);
+    --mm-shadow: 0 14px 36px rgba(0, 0, 0, 0.1);
+    --mm-shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.07);
     --mm-glow: 0 0 0 0.22rem rgba(13, 110, 253, 0.14);
-    --mm-radius: 18px;
+    --mm-radius: 20px;
     position: relative;
   }
 
-  /* Desktop look can keep some of your “neo” vibe */
   .mm-page-shop-stock::before {
     content: "";
     position: absolute;
     inset: -18px -12px -18px -12px;
     pointer-events: none;
     background:
-      radial-gradient(
-        circle at 14% 12%,
-        rgba(13, 110, 253, 0.12),
-        transparent 34%
-      ),
-      radial-gradient(
-        circle at 86% 18%,
-        rgba(111, 66, 193, 0.1),
-        transparent 36%
-      ),
-      radial-gradient(
-        circle at 28% 90%,
-        rgba(32, 201, 151, 0.1),
-        transparent 38%
-      ),
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.03), transparent 40%);
+      radial-gradient(circle at 14% 12%, rgba(13, 110, 253, 0.1), transparent 34%),
+      radial-gradient(circle at 86% 18%, rgba(111, 66, 193, 0.08), transparent 36%),
+      radial-gradient(circle at 28% 90%, rgba(32, 201, 151, 0.08), transparent 38%);
     opacity: 0.95;
   }
 
@@ -55,8 +38,8 @@
     border-radius: var(--mm-radius);
     background: linear-gradient(180deg, var(--mm-cardA), var(--mm-cardB));
     box-shadow: var(--mm-shadow);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     overflow: hidden;
   }
 
@@ -64,7 +47,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    padding: 0.33rem 0.7rem;
+    padding: 0.34rem 0.72rem;
     border-radius: 999px;
     border: 1px solid var(--mm-line);
     background: rgba(255, 255, 255, 0.72);
@@ -84,7 +67,6 @@
     color: var(--mm-muted);
   }
 
-  /* Mobile sticky search bar */
   .mm-stock-sticky {
     position: sticky;
     top: 0;
@@ -97,12 +79,12 @@
     border-color: rgba(13, 110, 253, 0.35);
   }
 
-  /* KPI tiles */
   .mm-kpi-tile {
     border: 1px solid var(--mm-line);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.76);
+    background: rgba(255, 255, 255, 0.8);
     box-shadow: var(--mm-shadow-soft);
+    height: 100%;
   }
 
   .mm-kpi-label {
@@ -115,8 +97,8 @@
 
   .mm-kpi-value {
     font-weight: 900;
-    font-size: 1.4rem;
-    color: rgba(0, 0, 0, 0.78);
+    font-size: 1.35rem;
+    color: rgba(0, 0, 0, 0.82);
     line-height: 1.1;
   }
 
@@ -125,21 +107,22 @@
     color: var(--mm-muted);
   }
 
-  /* Mobile product cards */
   .mm-stock-card {
     border: 1px solid var(--mm-line);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.82);
     box-shadow: var(--mm-shadow-soft);
     overflow: hidden;
   }
+
   .mm-stock-card.mm-empty {
-    background: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.74);
     border-color: rgba(0, 0, 0, 0.1);
-    opacity: 0.92;
+    opacity: 0.94;
   }
+
   .mm-stock-card.mm-low {
-    border-color: rgba(220, 53, 69, 0.25);
+    border-color: rgba(220, 53, 69, 0.24);
     box-shadow: 0 12px 26px rgba(220, 53, 69, 0.08);
   }
 
@@ -152,7 +135,7 @@
 
   .mm-stock-name {
     font-weight: 900;
-    font-size: 1.02rem;
+    font-size: 1.04rem;
     line-height: 1.15;
     margin-top: 2px;
   }
@@ -160,111 +143,143 @@
   .mm-stock-meta {
     font-size: 0.82rem;
     color: var(--mm-muted);
-    margin-top: 3px;
+    margin-top: 4px;
   }
 
   .mm-stock-qtybox {
     text-align: right;
-    min-width: 84px;
+    min-width: 88px;
   }
+
   .mm-stock-qty {
     font-weight: 950;
     font-size: 1.55rem;
     line-height: 1;
-    color: rgba(0, 0, 0, 0.78);
+    color: rgba(0, 0, 0, 0.8);
   }
 
   .mm-action-btn {
     border-radius: 999px !important;
     font-weight: 900 !important;
-    height: 44px;
+    min-height: 44px;
   }
 
-  /* Details block (hybrid) */
   .mm-details-row {
     border-top: 1px solid rgba(0, 0, 0, 0.06);
     margin-top: 10px;
     padding-top: 10px;
   }
+
   .mm-details-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
+
   .mm-details-item {
     border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.62);
+    background: rgba(255, 255, 255, 0.64);
     padding: 8px 10px;
   }
+
   .mm-details-item .k {
     font-size: 0.72rem;
     color: var(--mm-muted);
     margin-bottom: 1px;
   }
+
   .mm-details-item .v {
     font-weight: 900;
     font-size: 0.9rem;
     color: rgba(0, 0, 0, 0.76);
   }
 
-  /* ===== MOBILE CALM DOWN (dad-friendly) ===== */
+  .mm-top-actions .btn {
+    border-radius: 999px;
+    font-weight: 800;
+  }
+
+  .mm-quick-note {
+    border: 1px dashed rgba(0, 0, 0, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.66);
+    padding: 10px 12px;
+    color: var(--mm-muted);
+    font-size: 0.88rem;
+  }
+
+  .mm-source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    background: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+    border: 1px solid rgba(13, 110, 253, 0.15);
+  }
+
   @media (max-width: 767.98px) {
-    /* remove the noisy background on mobile */
     .mm-page-shop-stock::before {
       display: none;
     }
 
-    /* remove blur/glass on mobile (still keeps clean cards) */
     .mm-neo-shell {
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
       box-shadow: 0 10px 18px rgba(0, 0, 0, 0.08);
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.94);
     }
 
-    /* sticky search should not feel like second navbar */
     .mm-stock-sticky .mm-neo-shell {
       box-shadow: 0 8px 14px rgba(0, 0, 0, 0.07);
+    }
+
+    .mm-kpi-value {
+      font-size: 1.1rem;
     }
   }
 </style>
 
 <div class="container-fluid py-3 py-md-4 mm-page-shop-stock">
+
   {# ===== HEADER ===== #}
-  <div
-    class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3"
-  >
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
     <div>
-      <div class="d-flex align-items-center gap-2 mb-1">
-        <span class="mm-neo-chip">🏪 <span>Shop</span></span>
-        <span class="mm-neo-chip">📦 <span>Stock</span></span>
+      <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+        <span class="mm-neo-chip"><i class="bi bi-shop me-1"></i><span>{{ t('shop_list_chip_shop') }}</span></span>
+        <span class="mm-neo-chip"><i class="bi bi-box-seam me-1"></i><span>{{ t('shop_list_chip_stock') }}</span></span>
       </div>
-      <h1 class="h4 mb-1 mm-neo-title">Склад магазина</h1>
+      <h1 class="h4 mb-1 mm-neo-title">{{ t('shop_list_title') }}</h1>
       <p class="small mm-neo-sub">
-        Остатки товаров в магазине: сколько штук, на какую сумму и что готово к
-        продаже.
+        {{ t('shop_list_subtitle') }}
       </p>
     </div>
 
-    <div class="d-flex flex-wrap gap-2 mm-shop-header-actions">
+    <div class="d-flex flex-wrap gap-2 mm-top-actions">
       <a
-        <button
-  type="button"
-  class="btn btn-sm btn-outline-success"
-  style="border-radius: 999px; font-weight: 800"
-  onclick="mmDownloadShopXlsx()"
->
-  <i class="bi bi-download me-1"></i> Скачать XLSX
-</button>
+        href="{{ url_for('shop.dashboard_shop') }}"
+        class="btn btn-sm btn-outline-secondary"
+      >
+        <i class="bi bi-arrow-left me-1"></i>{{ t('shop_orders_back') }}
       </a>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-success"
+        onclick="mmDownloadShopXlsx()"
+      >
+        <i class="bi bi-download me-1"></i>{{ t('shop_list_download_xlsx') }}
+      </button>
 
       <a
         href="{{ url_for('products.list_products') }}"
-        class="btn btn-sm btn-outline-secondary"
-        style="border-radius: 999px; font-weight: 800"
+        class="btn btn-sm btn-outline-dark"
       >
-        ← К готовой продукции
+        {{ t('shop_list_finished_products') }}
       </a>
     </div>
   </div>
@@ -272,33 +287,33 @@
   {# ===== KPI ROW ===== #}
   <div class="row g-2 g-md-3 mb-3">
     <div class="col-6 col-md-4">
-      <div class="mm-kpi-tile h-100">
-        <div class="p-3 py-3 text-center">
-          <div class="mm-kpi-label">Моделей</div>
+      <div class="mm-kpi-tile">
+        <div class="p-3 text-center">
+          <div class="mm-kpi-label">{{ t('shop_list_kpi_rows') }}</div>
           <div class="mm-kpi-value">{{ items|length }}</div>
-          <div class="mm-kpi-foot">Уникальные позиции</div>
+          <div class="mm-kpi-foot">{{ t('shop_list_kpi_rows_hint') }}</div>
         </div>
       </div>
     </div>
 
     <div class="col-6 col-md-4">
-      <div class="mm-kpi-tile h-100">
-        <div class="p-3 py-3 text-center">
-          <div class="mm-kpi-label">Всего (шт.)</div>
+      <div class="mm-kpi-tile">
+        <div class="p-3 text-center">
+          <div class="mm-kpi-label">{{ t('shop_list_kpi_total_qty') }}</div>
           <div class="mm-kpi-value">{{ total_qty }}</div>
-          <div class="mm-kpi-foot">Сумма всех остатков</div>
+          <div class="mm-kpi-foot">{{ t('shop_list_kpi_total_qty_hint') }}</div>
         </div>
       </div>
     </div>
 
     <div class="col-12 col-md-4">
-      <div class="mm-kpi-tile h-100">
-        <div class="p-3 py-3 text-center">
-          <div class="mm-kpi-label">Сумма (UZS)</div>
-          <div class="mm-kpi-value" style="font-size: 1.2rem">
+      <div class="mm-kpi-tile">
+        <div class="p-3 text-center">
+          <div class="mm-kpi-label">{{ t('shop_list_kpi_total_value') }}</div>
+          <div class="mm-kpi-value" style="font-size: 1.15rem;">
             {{ format_money(total_value_uzs or 0, 'UZS') }}
           </div>
-          <div class="mm-kpi-foot">По розничной цене</div>
+          <div class="mm-kpi-foot">{{ t('shop_list_kpi_total_value_hint') }}</div>
         </div>
       </div>
     </div>
@@ -307,24 +322,27 @@
   {# ===== QUICK ACTIONS ===== #}
   <div class="mm-neo-shell mb-3">
     <div class="p-3">
-      <div class="mm-kpi-label text-center mb-2" style="letter-spacing: 0.14em">
-        Быстрые действия
+      <div class="mm-kpi-label text-center mb-2" style="letter-spacing: 0.14em;">
+        {{ t('shop_list_quick_actions') }}
       </div>
-      <div class="d-flex flex-wrap justify-content-center gap-2">
+
+      <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+        {% if current_user.is_manager or current_user.is_admin %}
         <a
           href="{{ url_for('shop.transfer_to_shop') }}"
           class="btn btn-outline-primary btn-sm"
           style="border-radius: 999px; font-weight: 800"
         >
-          → Передать в магазин
+          <i class="bi bi-arrow-right me-1"></i>{{ t('shop_transfer') }}
         </a>
+        {% endif %}
 
         <a
           href="{{ url_for('sales.list_sales') }}"
           class="btn btn-outline-success btn-sm"
           style="border-radius: 999px; font-weight: 800"
         >
-          💸 Продажи
+          <i class="bi bi-cash-coin me-1"></i>{{ t('sales_history') }}
         </a>
 
         <a
@@ -332,7 +350,7 @@
           class="btn btn-outline-secondary btn-sm"
           style="border-radius: 999px; font-weight: 800"
         >
-          💰 Касса
+          <i class="bi bi-wallet2 me-1"></i>{{ t('dashboard_cash') }}
         </a>
 
         {% if current_user.is_manager or current_user.is_admin %}
@@ -341,7 +359,7 @@
           class="btn btn-outline-dark btn-sm"
           style="border-radius: 999px; font-weight: 800"
         >
-          📜 История движений
+          <i class="bi bi-clock-history me-1"></i>{{ t('reports_shop_history') }}
         </a>
 
         <a
@@ -349,9 +367,13 @@
           class="btn btn-outline-danger btn-sm"
           style="border-radius: 999px; font-weight: 800"
         >
-          🏭 Заказы на производство
+          <i class="bi bi-building-gear me-1"></i>{{ t('dashboard_manager_shop_orders_open_factory') }}
         </a>
         {% endif %}
+      </div>
+
+      <div class="mm-quick-note">
+        {{ t('shop_list_quick_note') }}
       </div>
     </div>
   </div>
@@ -363,18 +385,26 @@
         <div class="p-3">
           <form method="get" class="row g-2 align-items-end">
             <div class="col-12">
-              <label class="form-label small mb-1">Поиск</label>
+              <label class="form-label small mb-1">{{ t('shop_list_search_label') }}</label>
               <input
                 type="text"
                 class="form-control mm-neo-input"
                 name="q"
-                placeholder="Название модели или категория"
+                placeholder="{{ t('shop_list_search_placeholder') }}"
                 value="{{ q }}"
               />
             </div>
+            <div class="col-12">
+              <label class="form-label small mb-1">{{ t('shop_list_sort_label') }}</label>
+              <select class="form-select" name="sort">
+                <option value="name" {% if sort == "name" %}selected{% endif %}>{{ t('shop_list_sort_name') }}</option>
+                <option value="qty" {% if sort == "qty" %}selected{% endif %}>{{ t('shop_list_sort_qty') }}</option>
+                <option value="factory" {% if sort == "factory" %}selected{% endif %}>{{ t('shop_list_sort_factory') }}</option>
+              </select>
+            </div>
             <div class="col-12 d-grid">
               <button type="submit" class="btn btn-primary mm-action-btn">
-                🔎 Найти
+                <i class="bi bi-search me-1"></i>{{ t('shop_list_search_button') }}
               </button>
             </div>
           </form>
@@ -385,242 +415,236 @@
     <div class="mm-neo-shell d-none d-md-block">
       <div class="p-3">
         <form method="get" class="row g-2 align-items-end">
-          <div class="col-12 col-md-8">
-            <label class="form-label small mb-1">Поиск</label>
+          <div class="col-12 col-md-7">
+            <label class="form-label small mb-1">{{ t('shop_list_search_label') }}</label>
             <input
               type="text"
               class="form-control form-control-sm mm-neo-input"
               name="q"
-              placeholder="Название модели или категория"
+              placeholder="{{ t('shop_list_search_placeholder') }}"
               value="{{ q }}"
             />
           </div>
 
           <div class="col-6 col-md-3">
-            <label class="form-label small mb-1">Сортировка</label>
+            <label class="form-label small mb-1">{{ t('shop_list_sort_label') }}</label>
             <select class="form-select form-select-sm" name="sort">
-              <option value="name" {% if sort == "name" %}selected{% endif %}>
-                По названию
-              </option>
-
-              <option value="category" {% if sort == "category" %}selected{% endif %}>
-                По категории
-              </option>
-
-              <option value="qty_desc" {% if sort == "qty_desc" %}selected{% endif %}>
-                Количество: больше → меньше
-              </option>
-
-              <option value="qty_asc" {% if sort == "qty_asc" %}selected{% endif %}>
-                Количество: меньше → больше
-              </option>
+              <option value="name" {% if sort == "name" %}selected{% endif %}>{{ t('shop_list_sort_name') }}</option>
+              <option value="qty" {% if sort == "qty" %}selected{% endif %}>{{ t('shop_list_sort_qty') }}</option>
+              <option value="factory" {% if sort == "factory" %}selected{% endif %}>{{ t('shop_list_sort_factory') }}</option>
             </select>
           </div>
 
-          <div class="col-6 col-md-1 d-flex justify-content-end">
+          <div class="col-6 col-md-2 d-grid">
             <button
               type="submit"
-              class="btn btn-secondary btn-sm px-3 d-flex align-items-center gap-1"
+              class="btn btn-secondary btn-sm"
               style="border-radius: 999px; font-weight: 800"
             >
-              <i class="bi bi-funnel"></i>
-              <span>Фильтр</span>
+              <i class="bi bi-funnel me-1"></i>{{ t('shop_list_filter_button') }}
             </button>
           </div>
         </form>
       </div>
     </div>
   </div>
-  {# ===== MOBILE LIST (HYBRID CARDS) ===== #}
+
+  {# ===== MOBILE LIST ===== #}
   <div class="d-md-none mb-3">
     {% if not items %}
-    <div class="mm-neo-shell">
-      <div class="p-3 small text-muted">В магазине нет товаров.</div>
-    </div>
-    {% endif %} {% for item in items %} {% set p = item.product %} {% set qty =
-    item.quantity or 0 %} {% set total_val = item.total_value or 0 %} {% set low
-    = qty > 0 and qty < 5 %} {% set details_id = "mmDetailsShop_" ~ p.id %}
+      <div class="mm-neo-shell">
+        <div class="p-3 small text-muted">{{ t('shop_list_empty') }}</div>
+      </div>
+    {% endif %}
 
-    <div
-      class="mm-stock-card mb-2 {% if qty == 0 %}mm-empty{% elif low %}mm-low{% endif %}"
-    >
-      <div class="p-3">
-        <div class="mm-stock-head">
-          <div style="min-width: 0">
-            <div class="mm-stock-name text-truncate">{{ p.name }}</div>
-            <div class="mm-stock-meta text-truncate">
-              {% if qty == 0 %}
-              <span class="badge bg-secondary">нет</span>
-              {% elif low %}
-              <span class="badge bg-danger">мало</span>
-              {% else %}
-              <span class="badge bg-success">в наличии</span>
-              {% endif %}
-              <span class="ms-2 text-muted"
-                >{{ p.category or 'Без категории' }}</span
-              >
+    {% for item in items %}
+      {% set p = item.product %}
+      {% set qty = item.quantity or 0 %}
+      {% set total_val = item.total_value or 0 %}
+      {% set low = qty > 0 and qty < 5 %}
+      {% set details_id = "mmDetailsShop_" ~ item.id %}
+      {% set source_factory_name = item.source_factory.name if item.source_factory else '—' %}
+
+      <div class="mm-stock-card mb-2 {% if qty == 0 %}mm-empty{% elif low %}mm-low{% endif %}">
+        <div class="p-3">
+          <div class="mm-stock-head">
+            <div style="min-width: 0;">
+              <div class="mm-stock-name text-truncate">{{ p.name }}</div>
+              <div class="mm-stock-meta text-truncate">
+                {% if qty == 0 %}
+                  <span class="badge bg-secondary">{{ t('shop_list_badge_none') }}</span>
+                {% elif low %}
+                  <span class="badge bg-danger">{{ t('shop_list_badge_low') }}</span>
+                {% else %}
+                  <span class="badge bg-success">{{ t('shop_list_badge_in_stock') }}</span>
+                {% endif %}
+                <span class="ms-2 text-muted">{{ p.category or t('shop_list_no_category') }}</span>
+              </div>
+              <div class="mt-2">
+                <span class="mm-source-badge"><i class="bi bi-building-gear me-1"></i>{{ source_factory_name }}</span>
+              </div>
+            </div>
+
+            <div class="mm-stock-qtybox">
+              <div class="small text-muted">{{ t('shop_list_in_shop') }}</div>
+              <div class="mm-stock-qty">{{ qty }}</div>
             </div>
           </div>
 
-          <div class="mm-stock-qtybox">
-            <div class="small text-muted">в магазине</div>
-            <div class="mm-stock-qty">{{ qty }}</div>
+          <div class="mt-3 d-grid gap-2">
+            {% if qty > 0 %}
+              <a
+                href="{{ url_for('shop.sell_product', shop_stock_id=item.id) }}"
+                class="btn btn-success mm-action-btn"
+              >
+                <i class="bi bi-cash-coin me-1"></i>{{ t('products_details_sell_button') }}
+              </a>
+            {% else %}
+              <button
+                class="btn btn-outline-secondary mm-action-btn"
+                type="button"
+                disabled
+              >
+                {{ t('shop_list_not_available') }}
+              </button>
+            {% endif %}
+
+            <button
+              class="btn btn-outline-primary mm-action-btn"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#{{ details_id }}"
+              aria-expanded="false"
+              aria-controls="{{ details_id }}"
+            >
+              <i class="bi bi-info-circle me-1"></i>{{ t('shop_list_details') }}
+            </button>
           </div>
-        </div>
 
-        <div class="mt-3 d-grid gap-2">
-          {% if qty > 0 %}
-          <a
-            href="{{ url_for('shop.sell_product', product_id=p.id) }}"
-            class="btn btn-outline-success mm-action-btn"
-          >
-            💸 Продать
-          </a>
-          {% else %}
-          <button
-            class="btn btn-outline-secondary mm-action-btn"
-            type="button"
-            disabled
-          >
-            Нет в наличии
-          </button>
-          {% endif %}
-
-          <button
-            class="btn btn-outline-primary mm-action-btn"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#{{ details_id }}"
-            aria-expanded="false"
-            aria-controls="{{ details_id }}"
-          >
-            ℹ️ Детали
-          </button>
-        </div>
-
-        <div id="{{ details_id }}" class="collapse">
-          <div class="mm-details-row">
-            <div class="mm-details-grid">
-              <div class="mm-details-item">
-                <div class="k">Код</div>
-                <div class="v">MM-{{ "%05d"|format(p.id) }}</div>
-              </div>
-
-              <div class="mm-details-item">
-                <div class="k">Валюта</div>
-                <div class="v">{{ p.currency }}</div>
-              </div>
-
-              <div class="mm-details-item">
-                <div class="k">Цена / 1</div>
-                <div class="v">
-                  {{ format_money(p.sell_price_per_item or 0, p.currency) }}
+          <div id="{{ details_id }}" class="collapse">
+            <div class="mm-details-row">
+              <div class="mm-details-grid">
+                <div class="mm-details-item">
+                  <div class="k">{{ t('shop_list_code') }}</div>
+                  <div class="v">MM-{{ "%05d"|format(p.id) }}</div>
                 </div>
-              </div>
 
-              <div class="mm-details-item">
-                <div class="k">Сумма (UZS)</div>
-                <div class="v">{{ format_money(total_val, 'UZS') }}</div>
+                <div class="mm-details-item">
+                  <div class="k">{{ t('shop_list_currency') }}</div>
+                  <div class="v">{{ p.currency }}</div>
+                </div>
+
+                <div class="mm-details-item">
+                  <div class="k">{{ t('shop_list_price_per_one') }}</div>
+                  <div class="v">{{ format_money(p.sell_price_per_item or 0, p.currency) }}</div>
+                </div>
+
+                <div class="mm-details-item">
+                  <div class="k">{{ t('shop_list_total_uzs') }}</div>
+                  <div class="v">{{ format_money(total_val, 'UZS') }}</div>
+                </div>
+
+                <div class="mm-details-item" style="grid-column: span 2;">
+                  <div class="k">{{ t('shop_list_source_factory') }}</div>
+                  <div class="v">{{ source_factory_name }}</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     {% endfor %}
   </div>
 
-  {# ===== DESKTOP TABLE (UNCHANGED) ===== #}
+  {# ===== DESKTOP TABLE ===== #}
   <div class="card shadow-sm border-0 mb-3 d-none d-md-block">
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-sm table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th class="text-nowrap">Код</th>
-              <th class="text-nowrap">Модель</th>
-              <th class="text-nowrap d-none d-md-table-cell">Категория</th>
-              <th class="text-nowrap text-end">Кол-во в магазине</th>
-              <th class="text-nowrap text-end">Цена за 1</th>
-              <th class="text-nowrap text-end">Сумма (UZS)</th>
-              <th class="text-nowrap text-center">Действия</th>
+              <th class="text-nowrap">{{ t('shop_list_code') }}</th>
+              <th class="text-nowrap">{{ t('shop_list_table_model') }}</th>
+              <th class="text-nowrap">{{ t('shop_list_table_category') }}</th>
+              <th class="text-nowrap">{{ t('shop_list_table_source_factory') }}</th>
+              <th class="text-nowrap text-end">{{ t('shop_list_table_qty') }}</th>
+              <th class="text-nowrap text-end">{{ t('shop_list_table_price_per_one') }}</th>
+              <th class="text-nowrap text-end">{{ t('shop_list_total_uzs') }}</th>
+              <th class="text-nowrap text-center">{{ t('shop_list_table_actions') }}</th>
             </tr>
           </thead>
 
           <tbody>
-            {% for item in items %} {% set p = item.product %} {% set qty =
-            item.quantity or 0 %} {% set total_val = item.total_value or 0 %} {%
-            set low = qty > 0 and qty < 5 %}
+            {% for item in items %}
+              {% set p = item.product %}
+              {% set qty = item.quantity or 0 %}
+              {% set total_val = item.total_value or 0 %}
+              {% set low = qty > 0 and qty < 5 %}
+              {% set source_factory_name = item.source_factory.name if item.source_factory else '—' %}
 
-            <tr
-              class="{% if qty == 0 %}table-secondary{% elif low %}table-warning{% endif %}"
-            >
-              <td>
-                <span class="badge bg-secondary"
-                  >MM-{{ "%05d"|format(p.id) }}</span
-                >
-              </td>
+              <tr class="{% if qty == 0 %}table-secondary{% elif low %}table-warning{% endif %}">
+                <td>
+                  <span class="badge bg-secondary">MM-{{ "%05d"|format(p.id) }}</span>
+                </td>
 
-              <td>
-                <div class="d-flex flex-column">
-                  <div class="small fw-semibold">
-                    {{ p.name }} {% if qty == 0 %}
-                    <span class="badge bg-secondary ms-1">нет остатков</span>
-                    {% elif low %}
-                    <span class="badge bg-danger ms-1">мало</span>
-                    {% endif %}
+                <td>
+                  <div class="d-flex flex-column">
+                    <div class="small fw-semibold">
+                      {{ p.name }}
+                      {% if qty == 0 %}
+                        <span class="badge bg-secondary ms-1">{{ t('shop_list_badge_no_stock') }}</span>
+                      {% elif low %}
+                        <span class="badge bg-danger ms-1">{{ t('shop_list_badge_low') }}</span>
+                      {% endif %}
+                    </div>
                   </div>
-                  <span class="text-muted small d-md-none">
-                    {{ p.category or 'Без категории' }} · {{ p.currency }}
-                  </span>
-                </div>
-              </td>
+                </td>
 
-              <td class="small d-none d-md-table-cell">
-                {{ p.category or '—' }}
-              </td>
+                <td class="small">{{ p.category or t('shop_list_only_dash') }}</td>
 
-              <td class="text-end small fw-semibold">{{ qty }}</td>
+                <td class="small">
+                  <span class="mm-source-badge">{{ source_factory_name }}</span>
+                </td>
 
-              <td class="text-end small">
-                {{ format_money(p.sell_price_per_item or 0, p.currency) }}
-              </td>
+                <td class="text-end small fw-semibold">{{ qty }}</td>
 
-              <td class="text-end small fw-semibold">
-                {{ format_money(total_val, 'UZS') }}
-              </td>
+                <td class="text-end small">
+                  {{ format_money(p.sell_price_per_item or 0, p.currency) }}
+                </td>
 
-              <td class="text-center">
-                {% if qty > 0 %}
-                <a
-                  href="{{ url_for('shop.sell_product', product_id=p.id) }}"
-                  class="btn btn-sm btn-outline-success px-2 py-1"
-                >
-                  💸 Продать
-                </a>
-                {% else %}
-                <span class="text-muted small">—</span>
-                {% endif %}
-              </td>
-            </tr>
+                <td class="text-end small fw-semibold">
+                  {{ format_money(total_val, 'UZS') }}
+                </td>
+
+                <td class="text-center">
+                  {% if qty > 0 %}
+                    <a
+                      href="{{ url_for('shop.sell_product', shop_stock_id=item.id) }}"
+                      class="btn btn-sm btn-success px-3 py-1"
+                    >
+                      <i class="bi bi-cash-coin me-1"></i>{{ t('products_details_sell_button') }}
+                    </a>
+                  {% else %}
+                      <span class="text-muted small">{{ t('shop_list_only_dash') }}</span>
+                  {% endif %}
+                </td>
+              </tr>
             {% else %}
-            <tr>
-              <td colspan="7" class="text-center text-muted py-3">
-                В магазине нет товаров.
-              </td>
-            </tr>
+              <tr>
+                <td colspan="8" class="text-center text-muted py-3">
+                  {{ t('shop_list_empty') }}
+                </td>
+              </tr>
             {% endfor %}
           </tbody>
 
           {% if items %}
           <tfoot>
             <tr class="table-light fw-semibold">
-              <td colspan="3" class="text-end">Итого:</td>
+              <td colspan="4" class="text-end">{{ t('shop_list_total_footer') }}</td>
               <td class="text-end">{{ total_qty }}</td>
               <td></td>
-              <td class="text-end">
-                {{ format_money(total_value_uzs or 0, 'UZS') }}
-              </td>
+              <td class="text-end">{{ format_money(total_value_uzs or 0, 'UZS') }}</td>
               <td></td>
             </tr>
           </tfoot>
@@ -630,4 +654,18 @@
     </div>
   </div>
 </div>
+
+<script>
+  function mmDownloadShopXlsx() {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q") || "";
+    const sort = params.get("sort") || "name";
+
+    const url = new URL("{{ url_for('shop.export_shop') }}", window.location.origin);
+    if (q) url.searchParams.set("q", q);
+    if (sort) url.searchParams.set("sort", sort);
+
+    window.location.href = url.toString();
+  }
+</script>
 {% endblock %}

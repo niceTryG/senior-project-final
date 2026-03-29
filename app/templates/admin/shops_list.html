@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('admin_shops_title') }}{% endblock %}
+
+{% block content %}
+<style>
+  .mm-shops-page{
+    padding-top:10px;
+    padding-bottom:96px;
+  }
+
+  .mm-card{
+    border-radius:20px;
+    border:0;
+    box-shadow:0 10px 28px rgba(16,24,40,0.06);
+  }
+
+  .mm-btn{
+    border-radius:14px;
+    font-weight:800;
+  }
+
+  .mm-shop-card{
+    border-radius:18px;
+    border:1px solid rgba(0,0,0,.08);
+    background:#fff;
+    padding:.95rem;
+  }
+
+  .mm-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    padding:.42rem .72rem;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,.10);
+    background:#fff;
+    color:#111;
+    font-size:.82rem;
+    font-weight:800;
+    white-space:nowrap;
+  }
+
+  .mm-mini-badge{
+    display:inline-flex;
+    align-items:center;
+    padding:.25rem .55rem;
+    border-radius:999px;
+    font-size:.72rem;
+    font-weight:800;
+    border:1px solid rgba(0,0,0,.08);
+    background:#fff;
+    color:#111;
+    white-space:nowrap;
+  }
+
+  .mm-mini-badge.ok{
+    background:rgba(16,185,129,.12);
+    color:#047857;
+    border-color:rgba(16,185,129,.18);
+  }
+
+  .mm-mini-badge.warn{
+    background:rgba(245,158,11,.14);
+    color:#b45309;
+    border-color:rgba(245,158,11,.18);
+  }
+
+  .mm-filter-form .form-control,
+  .mm-filter-form .form-select{
+    border-radius:12px;
+  }
+
+  .mm-empty-box{
+    border-radius:18px;
+    border:1px dashed rgba(0,0,0,.12);
+    background:rgba(0,0,0,.02);
+    padding:1rem;
+    text-align:center;
+    color:#6c757d;
+  }
+
+  .mm-table-wrap{
+    display:none;
+  }
+
+  @media (min-width: 768px){
+    .mm-mobile-list{
+      display:none;
+    }
+
+    .mm-table-wrap{
+      display:block;
+    }
+
+    .mm-table thead th{
+      font-size:.75rem;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      color:#6c757d;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .mm-table td{
+      vertical-align:middle;
+    }
+  }
+</style>
+
+<div class="container-fluid mm-shops-page">
+  <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="h4 mb-0">{{ t('admin_shops_title') }}</h1>
+      <div class="small text-muted">
+        {{ t('admin_shops_subtitle') }}
+      </div>
+    </div>
+
+    <a href="{{ url_for('auth.create_shop') }}" class="btn btn-primary btn-sm mm-btn">
+      {{ t('admin_add_shop') }}
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0 mm-card mb-3">
+    <div class="card-body p-2 p-md-3">
+      <form method="get" class="row g-2 mm-filter-form">
+        <div class="col-12 col-md-5">
+          <label class="form-label small mb-1">{{ t('filter_search') }}</label>
+          <input type="text"
+                 class="form-control form-control-sm"
+                 name="q"
+                 value="{{ q or '' }}"
+                 placeholder="{{ t('filter_search') }}">
+        </div>
+
+        {% if current_user.is_superadmin %}
+        <div class="col-12 col-md-4">
+          <label class="form-label small mb-1">{{ t('label_factory') }}</label>
+          <select name="factory_id" class="form-select form-select-sm">
+            <option value="">{{ t('all') }}</option>
+            {% for f in factories %}
+              <option value="{{ f.id }}" {% if selected_factory_id == f.id %}selected{% endif %}>
+                {{ f.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <div class="col-12 col-md-2 d-grid">
+          <label class="form-label small mb-1 d-none d-md-block">&nbsp;</label>
+          <button type="submit" class="btn btn-dark btn-sm mm-btn">{{ t('shop_order_big_submit') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="mm-mobile-list d-md-none">
+    {% for row in shop_rows %}
+      <div class="mm-shop-card mb-2">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div class="fw-semibold">{{ row.shop.name }}</div>
+            <div class="small text-muted">{{ t('table_id') }}: {{ row.shop.id }}</div>
+          </div>
+
+          {% if row.shop.is_active %}
+            <span class="mm-mini-badge ok">{{ t('label_active') }}</span>
+          {% else %}
+            <span class="mm-mini-badge warn">{{ t('label_inactive') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="mt-2 small text-muted">
+          {{ row.shop.location or t('admin_no_address') }}
+        </div>
+
+        {% if row.shop.note %}
+          <div class="mt-1 small">{{ row.shop.note }}</div>
+        {% endif %}
+
+        <div class="mt-2 d-flex gap-2 flex-wrap">
+          <span class="mm-chip"><i class="bi bi-building-gear me-1"></i>{{ row.linked_factory_count }} {{ t('admin_factories_count') }}</span>
+          <span class="mm-chip"><i class="bi bi-people me-1"></i>{{ row.users_count }} {{ t('admin_users_count') }}</span>
+        </div>
+
+        <div class="mt-2 d-flex gap-1 flex-wrap">
+          {% for f in row.linked_factories %}
+            <span class="mm-mini-badge">{{ f.name }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="mt-3">
+          <a href="{{ url_for('auth.edit_shop', shop_id=row.shop.id) }}"
+             class="btn btn-outline-primary btn-sm w-100 mm-btn">
+            <i class="bi bi-pencil-square me-1"></i>{{ t('admin_edit') }}
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <div class="mm-empty-box">{{ t('admin_shops_empty') }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="card shadow-sm border-0 mm-card mm-table-wrap">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 mm-table">
+          <thead class="table-light">
+            <tr>
+              <th>{{ t('table_id') }}</th>
+              <th>{{ t('admin_shop_name') }}</th>
+              <th>{{ t('admin_shop_location') }}</th>
+              <th>{{ t('admin_linked_factories') }}</th>
+              <th>{{ t('label_users') }}</th>
+              <th>{{ t('label_status') }}</th>
+              <th class="text-end">{{ t('label_actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in shop_rows %}
+              <tr>
+                <td class="text-muted small">{{ row.shop.id }}</td>
+                <td>
+                  <div class="fw-semibold">{{ row.shop.name }}</div>
+                  {% if row.shop.note %}
+                    <div class="small text-muted">{{ row.shop.note }}</div>
+                  {% endif %}
+                </td>
+                <td>{{ row.shop.location or "—" }}</td>
+                <td>
+                  <div class="d-flex gap-1 flex-wrap">
+                    {% for f in row.linked_factories %}
+                      <span class="badge bg-light text-dark border">{{ f.name }}</span>
+                    {% endfor %}
+                  </div>
+                </td>
+                <td>{{ row.users_count }}</td>
+                <td>
+                  {% if row.shop.is_active %}
+                    <span class="badge bg-success">{{ t('label_active') }}</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">{{ t('label_inactive') }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <a href="{{ url_for('auth.edit_shop', shop_id=row.shop.id) }}"
+                     class="btn btn-outline-primary btn-sm mm-btn">
+                    {{ t('admin_edit') }}
+                  </a>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                  {{ t('admin_shops_empty') }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

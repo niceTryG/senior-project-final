@@ -1,6 +1,6 @@
 {# templates/macros.html #}
 
-{# Карточка-метрика (может быть кликаемой) #}
+{# Metric card (optionally clickable) #}
 {% macro metric_card(title, value, subtitle='', href=None, value_class='', card_class='') %}
   {%- if href -%}
     <a href="{{ href }}" class="text-decoration-none text-reset">
@@ -24,7 +24,7 @@
 {% endmacro %}
 
 
-{# Кнопка в блоке "Быстрые действия" #}
+{# Button for the quick actions block #}
 {% macro quick_btn(label, href, btn_class='btn-outline-primary') %}
   <a href="{{ href }}" class="btn btn-sm {{ btn_class }}">
     {{ label }}

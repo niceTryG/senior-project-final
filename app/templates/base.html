@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ current_lang or 'ru' }}">
   <head>
     <link
       rel="manifest"
@@ -14,93 +14,720 @@
     <title>{{ t('app_title') }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Theme variables (light/dark) -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=neo3">
-
-    <!-- Bootstrap CSS (CDN) -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/theme.css') }}?v=neo5"
+    />
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-
-    <!-- Custom styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}?v=neo3">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/custom.css') }}?v=neo5"
+    />
 
     {% block extra_css %}{% endblock %}
 
-    <style>
-      /* Space for fixed bottom nav (only internal) */
-      .mm-main {
-        padding-bottom: calc(86px + env(safe-area-inset-bottom));
-      }
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap");
 
-      /* Mobile: hide the huge collapse menu completely */
-      @media (max-width: 991.98px) {
-        .mm-desktop-menu {
-          display: none !important;
-        }
-      }
+  .mm-main {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
 
-      /* Optional: slightly tighter topbar on mobile */
-      @media (max-width: 575.98px) {
-        .navbar-brand .brand-text {
-          font-size: 1rem;
-        }
-        .mm-top-actions .btn {
-          padding: 0.25rem 0.5rem;
-        }
-      }
+  .mm-body {
+    font-family: "DM Sans", sans-serif;
+  }
 
-      /* Public: nicer hero spacing */
-      .mm-public-hero {
-        padding: 24px 0;
-      }
+  @media (max-width: 991.98px) {
+    .mm-desktop-menu {
+      display: none !important;
+    }
+  }
 
-      /* ===== NEO TOPBAR ===== */
-      .mm-topbar-neo {
-        background: #f6f7fb !important;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-        box-shadow:
-          0 10px 24px rgba(17, 17, 17, 0.08),
-          inset 0 1px 0 rgba(255, 255, 255, 0.65);
-      }
-      .mm-topbar-neo .navbar-brand,
-      .mm-topbar-neo .brand-text {
-        color: #111 !important;
-      }
-      .mm-topbar-neo .btn {
-        border-radius: 999px;
-        font-weight: 800;
-      }
-      .mm-topbar-neo .btn-outline-light {
-        color: #111 !important;
-        border-color: rgba(0, 0, 0, 0.18) !important;
-      }
-      .mm-topbar-neo .btn-outline-light:hover {
-        background: rgba(0, 0, 0, 0.04) !important;
-      }
-      .mm-topbar-neo .btn-light {
-        background: #fff !important;
-        border-color: rgba(0, 0, 0, 0.12) !important;
-      }
-      .mm-topbar-neo .text-light {
-        color: #111 !important;
-      }
-      .mm-topbar-neo .brand-logo {
-        height: 28px;
-        width: auto;
-        border-radius: 8px;
-      }
-    </style>
+  @media (max-width: 575.98px) {
+    .navbar-brand .brand-text {
+      font-size: 1rem;
+    }
+    .mm-top-actions .btn {
+      padding: 0.25rem 0.5rem;
+    }
+  }
+
+  /* =========================
+     PUBLIC TOPBAR
+     ========================= */
+  .mm-topbar-public {
+    background: #f7f4ef !important;
+    border-bottom: 1px solid rgba(26, 22, 18, 0.08) !important;
+    box-shadow: 0 1px 12px rgba(26, 22, 18, 0.06) !important;
+    padding: 0 !important;
+    height: 56px;
+  }
+
+  .mm-topbar-public .navbar-brand {
+    color: #1a1612 !important;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+  }
+
+  .mm-topbar-public .brand-logo {
+    height: 28px;
+    width: auto;
+    border-radius: 6px;
+  }
+
+  .mm-topbar-public .brand-text {
+    color: #1a1612 !important;
+    font-size: 1rem;
+  }
+
+  .mm-pub-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+  }
+
+  .mm-pub-link {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #5c5650 !important;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 2px;
+    transition: color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+
+  .mm-pub-link:hover {
+    color: #1a1612 !important;
+    background: rgba(26, 22, 18, 0.05);
+  }
+
+  .mm-pub-tg {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: #1a1612 !important;
+    color: #f7f4ef !important;
+    text-decoration: none;
+    padding: 7px 16px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.18s, transform 0.12s;
+    white-space: nowrap;
+    margin-left: 4px;
+  }
+
+  .mm-pub-tg:hover {
+    background: #c4551a !important;
+    color: #f7f4ef !important;
+    transform: translateY(-1px);
+  }
+
+  .mm-pub-login {
+    font-size: 11px;
+    font-weight: 400;
+    color: #b0a89e !important;
+    text-decoration: none;
+    padding: 6px 10px;
+    transition: color 0.15s;
+    white-space: nowrap;
+    margin-left: 2px;
+  }
+
+  .mm-pub-login:hover {
+    color: #5c5650 !important;
+  }
+
+  .mm-pub-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(26, 22, 18, 0.12);
+    margin: 0 6px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    .mm-pub-hide-xs {
+      display: none !important;
+    }
+
+    .mm-pub-link {
+      padding: 6px 8px;
+      font-size: 11px;
+    }
+
+    .mm-pub-tg {
+      padding: 7px 12px;
+    }
+  }
+
+  /* =========================
+     INTERNAL TOPBAR
+     ========================= */
+  .mm-topbar-neo {
+    background: linear-gradient(135deg, #070d1b, #061946) !important;
+    border-bottom: 1px solid rgba(15, 30, 60, 0.28);
+    box-shadow: 0 2px 12px rgba(15, 25, 45, 0.28);
+    min-height: 58px;
+  }
+
+  .mm-topbar-neo .navbar-brand,
+  .mm-topbar-neo .brand-text,
+  .mm-topbar-neo .nav-link,
+  .mm-topbar-neo .mm-lang-toggle {
+    color: #f2f7ff !important;
+  }
+
+  .mm-topbar-neo .navbar-brand .brand-text {
+    color: #ffffff !important;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  }
+
+  .mm-topbar-neo .btn-outline-light {
+    color: #f2f7ff !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .mm-topbar-neo .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .mm-topbar-neo .btn {
+    border-radius: 999px;
+    font-weight: 700;
+  }
+
+  .mm-topbar-neo .btn-light {
+    background: #ffffff !important;
+    color: #0c1c43 !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+  }
+
+  .mm-topbar-neo .text-light {
+    color: #f2f7ff !important;
+  }
+
+  .mm-topbar-neo .brand-logo {
+    height: 28px;
+    width: auto;
+    border-radius: 8px;
+  }
+
+  /* =========================
+     LANGUAGE
+     ========================= */
+  .mm-lang-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .mm-lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 36px;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 999px;
+    background: #061946;
+    color: #fff !important;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .mm-lang-toggle:hover {
+    background: rgba(255,255,255,.14);
+    border-color: rgba(255,255,255,.18);
+    color: #fff !important;
+  }
+
+  .mm-lang-toggle:focus,
+  .mm-lang-toggle:active {
+    outline: none;
+    box-shadow: 0 0 0 0.18rem rgba(13, 110, 253, 0.12);
+  }
+
+  .mm-lang-current {
+    text-transform: uppercase;
+  }
+
+  .mm-lang-caret {
+    font-size: 0.7rem;
+    line-height: 1;
+    opacity: 0.72;
+  }
+
+  .mm-lang-menu {
+    min-width: 140px;
+    padding: 0.4rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(17, 17, 17, 0.08);
+  }
+
+  .mm-lang-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    border-radius: 10px;
+    color: #111 !important;
+    text-decoration: none;
+    font-size: 0.86rem;
+    font-weight: 600;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .mm-lang-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .mm-lang-item.active {
+    background: rgba(13, 110, 253, 0.08);
+    color: #0d6efd !important;
+  }
+
+  .mm-lang-item small {
+    font-size: 0.72rem;
+    color: rgba(17, 17, 17, 0.5);
+  }
+
+  .mm-topbar-public .mm-lang-toggle {
+    background: rgba(255, 255, 255, 0.82);
+    border-color: rgba(26, 22, 18, 0.1);
+    color: #1a1612 !important;
+  }
+
+  .mm-topbar-public .mm-lang-toggle:hover {
+    background: #fff;
+    color: #1a1612 !important;
+  }
+
+  .mm-topbar-public .mm-lang-menu {
+    border-color: rgba(26, 22, 18, 0.1);
+  }
+
+  /* =========================
+     PROFILE
+     ========================= */
+  .mm-profile-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+  }
+
+  .mm-profile-trigger-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #172554, #312e81);
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 800;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  }
+
+  /* =========================
+     MORE OFFCANVAS
+     ========================= */
+  .mm-more-offcanvas {
+    --mm-more-bg-1: #0b1220;
+    --mm-more-bg-2: #131c2e;
+    --mm-more-card: rgba(255,255,255,.05);
+    --mm-more-line: rgba(255,255,255,.10);
+    --mm-more-line-strong: rgba(255,255,255,.16);
+    --mm-more-text: #f8fbff;
+    --mm-more-muted: rgba(226,232,240,.72);
+    --mm-more-chip: rgba(255,255,255,.08);
+    background:
+      radial-gradient(circle at top right, rgba(59,130,246,.16), transparent 34%),
+      linear-gradient(180deg, var(--mm-more-bg-2), var(--mm-more-bg-1)) !important;
+    border-left: 1px solid var(--mm-more-line);
+    color: var(--mm-more-text);
+  }
+
+  .mm-more-offcanvas .offcanvas-header {
+    border-bottom: 1px solid var(--mm-more-line);
+    padding: 16px 16px 12px;
+  }
+
+  .mm-more-offcanvas .offcanvas-title {
+    font-size: 1.08rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .mm-more-offcanvas .offcanvas-body {
+    padding: 14px 14px 18px;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mm-more-user,
+  .mm-more-section,
+  .mm-more-logout-wrap {
+    margin-bottom: 14px;
+    flex-shrink: 0;
+  }
+
+  .mm-more-user {
+    border: 1px solid var(--mm-more-line);
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    border-radius: 20px;
+    padding: 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  }
+
+  .mm-more-user-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mm-more-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    box-shadow: 0 10px 24px rgba(37,99,235,.28);
+    flex-shrink: 0;
+  }
+
+  .mm-more-user-name {
+    font-size: 0.98rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--mm-more-text);
+  }
+
+  .mm-more-user-meta {
+    margin-top: 4px;
+    color: var(--mm-more-muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .mm-more-role-row {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .mm-more-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--mm-more-chip);
+    border: 1px solid var(--mm-more-line);
+    color: var(--mm-more-text);
+    font-size: 0.73rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .mm-more-section {
+    border: 1px solid var(--mm-more-line);
+    background: rgba(255,255,255,.04);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .mm-more-section-head {
+    padding: 12px 14px 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mm-more-muted);
+  }
+
+  .mm-more-list {
+    padding: 0 10px 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .mm-more-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 48px;
+    padding: 12px 13px;
+    border-radius: 14px;
+    text-decoration: none;
+    color: var(--mm-more-text);
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    transition: transform .16s ease, background .16s ease, border-color .16s ease;
+  }
+
+  .mm-more-item:hover {
+    color: var(--mm-more-text);
+    background: rgba(255,255,255,.06);
+    border-color: var(--mm-more-line-strong);
+    transform: translateY(-1px);
+  }
+
+  .mm-more-item-left {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+  }
+
+  .mm-more-item-ico {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.08);
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+
+  .mm-more-item-label {
+    min-width: 0;
+  }
+
+  .mm-more-item-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--mm-more-text);
+  }
+
+  .mm-more-item-sub {
+    margin-top: 3px;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--mm-more-muted);
+  }
+
+  .mm-more-item-arrow {
+    color: rgba(255,255,255,.48);
+    font-size: 0.88rem;
+    flex-shrink: 0;
+  }
+
+  .mm-more-logout-wrap {
+    padding-top: 4px;
+  }
+
+  .mm-more-logout {
+    display: block;
+    width: 100%;
+    text-align: center;
+    text-decoration: none;
+    padding: 13px 16px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ef4444, #dc2626);
+    color: #fff;
+    font-weight: 800;
+    border: 0;
+    box-shadow: 0 14px 26px rgba(220,38,38,.22);
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+
+  .mm-more-logout:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(220,38,38,.28);
+  }
+
+  /* =========================
+     BOTTOM NAV
+     ========================= */
+  .mm-bottom-nav {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: rgba(7, 13, 27, 0.96) !important;
+  }
+
+  .mm-bottom-nav .d-flex {
+    gap: 2px;
+  }
+
+  .mm-nav-link {
+    flex: 1 1 0;
+    color: rgba(255, 255, 255, 0.72);
+    padding: 10px 4px 9px;
+    transition: color 0.15s ease, background 0.15s ease;
+    min-width: 0;
+    border-radius: 0;
+  }
+
+  .mm-nav-link:hover {
+    color: #fff;
+  }
+
+  .mm-nav-link.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .mm-nav-ico {
+    font-size: 1.05rem;
+    line-height: 1.05;
+    margin-bottom: 2px;
+  }
+
+  .mm-nav-txt {
+    font-size: 0.69rem;
+    font-weight: 800;
+    line-height: 1.05;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 420px) {
+    .mm-nav-txt {
+      font-size: 0.64rem;
+    }
+
+    .mm-more-offcanvas {
+      width: min(92vw, 380px) !important;
+    }
+  }
+</style>
   </head>
 
   <body class="mm-body">
+    {% if request.blueprint == 'public' %}
+    <nav class="navbar mm-topbar-public">
+      <div class="container-fluid px-3 px-md-4 h-100 d-flex align-items-center">
+        <a class="navbar-brand" href="{{ url_for('public.home') }}">
+          <img
+            src="{{ url_for('static', filename='img/minimoda_logo.png') }}"
+            alt="Mini Moda"
+            class="brand-logo"
+            onerror="this.style.display = 'none'"
+          />
+          <span class="brand-text">Mini Moda</span>
+        </a>
+
+        <div class="mm-pub-nav">
+          <div class="mm-lang-dropdown">
+            <a
+              class="mm-lang-toggle dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <span class="mm-lang-current">
+                {% if current_lang == 'ru' %}RU {% elif current_lang == 'uz' %}UZ {% else %}EN {% endif %}
+              </span>
+              <span class="mm-lang-caret">▾</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-end mm-lang-menu">
+              <a
+                href="{{ url_for('switch_language', lang_code='ru') }}"
+                class="mm-lang-item {% if current_lang == 'ru' %}active{% endif %}"
+              >
+                <span>{{ t('lang_ru') }}</span><small>{{ t('language_name_russian') }}</small>
+              </a>
+              <a
+                href="{{ url_for('switch_language', lang_code='en') }}"
+                class="mm-lang-item {% if current_lang == 'en' %}active{% endif %}"
+              >
+                <span>{{ t('lang_en') }}</span><small>{{ t('language_name_english') }}</small>
+              </a>
+              <a
+                href="{{ url_for('switch_language', lang_code='uz') }}"
+                class="mm-lang-item {% if current_lang == 'uz' %}active{% endif %}"
+              >
+                <span>{{ t('lang_uz') }}</span><small>{{ t('language_name_uzbek') }}</small>
+              </a>
+            </div>
+          </div>
+
+          <div class="mm-pub-divider mm-pub-hide-xs"></div>
+
+          <a
+            href="{{ url_for('public.catalog') }}"
+            class="mm-pub-link mm-pub-hide-xs"
+          >
+            {{ t('public_catalog') if t else 'Catalog' }}
+          </a>
+
+          <div class="mm-pub-divider mm-pub-hide-xs"></div>
+
+          {% if public_telegram_url %}
+          <a
+            href="{{ public_telegram_url }}"
+            target="_blank"
+            rel="noopener"
+            class="mm-pub-tg"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.247l-2.02 9.52c-.148.658-.538.818-1.09.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.16 14.4l-2.95-.924c-.64-.203-.654-.64.136-.948l11.527-4.443c.533-.194 1.003.13.689.162z"
+              />
+            </svg>
+            Telegram
+          </a>
+          {% endif %}
+
+          <a href="{{ url_for('auth.login') }}" class="mm-pub-login">
+            {{ t('public_login') if t else 'Login' }}
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    {% else %}
+    {% set ep = request.endpoint or '' %}
+
     <nav class="navbar navbar-expand-lg mm-topbar mm-topbar-neo">
       <div class="container-fluid">
-        <!-- Brand with logo -->
         <a
           class="navbar-brand d-flex align-items-center fw-bold"
-          href="{% if request.blueprint == 'public' %}{{ url_for('public.home') }}{% else %}{{ url_for('main.dashboard') }}{% endif %}"
+          href="{{ url_for('main.dashboard') }}"
         >
           <img
             src="{{ url_for('static', filename='img/minimoda_logo.png') }}"
@@ -111,348 +738,530 @@
           <span class="brand-text">Mini Moda</span>
         </a>
 
-        {# ======================= PUBLIC TOP ACTIONS (always visible on public pages) ======================= #}
-        {% if request.blueprint == 'public' %}
-        <div class="ms-auto d-flex align-items-center gap-2">
-          <a class="btn btn-outline-light btn-sm" href="{{ url_for('public.catalog') }}">Catalog</a>
-          <a class="btn btn-outline-light btn-sm" href="{{ url_for('public.contact') }}">Contact</a>
-
-          {% if public_telegram_url %}
-          <a class="btn btn-light btn-sm" href="{{ public_telegram_url }}" target="_blank" rel="noopener">Telegram</a>
-          {% endif %}
-
-          <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.login') }}">Login</a>
-        </div>
-        {% endif %}
-
-        {# ======================= MOBILE TOP ACTIONS ONLY (internal) ======================= #}
-        {% if current_user.is_authenticated and request.blueprint != 'public' %}
+        {% if current_user.is_authenticated %}
+        {% set profile_initial = (current_user.full_name[:1] if current_user.full_name else current_user.username[:1] if current_user.username else 'U')|upper %}
         <div class="d-flex align-items-center gap-2 ms-auto mm-top-actions d-lg-none">
-
-          <!-- Language (compact) -->
-          <div class="small">
+          <div class="mm-lang-dropdown">
             <a
-              href="{{ url_for('switch_language', lang_code='ru') }}"
-              class="text-decoration-none"
-              style="color:#111; font-weight:800;"
-              >RU</a
+              class="mm-lang-toggle dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
             >
-            <span class="text-muted">|</span>
-            <a
-              href="{{ url_for('switch_language', lang_code='uz') }}"
-              class="text-decoration-none"
-              style="color:#111; font-weight:800;"
-              >UZ</a
-            >
+              <span class="mm-lang-current">
+                {% if current_lang == 'ru' %}{{ t('lang_ru') }} {% elif current_lang == 'uz' %}{{ t('lang_uz') }} {% else %}{{ t('lang_en') }} {% endif %}
+              </span>
+              <span class="mm-lang-caret">▾</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-end mm-lang-menu">
+              <a
+                href="{{ url_for('switch_language', lang_code='ru') }}"
+                class="mm-lang-item {% if current_lang == 'ru' %}active{% endif %}"
+              >
+                <span>{{ t('lang_ru') }}</span><small>{{ t('language_name_russian') }}</small>
+              </a>
+              <a
+                href="{{ url_for('switch_language', lang_code='en') }}"
+                class="mm-lang-item {% if current_lang == 'en' %}active{% endif %}"
+              >
+                <span>{{ t('lang_en') }}</span><small>{{ t('language_name_english') }}</small>
+              </a>
+              <a
+                href="{{ url_for('switch_language', lang_code='uz') }}"
+                class="mm-lang-item {% if current_lang == 'uz' %}active{% endif %}"
+              >
+                <span>{{ t('lang_uz') }}</span><small>{{ t('language_name_uzbek') }}</small>
+              </a>
+            </div>
           </div>
 
-          <!-- More button -->
-          <button
-            class="btn btn-sm btn-outline-light"
-            type="button"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#mmMoreOffcanvas"
-            aria-controls="mmMoreOffcanvas"
+          <a
+            href="{{ url_for('main.profile') }}"
+            class="mm-profile-link"
+            aria-label="{{ t('profile_aria') }}"
           >
-            <i class="bi bi-three-dots-vertical"></i>
-          </button>
+            <span class="mm-profile-trigger-avatar">{{ profile_initial }}</span>
+          </a>
         </div>
-        
-
         {% endif %}
-        {# ======================= DESKTOP NAVBAR (internal)
-        ======================= #} {% if request.blueprint != 'public' %}
+
         <button
           class="navbar-toggler d-none d-lg-inline-block"
           type="button"
           data-bs-toggle="collapse"
           data-bs-target="#navbarMain"
+          aria-label="{{ t('toggle_navigation') }}"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse mm-desktop-menu" id="navbarMain">
-          <!-- LEFT MENU -->
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             {% if current_user.is_authenticated %}
-
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('main.dashboard') }}"
-                >{{ t('menu_dashboard') }}</a
-              >
+              <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                {{ t('menu_dashboard') }}
+              </a>
             </li>
 
             {% if current_user.role in ['manager', 'admin', 'accountant'] %}
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('fabrics.list') }}"
-                >{{ t('menu_fabrics') }}</a
-              >
+              <a class="nav-link" href="{{ url_for('fabrics.list') }}">
+                {{ t('menu_fabrics') }}
+              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('products.list_products') }}"
-                >{{ t('menu_products') }}</a
-              >
+              <a class="nav-link" href="{{ url_for('products.list_products') }}">
+                {{ t('menu_products') }}
+              </a>
             </li>
             {% endif %}
 
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('sales.list_sales') }}"
-                >{{ t('menu_sales') }}</a
-              >
+              <a class="nav-link" href="{{ url_for('sales.list_sales') }}">
+                {{ t('menu_sales') }}
+              </a>
             </li>
 
-            {% if current_user.role in ['manager','admin','accountant'] %}
+            {% if current_user.role in ['manager', 'admin', 'accountant'] %}
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('cash.list_cash') }}"
-                >{{ t('menu_cash') }}</a
-              >
-            </li>
-            {% endif %} {% if current_user.role in ['manager','admin','shop'] %}
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('shop.list_shop') }}"
-                >{{ t('menu_shop') }}</a
-              >
+              <a class="nav-link" href="{{ url_for('cash.list_cash') }}">
+                {{ t('menu_cash') }}
+              </a>
             </li>
             {% endif %}
 
-            <!-- Reports dropdown (DESKTOP ONLY) -->
+            {% if current_user.role in ['manager', 'admin', 'shop'] %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('shop.list_shop') }}">
+                {{ t('menu_shop') }}
+              </a>
+            </li>
+            {% endif %}
+
             <li class="nav-item dropdown">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                data-bs-toggle="dropdown"
-              >
+              <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                 📊 {{ t('menu_reports') }}
               </a>
-
               <ul class="dropdown-menu">
                 {% if current_user.role in ['manager','admin','shop'] %}
                 <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('shop.movement_history') }}"
-                  >
+                  <a class="dropdown-item" href="{{ url_for('shop.movement_history') }}">
                     <span class="me-1">📜</span>{{ t('reports_shop_history') }}
                   </a>
                 </li>
                 <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('shop_report.weekly_report') }}"
-                  >
+                  <a class="dropdown-item" href="{{ url_for('shop_report.weekly_report') }}">
                     <span class="me-1">📅</span>{{ t('reports_shop_weekly') }}
                   </a>
                 </li>
                 <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('shop_monthly.monthly_report') }}"
-                  >
+                  <a class="dropdown-item" href="{{ url_for('shop_monthly.monthly_report') }}">
                     <span class="me-1">📅</span>{{ t('reports_shop_monthly') }}
                   </a>
                 </li>
-                {% endif %} {% if current_user.role in
-                ['manager','admin','accountant'] %}
+                {% endif %}
+
+                {% if current_user.role in ['manager','admin','accountant'] %}
                 <li><hr class="dropdown-divider" /></li>
                 <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('fabric_report.usage_report') }}"
-                  >
+                  <a class="dropdown-item" href="{{ url_for('fabric_report.usage_report') }}">
                     <span class="me-1">🧵</span>{{ t('reports_fabric_usage') }}
                   </a>
                 </li>
-                {% endif %} {% if current_user.role in ['manager','admin'] %}
+                {% endif %}
+
+                {% if current_user.role in ['manager','admin'] %}
                 <li><hr class="dropdown-divider" /></li>
                 <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('manager_report.manager_report') }}"
-                  >
+                  <a class="dropdown-item" href="{{ url_for('manager_report.manager_report') }}">
                     <span class="me-1">📄</span>{{ t('reports_manager_main') }}
                   </a>
                 </li>
                 <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('manager_report.manager_report_pdf') }}"
-                  >
+                  <a class="dropdown-item" href="{{ url_for('manager_report.manager_report_pdf') }}">
                     <span class="me-1">📄</span>{{ t('reports_manager_pdf') }}
                   </a>
                 </li>
                 {% endif %}
               </ul>
             </li>
-
             {% endif %}
           </ul>
 
-          <!-- RIGHT SIDE (desktop) -->
-          <div
-            class="d-flex align-items-center gap-3 flex-wrap justify-content-end mm-topbar-right"
-          >
-            <!-- USD → UZS rate (desktop only) -->
+          <div class="d-flex align-items-center gap-3 flex-wrap justify-content-end mm-topbar-right">
             <div class="text-light small text-end lh-sm d-none d-md-block">
               <div>{{ t('header_usd_rate_title') }}</div>
               <div>
-                1 USD = {% if usd_uzs_rate %} {{ usd_uzs_rate | round(2) }} {%
-                else %} — {% endif %} so‘m
+                {{ t('header_usd_rate_value').format(rate=(usd_uzs_rate | round(2)) if usd_uzs_rate else '—') }}
               </div>
             </div>
 
-            <!-- Theme toggle (desktop) -->
             <button
               id="theme-toggle-desktop"
               type="button"
               class="btn btn-sm btn-outline-light"
+              aria-label="{{ t('toggle_theme') }}"
             >
               🌙
             </button>
 
-            <!-- Language (desktop) -->
-            <div class="small text-light">
+            <div class="mm-lang-dropdown">
               <a
-                href="{{ url_for('switch_language', lang_code='ru') }}"
-                class="text-light text-decoration-none"
+                class="mm-lang-toggle dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
               >
-                {{ t('lang_ru') }}
+                <span class="mm-lang-current">
+                  {% if current_lang == 'ru' %}{{ t('lang_ru') }} {% elif current_lang == 'uz' %}{{ t('lang_uz') }} {% else %}{{ t('lang_en') }} {% endif %}
+                </span>
+                <span class="mm-lang-caret">▾</span>
               </a>
-              |
-              <a
-                href="{{ url_for('switch_language', lang_code='uz') }}"
-                class="text-light text-decoration-none"
-              >
-                {{ t('lang_uz') }}
-              </a>
+              <div class="dropdown-menu dropdown-menu-end mm-lang-menu">
+                <a
+                  href="{{ url_for('switch_language', lang_code='ru') }}"
+                  class="mm-lang-item {% if current_lang == 'ru' %}active{% endif %}"
+                >
+                  <span>{{ t('lang_ru') }}</span><small>{{ t('language_name_russian') }}</small>
+                </a>
+                <a
+                  href="{{ url_for('switch_language', lang_code='en') }}"
+                  class="mm-lang-item {% if current_lang == 'en' %}active{% endif %}"
+                >
+                  <span>{{ t('lang_en') }}</span><small>{{ t('language_name_english') }}</small>
+                </a>
+                <a
+                  href="{{ url_for('switch_language', lang_code='uz') }}"
+                  class="mm-lang-item {% if current_lang == 'uz' %}active{% endif %}"
+                >
+                  <span>{{ t('lang_uz') }}</span><small>{{ t('language_name_uzbek') }}</small>
+                </a>
+              </div>
             </div>
 
             {% if current_user.is_authenticated %}
-            <span class="text-light small d-none d-md-inline"
-              >{{ current_user.username }}</span
-            >
-            <a
-              class="btn btn-outline-light btn-sm"
-              href="{{ url_for('auth.logout') }}"
-            >
+            <a class="btn btn-outline-light btn-sm" href="{{ url_for('main.profile') }}">
+              {{ t('more_profile_title') }}
+            </a>
+            <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">
               {{ t('menu_logout') }}
             </a>
             {% endif %}
           </div>
         </div>
-        {% endif %}
       </div>
     </nav>
+    {% endif %}
 
-    {# ✅ render top_banner for any authenticated page (internal only) #} {% if
-    current_user.is_authenticated and request.blueprint != 'public' %} {% block
-    top_banner %}{% endblock %} {% endif %}
+    {% if current_user.is_authenticated and request.blueprint != 'public' %}
+      {% block top_banner %}{% endblock %}
+    {% endif %}
 
-    <!-- MOBILE OFFCANVAS (internal only) -->
     {% if current_user.is_authenticated and request.blueprint != 'public' %}
     <div
-      class="offcanvas offcanvas-end text-bg-dark"
+      class="offcanvas offcanvas-end mm-more-offcanvas"
       tabindex="-1"
       id="mmMoreOffcanvas"
       aria-labelledby="mmMoreOffcanvasLabel"
     >
       <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="mmMoreOffcanvasLabel">Меню</h5>
+        <h5 class="offcanvas-title" id="mmMoreOffcanvasLabel">
+          {{ t('menu_more') if t else 'More' }}
+        </h5>
         <button
           type="button"
           class="btn-close btn-close-white"
           data-bs-dismiss="offcanvas"
-          aria-label="Close"
+          aria-label="{{ t('aria_close') }}"
         ></button>
       </div>
-      <div class="offcanvas-body">
-        <div class="mb-3">
-          <div class="small text-uppercase text-secondary mb-2">Отчёты</div>
 
-          {% if current_user.role in ['manager','admin','shop'] %}
-          <a
-            class="btn btn-outline-light w-100 mb-2"
-            href="{{ url_for('shop.movement_history') }}"
-          >
-            📊 {{ t('reports_shop_history') }}
-          </a>
-          <a
-            class="btn btn-outline-light w-100 mb-2"
-            href="{{ url_for('shop_report.weekly_report') }}"
-          >
-            📅 {{ t('reports_shop_weekly') }}
-          </a>
-          <a
-            class="btn btn-outline-light w-100 mb-2"
-            href="{{ url_for('shop_monthly.monthly_report') }}"
-          >
-            📅 {{ t('reports_shop_monthly') }}
-          </a>
-          {% endif %} {% if current_user.role in
-          ['manager','admin','accountant'] %}
-          <a
-            class="btn btn-outline-light w-100 mb-2"
-            href="{{ url_for('fabric_report.usage_report') }}"
-          >
-            🧵 {{ t('reports_fabric_usage') }}
-          </a>
-          {% endif %} {% if current_user.role in ['manager','admin'] %}
-          <a
-            class="btn btn-outline-light w-100 mb-2"
-            href="{{ url_for('manager_report.manager_report') }}"
-          >
-            📄 {{ t('reports_manager_main') }}
-          </a>
-          <a
-            class="btn btn-outline-light w-100 mb-2"
-            href="{{ url_for('manager_report.manager_report_pdf') }}"
-          >
-            📄 {{ t('reports_manager_pdf') }}
-          </a>
-          {% endif %}
+      <div class="offcanvas-body">
+        <div class="mm-more-user">
+          <div class="mm-more-user-top">
+            <div class="mm-more-avatar">{{ profile_initial if profile_initial else 'U' }}</div>
+            <div>
+              <div class="mm-more-user-name">
+                {{ current_user.full_name if current_user.full_name else current_user.username }}
+              </div>
+              <div class="mm-more-user-meta">
+                {% if current_user.factory and current_user.factory.name %}
+                  {{ current_user.factory.name }}
+                {% else %}
+                  Mini Moda
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="mm-more-role-row">
+            <span class="mm-more-chip">
+              {% if current_user.role == 'admin' %}
+                {{ t('role_admin') }}
+              {% elif current_user.role == 'manager' %}
+                {{ t('role_manager') }}
+              {% elif current_user.role == 'shop' %}
+                {{ t('role_shop') }}
+              {% elif current_user.role == 'accountant' %}
+                {{ t('role_accountant') }}
+              {% else %}
+                {{ current_user.role }}
+              {% endif %}
+            </span>
+
+            <span class="mm-more-chip">
+              {{ current_lang|upper if current_lang else 'RU' }}
+            </span>
+          </div>
         </div>
 
-        <div class="mt-4">
-          <a class="btn btn-danger w-100" href="{{ url_for('auth.logout') }}">
-            Выйти
+        <div class="mm-more-section">
+          <div class="mm-more-section-head">{{ t('more_account_section') }}</div>
+          <div class="mm-more-list">
+            <a class="mm-more-item" href="{{ url_for('main.profile') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">👤</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('more_profile_title') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_profile_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+          </div>
+        </div>
+
+        {% if current_user.role == 'shop' %}
+        <div class="mm-more-section">
+          <div class="mm-more-section-head">{{ t('more_tools_section') }}</div>
+          <div class="mm-more-list">
+            <a class="mm-more-item" href="{{ url_for('sales.list_sales') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">💸</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('more_sales_title') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_sales_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+
+            <a class="mm-more-item" href="{{ url_for('shop.export_shop') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">⬇️</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('more_download_stock_csv_title') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_download_stock_csv_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+
+            <a class="mm-more-item" href="{{ url_for('shop.movement_history') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">📦</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('movement_history') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_movement_history_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="mm-more-section">
+          <div class="mm-more-section-head">{{ t('more_reports_section') }}</div>
+          <div class="mm-more-list">
+            <a class="mm-more-item" href="{{ url_for('shop_report.weekly_report') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">📅</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('reports_shop_weekly') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_weekly_report_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+
+            <a class="mm-more-item" href="{{ url_for('shop_monthly.monthly_report') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">🗓️</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('reports_shop_monthly') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_monthly_report_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+          </div>
+        </div>
+
+        {% else %}
+        <div class="mm-more-section">
+          <div class="mm-more-section-head">{{ t('more_reports_section') }}</div>
+          <div class="mm-more-list">
+            {% if current_user.role in ['manager','admin','shop'] %}
+            <a class="mm-more-item" href="{{ url_for('shop.movement_history') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">📜</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('reports_shop_history') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_shop_history_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+
+            <a class="mm-more-item" href="{{ url_for('shop_report.weekly_report') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">📅</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('reports_shop_weekly') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_weekly_report_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+
+            <a class="mm-more-item" href="{{ url_for('shop_monthly.monthly_report') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">🗓️</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('reports_shop_monthly') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_monthly_report_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+            {% endif %}
+
+            {% if current_user.role in ['manager','admin','accountant'] %}
+            <a class="mm-more-item" href="{{ url_for('fabric_report.usage_report') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">🧵</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('reports_fabric_usage') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_fabric_usage_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+            {% endif %}
+
+            {% if current_user.role in ['manager','admin'] %}
+            <a class="mm-more-item" href="{{ url_for('manager_report.manager_report') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">📄</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('reports_manager_main') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_manager_report_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+
+            <a class="mm-more-item" href="{{ url_for('manager_report.manager_report_pdf') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">🧾</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('reports_manager_pdf') }}</div>
+                  <div class="mm-more-item-sub">{{ t('more_manager_report_pdf_sub') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="mm-more-section">
+          <div class="mm-more-section-head">{{ t('more_settings_section') }}</div>
+          <div class="mm-more-list">
+            <a class="mm-more-item" href="{{ url_for('switch_language', lang_code='ru') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">🇷🇺</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('language_name_russian') }}</div>
+                  <div class="mm-more-item-sub">{{ t('switch_language') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+
+            <a class="mm-more-item" href="{{ url_for('switch_language', lang_code='en') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">🇬🇧</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('language_name_english') }}</div>
+                  <div class="mm-more-item-sub">{{ t('switch_language') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+
+            <a class="mm-more-item" href="{{ url_for('switch_language', lang_code='uz') }}">
+              <div class="mm-more-item-left">
+                <div class="mm-more-item-ico">🇺🇿</div>
+                <div class="mm-more-item-label">
+                  <div class="mm-more-item-title">{{ t('language_name_uzbek') }}</div>
+                  <div class="mm-more-item-sub">{{ t('switch_language') }}</div>
+                </div>
+              </div>
+              <div class="mm-more-item-arrow">›</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="mm-more-logout-wrap">
+          <a class="mm-more-logout" href="{{ url_for('auth.logout') }}">
+            {{ t('menu_logout') }}
           </a>
         </div>
       </div>
     </div>
     {% endif %}
 
-    <!-- MAIN -->
     <main class="mm-main">
       <div class="container-fluid mm-page-wrap">
         <div class="container-lg">
-          <!-- Flash messages -->
-          {% with messages = get_flashed_messages(with_categories=true) %} {% if
-          messages %}
-          <div class="mb-3">
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show">
-              {{ message }}
-              <button class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            {% endfor %}
-          </div>
-          {% endif %} {% endwith %} {% block content %}{% endblock %}
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="mb-3">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                  {{ message }}
+                  <button
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="{{ t('aria_close') }}"
+                  ></button>
+                </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          {% block content %}{% endblock %}
         </div>
       </div>
     </main>
 
-    <!-- FOOTER -->
     <footer class="mt-4 py-3 text-center small text-muted d-none d-lg-block">
-      Mini Moda © 2020–{{ current_date }} · {{ t('footer_internal_system') }}
+      Mini Moda © 2020–{{ current_year }} · {{ t('footer_internal_system') }}
     </footer>
 
-    <!-- MOBILE BOTTOM BAR (internal only) -->
     {% if current_user.is_authenticated and request.blueprint != 'public' %}
-    <div class="d-lg-none fixed-bottom mm-bottom-nav bg-dark text-light">
+    <div class="d-lg-none fixed-bottom mm-bottom-nav text-light">
       <div class="d-flex justify-content-around small">
         {% if current_user.role in ['manager','admin'] %}
         <a
           href="{{ url_for('main.dashboard') }}"
-          class="mm-nav-link text-center text-decoration-none"
+          class="mm-nav-link text-center text-decoration-none {% if ep == 'main.dashboard' %}active{% endif %}"
         >
           <div class="mm-nav-ico">🏠</div>
           <div class="mm-nav-txt">{{ t('menu_dashboard') }}</div>
@@ -460,7 +1269,7 @@
 
         <a
           href="{{ url_for('fabrics.list') }}"
-          class="mm-nav-link text-center text-decoration-none"
+          class="mm-nav-link text-center text-decoration-none {% if ep.startswith('fabrics.') %}active{% endif %}"
         >
           <div class="mm-nav-ico">🧵</div>
           <div class="mm-nav-txt">{{ t('menu_fabrics') }}</div>
@@ -468,7 +1277,7 @@
 
         <a
           href="{{ url_for('products.list_products') }}"
-          class="mm-nav-link text-center text-decoration-none"
+          class="mm-nav-link text-center text-decoration-none {% if ep.startswith('products.') %}active{% endif %}"
         >
           <div class="mm-nav-ico">👕</div>
           <div class="mm-nav-txt">{{ t('menu_products') }}</div>
@@ -476,7 +1285,7 @@
 
         <a
           href="{{ url_for('shop.list_shop') }}"
-          class="mm-nav-link text-center text-decoration-none"
+          class="mm-nav-link text-center text-decoration-none {% if ep.startswith('shop.') %}active{% endif %}"
         >
           <div class="mm-nav-ico">🏬</div>
           <div class="mm-nav-txt">{{ t('menu_shop') }}</div>
@@ -484,7 +1293,7 @@
 
         <a
           href="{{ url_for('sales.list_sales') }}"
-          class="mm-nav-link text-center text-decoration-none"
+          class="mm-nav-link text-center text-decoration-none {% if ep.startswith('sales.') %}active{% endif %}"
         >
           <div class="mm-nav-ico">💸</div>
           <div class="mm-nav-txt">{{ t('menu_sales') }}</div>
@@ -495,32 +1304,68 @@
           class="mm-nav-link text-center text-decoration-none"
           data-bs-toggle="offcanvas"
           data-bs-target="#mmMoreOffcanvas"
-          aria-controls="mmMoreOffcanvas"
         >
           <div class="mm-nav-ico">⋯</div>
-          <div class="mm-nav-txt">Ещё</div>
+          <div class="mm-nav-txt">{{ t('menu_more') }}</div>
+        </a>
+
+        {% elif current_user.role == 'shop' %}
+        <a
+          href="{{ url_for('shop.dashboard_shop') }}"
+          class="mm-nav-link text-center text-decoration-none {% if ep == 'shop.dashboard_shop' %}active{% endif %}"
+        >
+          <div class="mm-nav-ico">🏠</div>
+          <div class="mm-nav-txt">{{ t('menu_dashboard') }}</div>
+        </a>
+
+        <a
+          href="{{ url_for('shop.list_shop') }}"
+          class="mm-nav-link text-center text-decoration-none {% if ep == 'shop.list_shop' %}active{% endif %}"
+        >
+          <div class="mm-nav-ico">📦</div>
+          <div class="mm-nav-txt">{{ t('menu_stock_short') }}</div>
+        </a>
+
+        <a
+          href="{{ url_for('sales.shop_sales_overview') }}"
+          class="mm-nav-link text-center text-decoration-none {% if ep == 'sales.shop_sales_overview' or ep == 'sales.shop_sell' or ep == 'shop.sell_product' %}active{% endif %}"
+        >
+          <div class="mm-nav-ico">🧾</div>
+          <div class="mm-nav-txt">{{ t('dashboard_shop_nav_sell') }}</div>
+        </a>
+
+        <a
+          href="{{ url_for('shop.list_shop_orders') }}"
+          class="mm-nav-link text-center text-decoration-none {% if ep == 'shop.list_shop_orders' or ep == 'shop.update_shop_order_status' or ep == 'shop.complete_shop_order' %}active{% endif %}"
+        >
+          <div class="mm-nav-ico">🛒</div>
+          <div class="mm-nav-txt">{{ t('menu_orders_short') }}</div>
+        </a>
+
+        <a
+          href="#"
+          class="mm-nav-link text-center text-decoration-none"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#mmMoreOffcanvas"
+        >
+          <div class="mm-nav-ico">⋯</div>
+          <div class="mm-nav-txt">{{ t('menu_more') }}</div>
         </a>
         {% endif %}
       </div>
     </div>
     {% endif %}
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
-    <!-- Theme toggle (sync mobile + desktop buttons) -->
     <script>
       (function () {
         const root = document.documentElement;
-        const btnMobile = document.getElementById("theme-toggle");
         const btnDesktop = document.getElementById("theme-toggle-desktop");
 
         function setBtnIcon() {
           const isDark = root.getAttribute("data-theme") === "dark";
-          if (btnMobile) btnMobile.textContent = isDark ? "☀️" : "🌙";
           if (btnDesktop) btnDesktop.textContent = isDark ? "☀️" : "🌙";
         }
 
@@ -529,14 +1374,12 @@
         setBtnIcon();
 
         function toggleTheme() {
-          const next =
-            root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+          const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
           root.setAttribute("data-theme", next);
           localStorage.setItem("theme", next);
           setBtnIcon();
         }
 
-        if (btnMobile) btnMobile.addEventListener("click", toggleTheme);
         if (btnDesktop) btnDesktop.addEventListener("click", toggleTheme);
       })();
     </script>

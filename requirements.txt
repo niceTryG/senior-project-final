@@ -1,6 +1,11 @@
 Flask
 Flask-SQLAlchemy
 Flask-Login
+Flask-Babel
+Flask-Migrate
+alembic
+python-dotenv
+python-telegram-bot==13.15
 qrcode[pil]
 xhtml2pdf
 requests 

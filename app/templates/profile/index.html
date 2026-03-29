@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('profile_title') }} - Mini Moda{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mm-profile-page {
+    --mm-bg: #f6f7fb;
+    --mm-surface: #ffffff;
+    --mm-surface-soft: #fafbfc;
+    --mm-line: rgba(17, 24, 39, 0.08);
+    --mm-line-strong: rgba(17, 24, 39, 0.14);
+    --mm-text: #111827;
+    --mm-muted: #6b7280;
+    --mm-primary: #111827;
+    --mm-accent: #2563eb;
+    --mm-success-bg: #ecfdf3;
+    --mm-success-text: #027a48;
+    --mm-danger-bg: #fef3f2;
+    --mm-danger-text: #b42318;
+    --mm-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
+  }
+
+  .mm-profile-shell {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  .mm-profile-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 0 1.1rem;
+    border-bottom: 1px solid var(--mm-line);
+    margin-bottom: 1.25rem;
+  }
+
+  .mm-profile-title {
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--mm-text);
+    letter-spacing: -0.03em;
+  }
+
+  .mm-profile-subtitle {
+    margin: 0.35rem 0 0;
+    font-size: 0.95rem;
+    color: var(--mm-muted);
+    max-width: 640px;
+  }
+
+  .mm-profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 38px;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--mm-line);
+    background: var(--mm-surface);
+    border-radius: 999px;
+    color: var(--mm-text);
+    font-size: 0.83rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .mm-profile-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1.35fr;
+    gap: 1rem;
+  }
+
+  .mm-panel {
+    background: var(--mm-surface);
+    border: 1px solid var(--mm-line);
+    border-radius: 20px;
+    box-shadow: var(--mm-shadow);
+    overflow: hidden;
+  }
+
+  .mm-panel-head {
+    padding: 1rem 1.1rem;
+    border-bottom: 1px solid var(--mm-line);
+    background: linear-gradient(180deg, #ffffff, #fbfcfe);
+  }
+
+  .mm-panel-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--mm-text);
+    letter-spacing: -0.02em;
+  }
+
+  .mm-panel-subtitle {
+    margin: 0.3rem 0 0;
+    font-size: 0.88rem;
+    color: var(--mm-muted);
+  }
+
+  .mm-panel-body {
+    padding: 1rem 1.1rem 1.1rem;
+  }
+
+  .mm-account-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .mm-account-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  }
+
+  .mm-account-item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .mm-account-label {
+    font-size: 0.82rem;
+    color: var(--mm-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    min-width: 90px;
+  }
+
+  .mm-account-value {
+    text-align: right;
+    font-size: 0.96rem;
+    color: var(--mm-text);
+    font-weight: 700;
+    word-break: break-word;
+  }
+
+  .mm-stack {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .mm-form-row + .mm-form-row {
+    margin-top: 0.95rem;
+  }
+
+  .mm-form-label {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #374151;
+  }
+
+  .mm-form-control {
+    min-height: 48px;
+    border-radius: 14px !important;
+    border: 1px solid var(--mm-line-strong) !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    padding-left: 0.95rem;
+    padding-right: 0.95rem;
+  }
+
+  .mm-form-control:focus {
+    border-color: rgba(37, 99, 235, 0.42) !important;
+    box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.08) !important;
+  }
+
+  .mm-form-help {
+    margin-top: 0.45rem;
+    font-size: 0.82rem;
+    color: var(--mm-muted);
+  }
+
+  .mm-form-actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .mm-save-btn {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    border-radius: 14px !important;
+    font-weight: 800 !important;
+  }
+
+  .mm-error-list {
+    margin: 0.45rem 0 0;
+    padding-left: 1rem;
+    color: #dc2626;
+    font-size: 0.84rem;
+  }
+
+  .mm-telegram-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+  }
+
+  .mm-telegram-status.ok {
+    background: var(--mm-success-bg);
+    color: var(--mm-success-text);
+  }
+
+  .mm-telegram-status.off {
+    background: var(--mm-danger-bg);
+    color: var(--mm-danger-text);
+  }
+
+  .mm-telegram-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .mm-telegram-box {
+    border: 1px solid var(--mm-line);
+    background: var(--mm-surface-soft);
+    border-radius: 16px;
+    padding: 0.9rem;
+  }
+
+  .mm-telegram-k {
+    font-size: 0.78rem;
+    color: var(--mm-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.3rem;
+  }
+
+  .mm-telegram-v {
+    font-size: 0.95rem;
+    color: var(--mm-text);
+    font-weight: 700;
+    word-break: break-word;
+  }
+
+  .mm-note {
+    font-size: 0.88rem;
+    color: var(--mm-muted);
+    line-height: 1.5;
+  }
+
+  .mm-placeholder-btn {
+    border-radius: 14px !important;
+    font-weight: 800 !important;
+    min-height: 46px;
+  }
+
+  @media (max-width: 991.98px) {
+    .mm-profile-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .mm-profile-header {
+      padding-top: 0.4rem;
+    }
+
+    .mm-profile-title {
+      font-size: 1.35rem;
+    }
+
+    .mm-panel-head,
+    .mm-panel-body {
+      padding-left: 0.95rem;
+      padding-right: 0.95rem;
+    }
+
+    .mm-account-item {
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .mm-account-value {
+      text-align: left;
+    }
+
+    .mm-telegram-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 py-md-4 mm-profile-page">
+  <div class="mm-profile-shell">
+
+    <div class="mm-profile-header">
+      <div>
+        <h1 class="mm-profile-title">{{ t('profile_title') }}</h1>
+       
+      </div>
+
+      <div class="mm-profile-badge">
+        {{ t('role_' ~ current_user.role) }}
+      </div>
+    </div>
+
+    <div class="mm-profile-grid">
+      <div class="mm-panel">
+        <div class="mm-panel-head">
+          <h2 class="mm-panel-title">{{ t('profile_account_overview') }}</h2>
+          <p class="mm-panel-subtitle">{{ t('profile_account_overview_sub') }}</p>
+        </div>
+        <div class="mm-panel-body">
+          <div class="mm-account-list">
+            <div class="mm-account-item">
+              <div class="mm-account-label">{{ t('label_username') }}</div>
+              <div class="mm-account-value">{{ current_user.username }}</div>
+            </div>
+
+            <div class="mm-account-item">
+              <div class="mm-account-label">{{ t('label_role') }}</div>
+              <div class="mm-account-value">{{ t('role_' ~ current_user.role) }}</div>
+            </div>
+
+            <div class="mm-account-item">
+              <div class="mm-account-label">{{ t('label_factory') }}</div>
+              <div class="mm-account-value">
+                {% if current_user.factory %}
+                  {{ current_user.factory.name }}
+                {% else %}
+                  —
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="mm-account-item">
+              <div class="mm-account-label">{{ t('label_shop') }}</div>
+              <div class="mm-account-value">
+                {% if current_user.shop %}
+                  {{ current_user.shop.name }}
+                {% else %}
+                  —
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          
+        </div>
+      </div>
+
+      <div class="mm-stack">
+        <div class="mm-panel">
+          <div class="mm-panel-head">
+            <h2 class="mm-panel-title">{{ t('profile_update_account') }}</h2>
+            <p class="mm-panel-subtitle">{{ t('profile_update_account_sub') }}</p>
+          </div>
+          <div class="mm-panel-body">
+            <form method="POST" novalidate>
+              {{ profile_form.hidden_tag() }}
+
+              <div class="mm-form-row">
+                <label class="mm-form-label" for="{{ profile_form.username.id }}">{{ t('label_username') }}</label>
+                {{ profile_form.username(class="form-control mm-form-control") }}
+                {% if profile_form.username.errors %}
+                  <ul class="mm-error-list">
+                    {% for error in profile_form.username.errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+
+              <div class="mm-form-help">
+                {{ t('profile_update_account_help') }}
+              </div>
+
+              <div class="mm-form-actions">
+                {{ profile_form.submit_profile(class="btn btn-dark mm-save-btn", value=t('profile_save_changes_button')) }}
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="mm-panel">
+          <div class="mm-panel-head">
+            <h2 class="mm-panel-title">{{ t('profile_change_password') }}</h2>
+            <p class="mm-panel-subtitle">{{ t('profile_change_password_sub') }}</p>
+          </div>
+          <div class="mm-panel-body">
+            <form method="POST" novalidate>
+              {{ password_form.hidden_tag() }}
+
+              <div class="mm-form-row">
+                <label class="mm-form-label" for="{{ password_form.current_password.id }}">{{ t('profile_current_password') }}</label>
+                {{ password_form.current_password(class="form-control mm-form-control") }}
+                {% if password_form.current_password.errors %}
+                  <ul class="mm-error-list">
+                    {% for error in password_form.current_password.errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+
+              <div class="mm-form-row">
+                <label class="mm-form-label" for="{{ password_form.new_password.id }}">{{ t('profile_new_password') }}</label>
+                {{ password_form.new_password(class="form-control mm-form-control") }}
+                {% if password_form.new_password.errors %}
+                  <ul class="mm-error-list">
+                    {% for error in password_form.new_password.errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+
+              <div class="mm-form-row">
+                <label class="mm-form-label" for="{{ password_form.confirm_new_password.id }}">{{ t('profile_confirm_new_password') }}</label>
+                {{ password_form.confirm_new_password(class="form-control mm-form-control") }}
+                {% if password_form.confirm_new_password.errors %}
+                  <ul class="mm-error-list">
+                    {% for error in password_form.confirm_new_password.errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+
+              <div class="mm-form-actions">
+                {{ password_form.submit_password(class="btn btn-primary mm-save-btn", value=t('profile_update_password_button')) }}
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mm-panel mt-3">
+      <div class="mm-panel-head">
+        <h2 class="mm-panel-title">{{ t('profile_telegram_connection') }}</h2>
+        <p class="mm-panel-subtitle">{{ t('profile_telegram_connection_sub') }}</p>
+      </div>
+      <div class="mm-panel-body">
+        {% if active_telegram_link %}
+          <div class="mm-telegram-status ok">{{ t('profile_connected') }}</div>
+
+          <div class="mm-telegram-grid">
+            <div class="mm-telegram-box">
+              <div class="mm-telegram-k">{{ t('profile_chat_id') }}</div>
+              <div class="mm-telegram-v">{{ active_telegram_link.telegram_chat_id }}</div>
+            </div>
+
+            <div class="mm-telegram-box">
+              <div class="mm-telegram-k">{{ t('profile_linked_at') }}</div>
+              <div class="mm-telegram-v">
+                {{ active_telegram_link.created_at.strftime('%Y-%m-%d %H:%M') if active_telegram_link.created_at else '—' }}
+              </div>
+            </div>
+
+            <div class="mm-telegram-box">
+              <div class="mm-telegram-k">{{ t('label_status') }}</div>
+              <div class="mm-telegram-v">{{ t('label_active') }}</div>
+            </div>
+          </div>
+
+          <div class="mm-note mb-3">
+            {{ t('profile_telegram_linked_note') }}
+          </div>
+        {% else %}
+          <div class="mm-telegram-status off">{{ t('profile_not_connected') }}</div>
+
+          <div class="mm-note mb-3">
+            {{ t('profile_telegram_not_linked_note') }}
+          </div>
+        {% endif %}
+
+        {% if active_telegram_code %}
+          <div class="mm-telegram-grid">
+            <div class="mm-telegram-box">
+              <div class="mm-telegram-k">{{ t('profile_telegram_code_label') }}</div>
+              <div class="mm-telegram-v"><code>{{ active_telegram_code.code }}</code></div>
+            </div>
+
+            <div class="mm-telegram-box">
+              <div class="mm-telegram-k">{{ t('profile_telegram_command_label') }}</div>
+              <div class="mm-telegram-v"><code>/link {{ active_telegram_code.code }}</code></div>
+            </div>
+
+            <div class="mm-telegram-box">
+              <div class="mm-telegram-k">{{ t('profile_telegram_code_expires') }}</div>
+              <div class="mm-telegram-v">
+                {{ active_telegram_code.expires_at.strftime('%Y-%m-%d %H:%M') if active_telegram_code.expires_at else '—' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="mm-note mb-3">
+            {{ t('profile_telegram_code_help') }}
+          </div>
+        {% endif %}
+
+        <form method="POST" novalidate>
+          {{ telegram_form.hidden_tag() }}
+          {{ telegram_form.submit_telegram_code(
+            class="btn btn-outline-dark mm-placeholder-btn",
+            value=(t('profile_regenerate_telegram_code') if active_telegram_code or active_telegram_link else t('profile_generate_telegram_code'))
+          ) }}
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

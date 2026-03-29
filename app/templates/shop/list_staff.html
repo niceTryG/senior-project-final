@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .mm-shop-staff-page {
+    --mm-line: rgba(0,0,0,.08);
+    --mm-muted: rgba(0,0,0,.56);
+    --mm-text: rgba(0,0,0,.86);
+    --mm-card: rgba(255,255,255,.96);
+    --mm-shadow: 0 10px 26px rgba(0,0,0,.06);
+    --mm-radius: 18px;
+    --mm-blue: #0d6efd;
+    --mm-blue-soft: rgba(13,110,253,.12);
+    --mm-green: #198754;
+    --mm-red: #dc3545;
+    --mm-gray: #6c757d;
+    --mm-track: rgba(0,0,0,.08);
+  }
+
+  .mm-block,
+  .mm-filter-box,
+  .mm-factory-card,
+  .mm-product-card,
+  .mm-empty-box {
+    border: 1px solid var(--mm-line);
+    border-radius: var(--mm-radius);
+    background: var(--mm-card);
+    box-shadow: var(--mm-shadow);
+  }
+
+  .mm-page-head {
+    padding: 16px;
+  }
+
+  .mm-title {
+    margin: 0;
+    font-weight: 900;
+    color: var(--mm-text);
+    line-height: 1.1;
+  }
+
+  .mm-sub {
+    margin: 6px 0 0;
+    color: var(--mm-muted);
+    font-size: .92rem;
+  }
+
+  .mm-top-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mm-action-btn {
+    border-radius: 14px !important;
+    min-height: 42px;
+    font-weight: 800 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .42rem;
+  }
+
+  .mm-filter-box {
+    padding: 14px;
+  }
+
+  .mm-filter-box .form-label {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--mm-muted);
+  }
+
+  .mm-factory-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+    overflow: hidden;
+    transition: transform .14s ease, box-shadow .14s ease;
+  }
+
+  .mm-factory-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(0,0,0,.10);
+    color: inherit;
+  }
+
+  .mm-factory-card-body {
+    padding: 14px;
+  }
+
+  .mm-factory-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .mm-factory-main {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .mm-factory-name {
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.15;
+    color: var(--mm-text);
+    margin: 0;
+    word-break: break-word;
+  }
+
+  .mm-factory-sub {
+    font-size: .82rem;
+    color: var(--mm-muted);
+    margin-top: 4px;
+  }
+
+  .mm-factory-chart {
+    width: 76px;
+    min-width: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mm-donut {
+    width: 76px;
+    height: 76px;
+    position: relative;
+  }
+
+  .mm-donut svg {
+    width: 76px;
+    height: 76px;
+    transform: rotate(-90deg);
+    display: block;
+  }
+
+  .mm-donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .86rem;
+    font-weight: 900;
+    color: var(--mm-text);
+  }
+
+  .mm-factory-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .mm-factory-mini {
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 14px;
+    background: rgba(255,255,255,.88);
+    padding: 10px;
+  }
+
+  .mm-factory-mini-k {
+    font-size: .70rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 800;
+    color: var(--mm-muted);
+    margin-bottom: 4px;
+  }
+
+  .mm-factory-mini-v {
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--mm-text);
+    line-height: 1.05;
+  }
+
+  .mm-factory-foot {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .mm-factory-share-note {
+    font-size: .76rem;
+    color: var(--mm-muted);
+  }
+
+  .mm-open-link {
+    font-size: .84rem;
+    font-weight: 800;
+    color: var(--mm-blue);
+  }
+
+  .mm-product-card {
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .mm-product-card-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .mm-product-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .mm-product-name {
+    font-size: .96rem;
+    font-weight: 900;
+    line-height: 1.15;
+    color: var(--mm-text);
+    margin: 0;
+    word-break: break-word;
+  }
+
+  .mm-product-meta {
+    font-size: .78rem;
+    color: var(--mm-muted);
+    margin-top: 4px;
+  }
+
+  .mm-qty-wrap {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,.06);
+  }
+
+  .mm-qty-k {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--mm-muted);
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .mm-qty-v {
+    font-size: 1.5rem;
+    font-weight: 950;
+    line-height: 1;
+    color: var(--mm-text);
+  }
+
+  .mm-stock-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: .28rem .62rem;
+    font-size: .72rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .mm-stock-ok {
+    background: rgba(25,135,84,.12);
+    color: #198754;
+  }
+
+  .mm-stock-low {
+    background: rgba(220,53,69,.12);
+    color: #dc3545;
+  }
+
+  .mm-stock-out {
+    background: rgba(108,117,125,.14);
+    color: #6c757d;
+  }
+
+  .mm-product-actions {
+    margin-top: auto;
+    padding-top: 12px;
+  }
+
+  .mm-empty-box {
+    padding: 28px 18px;
+    text-align: center;
+    color: var(--mm-muted);
+  }
+
+  @media (max-width: 575.98px) {
+    .mm-page-head {
+      padding: 14px;
+    }
+
+    .mm-title {
+      font-size: 1.08rem;
+    }
+
+    .mm-sub {
+      font-size: .86rem;
+    }
+
+    .mm-product-name,
+    .mm-factory-name {
+      font-size: .92rem;
+    }
+
+    .mm-qty-v {
+      font-size: 1.34rem;
+    }
+
+    .mm-factory-chart,
+    .mm-donut,
+    .mm-donut svg {
+      width: 68px;
+      height: 68px;
+      min-width: 68px;
+    }
+
+    .mm-donut-center {
+      font-size: .8rem;
+    }
+
+    .mm-factory-grid {
+      gap: 7px;
+    }
+
+    .mm-factory-mini {
+      padding: 9px;
+    }
+
+    .mm-factory-mini-v {
+      font-size: .94rem;
+    }
+  }
+</style>
+
+<div class="container-fluid py-3 py-md-4 mm-shop-staff-page">
+
+  <div class="mm-block mm-page-head mb-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <h1 class="h4 mm-title">
+          {% if show_factory_overview %}
+            {{ t('shop_stock') }}
+          {% else %}
+            {{ selected_factory.factory_name if selected_factory else t('shop_stock') }}
+          {% endif %}
+        </h1>
+
+        <p class="mm-sub">
+          {% if show_factory_overview %}
+            {{ t('shop_staff_factory_overview_subtitle') }}
+          {% else %}
+            {{ t('shop_staff_factory_products_subtitle') }}
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="mm-top-actions">
+        {% if show_factory_products %}
+          <a href="{{ url_for('shop.list_shop') }}" class="btn btn-outline-secondary mm-action-btn">
+            ← {{ t('btn_back') }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if show_factory_overview %}
+
+    <div class="row g-2 g-md-3">
+      {% for f in factory_summary %}
+        {% set share_pct = ((f.total_qty / overall_total_qty) * 100) | round(0) | int if overall_total_qty > 0 else 0 %}
+        {% set circumference = 251.2 %}
+        {% set dash = (share_pct / 100) * circumference %}
+        <div class="col-12 col-md-6 col-xl-4">
+          <a href="{{ url_for('shop.list_shop', factory_id=f.factory_id) }}" class="mm-factory-card">
+            <div class="mm-factory-card-body">
+
+              <div class="mm-factory-head">
+                <div class="mm-factory-main">
+                  <h3 class="mm-factory-name">🏭 {{ f.factory_name }}</h3>
+                  <div class="mm-factory-sub">{{ t('shop_staff_open_factory_stock') }}</div>
+                </div>
+
+                <div class="mm-factory-chart">
+                  <div class="mm-donut" aria-hidden="true">
+                    <svg viewBox="0 0 100 100">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke="rgba(0,0,0,.08)"
+                        stroke-width="10"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke="#0d6efd"
+                        stroke-width="10"
+                        stroke-linecap="round"
+                        stroke-dasharray="{{ dash }} {{ circumference }}"
+                      />
+                    </svg>
+                    <div class="mm-donut-center">{{ share_pct }}%</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mm-factory-grid">
+                <div class="mm-factory-mini">
+                  <div class="mm-factory-mini-k">{{ t('dashboard_shop_total_skus') }}</div>
+                  <div class="mm-factory-mini-v">{{ f.items_count }}</div>
+                </div>
+
+                <div class="mm-factory-mini">
+                  <div class="mm-factory-mini-k">{{ t('dashboard_shop_total_qty') }}</div>
+                  <div class="mm-factory-mini-v">{{ f.total_qty }}</div>
+                </div>
+
+                <div class="mm-factory-mini">
+                  <div class="mm-factory-mini-k">{{ t('dashboard_shop_low_stock_count') }}</div>
+                  <div class="mm-factory-mini-v">{{ f.low_stock_count }}</div>
+                </div>
+
+                <div class="mm-factory-mini">
+                  <div class="mm-factory-mini-k">{{ t('shop_staff_out_of_stock_short') }}</div>
+                  <div class="mm-factory-mini-v">{{ f.out_of_stock_count }}</div>
+                </div>
+              </div>
+
+              <div class="mm-factory-foot">
+                <div class="mm-factory-share-note">
+                  {{ t('shop_staff_visible_stock_share_note').format(percent=share_pct) }}
+                </div>
+                <div class="mm-open-link">
+                  {{ t('shop_staff_open_factory_stock') }} →
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% else %}
+        <div class="col-12">
+          <div class="mm-empty-box">
+            {{ t('dashboard_shop_factory_breakdown_empty') }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+
+    <div class="row g-2 g-md-3 mb-3">
+      <div class="col-4">
+        <div class="mm-block" style="padding:14px;">
+          <div style="font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mm-muted);font-weight:800;margin-bottom:4px;">
+            {{ t('dashboard_shop_total_skus') }}
+          </div>
+          <div style="font-size:1.2rem;font-weight:900;color:var(--mm-text);line-height:1.05;">
+            {{ items|length }}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="mm-block" style="padding:14px;">
+          <div style="font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mm-muted);font-weight:800;margin-bottom:4px;">
+            {{ t('dashboard_shop_total_qty') }}
+          </div>
+          <div style="font-size:1.2rem;font-weight:900;color:var(--mm-text);line-height:1.05;">
+            {{ total_qty }}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="mm-block" style="padding:14px;">
+          <div style="font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mm-muted);font-weight:800;margin-bottom:4px;">
+            {{ t('dashboard_shop_low_stock_count') }}
+          </div>
+          <div style="font-size:1.2rem;font-weight:900;line-height:1.05;" class="{% if low_stock_count > 0 %}text-danger{% else %}text-dark{% endif %}">
+            {{ low_stock_count }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mm-filter-box mb-3">
+      <form method="get" class="row g-2 align-items-end">
+        <input type="hidden" name="factory_id" value="{{ factory_filter }}">
+
+        <div class="col-12 col-md-6">
+          <label class="form-label mb-1">{{ t('filter_search') }}</label>
+          <input
+            type="text"
+            class="form-control"
+            name="q"
+            placeholder="{{ t('shop_staff_search_placeholder') }}"
+            value="{{ q }}"
+          />
+        </div>
+
+        <div class="col-6 col-md-3">
+          <label class="form-label mb-1">{{ t('filter_status') }}</label>
+          <select class="form-select" name="stock_filter">
+            <option value="" {% if not stock_filter %}selected{% endif %}>{{ t('shop_staff_filter_all') }}</option>
+            <option value="available" {% if stock_filter == "available" %}selected{% endif %}>{{ t('shop_staff_filter_available') }}</option>
+            <option value="low" {% if stock_filter == "low" %}selected{% endif %}>{{ t('shop_staff_filter_low') }}</option>
+            <option value="out" {% if stock_filter == "out" %}selected{% endif %}>{{ t('shop_staff_filter_out') }}</option>
+          </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label mb-1">{{ t('sort_label') }}</label>
+          <select class="form-select" name="sort">
+            <option value="name" {% if sort == "name" %}selected{% endif %}>{{ t('sort_name') }}</option>
+            <option value="qty" {% if sort == "qty" %}selected{% endif %}>{{ t('sort_quantity') }}</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-1 d-grid">
+          <button type="submit" class="btn btn-primary mm-action-btn">
+            {{ t('shop_staff_apply_filters') }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="row g-2 g-md-3">
+      {% for item in items %}
+        {% set p = item.product %}
+        {% set qty = item.quantity or 0 %}
+
+        <div class="col-6 col-md-4 col-xl-3">
+          <div class="mm-product-card h-100">
+            <div class="mm-product-card-body">
+              <div class="mm-product-top">
+                <div class="flex-grow-1" style="min-width:0;">
+                  <h3 class="mm-product-name">{{ p.name }}</h3>
+                  <div class="mm-product-meta">{{ p.category or t('products_no_category') }}</div>
+                </div>
+
+                {% if qty <= 0 %}
+                  <span class="mm-stock-badge mm-stock-out">{{ t('public_out_stock') }}</span>
+                {% elif qty < 5 %}
+                  <span class="mm-stock-badge mm-stock-low">{{ t('products_badge_low_stock') }}</span>
+                {% else %}
+                  <span class="mm-stock-badge mm-stock-ok">{{ t('public_in_stock') }}</span>
+                {% endif %}
+              </div>
+
+              <div class="mm-qty-wrap">
+                <div class="mm-qty-k">{{ t('shop_product_info_stock') }}</div>
+                <div class="mm-qty-v">{{ qty }}</div>
+              </div>
+
+              <div class="mm-product-actions d-grid">
+                {% if qty > 0 %}
+                  <a
+                    href="{{ url_for('shop.sell_product', shop_stock_id=item.id) }}"
+                    class="btn btn-success mm-action-btn"
+                  >
+                    💸 {{ t('dashboard_shop_nav_sell') }}
+                  </a>
+                {% else %}
+                  <button class="btn btn-outline-secondary mm-action-btn" type="button" disabled>
+                    {{ t('shop_staff_out_of_stock_button') }}
+                  </button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="col-12">
+          <div class="mm-empty-box">
+            {{ t('shop_no_items') }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% endif %}
+</div>
+{% endblock %}

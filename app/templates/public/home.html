@@ -1,136 +1,1689 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-3">
 
-  <!-- Hero -->
-  <div class="p-3 p-md-4 rounded-4 border bg-light mb-3">
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-      <div>
-        <div class="h3 fw-bold mb-1">Mini Moda</div>
-        <div class="text-muted">
-          {{ t('public_tagline') if t else 'Kids clothing. View models and order in Telegram.' }}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap');
+
+  :root {
+    --mm-cream: #f6f1ea;
+    --mm-paper: #fffdfa;
+    --mm-paper-soft: #fbf7f1;
+    --mm-surface: #ffffff;
+    --mm-ink: #171311;
+    --mm-ink-soft: #29231f;
+    --mm-muted: #746b64;
+    --mm-muted-soft: #978c83;
+    --mm-line: rgba(23, 19, 17, 0.08);
+    --mm-line-strong: rgba(23, 19, 17, 0.14);
+    --mm-warm: #b65a24;
+    --mm-warm-deep: #99471a;
+    --mm-warm-soft: rgba(182, 90, 36, 0.08);
+    --mm-green: #35654a;
+    --mm-green-soft: rgba(53, 101, 74, 0.10);
+    --mm-shadow-xs: 0 6px 18px rgba(23, 19, 17, 0.04);
+    --mm-shadow-sm: 0 14px 34px rgba(23, 19, 17, 0.06);
+    --mm-shadow-md: 0 22px 58px rgba(23, 19, 17, 0.08);
+    --mm-shadow-lg: 0 34px 90px rgba(23, 19, 17, 0.10);
+    --mm-radius-sm: 18px;
+    --mm-radius-md: 28px;
+    --mm-radius-lg: 38px;
+    --mm-max: 1220px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(182, 90, 36, 0.05), transparent 30%),
+      linear-gradient(180deg, #f8f4ee 0%, #f3eee7 100%) !important;
+  }
+
+  .mm-root {
+    width: calc(100% + 24px);
+    margin-left: -12px;
+    margin-right: -12px;
+    min-height: 100vh;
+    background: transparent;
+    color: var(--mm-ink);
+    font-family: 'Inter', sans-serif;
+    overflow-x: clip;
+    position: relative;
+  }
+
+  .mm-root::before,
+  .mm-root::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(10px);
+  }
+
+  .mm-root::before {
+    top: -120px;
+    left: -120px;
+    width: 420px;
+    height: 420px;
+    background: radial-gradient(circle, rgba(182, 90, 36, 0.09), transparent 68%);
+  }
+
+  .mm-root::after {
+    top: 520px;
+    right: -160px;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(23, 19, 17, 0.04), transparent 72%);
+  }
+
+  .mm-page-wrap > .container-lg {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .mm-container {
+    max-width: var(--mm-max);
+    margin: 0 auto;
+    padding-left: 26px;
+    padding-right: 26px;
+    position: relative;
+    z-index: 1;
+  }
+
+  a,
+  button {
+    transition:
+      transform 0.22s ease,
+      background-color 0.22s ease,
+      border-color 0.22s ease,
+      color 0.22s ease,
+      box-shadow 0.22s ease,
+      opacity 0.22s ease;
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--mm-warm);
+    outline-offset: 3px;
+  }
+
+  .mm-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(182, 90, 36, 0.16);
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--mm-warm);
+    box-shadow: var(--mm-shadow-xs);
+    backdrop-filter: blur(8px);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .mm-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.92;
+  }
+
+  .mm-section {
+    padding: 96px 0;
+  }
+
+  .mm-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    margin-bottom: 34px;
+  }
+
+  .mm-section-head-copy {
+    max-width: 760px;
+  }
+
+  .mm-section-eyebrow {
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: var(--mm-warm);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .mm-section-title {
+    margin: 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(38px, 5vw, 56px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+    color: var(--mm-ink);
+  }
+
+  .mm-section-text {
+    margin: 12px 0 0;
+    max-width: 640px;
+    font-size: 15px;
+    line-height: 1.85;
+    color: var(--mm-muted);
+  }
+
+  .mm-section-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--mm-ink);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(23, 19, 17, 0.14);
+  }
+
+  .mm-section-link:hover {
+    color: var(--mm-warm);
+    border-color: var(--mm-warm);
+    transform: translateY(-1px);
+  }
+
+  .mm-btn-lg,
+  .mm-btn-sm,
+  .mm-location-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .mm-btn-lg {
+    min-height: 52px;
+    padding: 0 22px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .mm-btn-lg.primary,
+  .mm-btn-sm.primary,
+  .mm-location-btn.primary {
+    background: var(--mm-ink);
+    color: #fff;
+    box-shadow: 0 14px 30px rgba(23, 19, 17, 0.14);
+  }
+
+  .mm-btn-lg.primary:hover,
+  .mm-btn-sm.primary:hover,
+  .mm-location-btn.primary:hover {
+    background: var(--mm-warm);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 18px 34px rgba(182, 90, 36, 0.20);
+  }
+
+  .mm-btn-lg.secondary,
+  .mm-location-btn.secondary {
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--mm-ink);
+    border: 1px solid var(--mm-line-strong);
+    backdrop-filter: blur(8px);
+  }
+
+  .mm-btn-lg.secondary:hover,
+  .mm-location-btn.secondary:hover {
+    background: #fff;
+    border-color: rgba(23, 19, 17, 0.22);
+    color: var(--mm-ink);
+    transform: translateY(-2px);
+    box-shadow: var(--mm-shadow-sm);
+  }
+
+  .mm-btn-sm {
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 15px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+  }
+
+  .mm-btn-sm.telegram {
+    background: var(--mm-green-soft);
+    color: var(--mm-green);
+    border: 1px solid rgba(53, 101, 74, 0.16);
+  }
+
+  .mm-btn-sm.telegram:hover {
+    background: var(--mm-green);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(53, 101, 74, 0.16);
+  }
+
+  .mm-btn-sm.disabled {
+    background: rgba(23, 19, 17, 0.05);
+    border: 1px solid rgba(23, 19, 17, 0.08);
+    color: var(--mm-muted);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .mm-ticker {
+    position: relative;
+    background: rgba(23, 19, 17, 0.97);
+    color: #f8f4ee;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .mm-ticker::before,
+  .mm-ticker::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 88px;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .mm-ticker::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(23, 19, 17, 1) 0%, rgba(23, 19, 17, 0) 100%);
+  }
+
+  .mm-ticker::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(23, 19, 17, 1) 0%, rgba(23, 19, 17, 0) 100%);
+  }
+
+  .mm-ticker-track {
+    display: flex;
+    width: max-content;
+    animation: mmTicker 32s linear infinite;
+  }
+
+  .mm-ticker-group {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    padding: 12px 0;
+  }
+
+  .mm-ticker-group span {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    padding: 0 20px;
+    opacity: 0.74;
+  }
+
+  .mm-ticker-group .dot {
+    color: #d18b62;
+    opacity: 1;
+    padding: 0 5px;
+  }
+
+  @keyframes mmTicker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .mm-hero {
+    padding: 26px 0 42px;
+  }
+
+  .mm-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.16fr) minmax(360px, 0.84fr);
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .mm-hero-main,
+  .mm-side-categories,
+  .mm-side-stats,
+  .mm-products-shell,
+  .mm-about-shell,
+  .mm-location-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 253, 250, 0.98));
+    border: 1px solid rgba(23, 19, 17, 0.08);
+    box-shadow: var(--mm-shadow-md);
+  }
+
+  .mm-hero-main,
+  .mm-side-categories,
+  .mm-side-stats {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mm-hero-main::before,
+  .mm-side-categories::before,
+  .mm-side-stats::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(140deg, rgba(182, 90, 36, 0.06), transparent 34%),
+      linear-gradient(180deg, transparent, rgba(23, 19, 17, 0.015));
+    pointer-events: none;
+  }
+
+  .mm-hero-main {
+    min-height: 610px;
+    padding: 46px;
+    border-radius: var(--mm-radius-lg);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .mm-hero-copy,
+  .mm-hero-footer {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mm-hero-title {
+    margin: 22px 0 18px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(68px, 9vw, 118px);
+    line-height: 0.82;
+    letter-spacing: -0.05em;
+    color: var(--mm-ink);
+    font-weight: 600;
+  }
+
+  .mm-hero-title em {
+    display: block;
+    color: var(--mm-warm);
+    font-style: italic;
+  }
+
+  .mm-hero-sub {
+    max-width: 580px;
+    margin: 0 0 24px;
+    font-size: 17px;
+    line-height: 1.8;
+    color: var(--mm-muted);
+  }
+
+  .mm-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .mm-hero-footer {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 18px;
+    align-items: end;
+    margin-top: 36px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(23, 19, 17, 0.08);
+  }
+
+  .mm-hero-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .mm-hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: rgba(23, 19, 17, 0.035);
+    border: 1px solid rgba(23, 19, 17, 0.07);
+    font-size: 11px;
+    color: var(--mm-ink-soft);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mm-hero-note {
+    max-width: 260px;
+    justify-self: end;
+    text-align: right;
+    color: var(--mm-muted);
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .mm-hero-side {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .mm-side-categories,
+  .mm-side-stats {
+    padding: 24px;
+    border-radius: 32px;
+  }
+
+  .mm-side-head {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 18px;
+  }
+
+  .mm-side-title {
+    margin: 0 0 8px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 35px;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+  }
+
+  .mm-side-text {
+    margin: 0;
+    max-width: 340px;
+    color: var(--mm-muted);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .mm-category-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .mm-category-card {
+    min-height: 132px;
+    padding: 18px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(249, 245, 239, 0.94));
+    border: 1px solid rgba(23, 19, 17, 0.08);
+    text-decoration: none;
+    color: var(--mm-ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .mm-category-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--mm-shadow-sm);
+    border-color: rgba(182, 90, 36, 0.18);
+    color: var(--mm-ink);
+  }
+
+  .mm-category-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--mm-warm);
+    font-weight: 700;
+  }
+
+  .mm-category-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 31px;
+    line-height: 0.92;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+  }
+
+  .mm-category-meta {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--mm-muted);
+  }
+
+  .mm-hero-mini-stats {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .mm-mini-stat {
+    padding: 18px 16px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 245, 239, 0.94));
+    border: 1px solid rgba(23, 19, 17, 0.08);
+  }
+
+  .mm-mini-stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 34px;
+    line-height: 0.94;
+    letter-spacing: -0.03em;
+    color: var(--mm-ink);
+    font-weight: 600;
+  }
+
+  .mm-mini-stat-label {
+    margin-top: 8px;
+    font-size: 10px;
+    line-height: 1.55;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: var(--mm-muted);
+    font-weight: 700;
+  }
+
+  .mm-products-shell {
+    padding: 32px;
+    border-radius: 34px;
+  }
+
+  .mm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+    gap: 20px;
+  }
+
+  .mm-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    background: linear-gradient(180deg, #ffffff 0%, #fdf9f4 100%);
+    border: 1px solid rgba(23, 19, 17, 0.08);
+    border-radius: 26px;
+    overflow: hidden;
+    box-shadow: var(--mm-shadow-sm);
+  }
+
+  .mm-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--mm-shadow-lg);
+    border-color: rgba(23, 19, 17, 0.12);
+  }
+
+  .mm-card-img {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.55), transparent 40%),
+      linear-gradient(180deg, #eee3d6 0%, #e3d4c2 100%);
+  }
+
+  .mm-card-img::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(23, 19, 17, 0.04));
+    pointer-events: none;
+  }
+
+  .mm-card-img img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .mm-card:hover .mm-card-img img {
+    transform: scale(1.05);
+  }
+
+  .mm-card-no-img {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: rgba(23, 19, 17, 0.22);
+  }
+
+  .mm-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    padding: 8px 11px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 20px rgba(23, 19, 17, 0.10);
+  }
+
+  .mm-badge-in {
+    background: rgba(53, 101, 74, 0.95);
+    color: #fff;
+  }
+
+  .mm-badge-out {
+    background: rgba(23, 19, 17, 0.74);
+    color: #fff;
+  }
+
+  .mm-card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 18px;
+  }
+
+  .mm-card-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .mm-card-cat {
+    min-width: 0;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--mm-warm);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mm-card-code {
+    flex-shrink: 0;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(23, 19, 17, 0.04);
+    color: var(--mm-muted);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+
+  .mm-card-name {
+    margin: 0 0 14px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    color: var(--mm-ink);
+    font-weight: 600;
+  }
+
+  .mm-card-meta {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 16px;
+    padding: 14px 0 0;
+    border-top: 1px solid rgba(23, 19, 17, 0.07);
+  }
+
+  .mm-card-price {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--mm-ink);
+    letter-spacing: -0.02em;
+  }
+
+  .mm-card-price-label,
+  .mm-card-stock-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--mm-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .mm-card-stock {
+    text-align: right;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--mm-muted);
+  }
+
+  .mm-card-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: auto;
+  }
+
+  .mm-about {
+    padding: 96px 0;
+  }
+
+  .mm-about-shell {
+    padding: 38px;
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .mm-about-shell::before {
+    content: "";
+    position: absolute;
+    top: -120px;
+    right: -80px;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(182, 90, 36, 0.08), transparent 68%);
+    pointer-events: none;
+  }
+
+  .mm-about-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+    gap: 34px;
+    align-items: start;
+  }
+
+  .mm-about-copy {
+    max-width: 720px;
+  }
+
+  .mm-about-title {
+    margin: 18px 0 18px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(44px, 5vw, 64px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    color: var(--mm-ink);
+    font-weight: 600;
+  }
+
+  .mm-about-title em {
+    color: var(--mm-warm);
+    font-style: italic;
+  }
+
+  .mm-about-body {
+    max-width: 680px;
+    margin: 0 0 26px;
+    font-size: 15px;
+    line-height: 1.92;
+    color: var(--mm-muted);
+  }
+
+  .mm-about-body strong {
+    color: var(--mm-ink);
+    font-weight: 700;
+  }
+
+  .mm-about-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .mm-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(23, 19, 17, 0.09);
+    background: rgba(255, 255, 255, 0.88);
+    color: var(--mm-ink-soft);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    box-shadow: var(--mm-shadow-xs);
+  }
+
+  .mm-info-panel {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mm-info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 245, 239, 0.94));
+    border: 1px solid rgba(23, 19, 17, 0.08);
+    box-shadow: var(--mm-shadow-sm);
+  }
+
+  .mm-info-icon {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: rgba(23, 19, 17, 0.05);
+    font-size: 18px;
+  }
+
+  .mm-info-label {
+    margin-bottom: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--mm-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .mm-info-value {
+    font-size: 14px;
+    line-height: 1.72;
+    color: var(--mm-ink);
+  }
+
+  .mm-info-value a {
+    color: var(--mm-ink);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(23, 19, 17, 0.16);
+  }
+
+  .mm-info-value a:hover {
+    color: var(--mm-warm);
+    border-color: var(--mm-warm);
+  }
+
+  .mm-hours {
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .mm-hours-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mm-hours-day {
+    color: var(--mm-ink);
+    font-weight: 600;
+  }
+
+  .mm-hours-time {
+    color: var(--mm-muted);
+    text-align: right;
+  }
+
+  .mm-location-section {
+    padding: 96px 0;
+  }
+
+  .mm-location-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.06fr) minmax(330px, 0.94fr);
+    gap: 24px;
+    padding: 20px;
+    border-radius: 34px;
+    overflow: hidden;
+  }
+
+  .mm-map-wrap {
+    position: relative;
+    min-height: 460px;
+    border-radius: 26px;
+    overflow: hidden;
+    background: #e6ded2;
+    border: 1px solid rgba(23, 19, 17, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+
+  .mm-map-wrap::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 88px;
+    background: linear-gradient(180deg, rgba(23, 19, 17, 0), rgba(23, 19, 17, 0.10));
+    pointer-events: none;
+  }
+
+  .mm-map-frame {
+    width: 100%;
+    height: 100%;
+    min-height: 460px;
+    border: 0;
+    display: block;
+    filter: saturate(0.92) contrast(1.02);
+  }
+
+  .mm-map-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: rgba(23, 19, 17, 0.86);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+  }
+
+  .mm-location-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 6px 8px 2px;
+  }
+
+  .mm-location-title {
+    margin: 16px 0 14px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(40px, 5vw, 58px);
+    line-height: 0.94;
+    letter-spacing: -0.04em;
+    color: var(--mm-ink);
+    font-weight: 600;
+  }
+
+  .mm-location-title em {
+    color: var(--mm-warm);
+    font-style: italic;
+  }
+
+  .mm-location-text {
+    margin: 0 0 22px;
+    max-width: 520px;
+    font-size: 15px;
+    line-height: 1.88;
+    color: var(--mm-muted);
+  }
+
+  .mm-location-list {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .mm-location-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 245, 239, 0.94));
+    border: 1px solid rgba(23, 19, 17, 0.08);
+  }
+
+  .mm-location-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: rgba(23, 19, 17, 0.05);
+    font-size: 17px;
+  }
+
+  .mm-location-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--mm-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .mm-location-value {
+    font-size: 14px;
+    line-height: 1.72;
+    color: var(--mm-ink);
+  }
+
+  .mm-location-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .mm-location-btn {
+    min-height: 48px;
+    padding: 0 18px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 1100px) {
+    .mm-hero-grid,
+    .mm-about-grid,
+    .mm-location-card {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-hero-main {
+      min-height: auto;
+    }
+
+    .mm-hero-note {
+      justify-self: start;
+      text-align: left;
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 991.98px) {
+    .mm-section,
+    .mm-about,
+    .mm-location-section {
+      padding: 78px 0;
+    }
+
+    .mm-hero-main {
+      padding: 34px;
+    }
+
+    .mm-products-shell,
+    .mm-about-shell {
+      padding: 26px;
+    }
+
+    .mm-map-wrap,
+    .mm-map-frame {
+      min-height: 360px;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .mm-container {
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+
+    .mm-root {
+      width: calc(100% + 16px);
+      margin-left: -8px;
+      margin-right: -8px;
+    }
+
+    .mm-hero {
+      padding: 20px 0 28px;
+    }
+
+    .mm-section,
+    .mm-about,
+    .mm-location-section {
+      padding: 62px 0;
+    }
+
+    .mm-hero-main,
+    .mm-side-categories,
+    .mm-side-stats,
+    .mm-products-shell,
+    .mm-about-shell,
+    .mm-location-card {
+      border-radius: 24px;
+    }
+
+    .mm-hero-main {
+      padding: 26px;
+    }
+
+    .mm-side-categories,
+    .mm-side-stats {
+      padding: 18px;
+    }
+
+    .mm-products-shell,
+    .mm-about-shell {
+      padding: 18px;
+    }
+
+    .mm-location-card {
+      padding: 12px;
+      gap: 14px;
+    }
+
+    .mm-hero-title {
+      font-size: clamp(54px, 16vw, 84px);
+    }
+
+    .mm-hero-footer,
+    .mm-section-head,
+    .mm-card-meta {
+      grid-template-columns: 1fr;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .mm-category-grid,
+    .mm-hero-mini-stats,
+    .mm-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-map-wrap,
+    .mm-map-frame {
+      min-height: 300px;
+      border-radius: 18px;
+    }
+
+    .mm-location-actions {
+      flex-direction: column;
+    }
+
+    .mm-location-btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 479.98px) {
+    .mm-container {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    .mm-btn-lg {
+      width: 100%;
+    }
+
+    .mm-hero-actions {
+      width: 100%;
+      flex-direction: column;
+    }
+
+    .mm-card-topline {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .mm-card-stock {
+      text-align: left;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+
+{% set public_brand_name = public_brand_name or 'Mini Moda' %}
+{% set public_city = public_city or 'Tashkent' %}
+{% set public_country = public_country or 'Uzbekistan' %}
+{% set public_location_name = public_location_name or 'Abu Saxiy Bazar' %}
+{% set public_address = public_address or (public_location_name ~ ', ' ~ public_city ~ ', ' ~ public_country) %}
+{% set public_phone = public_phone or '+998 99 000 00 00' %}
+{% set public_phone_href = public_phone_href or '+998990000000' %}
+{% set public_year_started = public_year_started or '2013' %}
+{% set public_best_time = public_best_time or 'Early morning market hours' %}
+{% set public_map_lat = public_map_lat or '41.24625' %}
+{% set public_map_lng = public_map_lng or '69.167761' %}
+{% set public_catalog_url = url_for('public.catalog') %}
+{% set public_maps_url = 'https://www.google.com/maps?q=' ~ public_map_lat ~ ',' ~ public_map_lng %}
+{% set public_directions_url = 'https://www.google.com/maps/dir/?api=1&destination=' ~ public_map_lat ~ ',' ~ public_map_lng %}
+
+<div class="mm-root">
+
+  <div class="mm-ticker" aria-hidden="true">
+    {% set items = [
+      public_brand_name,
+      '|',
+      public_city,
+      '|',
+      (t('public_home_ticker_wholesale') if t else 'Wholesale'),
+      '|',
+      (t('public_home_ticker_kids_clothing') if t else 'Kids clothing'),
+      '|',
+      (t('public_home_ticker_export') if t else 'Export'),
+      '|',
+      (t('public_home_ticker_since_2013') if t else 'Since ' ~ public_year_started),
+      '|'
+    ] %}
+    <div class="mm-ticker-track">
+      <div class="mm-ticker-group">
+        {% for item in items %}
+          {% if item == '|' %}
+            <span class="dot">&middot;</span>
+          {% else %}
+            <span>{{ item }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="mm-ticker-group">
+        {% for item in items %}
+          {% if item == '|' %}
+            <span class="dot">&middot;</span>
+          {% else %}
+            <span>{{ item }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <section class="mm-hero">
+    <div class="mm-container">
+      <div class="mm-hero-grid">
+
+        <div class="mm-hero-main">
+          <div class="mm-hero-copy">
+            <div class="mm-kicker">
+              <span class="mm-dot"></span>
+              {{ public_city }}, {{ public_country }} · {{ t('public_home_ticker_since_2013') if t else 'Since ' ~ public_year_started }}
+            </div>
+
+            <h1 class="mm-hero-title">
+              {{ public_brand_name.split(' ')[0] if ' ' in public_brand_name else public_brand_name }}
+              <em>{{ public_brand_name.split(' ', 1)[1] if ' ' in public_brand_name else 'Kids' }}</em>
+            </h1>
+
+            <p class="mm-hero-sub">
+              {{ t('public_tagline') if t else 'Wholesale kids clothing for shops and resellers.' }}
+            </p>
+
+            <div class="mm-hero-actions">
+              <a href="{{ public_catalog_url }}" class="mm-btn-lg primary">
+                {{ t('public_view_catalog') if t else 'View catalog' }}
+              </a>
+
+              {% if public_telegram_url %}
+                <a href="{{ public_telegram_url }}" target="_blank" rel="noopener" class="mm-btn-lg secondary">
+                  {{ t('public_order_tg') if t else 'Order via Telegram' }}
+                </a>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mm-hero-footer">
+            <div class="mm-hero-points">
+              <span class="mm-hero-pill">{{ t('public_home_hero_pill_wholesale_only') if t else 'Wholesale only' }}</span>
+              <span class="mm-hero-pill">{{ t('public_home_hero_pill_product_codes') if t else 'Product codes ready' }}</span>
+              <span class="mm-hero-pill">{{ t('public_home_hero_pill_fast_order') if t else 'Fast order flow' }}</span>
+            </div>
+
+            <div class="mm-hero-note">
+              {{ t('public_home_hero_note') if t else 'Clear catalog, direct contact, quick ordering.' }}
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="d-grid d-md-block">
-        <a href="{{ url_for('public.catalog') }}" class="btn btn-dark">
-          {{ t('public_view_catalog') if t else 'View catalog' }}
-        </a>
-      </div>
-    </div>
-  </div>
 
-  <!-- Latest -->
-  <div class="d-flex justify-content-between align-items-end mb-2">
-    <div>
-      <div class="h5 fw-semibold mb-0">
-        {{ t('public_latest_products') if t else 'Latest products' }}
-      </div>
-      <div class="text-muted small">
-        {{ t('public_latest_hint') if t else 'Tap a product to see details.' }}
+        <div class="mm-hero-side">
+          <div class="mm-side-categories">
+            <div class="mm-side-head">
+              <h2 class="mm-side-title">{{ t('public_home_categories_title') if t else 'Categories' }}</h2>
+              <p class="mm-side-text">
+                {{ t('public_home_categories_subtitle') if t else 'Browse the main product groups.' }}
+              </p>
+            </div>
+
+            <div class="mm-category-grid">
+              <a href="{{ public_catalog_url }}" class="mm-category-card">
+                <div class="mm-category-label">{{ t('public_home_collection') if t else 'Collection' }}</div>
+                <div class="mm-category-name">{{ t('public_home_category_baby') if t else 'Baby' }}</div>
+                <div class="mm-category-meta">{{ t('public_home_category_baby_meta') if t else 'Soft essentials' }}</div>
+              </a>
+
+              <a href="{{ public_catalog_url }}" class="mm-category-card">
+                <div class="mm-category-label">{{ t('public_home_collection') if t else 'Collection' }}</div>
+                <div class="mm-category-name">{{ t('public_home_category_girls') if t else 'Girls' }}</div>
+                <div class="mm-category-meta">{{ t('public_home_category_girls_meta') if t else 'Dresses & sets' }}</div>
+              </a>
+
+              <a href="{{ public_catalog_url }}" class="mm-category-card">
+                <div class="mm-category-label">{{ t('public_home_collection') if t else 'Collection' }}</div>
+                <div class="mm-category-name">{{ t('public_home_category_boys') if t else 'Boys' }}</div>
+                <div class="mm-category-meta">{{ t('public_home_category_boys_meta') if t else 'Dailywear' }}</div>
+              </a>
+
+              <a href="{{ public_catalog_url }}" class="mm-category-card">
+                <div class="mm-category-label">{{ t('public_home_collection') if t else 'Collection' }}</div>
+                <div class="mm-category-name">{{ t('public_home_category_new') if t else 'New' }}</div>
+                <div class="mm-category-meta">{{ t('public_home_category_new_meta') if t else 'Latest arrivals' }}</div>
+              </a>
+            </div>
+          </div>
+
+          <div class="mm-side-stats">
+            <div class="mm-hero-mini-stats">
+              <div class="mm-mini-stat">
+                <div class="mm-mini-stat-num">10+</div>
+                <div class="mm-mini-stat-label">{{ t('public_home_years_in_business') if t else 'Years' }}</div>
+              </div>
+              <div class="mm-mini-stat">
+                <div class="mm-mini-stat-num">14</div>
+                <div class="mm-mini-stat-label">{{ t('public_home_regions_supplied') if t else 'Regions' }}</div>
+              </div>
+              <div class="mm-mini-stat">
+                <div class="mm-mini-stat-num">{{ t('public_home_export_markets_value') if t else 'CIS' }}</div>
+                <div class="mm-mini-stat-label">{{ t('public_home_export_markets') if t else 'Markets' }}</div>
+              </div>
+              <div class="mm-mini-stat">
+                <div class="mm-mini-stat-num">{{ t('public_home_business_model') if t else 'B2B' }}</div>
+                <div class="mm-mini-stat-label">{{ t('public_home_hero_pill_wholesale_only') if t else 'Wholesale' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
-    <a class="small text-decoration-none" href="{{ url_for('public.catalog') }}">
-      {{ t('public_all') if t else 'All →' }}
-    </a>
-  </div>
+  </section>
 
   {% if products %}
-    <div class="row g-3">
-      {% for p in products %}
-        {% set in_stock = (p.quantity or 0) > 0 %}
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+    <section class="mm-section">
+      <div class="mm-container">
+        <div class="mm-products-shell">
+          <div class="mm-section-head">
+            <div class="mm-section-head-copy">
+              <div class="mm-section-eyebrow">{{ t('public_catalog') if t else 'Catalog' }}</div>
+              <h2 class="mm-section-title">
+                {{ t('public_latest_products') if t else 'Latest products' }}
+              </h2>
+              <p class="mm-section-text">
+                {{ t('public_home_catalog_subtitle') if t else 'View prices, stock, and product details in one place.' }}
+              </p>
+            </div>
 
-            {% if p.image_path %}
-              <img src="{{ url_for('static', filename=p.image_path) }}"
-                   class="card-img-top"
-                   style="object-fit:cover; aspect-ratio: 4/3;"
-                   alt="{{ p.name }}">
-            {% else %}
-              <div class="bg-light d-flex align-items-center justify-content-center"
-                   style="aspect-ratio: 4/3;">
-                <span class="text-muted small">
-                  {{ t('public_no_image') if t else 'No image' }}
-                </span>
+            <a href="{{ public_catalog_url }}" class="mm-section-link">
+              {{ t('public_all') if t else 'All products' }}
+            </a>
+          </div>
+
+          <div class="mm-grid">
+            {% for p in products %}
+              {% set in_stock = (p.quantity or 0) > 0 %}
+              <article class="mm-card">
+                <div class="mm-card-img">
+                  {% if p.image_path %}
+                    <img
+                      src="{{ url_for('static', filename=p.image_path) }}"
+                      alt="{{ p.name }}"
+                      loading="lazy"
+                      decoding="async"
+                    >
+                  {% else %}
+                    <div class="mm-card-no-img" aria-hidden="true">
+                      <svg width="44" height="44" viewBox="0 0 36 36" fill="none">
+                        <rect x="2" y="6" width="32" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="12" cy="15" r="3" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M2 26l8-7 6 5 5-4 9 6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                  {% endif %}
+
+                  <span class="mm-badge {% if in_stock %}mm-badge-in{% else %}mm-badge-out{% endif %}">
+                    {% if in_stock %}
+                      {{ t('public_in_stock') if t else 'In stock' }}
+                    {% else %}
+                      {{ t('public_out_stock') if t else 'Out of stock' }}
+                    {% endif %}
+                  </span>
+                </div>
+
+                <div class="mm-card-body">
+                  <div class="mm-card-topline">
+                    <div class="mm-card-cat">
+                      {{ p.category or (t('products_no_category') if t else 'Category') }}
+                    </div>
+                    <div class="mm-card-code">MM-{{ "%05d"|format(p.id) }}</div>
+                  </div>
+
+                  <h3 class="mm-card-name">{{ p.name }}</h3>
+
+                  <div class="mm-card-meta">
+                    <div>
+                      <span class="mm-card-price-label">{{ t('public_home_wholesale_price') if t else 'Price' }}</span>
+                      <div class="mm-card-price">
+                        {{ format_money(p.sell_price_per_item, p.currency) }}
+                      </div>
+                    </div>
+
+                    <div class="mm-card-stock">
+                      <span class="mm-card-stock-label">{{ t('public_home_availability') if t else 'Stock' }}</span>
+                      {% if in_stock %}
+                        {{ t('public_home_qty') if t else 'Qty' }}: {{ p.quantity or 0 }}
+                      {% else %}
+                        {{ t('public_home_currently_unavailable') if t else 'Unavailable' }}
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="mm-card-actions">
+                    <a href="{{ url_for('public.product_detail', product_id=p.id) }}" class="mm-btn-sm primary">
+                      {{ t('public_view') if t else 'View details' }}
+                    </a>
+
+                    {% if in_stock and public_telegram_url %}
+                      <a href="{{ tg_order_link(p) }}" target="_blank" rel="noopener" class="mm-btn-sm telegram">
+                        {{ t('public_order_tg') if t else 'Order via Telegram' }}
+                      </a>
+                    {% elif in_stock %}
+                      <a href="tel:{{ public_phone_href }}" class="mm-btn-sm telegram">
+                        {{ t('public_home_phone_label') if t else 'Call to order' }}
+                      </a>
+                    {% else %}
+                      <button class="mm-btn-sm disabled" disabled>
+                        {{ t('public_out_stock') if t else 'Out of stock' }}
+                      </button>
+                    {% endif %}
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="mm-about" id="about">
+    <div class="mm-container">
+      <div class="mm-about-shell">
+        <div class="mm-about-grid">
+
+          <div class="mm-about-copy">
+            <div class="mm-kicker">
+              <span class="mm-dot"></span>
+              {{ t('public_home_about_kicker') if t else 'About' }}
+            </div>
+
+            <h2 class="mm-about-title">
+              {{ (t('public_home_about_title') if t else 'Simple wholesale,<br><em>clear contact</em>') | safe }}
+            </h2>
+
+            <p class="mm-about-body">
+              {{ (t('public_home_about_body_1') if t else 'Mini Moda has been supplying kids clothing since <strong>' ~ public_year_started ~ '</strong>. We focus on stable assortment, clear pricing, and direct communication.') | safe }}
+            </p>
+
+            <div class="mm-about-tags">
+              <span class="mm-tag">{{ t('public_home_tag_wholesale') if t else 'Wholesale' }}</span>
+              <span class="mm-tag">{{ t('public_home_tag_kids_clothing') if t else 'Kids clothing' }}</span>
+              <span class="mm-tag">{{ t('public_home_tag_export') if t else 'Export' }}</span>
+              <span class="mm-tag">{{ t('public_home_tag_tashkent') if t else public_city }}</span>
+            </div>
+          </div>
+
+          <div class="mm-info-panel">
+            <div class="mm-info-row">
+              <div class="mm-info-icon">📍</div>
+              <div>
+                <div class="mm-info-label">{{ t('public_home_location_label') if t else 'Location' }}</div>
+                <div class="mm-info-value">{{ public_address }}</div>
+              </div>
+            </div>
+
+            {% if public_working_hours %}
+              <div class="mm-info-row">
+                <div class="mm-info-icon">🕐</div>
+                <div>
+                  <div class="mm-info-label">{{ t('public_home_working_hours') if t else 'Working hours' }}</div>
+                  <div class="mm-hours">
+                    {% for row in public_working_hours %}
+                      <div class="mm-hours-row">
+                        <span class="mm-hours-day">{{ row.day }}</span>
+                        <span class="mm-hours-time">{{ row.time }}</span>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
               </div>
             {% endif %}
 
-            <div class="card-body d-flex flex-column">
-              <div class="d-flex justify-content-between align-items-start gap-2">
-                <div style="min-width:0;">
-                  <div class="fw-semibold text-truncate">{{ p.name }}</div>
-                  <div class="small text-muted text-truncate">
-                    {{ p.category or (t('products_no_category') if t else 'No category') }}
-                  </div>
-                </div>
-
-                {% if in_stock %}
-                  <span class="badge text-bg-success">
-                    {{ t('public_in_stock') if t else 'In stock' }}
-                  </span>
-                {% else %}
-                  <span class="badge text-bg-secondary">
-                    {{ t('public_out_stock') if t else 'Out' }}
-                  </span>
-                {% endif %}
-              </div>
-
-              <div class="mt-2 small text-muted">
-                {{ t('public_code') if t else 'Code' }}:
-                <strong>MM-{{ "%05d"|format(p.id) }}</strong>
-              </div>
-
-              <div class="mt-auto d-grid gap-2 pt-2">
-                <a href="{{ url_for('public.product_detail', product_id=p.id) }}"
-                   class="btn btn-dark btn-sm rounded-3">
-                  {{ t('public_view') if t else 'View' }}
-                </a>
-
-                {% if in_stock %}
-                  <a href="{{ tg_order_link(p) }}" target="_blank" rel="noopener"
-                     class="btn btn-outline-success btn-sm rounded-3">
-                    {{ t('public_order_tg') if t else 'Order in Telegram' }}
-                  </a>
-                {% else %}
-                  <button type="button"
-                          class="btn btn-outline-secondary btn-sm rounded-3"
-                          disabled>
-                    {{ t('public_out_stock') if t else 'Out of stock' }}
-                  </button>
-                {% endif %}
-
-                <div class="small text-muted">
-                  {{ t('public_order_hint_short') if t else 'Send code + qty + phone to the bot.' }}
+            <div class="mm-info-row">
+              <div class="mm-info-icon">📞</div>
+              <div>
+                <div class="mm-info-label">{{ t('public_home_phone_label') if t else 'Phone' }}</div>
+                <div class="mm-info-value">
+                  <a href="tel:{{ public_phone_href }}">{{ public_phone }}</a>
                 </div>
               </div>
             </div>
 
+            {% if public_telegram_url %}
+              <div class="mm-info-row">
+                <div class="mm-info-icon">💬</div>
+                <div>
+                  <div class="mm-info-label">{{ t('public_home_order_via') if t else 'Order via' }}</div>
+                  <div class="mm-info-value">
+                    <a href="{{ public_telegram_url }}" target="_blank" rel="noopener">
+                      {{ t('public_telegram') if t else 'Telegram' }}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mm-location-section" id="location">
+    <div class="mm-container">
+      <div class="mm-location-card">
+
+        <div class="mm-map-wrap">
+          <div class="mm-map-badge">
+            <span>📍</span>
+            {{ t('public_home_store_location') if t else 'Location' }}
+          </div>
+
+          <iframe
+            class="mm-map-frame"
+            loading="lazy"
+            allowfullscreen
+            referrerpolicy="no-referrer-when-downgrade"
+            src="https://maps.google.com/maps?q={{ public_map_lat }},{{ public_map_lng }}&z=16&output=embed">
+          </iframe>
+        </div>
+
+        <div class="mm-location-panel">
+          <div class="mm-kicker">
+            <span class="mm-dot"></span>
+            {{ t('public_home_visit_kicker') if t else 'Visit us' }}
+          </div>
+
+          <h2 class="mm-location-title">
+            {{ (t('public_home_location_title') if t else 'Find our <em>location</em>') | safe }}
+          </h2>
+
+          <p class="mm-location-text">
+            {{ t('public_home_location_text') if t else 'Visit us for wholesale orders and product selection.' }}
+          </p>
+
+          <div class="mm-location-list">
+            <div class="mm-location-item">
+              <div class="mm-location-icon">📍</div>
+              <div>
+                <div class="mm-location-label">{{ t('public_home_address') if t else 'Address' }}</div>
+                <div class="mm-location-value">{{ public_address }}</div>
+              </div>
+            </div>
+
+            <div class="mm-location-item">
+              <div class="mm-location-icon">🧭</div>
+              <div>
+                <div class="mm-location-label">{{ t('public_home_coordinates') if t else 'Coordinates' }}</div>
+                <div class="mm-location-value">{{ public_map_lat }}, {{ public_map_lng }}</div>
+              </div>
+            </div>
+
+            <div class="mm-location-item">
+              <div class="mm-location-icon">🕐</div>
+              <div>
+                <div class="mm-location-label">{{ t('public_home_best_time') if t else 'Best time' }}</div>
+                <div class="mm-location-value">{{ public_best_time }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mm-location-actions">
+            <a
+              href="{{ public_maps_url }}"
+              target="_blank"
+              rel="noopener"
+              class="mm-location-btn primary">
+              {{ t('public_home_open_maps') if t else 'Open map' }}
+            </a>
+
+            <a
+              href="{{ public_directions_url }}"
+              target="_blank"
+              rel="noopener"
+              class="mm-location-btn secondary">
+              {{ t('public_home_get_directions') if t else 'Directions' }}
+            </a>
           </div>
         </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <!-- Empty State -->
-    <div class="p-4 rounded-4 border bg-white text-center shadow-sm">
-      <div class="h5 fw-semibold mb-2">
-        {{ t('public_no_products_title') if t else 'Catalog is coming soon' }}
-      </div>
-      <div class="text-muted mb-3">
-        {{ t('public_no_products_body') if t else 'We are preparing the first products. Please check back soon.' }}
-      </div>
 
-      <div class="d-grid d-md-flex justify-content-center gap-2">
-        <a href="{{ url_for('public.catalog') }}" class="btn btn-dark rounded-3">
-          {{ t('public_view_catalog') if t else 'View catalog' }}
-        </a>
-
-        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary rounded-3">
-          {{ t('login') if t else 'Admin login' }}
-        </a>
       </div>
     </div>
-  {% endif %}
+  </section>
 
 </div>
+
 {% endblock %}

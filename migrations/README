@@ -1,0 +1,9 @@
+Single-database configuration for Mini Moda.
+
+Primary usage:
+- `flask --app wsgi db upgrade`
+- `flask --app wsgi db migrate -m "describe schema change"`
+
+This repo still keeps the legacy `schema_migrations` table for compatibility with
+the custom bootstrap checks in `app/db_migrations.py`. The baseline Alembic
+revision populates those legacy versions on fresh installs.

@@ -1,19 +1,10 @@
 # ==== app/routes/product_routes.py (REPLACE FULL FILE) ====
-from flask import render_template
-from ..services.fabric_service import FabricService
-from flask import jsonify
-
-fabric_service = FabricService()
-from ..models import Product, Production, FabricConsumption
-
 import os
 import json
 import hashlib
 from io import BytesIO
 from datetime import datetime, date
-from flask import session
-from ..models import Factory, Fabric
-from ..extensions import db
+
 import pandas as pd
 from werkzeug.utils import secure_filename
 from flask import (
@@ -25,6 +16,9 @@ from flask import (
     flash,
     current_app,
     send_file,
+    session,
+    jsonify,
+    abort,
 )
 from flask_login import login_required, current_user
 from sqlalchemy import func, or_
@@ -33,6 +27,11 @@ from ..extensions import db
 from ..auth_utils import roles_required
 from ..models import (
     Product,
+    Production,
+    FabricConsumption,
+    Factory,
+    Fabric,
+    Shop,
     ShopStock,
     Sale,
     CashRecord,
@@ -40,9 +39,12 @@ from ..models import (
     ExcelImportRow,
     ExcelImportBatch,
 )
+from ..services.fabric_service import FabricService
 from ..services.product_service import ProductService
+from ..shop_utils import get_or_create_default_shop
 
 
+fabric_service = FabricService()
 products_bp = Blueprint("products", __name__, url_prefix="/products")
 service = ProductService()
 
@@ -50,7 +52,6 @@ service = ProductService()
 # ==========================
 #   🔧 SMALL HELPERS
 # ==========================
-
 
 def _to_int(value, default: int = 0) -> int:
     try:
@@ -70,9 +71,6 @@ def _to_float(value, default=None):
         return float(value)
     except (TypeError, ValueError):
         return default
-
-
-from flask import session
 
 
 def _ensure_factory_bound():
@@ -162,9 +160,27 @@ def _mark_imported(factory_id: int, kind: str, row_hash: str) -> None:
 
 
 def _ensure_shop_stock(product: Product) -> ShopStock:
-    if product.shop_stock:
-        return product.shop_stock
-    stock = ShopStock(product_id=product.id, quantity=0)
+    """
+    Multi-factory-safe default shop stock row.
+    Keeps stock separated by source_factory_id.
+    """
+    shop = get_or_create_default_shop(product.factory_id)
+
+    stock = ShopStock.query.filter_by(
+        shop_id=shop.id,
+        product_id=product.id,
+        source_factory_id=product.factory_id,
+    ).first()
+
+    if stock:
+        return stock
+
+    stock = ShopStock(
+        shop_id=shop.id,
+        product_id=product.id,
+        source_factory_id=product.factory_id,
+        quantity=0,
+    )
     db.session.add(stock)
     db.session.flush()
     return stock
@@ -193,8 +209,12 @@ def list_products():
 
     query = db.session.query(
         Product,
-        func.coalesce(ShopStock.quantity, 0).label("qty_shop"),
-    ).outerjoin(ShopStock, ShopStock.product_id == Product.id)
+        func.coalesce(func.sum(ShopStock.quantity), 0).label("qty_shop"),
+    ).outerjoin(
+        ShopStock,
+        (ShopStock.product_id == Product.id)
+        & (ShopStock.source_factory_id == Product.factory_id),
+    )
 
     if not getattr(current_user, "is_superadmin", False):
         query = query.filter(Product.factory_id == factory_id)
@@ -208,16 +228,18 @@ def list_products():
     if selected_category:
         query = query.filter(Product.category == selected_category)
 
+    query = query.group_by(Product.id)
+
     if sort == "name":
         query = query.order_by(Product.name.asc())
     elif sort == "qty_total":
         query = query.order_by(
-            (Product.quantity + func.coalesce(ShopStock.quantity, 0)).desc()
+            (Product.quantity + func.coalesce(func.sum(ShopStock.quantity), 0)).desc()
         )
     elif sort == "qty_factory":
         query = query.order_by(Product.quantity.desc())
     elif sort == "qty_shop":
-        query = query.order_by(func.coalesce(ShopStock.quantity, 0).desc())
+        query = query.order_by(func.coalesce(func.sum(ShopStock.quantity), 0).desc())
     else:
         query = query.order_by(Product.name.asc())
 
@@ -267,6 +289,8 @@ def add_product():
 
     name = request.form.get("name", "").strip()
     category = request.form.get("category", "").strip() or None
+    fabric_used = request.form.get("fabric_used", "").strip() or None
+    notes = request.form.get("notes", "").strip() or None
 
     quantity = _to_int(request.form.get("quantity", "0"), default=0)
     if quantity < 0:
@@ -284,21 +308,38 @@ def add_product():
         flash("Название модели обязательно.", "warning")
         return redirect(url_for("products.list_products"))
 
-    file = request.files.get("image")
-    image_path = None
-    if file and file.filename:
-        ext = file.filename.rsplit(".", 1)[-1].lower()
-        if ext in {"png", "jpg", "jpeg", "webp"}:
-            filename = secure_filename(file.filename)
-            upload_dir = current_app.config.get(
-                "UPLOAD_FOLDER", os.path.join("app", "static", "uploads", "products")
-            )
-            os.makedirs(upload_dir, exist_ok=True)
-            save_path = os.path.join(upload_dir, filename)
-            file.save(save_path)
-            image_path = f"uploads/products/{filename}"
-        else:
-            flash("Недопустимый формат изображения.", "danger")
+    upload_dir = current_app.config.get(
+        "UPLOAD_FOLDER",
+        os.path.join("app", "static", "uploads", "products")
+    )
+    os.makedirs(upload_dir, exist_ok=True)
+
+    def save_product_image(file_obj):
+        if not file_obj or not file_obj.filename:
+            return None
+
+        ext = file_obj.filename.rsplit(".", 1)[-1].lower()
+        if ext not in {"png", "jpg", "jpeg", "webp"}:
+            return None
+
+        filename = secure_filename(file_obj.filename)
+        save_path = os.path.join(upload_dir, filename)
+        file_obj.save(save_path)
+        return f"uploads/products/{filename}"
+
+    image_file = request.files.get("image")
+    website_image_file = request.files.get("website_image")
+
+    image_path = save_product_image(image_file)
+    website_image_path = save_product_image(website_image_file)
+
+    if image_file and image_file.filename and not image_path:
+        flash("Недопустимый формат обычного фото товара.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    if website_image_file and website_image_file.filename and not website_image_path:
+        flash("Недопустимый формат фото для сайта.", "danger")
+        return redirect(url_for("products.list_products"))
 
     service.add_product(
         factory_id=factory_id,
@@ -309,6 +350,9 @@ def add_product():
         sell_price_per_item=sell_price_per_item,
         currency=currency,
         image_path=image_path,
+        website_image=website_image_path,
+        fabric_used=fabric_used,
+        notes=notes,
     )
 
     flash("Товар добавлен / обновлён.", "success")
@@ -407,7 +451,6 @@ def to_shop(product_id: int):
 #   📥 EXCEL IMPORT WIZARD
 # =========================================================
 
-
 @products_bp.route("/import", methods=["GET"])
 @login_required
 @roles_required("admin", "manager")
@@ -426,7 +469,7 @@ def import_wizard():
     return render_template("products/import_wizard.html", batches=batches)
 
 
-MAX_IMPORT_MB = 15  # adjust if you want
+MAX_IMPORT_MB = 15
 MAX_IMPORT_BYTES = MAX_IMPORT_MB * 1024 * 1024
 
 
@@ -466,9 +509,9 @@ def import_upload():
     batch = ExcelImportBatch(
         factory_id=factory_id,
         filename=filename,
-        stored_path=None,  # ✅ don't rely on disk
+        stored_path=None,
         file_hash=file_hash,
-        file_bytes=raw_bytes,  # ✅ store bytes in DB
+        file_bytes=raw_bytes,
         file_size=len(raw_bytes),
         uploaded_by_id=current_user.id,
         status="uploaded",
@@ -477,7 +520,6 @@ def import_upload():
     db.session.add(batch)
     db.session.commit()
 
-    # Preview sheets from in-memory bytes
     bio = BytesIO(raw_bytes)
     try:
         xls = pd.ExcelFile(bio)
@@ -549,10 +591,8 @@ def import_confirm():
         flash("Выберите что импортировать (реализация/касса/цены).", "warning")
         return redirect(url_for("products.import_batch_detail", batch_id=batch.id))
 
-    # ✅ Read bytes from DB first (Render-safe)
     raw_bytes = batch.file_bytes if getattr(batch, "file_bytes", None) else None
 
-    # Optional legacy fallback (only if you still have old batches saved to disk)
     if not raw_bytes:
         try:
             if not batch.stored_path:
@@ -565,7 +605,6 @@ def import_confirm():
             flash(f"Не могу открыть файл: {e}", "danger")
             return redirect(url_for("products.import_wizard"))
 
-    # Parse Excel
     bio = BytesIO(raw_bytes)
     try:
         xls = pd.ExcelFile(bio)
@@ -669,10 +708,6 @@ def import_batch_detail(batch_id: int):
     )
 
 
-from flask import abort
-import os
-
-
 @products_bp.route("/imports/<int:batch_id>/download")
 @login_required
 @roles_required("admin", "manager")
@@ -687,11 +722,9 @@ def import_batch_download(batch_id):
 
     raw_bytes = batch.file_bytes if getattr(batch, "file_bytes", None) else None
 
-    # Optional legacy fallback
     if not raw_bytes and batch.stored_path:
         stored = (batch.stored_path or "").replace("/", os.sep).replace("\\", os.sep)
         if not os.path.isabs(stored):
-            # if you used static folder storage before:
             stored = os.path.join(current_app.static_folder, stored)
 
         if os.path.exists(stored):
@@ -705,7 +738,6 @@ def import_batch_download(batch_id):
     bio = BytesIO(raw_bytes)
     bio.seek(0)
 
-    # Excel MIME type
     mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
     return send_file(
@@ -719,7 +751,6 @@ def import_batch_download(batch_id):
 # =========================================================
 #   INTERNAL: sheet parsers
 # =========================================================
-
 
 def _locate_cols(row_strs, keys_map):
     out = {}
@@ -797,8 +828,6 @@ def _import_sheet_realization(
             _clean_int(raw.iat[r, cols["price"]]) if cols["price"] < raw.shape[1] else 0
         )
 
-        # IMPORTANT:
-        # If you want "models + price" even with empty qty -> allow price-only rows.
         if qty <= 0 and price <= 0:
             continue
 
@@ -959,12 +988,10 @@ def product_cost(product_id: int):
 
     product = Product.query.get_or_404(product_id)
 
-    # strict factory isolation
     if product.factory_id != factory_id:
         flash("Нет доступа к этой модели.", "danger")
         return redirect(url_for("products.list_products"))
 
-    # ---- Load recent real batches (Production + FabricConsumption + Fabric) ----
     recent_batches = (
         db.session.query(Production, FabricConsumption, Fabric)
         .join(FabricConsumption, FabricConsumption.production_id == Production.id)
@@ -976,7 +1003,6 @@ def product_cost(product_id: int):
         .all()
     )
 
-    # Default display helpers (unit/currency)
     cost_data = {}
     if recent_batches:
         _prod0, _cons0, _fab0 = recent_batches[0]
@@ -1016,18 +1042,20 @@ def product_cost(product_id: int):
 
         flash("Себестоимость сохранена.", "success")
         return redirect(url_for("products.list_products"))
+
     print("COST recent_batches:", len(recent_batches))
 
     return render_template(
         "products/product_cost.html",
         product=product,
         cost_data=cost_data,
-        recent_batches=recent_batches,   # ✅ NEW
+        recent_batches=recent_batches,
     )
+
+
 @products_bp.route("/factory-stock", endpoint="factory_stock")
 @login_required
 def factory_stock():
-    # temporary redirect so dashboard doesn't crash
     return redirect(url_for("products.list_products"))
 
 
@@ -1041,7 +1069,6 @@ def toggle_publish(product_id: int):
 
     product = Product.query.get_or_404(product_id)
 
-    # Security: managers/admin should only touch their factory products
     if not getattr(current_user, "is_superadmin", False):
         if product.factory_id != factory_id:
             flash("Нет доступа к этой модели.", "danger")
@@ -1089,4 +1116,67 @@ def produce_with_fabric(product_id: int):
     else:
         flash("Производство зарегистрировано + ткань списана.", "success")
 
+    return redirect(url_for("products.list_products"))
+
+
+@products_bp.route("/<int:product_id>/update_info", methods=["POST"])
+@login_required
+@roles_required("admin", "manager")
+def update_product_info(product_id: int):
+    factory_id = _ensure_factory_bound()
+    if factory_id is None and not getattr(current_user, "is_superadmin", False):
+        return redirect(url_for("products.list_products"))
+
+    category = request.form.get("category", "").strip() or None
+    fabric_used = request.form.get("fabric_used", "").strip() or None
+    notes = request.form.get("notes", "").strip() or None
+
+    upload_dir = current_app.config.get(
+        "UPLOAD_FOLDER",
+        os.path.join("app", "static", "uploads", "products")
+    )
+    os.makedirs(upload_dir, exist_ok=True)
+
+    def save_product_image(file_obj):
+        if not file_obj or not file_obj.filename:
+            return None
+
+        ext = file_obj.filename.rsplit(".", 1)[-1].lower()
+        if ext not in {"png", "jpg", "jpeg", "webp"}:
+            return False
+
+        filename = secure_filename(file_obj.filename)
+        save_path = os.path.join(upload_dir, filename)
+        file_obj.save(save_path)
+        return f"uploads/products/{filename}"
+
+    image_file = request.files.get("image")
+    website_image_file = request.files.get("website_image")
+
+    image_path = save_product_image(image_file)
+    website_image_path = save_product_image(website_image_file)
+
+    if image_path is False:
+        flash("Недопустимый формат обычного фото товара.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    if website_image_path is False:
+        flash("Недопустимый формат фото для сайта.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    product = service.update_product_info(
+        factory_id=factory_id,
+        product_id=product_id,
+        category=category,
+        fabric_used=fabric_used,
+        notes=notes,
+        image_path=image_path,
+        website_image=website_image_path,
+    )
+
+    if not product:
+        flash("Товар не найден.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    flash("Информация о товаре обновлена.", "success")
     return redirect(url_for("products.list_products"))

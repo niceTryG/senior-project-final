@@ -1,45 +1,84 @@
 import os
 from datetime import timedelta
+from pathlib import Path
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def _load_local_env() -> None:
+    env_path = BASE_DIR / ".env"
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+
+        os.environ.setdefault(key, value)
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = (os.environ.get(name) or "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _database_url() -> str:
+    raw = (os.environ.get("DATABASE_URL") or "").strip()
+    if raw.startswith("postgres://"):
+        raw = raw.replace("postgres://", "postgresql://", 1)
+    return raw or f"sqlite:///{BASE_DIR / 'fabric.db'}"
+
+
+_load_local_env()
 
 
 class BaseConfig:
     SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-only-change-me"
-
-    # Render provides DATABASE_URL for Postgres
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL") or (
-        "sqlite:///" + os.path.join(BASE_DIR, "fabric.db")
-    )
-
+    SQLALCHEMY_DATABASE_URI = _database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
-    # uploads
     UPLOAD_FOLDER = "app/static/uploads/products"
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB
 
-    # 🔐 Session & Login Improvements
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SECURE = False  # False for LAN / HTTP
+    SESSION_COOKIE_SAMESITE = (os.environ.get("SESSION_COOKIE_SAMESITE") or "Lax").strip() or "Lax"
+    SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", False)
 
-    REMEMBER_COOKIE_SECURE = False
+    REMEMBER_COOKIE_SECURE = _env_bool("REMEMBER_COOKIE_SECURE", False)
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_DURATION = timedelta(days=30)
-
     PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
 
-    # Telegram
+    AUTO_DB_BOOTSTRAP = _env_bool("AUTO_DB_BOOTSTRAP", True)
+    PROD_ALLOW_SQLITE = _env_bool("PROD_ALLOW_SQLITE", False)
+
     PUBLIC_TELEGRAM_URL = os.environ.get(
         "PUBLIC_TELEGRAM_URL",
-        "https://t.me/ibrohim_musakhodjaev"
+        "https://t.me/ibrohim_musakhodjaev",
     )
 
 
 class DevConfig(BaseConfig):
     DEBUG = True
+    SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", False)
+    REMEMBER_COOKIE_SECURE = _env_bool("REMEMBER_COOKIE_SECURE", False)
+    AUTO_DB_BOOTSTRAP = _env_bool("AUTO_DB_BOOTSTRAP", True)
 
 
 class ProdConfig(BaseConfig):
     DEBUG = False
+    SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", True)
+    REMEMBER_COOKIE_SECURE = _env_bool("REMEMBER_COOKIE_SECURE", True)
+    AUTO_DB_BOOTSTRAP = _env_bool("AUTO_DB_BOOTSTRAP", False)
