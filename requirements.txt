@@ -13,3 +13,6 @@ pandas
 openpyxl
 gunicorn
 psycopg2-binary
+Flask-WTF
+WTForms
+email-validator
