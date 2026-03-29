@@ -1,133 +1,154 @@
-{% extends "base.html" %}
-
-{% block title %}{{ t('sales_history_title') }}{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}{{ t('sales_history_title') }}{%
+endblock %} {% block content %}
 <style>
-  .mm-page-sales-history{
-    --mm-cardA: rgba(255,255,255,.78);
-    --mm-cardB: rgba(255,255,255,.92);
-    --mm-line: rgba(0,0,0,.08);
-    --mm-muted: rgba(0,0,0,.50);
-    --mm-soft: rgba(0,0,0,.65);
-    --mm-shadow: 0 14px 36px rgba(0,0,0,.12);
-    --mm-glow: 0 0 0 .22rem rgba(13,110,253,.14);
+  .mm-page-sales-history {
+    --mm-cardA: rgba(255, 255, 255, 0.78);
+    --mm-cardB: rgba(255, 255, 255, 0.92);
+    --mm-line: rgba(0, 0, 0, 0.08);
+    --mm-muted: rgba(0, 0, 0, 0.5);
+    --mm-soft: rgba(0, 0, 0, 0.65);
+    --mm-shadow: 0 14px 36px rgba(0, 0, 0, 0.12);
+    --mm-glow: 0 0 0 0.22rem rgba(13, 110, 253, 0.14);
     --mm-radius: 18px;
     position: relative;
   }
 
-  .mm-page-sales-history::before{
-    content:"";
-    position:absolute;
-    inset:-16px -12px -16px -12px;
-    pointer-events:none;
+  .mm-page-sales-history::before {
+    content: "";
+    position: absolute;
+    inset: -16px -12px -16px -12px;
+    pointer-events: none;
     background:
-      radial-gradient(circle at 12% 12%, rgba(13,110,253,.12), transparent 34%),
-      radial-gradient(circle at 88% 22%, rgba(111,66,193,.10), transparent 36%),
-      radial-gradient(circle at 30% 90%, rgba(32,201,151,.10), transparent 38%),
-      linear-gradient(to bottom, rgba(0,0,0,.03), transparent 40%);
-    opacity:.9;
+      radial-gradient(
+        circle at 12% 12%,
+        rgba(13, 110, 253, 0.12),
+        transparent 34%
+      ),
+      radial-gradient(
+        circle at 88% 22%,
+        rgba(111, 66, 193, 0.1),
+        transparent 36%
+      ),
+      radial-gradient(
+        circle at 30% 90%,
+        rgba(32, 201, 151, 0.1),
+        transparent 38%
+      ),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.03), transparent 40%);
+    opacity: 0.9;
   }
-  .mm-page-sales-history > *{ position:relative; z-index:1; }
+  .mm-page-sales-history > * {
+    position: relative;
+    z-index: 1;
+  }
 
-  .mm-neo-shell{
-    border:1px solid var(--mm-line);
+  .mm-neo-shell {
+    border: 1px solid var(--mm-line);
     border-radius: var(--mm-radius);
     background: linear-gradient(180deg, var(--mm-cardA), var(--mm-cardB));
     box-shadow: var(--mm-shadow);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    overflow:hidden;
+    overflow: hidden;
   }
 
-  .mm-neo-chip{
-    display:inline-flex;
-    align-items:center;
-    gap:.45rem;
-    padding:.35rem .7rem;
-    border-radius:999px;
-    border:1px solid var(--mm-line);
-    background: rgba(255,255,255,.75);
-    font-size:.78rem;
+  .mm-neo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--mm-line);
+    background: rgba(255, 255, 255, 0.75);
+    font-size: 0.78rem;
     color: var(--mm-soft);
     white-space: nowrap;
   }
 
-  .mm-neo-title{ font-weight: 800; letter-spacing:.2px; margin:0; }
-  .mm-neo-sub{ margin:0; color: var(--mm-muted); }
+  .mm-neo-title {
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    margin: 0;
+  }
+  .mm-neo-sub {
+    margin: 0;
+    color: var(--mm-muted);
+  }
 
   .mm-neo-input:focus,
-  .mm-page-sales-history .form-select:focus{
+  .mm-page-sales-history .form-select:focus {
     box-shadow: var(--mm-glow);
-    border-color: rgba(13,110,253,.35);
+    border-color: rgba(13, 110, 253, 0.35);
   }
 
-  .mm-period-row{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:12px;
+  .mm-period-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
   }
 
-  .mm-period-chip{
-    min-height:38px;
-    padding:0 12px;
-    border-radius:999px;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    text-decoration:none;
-    font-size:.82rem;
-    font-weight:800;
-    border:1px solid var(--mm-line);
-    background: rgba(255,255,255,.82);
+  .mm-period-chip {
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 800;
+    border: 1px solid var(--mm-line);
+    background: rgba(255, 255, 255, 0.82);
     color: var(--mm-soft);
-    transition:.18s ease;
+    transition: 0.18s ease;
   }
 
-  .mm-period-chip:hover{
-    transform:translateY(-1px);
+  .mm-period-chip:hover {
+    transform: translateY(-1px);
     color: var(--mm-text, #111827);
   }
 
-  .mm-period-chip.active{
-    background:#2563eb;
-    color:#fff;
-    border-color:#2563eb;
-    box-shadow: 0 10px 22px rgba(37,99,235,.18);
+  .mm-period-chip.active {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
   }
 
-  .mm-mob-actions{
+  .mm-mob-actions {
     position: sticky;
     top: 0;
     z-index: 20;
-    background: rgba(255,255,255,.82);
+    background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--mm-line);
     border-radius: 16px;
     padding: 10px;
-    box-shadow: 0 10px 22px rgba(0,0,0,.08);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
   }
-  .mm-mob-actions .btn{
+  .mm-mob-actions .btn {
     border-radius: 999px;
     height: 42px;
     font-weight: 700;
   }
-  .mm-mob-actions .btn-outline-secondary{
-    background: rgba(255,255,255,.75);
+  .mm-mob-actions .btn-outline-secondary {
+    background: rgba(255, 255, 255, 0.75);
   }
 
-  .mm-modal-backdrop{
+  .mm-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.42);
+    background: rgba(0, 0, 0, 0.42);
     display: none;
     z-index: 9998;
   }
-  .mm-modal-backdrop.open{ display:block; }
+  .mm-modal-backdrop.open {
+    display: block;
+  }
 
-  .mm-modal{
+  .mm-modal {
     position: fixed;
     inset: 0;
     display: none;
@@ -137,123 +158,142 @@
     padding: 14px;
     padding-bottom: calc(14px + env(safe-area-inset-bottom));
   }
-  .mm-modal.open{ display:flex; }
+  .mm-modal.open {
+    display: flex;
+  }
 
-  .mm-modal-card{
+  .mm-modal-card {
     width: 100%;
     max-width: 520px;
     border-radius: 22px;
     border: 1px solid var(--mm-line);
-    background: rgba(255,255,255,.92);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 22px 60px rgba(0,0,0,.22);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
     overflow: hidden;
   }
 
-  .mm-modal-head{
+  .mm-modal-head {
     padding: 12px 14px;
     border-bottom: 1px solid var(--mm-line);
-    display:flex;
-    align-items:center;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 10px;
-    background: rgba(255,255,255,.88);
+    background: rgba(255, 255, 255, 0.88);
   }
-  .mm-modal-title{
-    margin:0;
+  .mm-modal-title {
+    margin: 0;
     font-weight: 900;
-    letter-spacing:.2px;
+    letter-spacing: 0.2px;
     font-size: 1rem;
   }
 
-  .mm-modal-body{
+  .mm-modal-body {
     padding: 14px;
     max-height: 70vh;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
   .mm-modal-body .form-control,
-  .mm-modal-body .form-select{
+  .mm-modal-body .form-select {
     border-radius: 14px;
   }
 
-  .mm-modal-actions{
+  .mm-modal-actions {
     padding: 10px 14px;
     padding-bottom: calc(10px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--mm-line);
-    background: rgba(255,255,255,.9);
-    display:flex;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
     gap: 10px;
   }
-  .mm-modal-actions .btn{
+  .mm-modal-actions .btn {
     border-radius: 999px;
     height: 46px;
     font-weight: 800;
   }
 
-  .mm-total-soft{
-    border:1px solid var(--mm-line);
+  .mm-total-soft {
+    border: 1px solid var(--mm-line);
     border-radius: 18px;
-    background: rgba(255,255,255,.72);
-    box-shadow: 0 10px 22px rgba(0,0,0,.06);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
   }
 
-  @media (max-width: 767.98px){
-    .mm-period-row{
-      gap:6px;
-      margin-bottom:10px;
+  @media (max-width: 767.98px) {
+    .mm-period-row {
+      gap: 6px;
+      margin-bottom: 10px;
     }
-    .mm-period-chip{
-      min-height:34px;
-      padding:0 10px;
-      font-size:.76rem;
+    .mm-period-chip {
+      min-height: 34px;
+      padding: 0 10px;
+      font-size: 0.76rem;
     }
   }
 </style>
 
 <div class="container-fluid py-2 py-md-3 mm-page-sales-history">
-
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+  <div
+    class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2"
+  >
     <div>
       <div class="d-flex align-items-center gap-2 mb-1">
         <span class="mm-neo-chip">🧾 <span>{{ t('sales') }}</span></span>
       </div>
       <h1 class="h4 mb-1 mm-neo-title">{{ t('sales_history_title') }}</h1>
-      <p class="mb-0 small mm-neo-sub">
-        {{ t('sales_history_subtitle') }}
-      </p>
+      <p class="mb-0 small mm-neo-sub">{{ t('sales_history_subtitle') }}</p>
     </div>
 
-    <div class="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end d-none d-md-flex">
-      <a href="{{ url_for('sales.shop_sell') }}" class="btn btn-sm btn-primary" style="border-radius:999px;font-weight:700;">
+    <div
+      class="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end d-none d-md-flex"
+    >
+      <a
+        href="{{ url_for('sales.shop_sell') }}"
+        class="btn btn-sm btn-primary"
+        style="border-radius: 999px; font-weight: 700"
+      >
         + {{ t('sale_action_short') }}
       </a>
     </div>
   </div>
 
   <div class="mm-period-row">
-    <a href="{{ url_for('sales.list_sales', period='today') }}"
-       class="mm-period-chip {% if period == 'today' %}active{% endif %}">
+    <a
+      href="{{ url_for('sales.list_sales', period='today') }}"
+      class="mm-period-chip {% if period == 'today' %}active{% endif %}"
+    >
       {{ t('today_label') }}
     </a>
-    <a href="{{ url_for('sales.list_sales', period='yesterday') }}"
-       class="mm-period-chip {% if period == 'yesterday' %}active{% endif %}">
+    <a
+      href="{{ url_for('sales.list_sales', period='yesterday') }}"
+      class="mm-period-chip {% if period == 'yesterday' %}active{% endif %}"
+    >
       {{ t('yesterday_label') }}
     </a>
-    <a href="{{ url_for('sales.list_sales', period='week') }}"
-       class="mm-period-chip {% if period == 'week' %}active{% endif %}">
+    <a
+      href="{{ url_for('sales.list_sales', period='week') }}"
+      class="mm-period-chip {% if period == 'week' %}active{% endif %}"
+    >
       {{ t('week_label') }}
     </a>
-    <a href="{{ url_for('sales.list_sales', period='all') }}"
-       class="mm-period-chip {% if period == 'all' or not period %}active{% endif %}">
+    <a
+      href="{{ url_for('sales.list_sales', period='all') }}"
+      class="mm-period-chip {% if period == 'all' or not period %}active{% endif %}"
+    >
       {{ t('all_option') }}
     </a>
   </div>
 
   <div class="d-md-none mb-3 mm-mob-actions">
     <div class="d-flex gap-2">
-      <button type="button" class="btn btn-outline-secondary w-50" id="mm-open-filters">
+      <button
+        type="button"
+        class="btn btn-outline-secondary w-50"
+        id="mm-open-filters"
+      >
         ⚙️ {{ t('sales_filter_title') }}
       </button>
       <a href="{{ url_for('sales.shop_sell') }}" class="btn btn-primary w-50">
@@ -265,7 +305,7 @@
   <div class="card shadow-sm mb-3 border-0 d-none d-md-block">
     <div class="card-body py-2">
       <form method="get" class="row g-2 align-items-end">
-        <input type="hidden" name="period" value="{{ period or '' }}">
+        <input type="hidden" name="period" value="{{ period or '' }}" />
 
         <div class="col-md-4">
           <label class="form-label mb-1 small">{{ t('filter_search') }}</label>
@@ -277,7 +317,7 @@
               name="q"
               placeholder="{{ t('sales_search_placeholder') }}"
               value="{{ q }}"
-            >
+            />
           </div>
         </div>
 
@@ -288,7 +328,7 @@
             class="form-control form-control-sm"
             name="from"
             value="{{ date_from }}"
-          >
+          />
         </div>
 
         <div class="col-md-2">
@@ -298,60 +338,130 @@
             class="form-control form-control-sm"
             name="to"
             value="{{ date_to }}"
-          >
+          />
         </div>
 
         <div class="col-md-2">
           <label class="form-label mb-1 small">{{ t('table_currency') }}</label>
           {% if sales_currencies %}
-            <select name="currency" class="form-select form-select-sm">
-              <option value="">{{ t('all_option') }}</option>
-              {% for cur in sales_currencies %}
-                <option value="{{ cur }}" {% if selected_currency == cur %}selected{% endif %}>
-                  {{ cur }}
-                </option>
-              {% endfor %}
-            </select>
+          <select name="currency" class="form-select form-select-sm">
+            <option value="">{{ t('all_option') }}</option>
+            {% for cur in sales_currencies %}
+            <option
+              value="{{ cur }}"
+              {%
+              if
+              selected_currency=""
+              ="cur"
+              %}selected{%
+              endif
+              %}
+            >
+              {{ cur }}
+            </option>
+            {% endfor %}
+          </select>
           {% else %}
-            <select name="currency" class="form-select form-select-sm">
-              <option value="">{{ t('all_option') }}</option>
-            </select>
+          <select name="currency" class="form-select form-select-sm">
+            <option value="">{{ t('all_option') }}</option>
+          </select>
           {% endif %}
         </div>
 
         <div class="col-md-2">
-          <label class="form-label mb-1 small">{{ t('fabrics_sorting') }}</label>
+          <label class="form-label mb-1 small"
+            >{{ t('fabrics_sorting') }}</label
+          >
           <select name="sort" class="form-select form-select-sm">
-            <option value="date_desc" {% if sort == 'date_desc' or not sort %}selected{% endif %}>
+            <option
+              value="date_desc"
+              {%
+              if
+              sort=""
+              ="date_desc"
+              or
+              not
+              sort
+              %}selected{%
+              endif
+              %}
+            >
               {{ t('sort_date_newest') }}
             </option>
-            <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>
+            <option
+              value="date_asc"
+              {%
+              if
+              sort=""
+              ="date_asc"
+              %}selected{%
+              endif
+              %}
+            >
               {{ t('sort_date_oldest') }}
             </option>
-            <option value="amount_desc" {% if sort == 'amount_desc' %}selected{% endif %}>
+            <option
+              value="amount_desc"
+              {%
+              if
+              sort=""
+              ="amount_desc"
+              %}selected{%
+              endif
+              %}
+            >
               {{ t('sort_amount_desc') }}
             </option>
-            <option value="amount_asc" {% if sort == 'amount_asc' %}selected{% endif %}>
+            <option
+              value="amount_asc"
+              {%
+              if
+              sort=""
+              ="amount_asc"
+              %}selected{%
+              endif
+              %}
+            >
               {{ t('sort_amount_asc') }}
             </option>
-            <option value="profit_desc" {% if sort == 'profit_desc' %}selected{% endif %}>
+            <option
+              value="profit_desc"
+              {%
+              if
+              sort=""
+              ="profit_desc"
+              %}selected{%
+              endif
+              %}
+            >
               {{ t('sort_profit_desc') }}
             </option>
           </select>
         </div>
 
         {% if sales_categories %}
-          <div class="col-md-3">
-            <label class="form-label mb-1 small">{{ t('filter_category') }}</label>
-            <select name="category" class="form-select form-select-sm">
-              <option value="">{{ t('all_option') }}</option>
-              {% for cat in sales_categories %}
-                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>
-                  {{ cat }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
+        <div class="col-md-3">
+          <label class="form-label mb-1 small"
+            >{{ t('filter_category') }}</label
+          >
+          <select name="category" class="form-select form-select-sm">
+            <option value="">{{ t('all_option') }}</option>
+            {% for cat in sales_categories %}
+            <option
+              value="{{ cat }}"
+              {%
+              if
+              selected_category=""
+              ="cat"
+              %}selected{%
+              endif
+              %}
+            >
+              {{ cat }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
         {% endif %}
 
         <div class="col-md-2 d-grid gap-1">
@@ -361,173 +471,170 @@
         </div>
 
         <div class="col-md-2 d-grid gap-1">
-          <a href="{{ url_for('sales.list_sales') }}" class="btn btn-sm btn-outline-secondary">
+          <a
+            href="{{ url_for('sales.list_sales') }}"
+            class="btn btn-sm btn-outline-secondary"
+          >
             {{ t('reset') }}
           </a>
         </div>
       </form>
 
-      {% if period or q or date_from or date_to or selected_currency or selected_category or (sort and sort != 'date_desc') %}
-        <div class="small text-muted d-flex flex-wrap gap-1 mt-2">
-          <span class="me-1">{{ t('active_filters') }}:</span>
+      {% if period or q or date_from or date_to or selected_currency or
+      selected_category or (sort and sort != 'date_desc') %}
+      <div class="small text-muted d-flex flex-wrap gap-1 mt-2">
+        <span class="me-1">{{ t('active_filters') }}:</span>
 
-          {% if period == 'today' %}
-            <span class="badge bg-light text-dark border">{{ t('period') }}: {{ t('today_label') }}</span>
-          {% elif period == 'yesterday' %}
-            <span class="badge bg-light text-dark border">{{ t('period') }}: {{ t('yesterday_label') }}</span>
-          {% elif period == 'week' %}
-            <span class="badge bg-light text-dark border">{{ t('period') }}: {{ t('week_label') }}</span>
-          {% elif period == 'all' %}
-            <span class="badge bg-light text-dark border">{{ t('period') }}: {{ t('all_option') }}</span>
-          {% endif %}
-
-          {% if q %}
-            <span class="badge bg-light text-dark border">
-              {{ t('filter_search') }}: “{{ q }}”
-            </span>
-          {% endif %}
-          {% if date_from %}
-            <span class="badge bg-light text-dark border">
-              {{ t('from') }}: {{ date_from }}
-            </span>
-          {% endif %}
-          {% if date_to %}
-            <span class="badge bg-light text-dark border">
-              {{ t('to') }}: {{ date_to }}
-            </span>
-          {% endif %}
-          {% if selected_currency %}
-            <span class="badge bg-light text-dark border">
-              {{ t('table_currency') }}: {{ selected_currency }}
-            </span>
-          {% endif %}
-          {% if selected_category %}
-            <span class="badge bg-light text-dark border">
-              {{ t('filter_category') }}: {{ selected_category }}
-            </span>
-          {% endif %}
-          {% if sort and sort != 'date_desc' %}
-            <span class="badge bg-light text-dark border">
-              {{ t('fabrics_sorting') }}:
-              {% if sort == 'date_asc' %}{{ t('sort_date_short_up') }}
-              {% elif sort == 'amount_desc' %}{{ t('sort_amount_short_down') }}
-              {% elif sort == 'amount_asc' %}{{ t('sort_amount_short_up') }}
-              {% elif sort == 'profit_desc' %}{{ t('sort_profit_short_down') }}
-              {% endif %}
-            </span>
-          {% endif %}
-        </div>
+        {% if period == 'today' %}
+        <span class="badge bg-light text-dark border"
+          >{{ t('period') }}: {{ t('today_label') }}</span
+        >
+        {% elif period == 'yesterday' %}
+        <span class="badge bg-light text-dark border"
+          >{{ t('period') }}: {{ t('yesterday_label') }}</span
+        >
+        {% elif period == 'week' %}
+        <span class="badge bg-light text-dark border"
+          >{{ t('period') }}: {{ t('week_label') }}</span
+        >
+        {% elif period == 'all' %}
+        <span class="badge bg-light text-dark border"
+          >{{ t('period') }}: {{ t('all_option') }}</span
+        >
+        {% endif %} {% if q %}
+        <span class="badge bg-light text-dark border">
+          {{ t('filter_search') }}: “{{ q }}”
+        </span>
+        {% endif %} {% if date_from %}
+        <span class="badge bg-light text-dark border">
+          {{ t('from') }}: {{ date_from }}
+        </span>
+        {% endif %} {% if date_to %}
+        <span class="badge bg-light text-dark border">
+          {{ t('to') }}: {{ date_to }}
+        </span>
+        {% endif %} {% if selected_currency %}
+        <span class="badge bg-light text-dark border">
+          {{ t('table_currency') }}: {{ selected_currency }}
+        </span>
+        {% endif %} {% if selected_category %}
+        <span class="badge bg-light text-dark border">
+          {{ t('filter_category') }}: {{ selected_category }}
+        </span>
+        {% endif %} {% if sort and sort != 'date_desc' %}
+        <span class="badge bg-light text-dark border">
+          {{ t('fabrics_sorting') }}: {% if sort == 'date_asc' %}{{
+          t('sort_date_short_up') }} {% elif sort == 'amount_desc' %}{{
+          t('sort_amount_short_down') }} {% elif sort == 'amount_asc' %}{{
+          t('sort_amount_short_up') }} {% elif sort == 'profit_desc' %}{{
+          t('sort_profit_short_down') }} {% endif %}
+        </span>
+        {% endif %}
+      </div>
       {% endif %}
     </div>
   </div>
 
   {% if totals %}
-    <div class="row g-2 mb-3">
-      {% for cur, t in totals.items() %}
-        <div class="col-12 col-md-4">
-          <div class="card shadow-sm border-0 h-100 mm-total-soft">
-            <div class="card-body py-2">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <div class="small text-muted">
-                  {{ t('total_for_currency').format(currency=cur) }}
-                </div>
-                <span class="badge bg-light text-dark border small">{{ cur }}</span>
-              </div>
-              <div class="small mb-1">
-                <span class="text-muted">{{ t('revenue_label') }}:</span>
-                <span class="fw-semibold">
-                  {{ format_money(t.sell|default(0), cur) }}
-                </span>
-              </div>
-              <div class="small mb-1">
-                <span class="text-muted">{{ t('cost_label') }}:</span>
-                <span class="fw-semibold">
-                  {{ format_money(t.cost|default(0), cur) }}
-                </span>
-              </div>
-              <div class="small">
-                <span class="text-muted">{{ t('profit_label') }}:</span>
-                <span class="fw-bold">
-                  {{ format_money(t.profit|default(0), cur) }}
-                </span>
-              </div>
+  <div class="row g-2 mb-3">
+    {% for cur, total in totals.items() %}
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm border-0 h-100 mm-total-soft">
+        <div class="card-body py-2">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="small text-muted">
+              {{ t('total_for_currency').format(currency=cur) }}
             </div>
+            <span class="badge bg-light text-dark border small">{{ cur }}</span>
+          </div>
+          <div class="small mb-1">
+            <span class="text-muted">{{ t('revenue_label') }}:</span>
+            <span class="fw-semibold">
+              {{ format_money(total.sell|default(0), cur) }}
+            </span>
+          </div>
+          <div class="small mb-1">
+            <span class="text-muted">{{ t('cost_label') }}:</span>
+            <span class="fw-semibold">
+              {{ format_money(total.cost|default(0), cur) }}
+            </span>
+          </div>
+          <div class="small">
+            <span class="text-muted">{{ t('profit_label') }}:</span>
+            <span class="fw-bold">
+              {{ format_money(total.profit|default(0), cur) }}
+            </span>
           </div>
         </div>
-      {% endfor %}
+      </div>
     </div>
+    {% endfor %}
+  </div>
   {% endif %}
 
   <div class="d-md-none mb-3">
     {% if sales|length == 0 %}
-      <div class="alert alert-light border small mb-0">
-        {{ t('no_sales_for_period') }}
-      </div>
-    {% endif %}
-
-    {% for s in sales %}
-      {% set high_profit = s.profit is not none and s.profit > 0 %}
-      <div class="card shadow-sm border-0 mb-2 mm-sale-card {% if high_profit %}mm-sale-card-profit{% endif %}">
-        <div class="card-body py-2">
-          <div class="d-flex justify-content-between align-items-start mb-1">
-            <div>
-              <div class="small text-muted">
-                {{ s.date }}
-              </div>
-              <div class="fw-semibold mm-sale-card-title">
-                {{ s.product.name }}
-              </div>
-              {% if s.product.category %}
-                <div class="small text-muted">
-                  {{ s.product.category }}
-                </div>
-              {% endif %}
-              {% if s.customer_name or s.customer_phone %}
-                <div class="small text-muted mt-1">
-                  {% if s.customer_name %}{{ s.customer_name }}{% endif %}
-                  {% if s.customer_phone %} · {{ s.customer_phone }}{% endif %}
-                </div>
-              {% endif %}
+    <div class="alert alert-light border small mb-0">
+      {{ t('no_sales_for_period') }}
+    </div>
+    {% endif %} {% for s in sales %} {% set high_profit = s.profit is not none
+    and s.profit > 0 %}
+    <div
+      class="card shadow-sm border-0 mb-2 mm-sale-card {% if high_profit %}mm-sale-card-profit{% endif %}"
+    >
+      <div class="card-body py-2">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <div>
+            <div class="small text-muted">{{ s.date }}</div>
+            <div class="fw-semibold mm-sale-card-title">
+              {{ s.product.name }}
             </div>
-            <div class="text-end">
-              <div class="small text-muted">{{ t('quantity') }}</div>
-              <div class="fw-bold mm-sale-card-qty">
-                {{ s.quantity }}
-              </div>
+            {% if s.product.category %}
+            <div class="small text-muted">{{ s.product.category }}</div>
+            {% endif %} {% if s.customer_name or s.customer_phone %}
+            <div class="small text-muted mt-1">
+              {% if s.customer_name %}{{ s.customer_name }}{% endif %} {% if
+              s.customer_phone %} · {{ s.customer_phone }}{% endif %}
             </div>
+            {% endif %}
           </div>
-
-          <div class="d-flex justify-content-between small mb-1">
-            <div>
-              {{ t('price_per_item') }}:
-              <span class="fw-semibold">
-                {{ format_money(s.sell_price_per_item, s.currency) }}
-              </span>
-            </div>
-            <div>
-              {{ t('amount_label') }}:
-              <span class="fw-semibold">
-                {{ format_money(s.total_sell, s.currency) }}
-              </span>
-            </div>
+          <div class="text-end">
+            <div class="small text-muted">{{ t('quantity') }}</div>
+            <div class="fw-bold mm-sale-card-qty">{{ s.quantity }}</div>
           </div>
+        </div>
 
-          <div class="d-flex justify-content-between small text-muted">
-            <div>
-              {{ t('cost_label') }}:
-              <span class="fw-semibold">
-                {{ format_money(s.total_cost, s.currency) }}
-              </span>
-            </div>
-            <div>
-              {{ t('profit_label') }}:
-              <span class="fw-semibold">
-                {{ format_money(s.profit, s.currency) }}
-              </span>
-            </div>
+        <div class="d-flex justify-content-between small mb-1">
+          <div>
+            {{ t('price_per_item') }}:
+            <span class="fw-semibold">
+              {{ format_money(s.sell_price_per_item, s.currency) }}
+            </span>
+          </div>
+          <div>
+            {{ t('amount_label') }}:
+            <span class="fw-semibold">
+              {{ format_money(s.total_sell, s.currency) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between small text-muted">
+          <div>
+            {{ t('cost_label') }}:
+            <span class="fw-semibold">
+              {{ format_money(s.total_cost, s.currency) }}
+            </span>
+          </div>
+          <div>
+            {{ t('profit_label') }}:
+            <span class="fw-semibold">
+              {{ format_money(s.profit, s.currency) }}
+            </span>
           </div>
         </div>
       </div>
+    </div>
     {% endfor %}
   </div>
 
@@ -542,45 +649,44 @@
               <th>{{ t('model_customer_label') }}</th>
               <th class="d-none d-lg-table-cell">{{ t('filter_category') }}</th>
               <th class="text-end text-nowrap">{{ t('quantity') }}</th>
-              <th class="text-end d-none d-md-table-cell text-nowrap">{{ t('price_per_item') }}</th>
+              <th class="text-end d-none d-md-table-cell text-nowrap">
+                {{ t('price_per_item') }}
+              </th>
               <th class="text-end text-nowrap">{{ t('amount_label') }}</th>
-              <th class="text-end d-none d-lg-table-cell text-nowrap">{{ t('cost_label') }}</th>
-              <th class="text-end d-none d-lg-table-cell text-nowrap">{{ t('profit_label') }}</th>
+              <th class="text-end d-none d-lg-table-cell text-nowrap">
+                {{ t('cost_label') }}
+              </th>
+              <th class="text-end d-none d-lg-table-cell text-nowrap">
+                {{ t('profit_label') }}
+              </th>
             </tr>
           </thead>
           <tbody>
-          {% if sales|length == 0 %}
+            {% if sales|length == 0 %}
             <tr>
               <td colspan="9" class="text-center small text-muted py-3">
                 {{ t('no_sales_for_filters') }}
               </td>
             </tr>
-          {% endif %}
-
-          {% for s in sales %}
-            {% set high_profit = s.profit is not none and s.profit > 0 %}
+            {% endif %} {% for s in sales %} {% set high_profit = s.profit is
+            not none and s.profit > 0 %}
             <tr class="{% if high_profit %}table-success{% endif %}">
               <td class="d-none d-md-table-cell text-muted small">
                 {{ s.id }}
               </td>
-              <td class="text-nowrap small text-muted">
-                {{ s.date }}
-              </td>
+              <td class="text-nowrap small text-muted">{{ s.date }}</td>
               <td>
-                <div class="fw-semibold small">
-                  {{ s.product.name }}
-                </div>
+                <div class="fw-semibold small">{{ s.product.name }}</div>
                 <div class="small text-muted">
-                  {% if s.customer_name %}{{ s.customer_name }}{% else %}—{% endif %}
-                  {% if s.customer_phone %} · {{ s.customer_phone }}{% endif %}
+                  {% if s.customer_name %}{{ s.customer_name }}{% else %}—{%
+                  endif %} {% if s.customer_phone %} · {{ s.customer_phone }}{%
+                  endif %}
                 </div>
               </td>
               <td class="d-none d-lg-table-cell small">
                 {{ s.product.category or "" }}
               </td>
-              <td class="text-end text-nowrap small">
-                {{ s.quantity }}
-              </td>
+              <td class="text-end text-nowrap small">{{ s.quantity }}</td>
               <td class="text-end d-none d-md-table-cell text-nowrap small">
                 {{ format_money(s.sell_price_per_item, s.currency) }}
               </td>
@@ -594,31 +700,40 @@
                 {{ format_money(s.profit, s.currency) }}
               </td>
             </tr>
-          {% endfor %}
+            {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
   </div>
-
 </div>
 
 <div class="mm-modal-backdrop" id="mm-filter-backdrop" aria-hidden="true"></div>
 
-<div class="mm-modal" id="mm-filter-modal" role="dialog" aria-modal="true" aria-label="{{ t('sales_filter_title') }}">
+<div
+  class="mm-modal"
+  id="mm-filter-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-label="{{ t('sales_filter_title') }}"
+>
   <div class="mm-modal-card" id="mm-filter-card">
     <div class="mm-modal-head">
       <h2 class="mm-modal-title">{{ t('sales_filter_title') }}</h2>
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="mm-close-filters" style="border-radius:999px;">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        id="mm-close-filters"
+        style="border-radius: 999px"
+      >
         ✕
       </button>
     </div>
 
     <form method="get">
-      <input type="hidden" name="period" value="{{ period or '' }}">
+      <input type="hidden" name="period" value="{{ period or '' }}" />
 
       <div class="mm-modal-body">
-
         <div class="mb-3">
           <label class="form-label small mb-1">{{ t('filter_search') }}</label>
           <input
@@ -627,65 +742,163 @@
             name="q"
             placeholder="{{ t('sales_search_placeholder') }}"
             value="{{ q }}"
-          >
+          />
         </div>
 
         <div class="row g-2 mb-3">
           <div class="col-6">
             <label class="form-label small mb-1">{{ t('from_date') }}</label>
-            <input type="date" class="form-control mm-neo-input" name="from" value="{{ date_from }}">
+            <input
+              type="date"
+              class="form-control mm-neo-input"
+              name="from"
+              value="{{ date_from }}"
+            />
           </div>
           <div class="col-6">
             <label class="form-label small mb-1">{{ t('to_date') }}</label>
-            <input type="date" class="form-control mm-neo-input" name="to" value="{{ date_to }}">
+            <input
+              type="date"
+              class="form-control mm-neo-input"
+              name="to"
+              value="{{ date_to }}"
+            />
           </div>
         </div>
 
         <div class="row g-2 mb-3">
           <div class="col-6">
-            <label class="form-label small mb-1">{{ t('table_currency') }}</label>
+            <label class="form-label small mb-1"
+              >{{ t('table_currency') }}</label
+            >
             {% if sales_currencies %}
-              <select name="currency" class="form-select">
-                <option value="">{{ t('all_option') }}</option>
-                {% for cur in sales_currencies %}
-                  <option value="{{ cur }}" {% if selected_currency == cur %}selected{% endif %}>{{ cur }}</option>
-                {% endfor %}
-              </select>
+            <select name="currency" class="form-select">
+              <option value="">{{ t('all_option') }}</option>
+              {% for cur in sales_currencies %}
+              <option
+                value="{{ cur }}"
+                {%
+                if
+                selected_currency=""
+                ="cur"
+                %}selected{%
+                endif
+                %}
+              >
+                {{ cur }}
+              </option>
+              {% endfor %}
+            </select>
             {% else %}
-              <select name="currency" class="form-select">
-                <option value="">{{ t('all_option') }}</option>
-              </select>
+            <select name="currency" class="form-select">
+              <option value="">{{ t('all_option') }}</option>
+            </select>
             {% endif %}
           </div>
 
           <div class="col-6">
-            <label class="form-label small mb-1">{{ t('fabrics_sorting') }}</label>
+            <label class="form-label small mb-1"
+              >{{ t('fabrics_sorting') }}</label
+            >
             <select name="sort" class="form-select">
-              <option value="date_desc" {% if sort == 'date_desc' or not sort %}selected{% endif %}>{{ t('sort_date_short_down') }}</option>
-              <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>{{ t('sort_date_short_up') }}</option>
-              <option value="amount_desc" {% if sort == 'amount_desc' %}selected{% endif %}>{{ t('sort_amount_short_down') }}</option>
-              <option value="amount_asc" {% if sort == 'amount_asc' %}selected{% endif %}>{{ t('sort_amount_short_up') }}</option>
-              <option value="profit_desc" {% if sort == 'profit_desc' %}selected{% endif %}>{{ t('sort_profit_short_down') }}</option>
+              <option
+                value="date_desc"
+                {%
+                if
+                sort=""
+                ="date_desc"
+                or
+                not
+                sort
+                %}selected{%
+                endif
+                %}
+              >
+                {{ t('sort_date_short_down') }}
+              </option>
+              <option
+                value="date_asc"
+                {%
+                if
+                sort=""
+                ="date_asc"
+                %}selected{%
+                endif
+                %}
+              >
+                {{ t('sort_date_short_up') }}
+              </option>
+              <option
+                value="amount_desc"
+                {%
+                if
+                sort=""
+                ="amount_desc"
+                %}selected{%
+                endif
+                %}
+              >
+                {{ t('sort_amount_short_down') }}
+              </option>
+              <option
+                value="amount_asc"
+                {%
+                if
+                sort=""
+                ="amount_asc"
+                %}selected{%
+                endif
+                %}
+              >
+                {{ t('sort_amount_short_up') }}
+              </option>
+              <option
+                value="profit_desc"
+                {%
+                if
+                sort=""
+                ="profit_desc"
+                %}selected{%
+                endif
+                %}
+              >
+                {{ t('sort_profit_short_down') }}
+              </option>
             </select>
           </div>
         </div>
 
         {% if sales_categories %}
-          <div class="mb-3">
-            <label class="form-label small mb-1">{{ t('filter_category') }}</label>
-            <select name="category" class="form-select">
-              <option value="">{{ t('all_option') }}</option>
-              {% for cat in sales_categories %}
-                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
-              {% endfor %}
-            </select>
-          </div>
+        <div class="mb-3">
+          <label class="form-label small mb-1"
+            >{{ t('filter_category') }}</label
+          >
+          <select name="category" class="form-select">
+            <option value="">{{ t('all_option') }}</option>
+            {% for cat in sales_categories %}
+            <option
+              value="{{ cat }}"
+              {%
+              if
+              selected_category=""
+              ="cat"
+              %}selected{%
+              endif
+              %}
+            >
+              {{ cat }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
         {% endif %}
-
       </div>
 
       <div class="mm-modal-actions">
-        <a href="{{ url_for('sales.list_sales') }}" class="btn btn-outline-secondary w-50">
+        <a
+          href="{{ url_for('sales.list_sales') }}"
+          class="btn btn-outline-secondary w-50"
+        >
           {{ t('reset') }}
         </a>
         <button type="submit" class="btn btn-primary w-50">
@@ -697,55 +910,63 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const openBtn = document.getElementById('mm-open-filters');
-  const closeBtn = document.getElementById('mm-close-filters');
-  const modal = document.getElementById('mm-filter-modal');
-  const backdrop = document.getElementById('mm-filter-backdrop');
-  const card = document.getElementById('mm-filter-card');
+  document.addEventListener("DOMContentLoaded", function () {
+    const openBtn = document.getElementById("mm-open-filters");
+    const closeBtn = document.getElementById("mm-close-filters");
+    const modal = document.getElementById("mm-filter-modal");
+    const backdrop = document.getElementById("mm-filter-backdrop");
+    const card = document.getElementById("mm-filter-card");
 
-  let ignoreOutside = false;
+    let ignoreOutside = false;
 
-  function openModal(e){
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (!modal || !backdrop) return;
+    function openModal(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (!modal || !backdrop) return;
 
-    ignoreOutside = true;
-    backdrop.classList.add('open');
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
+      ignoreOutside = true;
+      backdrop.classList.add("open");
+      modal.classList.add("open");
+      document.body.style.overflow = "hidden";
 
-    window.setTimeout(() => { ignoreOutside = false; }, 220);
-  }
+      window.setTimeout(() => {
+        ignoreOutside = false;
+      }, 220);
+    }
 
-  function closeModal(e){
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (!modal || !backdrop) return;
+    function closeModal(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (!modal || !backdrop) return;
 
-    backdrop.classList.remove('open');
-    modal.classList.remove('open');
-    document.body.style.overflow = '';
-  }
+      backdrop.classList.remove("open");
+      modal.classList.remove("open");
+      document.body.style.overflow = "";
+    }
 
-  if (openBtn) openBtn.addEventListener('click', openModal);
-  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (openBtn) openBtn.addEventListener("click", openModal);
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
 
-  if (backdrop) {
-    backdrop.addEventListener('click', function (e) {
-      if (ignoreOutside) return;
-      closeModal(e);
+    if (backdrop) {
+      backdrop.addEventListener("click", function (e) {
+        if (ignoreOutside) return;
+        closeModal(e);
+      });
+    }
+
+    if (card) {
+      card.addEventListener("click", function (e) {
+        e.stopPropagation();
+      });
+    }
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeModal(e);
     });
-  }
-
-  if (card) {
-    card.addEventListener('click', function (e) {
-      e.stopPropagation();
-    });
-  }
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeModal(e);
   });
-});
 </script>
 {% endblock %}s
