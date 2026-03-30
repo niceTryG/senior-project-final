@@ -349,13 +349,7 @@ endblock %} {% block content %}
             {% for cur in sales_currencies %}
             <option
               value="{{ cur }}"
-              {%
-              if
-              selected_currency=""
-              ="cur"
-              %}selected{%
-              endif
-              %}
+              {% if selected_currency == cur %}selected{% endif %}
             >
               {{ cur }}
             </option>
@@ -375,64 +369,31 @@ endblock %} {% block content %}
           <select name="sort" class="form-select form-select-sm">
             <option
               value="date_desc"
-              {%
-              if
-              sort=""
-              ="date_desc"
-              or
-              not
-              sort
-              %}selected{%
-              endif
-              %}
+              {% if sort == 'date_desc' or not sort %}selected{% endif %}
             >
               {{ t('sort_date_newest') }}
             </option>
             <option
               value="date_asc"
-              {%
-              if
-              sort=""
-              ="date_asc"
-              %}selected{%
-              endif
-              %}
+              {% if sort == 'date_asc' %}selected{% endif %}
             >
               {{ t('sort_date_oldest') }}
             </option>
             <option
               value="amount_desc"
-              {%
-              if
-              sort=""
-              ="amount_desc"
-              %}selected{%
-              endif
-              %}
+              {% if sort == 'amount_desc' %}selected{% endif %}
             >
               {{ t('sort_amount_desc') }}
             </option>
             <option
               value="amount_asc"
-              {%
-              if
-              sort=""
-              ="amount_asc"
-              %}selected{%
-              endif
-              %}
+              {% if sort == 'amount_asc' %}selected{% endif %}
             >
               {{ t('sort_amount_asc') }}
             </option>
             <option
               value="profit_desc"
-              {%
-              if
-              sort=""
-              ="profit_desc"
-              %}selected{%
-              endif
-              %}
+              {% if sort == 'profit_desc' %}selected{% endif %}
             >
               {{ t('sort_profit_desc') }}
             </option>
@@ -449,13 +410,7 @@ endblock %} {% block content %}
             {% for cat in sales_categories %}
             <option
               value="{{ cat }}"
-              {%
-              if
-              selected_category=""
-              ="cat"
-              %}selected{%
-              endif
-              %}
+              {% if selected_category == cat %}selected{% endif %}
             >
               {{ cat }}
             </option>
@@ -534,7 +489,6 @@ endblock %} {% block content %}
       {% endif %}
     </div>
   </div>
-
   {% if totals %}
   <div class="row g-2 mb-3">
     {% for cur, total in totals.items() %}

@@ -59,118 +59,346 @@
      PUBLIC TOPBAR
      ========================= */
   .mm-topbar-public {
-    background: #f7f4ef !important;
+    background: rgba(247, 244, 239, 0.94) !important;
     border-bottom: 1px solid rgba(26, 22, 18, 0.08) !important;
-    box-shadow: 0 1px 12px rgba(26, 22, 18, 0.06) !important;
+    box-shadow: 0 1px 12px rgba(26, 22, 18, 0.05) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     padding: 0 !important;
-    height: 56px;
+    min-height: 62px;
   }
 
-  .mm-topbar-public .navbar-brand {
+  .mm-topbar-public .container-fluid {
+    min-height: 62px;
+  }
+
+  .mm-public-brand {
     color: #1a1612 !important;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    display: flex;
+    text-decoration: none;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     padding: 0;
+    min-width: 0;
   }
 
-  .mm-topbar-public .brand-logo {
-    height: 28px;
-    width: auto;
-    border-radius: 6px;
-  }
-
-  .mm-topbar-public .brand-text {
+  .mm-public-brand:hover {
     color: #1a1612 !important;
-    font-size: 1rem;
   }
 
-  .mm-pub-nav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: auto;
-  }
-
-  .mm-pub-link {
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #5c5650 !important;
-    text-decoration: none;
-    padding: 6px 12px;
-    border-radius: 2px;
-    transition: color 0.15s, background 0.15s;
-    white-space: nowrap;
-  }
-
-  .mm-pub-link:hover {
-    color: #1a1612 !important;
-    background: rgba(26, 22, 18, 0.05);
-  }
-
-  .mm-pub-tg {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    background: #1a1612 !important;
-    color: #f7f4ef !important;
-    text-decoration: none;
-    padding: 7px 16px;
-    border-radius: 2px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.18s, transform 0.12s;
-    white-space: nowrap;
-    margin-left: 4px;
-  }
-
-  .mm-pub-tg:hover {
-    background: #c4551a !important;
-    color: #f7f4ef !important;
-    transform: translateY(-1px);
-  }
-
-  .mm-pub-login {
-    font-size: 11px;
-    font-weight: 400;
-    color: #b0a89e !important;
-    text-decoration: none;
-    padding: 6px 10px;
-    transition: color 0.15s;
-    white-space: nowrap;
-    margin-left: 2px;
-  }
-
-  .mm-pub-login:hover {
-    color: #5c5650 !important;
-  }
-
-  .mm-pub-divider {
-    width: 1px;
-    height: 18px;
-    background: rgba(26, 22, 18, 0.12);
-    margin: 0 6px;
+  .mm-public-brand-mark {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #1a1612, #c4551a);
+    box-shadow: 0 0 0 5px rgba(196, 85, 26, 0.08);
     flex-shrink: 0;
   }
 
-  @media (max-width: 480px) {
-    .mm-pub-hide-xs {
-      display: none !important;
+  .mm-public-brand-copy {
+    min-width: 0;
+  }
+
+  .mm-public-brand-title {
+    color: #1a1612;
+    font-size: 0.98rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+
+  .mm-public-brand-sub {
+    margin-top: 3px;
+    color: #847a71;
+    font-size: 0.67rem;
+    line-height: 1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .mm-public-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  .mm-public-quick-link {
+    color: #6d645c !important;
+    text-decoration: none;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0 2px;
+    white-space: nowrap;
+  }
+
+  .mm-public-quick-link:hover {
+    color: #1a1612 !important;
+  }
+
+  .mm-public-menu-btn {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(26, 22, 18, 0.09);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 5px;
+    padding: 0 11px;
+    box-shadow: 0 8px 18px rgba(26, 22, 18, 0.06);
+  }
+
+  .mm-public-menu-btn:hover {
+    background: #fff;
+    border-color: rgba(26, 22, 18, 0.16);
+  }
+
+  .mm-public-menu-btn span {
+    display: block;
+    height: 2px;
+    border-radius: 999px;
+    background: #1a1612;
+  }
+
+  .mm-public-menu-btn span:nth-child(1) {
+    width: 18px;
+  }
+
+  .mm-public-menu-btn span:nth-child(2) {
+    width: 24px;
+  }
+
+  .mm-public-menu-btn span:nth-child(3) {
+    width: 14px;
+  }
+
+  .mm-public-offcanvas {
+    background:
+      radial-gradient(circle at top right, rgba(196, 85, 26, 0.12), transparent 34%),
+      linear-gradient(180deg, #fffdf9, #f7f1ea) !important;
+    border-left: 1px solid rgba(26, 22, 18, 0.08);
+    color: #1a1612;
+  }
+
+  .mm-public-offcanvas .offcanvas-header {
+    padding: 18px 18px 12px;
+    border-bottom: 1px solid rgba(26, 22, 18, 0.07);
+  }
+
+  .mm-public-offcanvas .offcanvas-title {
+    font-size: 1.02rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .mm-public-offcanvas .offcanvas-body {
+    padding: 16px 16px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .mm-public-menu-card {
+    border: 1px solid rgba(26, 22, 18, 0.08);
+    background: rgba(255, 255, 255, 0.78);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 10px 26px rgba(26, 22, 18, 0.05);
+  }
+
+  .mm-public-menu-head {
+    padding: 14px 16px 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8c8178;
+  }
+
+  .mm-public-menu-list {
+    padding: 0 10px 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .mm-public-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 50px;
+    padding: 12px 12px;
+    border-radius: 16px;
+    text-decoration: none;
+    color: #1a1612;
+    background: rgba(26, 22, 18, 0.03);
+    border: 1px solid rgba(26, 22, 18, 0.06);
+    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+  }
+
+  .mm-public-menu-item:hover {
+    color: #1a1612;
+    background: rgba(196, 85, 26, 0.06);
+    border-color: rgba(196, 85, 26, 0.12);
+    transform: translateY(-1px);
+  }
+
+  .mm-public-menu-item-left {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+  }
+
+  .mm-public-menu-ico {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 22, 18, 0.05);
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+
+  .mm-public-menu-label {
+    min-width: 0;
+  }
+
+  .mm-public-menu-title {
+    font-size: 0.93rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #1a1612;
+  }
+
+  .mm-public-menu-sub {
+    margin-top: 3px;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: #857a71;
+  }
+
+  .mm-public-menu-arrow {
+    color: #aa9f95;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .mm-public-action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mm-public-action-btn {
+    min-height: 48px;
+    border-radius: 16px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 14px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mm-public-action-btn.telegram {
+    background: #1a1612;
+    color: #f7f4ef;
+    box-shadow: 0 14px 28px rgba(26, 22, 18, 0.12);
+  }
+
+  .mm-public-action-btn.telegram:hover {
+    background: #c4551a;
+    color: #fff;
+  }
+
+  .mm-public-action-btn.call {
+    background: rgba(255, 255, 255, 0.84);
+    color: #1a1612;
+    border: 1px solid rgba(26, 22, 18, 0.09);
+  }
+
+  .mm-public-action-btn.call:hover {
+    background: #fff;
+    color: #1a1612;
+  }
+
+  .mm-public-lang-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .mm-public-lang-pill {
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 22, 18, 0.04);
+    border: 1px solid rgba(26, 22, 18, 0.08);
+    color: #1a1612;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mm-public-lang-pill.active {
+    background: #1a1612;
+    color: #f7f4ef;
+    border-color: #1a1612;
+  }
+
+  .mm-public-login {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    width: 100%;
+    border-radius: 16px;
+    text-decoration: none;
+    background: rgba(26, 22, 18, 0.05);
+    border: 1px solid rgba(26, 22, 18, 0.08);
+    color: #1a1612;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mm-public-login:hover {
+    color: #1a1612;
+    background: rgba(196, 85, 26, 0.06);
+    border-color: rgba(196, 85, 26, 0.12);
+  }
+
+  @media (max-width: 575.98px) {
+    .mm-public-brand-sub,
+    .mm-public-quick-link {
+      display: none;
     }
 
-    .mm-pub-link {
-      padding: 6px 8px;
-      font-size: 11px;
+    .mm-public-offcanvas {
+      width: min(92vw, 380px) !important;
     }
 
-    .mm-pub-tg {
-      padding: 7px 12px;
+    .mm-public-action-grid {
+      grid-template-columns: 1fr;
     }
   }
 
@@ -314,21 +542,6 @@
   .mm-lang-item small {
     font-size: 0.72rem;
     color: rgba(17, 17, 17, 0.5);
-  }
-
-  .mm-topbar-public .mm-lang-toggle {
-    background: rgba(255, 255, 255, 0.82);
-    border-color: rgba(26, 22, 18, 0.1);
-    color: #1a1612 !important;
-  }
-
-  .mm-topbar-public .mm-lang-toggle:hover {
-    background: #fff;
-    color: #1a1612 !important;
-  }
-
-  .mm-topbar-public .mm-lang-menu {
-    border-color: rgba(26, 22, 18, 0.1);
   }
 
   /* =========================
@@ -638,87 +851,207 @@
 
   <body class="mm-body">
     {% if request.blueprint == 'public' %}
+    {% set public_phone = public_phone or '+998 99 000 00 00' %}
+    {% set public_phone_href = public_phone_href or '+998990000000' %}
     <nav class="navbar mm-topbar-public">
       <div class="container-fluid px-3 px-md-4 h-100 d-flex align-items-center">
-        <a class="navbar-brand" href="{{ url_for('public.home') }}">
-          <img
-            src="{{ url_for('static', filename='img/minimoda_logo.png') }}"
-            alt="Mini Moda"
-            class="brand-logo"
-            onerror="this.style.display = 'none'"
-          />
-          <span class="brand-text">Mini Moda</span>
+        <a href="{{ url_for('public.catalog') }}" class="mm-public-brand">
+          <span class="mm-public-brand-mark"></span>
+          <span class="mm-public-brand-copy">
+            <span class="mm-public-brand-title">Mini Moda</span>
+            <span class="mm-public-brand-sub">
+              {{ t('public_tagline') if t else 'Wholesale kids clothing' }}
+            </span>
+          </span>
         </a>
 
-        <div class="mm-pub-nav">
-          <div class="mm-lang-dropdown">
-            <a
-              class="mm-lang-toggle dropdown-toggle"
-              href="#"
-              role="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <span class="mm-lang-current">
-                {% if current_lang == 'ru' %}RU {% elif current_lang == 'uz' %}UZ {% else %}EN {% endif %}
-              </span>
-              <span class="mm-lang-caret">▾</span>
-            </a>
-            <div class="dropdown-menu dropdown-menu-end mm-lang-menu">
-              <a
-                href="{{ url_for('switch_language', lang_code='ru') }}"
-                class="mm-lang-item {% if current_lang == 'ru' %}active{% endif %}"
-              >
-                <span>{{ t('lang_ru') }}</span><small>{{ t('language_name_russian') }}</small>
-              </a>
-              <a
-                href="{{ url_for('switch_language', lang_code='en') }}"
-                class="mm-lang-item {% if current_lang == 'en' %}active{% endif %}"
-              >
-                <span>{{ t('lang_en') }}</span><small>{{ t('language_name_english') }}</small>
-              </a>
-              <a
-                href="{{ url_for('switch_language', lang_code='uz') }}"
-                class="mm-lang-item {% if current_lang == 'uz' %}active{% endif %}"
-              >
-                <span>{{ t('lang_uz') }}</span><small>{{ t('language_name_uzbek') }}</small>
-              </a>
-            </div>
-          </div>
-
-          <div class="mm-pub-divider mm-pub-hide-xs"></div>
-
-          <a
-            href="{{ url_for('public.catalog') }}"
-            class="mm-pub-link mm-pub-hide-xs"
-          >
+        <div class="mm-public-topbar-right">
+          <a href="{{ url_for('public.catalog') }}" class="mm-public-quick-link">
             {{ t('public_catalog') if t else 'Catalog' }}
           </a>
 
-          <div class="mm-pub-divider mm-pub-hide-xs"></div>
-
-          {% if public_telegram_url %}
-          <a
-            href="{{ public_telegram_url }}"
-            target="_blank"
-            rel="noopener"
-            class="mm-pub-tg"
+          <button
+            class="btn mm-public-menu-btn"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#mmPublicMenu"
+            aria-controls="mmPublicMenu"
+            aria-label="{{ t('toggle_navigation') }}"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.247l-2.02 9.52c-.148.658-.538.818-1.09.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.16 14.4l-2.95-.924c-.64-.203-.654-.64.136-.948l11.527-4.443c.533-.194 1.003.13.689.162z"
-              />
-            </svg>
-            Telegram
-          </a>
-          {% endif %}
-
-          <a href="{{ url_for('auth.login') }}" class="mm-pub-login">
-            {{ t('public_login') if t else 'Login' }}
-          </a>
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
         </div>
       </div>
     </nav>
+
+    <div
+      class="offcanvas offcanvas-end mm-public-offcanvas"
+      tabindex="-1"
+      id="mmPublicMenu"
+      aria-labelledby="mmPublicMenuLabel"
+    >
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="mmPublicMenuLabel">Mini Moda</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="offcanvas"
+          aria-label="{{ t('aria_close') }}"
+        ></button>
+      </div>
+
+      <div class="offcanvas-body">
+        <div class="mm-public-menu-card">
+          <div class="mm-public-menu-head">
+            {{ t('public_catalog') if t else 'Catalog' }}
+          </div>
+          <div class="mm-public-menu-list">
+            <a class="mm-public-menu-item" href="{{ url_for('public.catalog') }}">
+              <div class="mm-public-menu-item-left">
+                <div class="mm-public-menu-ico">🛍️</div>
+                <div class="mm-public-menu-label">
+                  <div class="mm-public-menu-title">
+                    {{ t('public_catalog') if t else 'Catalog' }}
+                  </div>
+                  <div class="mm-public-menu-sub">
+                    {{ t('public_view_catalog') if t else 'Browse all products' }}
+                  </div>
+                </div>
+              </div>
+              <div class="mm-public-menu-arrow">›</div>
+            </a>
+
+            <a class="mm-public-menu-item" href="{{ url_for('public.catalog') }}#new">
+              <div class="mm-public-menu-item-left">
+                <div class="mm-public-menu-ico">✨</div>
+                <div class="mm-public-menu-label">
+                  <div class="mm-public-menu-title">
+                    {{ t('public_home_category_new') if t else 'New arrivals' }}
+                  </div>
+                  <div class="mm-public-menu-sub">
+                    {{ t('public_home_category_new_meta') if t else 'Latest products and fresh drops' }}
+                  </div>
+                </div>
+              </div>
+              <div class="mm-public-menu-arrow">›</div>
+            </a>
+
+            <a class="mm-public-menu-item" href="{{ url_for('public.catalog') }}#stock">
+              <div class="mm-public-menu-item-left">
+                <div class="mm-public-menu-ico">📦</div>
+                <div class="mm-public-menu-label">
+                  <div class="mm-public-menu-title">
+                    {{ t('public_in_stock') if t else 'In stock' }}
+                  </div>
+                  <div class="mm-public-menu-sub">
+                    {{ t('public_home_availability') if t else 'View available wholesale items' }}
+                  </div>
+                </div>
+              </div>
+              <div class="mm-public-menu-arrow">›</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="mm-public-menu-card">
+          <div class="mm-public-menu-head">
+            {{ t('menu_more') if t else 'Information' }}
+          </div>
+          <div class="mm-public-menu-list">
+            <a class="mm-public-menu-item" href="/#about">
+              <div class="mm-public-menu-item-left">
+                <div class="mm-public-menu-ico">ℹ️</div>
+                <div class="mm-public-menu-label">
+                  <div class="mm-public-menu-title">
+                    {{ t('public_home_about_kicker') if t else 'About us' }}
+                  </div>
+                  <div class="mm-public-menu-sub">
+                    {{ t('public_home_about_body_2') if t else 'Learn about our wholesale business' }}
+                  </div>
+                </div>
+              </div>
+              <div class="mm-public-menu-arrow">›</div>
+            </a>
+
+            <a class="mm-public-menu-item" href="/#location">
+              <div class="mm-public-menu-item-left">
+                <div class="mm-public-menu-ico">📍</div>
+                <div class="mm-public-menu-label">
+                  <div class="mm-public-menu-title">
+                    {{ t('public_home_store_location') if t else 'Location' }}
+                  </div>
+                  <div class="mm-public-menu-sub">
+                    {{ t('public_home_location_text') if t else 'Find our store and market location' }}
+                  </div>
+                </div>
+              </div>
+              <div class="mm-public-menu-arrow">›</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="mm-public-menu-card">
+          <div class="mm-public-menu-head">
+            {{ t('public_home_order_via') if t else 'Contact' }}
+          </div>
+          <div class="mm-public-menu-list">
+            <div class="mm-public-action-grid">
+              {% if public_telegram_url %}
+              <a
+                href="{{ public_telegram_url }}"
+                target="_blank"
+                rel="noopener"
+                class="mm-public-action-btn telegram"
+              >
+                Telegram
+              </a>
+              {% endif %}
+
+              <a
+                href="tel:{{ public_phone_href }}"
+                class="mm-public-action-btn call"
+              >
+                {{ t('public_home_phone_label') if t else 'Call us' }}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="mm-public-menu-card">
+          <div class="mm-public-menu-head">
+            {{ t('switch_language') if t else 'Language' }}
+          </div>
+          <div class="mm-public-menu-list">
+            <div class="mm-public-lang-row">
+              <a
+                href="{{ url_for('switch_language', lang_code='ru') }}"
+                class="mm-public-lang-pill {% if current_lang == 'ru' %}active{% endif %}"
+              >
+                RU
+              </a>
+              <a
+                href="{{ url_for('switch_language', lang_code='en') }}"
+                class="mm-public-lang-pill {% if current_lang == 'en' %}active{% endif %}"
+              >
+                EN
+              </a>
+              <a
+                href="{{ url_for('switch_language', lang_code='uz') }}"
+                class="mm-public-lang-pill {% if current_lang == 'uz' %}active{% endif %}"
+              >
+                UZ
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <a href="{{ url_for('auth.login') }}" class="mm-public-login">
+          {{ t('public_login') if t else 'Login' }}
+        </a>
+      </div>
+    </div>
 
     {% else %}
     {% set ep = request.endpoint or '' %}

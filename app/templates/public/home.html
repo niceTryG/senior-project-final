@@ -51,6 +51,7 @@
     font-family: 'Inter', sans-serif;
     overflow-x: clip;
     position: relative;
+    padding-top: 20px;
   }
 
   .mm-root::before,
@@ -138,7 +139,7 @@
   }
 
   .mm-section {
-    padding: 96px 0;
+    padding: 40px 0 96px;
   }
 
   .mm-section-head {
@@ -201,7 +202,6 @@
     transform: translateY(-1px);
   }
 
-  .mm-btn-lg,
   .mm-btn-sm,
   .mm-location-btn {
     display: inline-flex;
@@ -215,50 +215,6 @@
     font-family: 'Inter', sans-serif;
   }
 
-  .mm-btn-lg {
-    min-height: 52px;
-    padding: 0 22px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .mm-btn-lg.primary,
-  .mm-btn-sm.primary,
-  .mm-location-btn.primary {
-    background: var(--mm-ink);
-    color: #fff;
-    box-shadow: 0 14px 30px rgba(23, 19, 17, 0.14);
-  }
-
-  .mm-btn-lg.primary:hover,
-  .mm-btn-sm.primary:hover,
-  .mm-location-btn.primary:hover {
-    background: var(--mm-warm);
-    color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 18px 34px rgba(182, 90, 36, 0.20);
-  }
-
-  .mm-btn-lg.secondary,
-  .mm-location-btn.secondary {
-    background: rgba(255, 255, 255, 0.78);
-    color: var(--mm-ink);
-    border: 1px solid var(--mm-line-strong);
-    backdrop-filter: blur(8px);
-  }
-
-  .mm-btn-lg.secondary:hover,
-  .mm-location-btn.secondary:hover {
-    background: #fff;
-    border-color: rgba(23, 19, 17, 0.22);
-    color: var(--mm-ink);
-    transform: translateY(-2px);
-    box-shadow: var(--mm-shadow-sm);
-  }
-
   .mm-btn-sm {
     min-height: 44px;
     padding: 0 14px;
@@ -267,6 +223,21 @@
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;
+  }
+
+  .mm-btn-sm.primary,
+  .mm-location-btn.primary {
+    background: var(--mm-ink);
+    color: #fff;
+    box-shadow: 0 14px 30px rgba(23, 19, 17, 0.14);
+  }
+
+  .mm-btn-sm.primary:hover,
+  .mm-location-btn.primary:hover {
+    background: var(--mm-warm);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 18px 34px rgba(182, 90, 36, 0.20);
   }
 
   .mm-btn-sm.telegram {
@@ -290,313 +261,12 @@
     pointer-events: none;
   }
 
-  .mm-ticker {
-    position: relative;
-    background: rgba(23, 19, 17, 0.97);
-    color: #f8f4ee;
-    overflow: hidden;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .mm-ticker::before,
-  .mm-ticker::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 88px;
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  .mm-ticker::before {
-    left: 0;
-    background: linear-gradient(90deg, rgba(23, 19, 17, 1) 0%, rgba(23, 19, 17, 0) 100%);
-  }
-
-  .mm-ticker::after {
-    right: 0;
-    background: linear-gradient(270deg, rgba(23, 19, 17, 1) 0%, rgba(23, 19, 17, 0) 100%);
-  }
-
-  .mm-ticker-track {
-    display: flex;
-    width: max-content;
-    animation: mmTicker 32s linear infinite;
-  }
-
-  .mm-ticker-group {
-    display: inline-flex;
-    align-items: center;
-    white-space: nowrap;
-    padding: 12px 0;
-  }
-
-  .mm-ticker-group span {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.20em;
-    text-transform: uppercase;
-    padding: 0 20px;
-    opacity: 0.74;
-  }
-
-  .mm-ticker-group .dot {
-    color: #d18b62;
-    opacity: 1;
-    padding: 0 5px;
-  }
-
-  @keyframes mmTicker {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
-
-  .mm-hero {
-    padding: 26px 0 42px;
-  }
-
-  .mm-hero-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.16fr) minmax(360px, 0.84fr);
-    gap: 20px;
-    align-items: stretch;
-  }
-
-  .mm-hero-main,
-  .mm-side-categories,
-  .mm-side-stats,
   .mm-products-shell,
   .mm-about-shell,
   .mm-location-card {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 253, 250, 0.98));
     border: 1px solid rgba(23, 19, 17, 0.08);
     box-shadow: var(--mm-shadow-md);
-  }
-
-  .mm-hero-main,
-  .mm-side-categories,
-  .mm-side-stats {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .mm-hero-main::before,
-  .mm-side-categories::before,
-  .mm-side-stats::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(140deg, rgba(182, 90, 36, 0.06), transparent 34%),
-      linear-gradient(180deg, transparent, rgba(23, 19, 17, 0.015));
-    pointer-events: none;
-  }
-
-  .mm-hero-main {
-    min-height: 610px;
-    padding: 46px;
-    border-radius: var(--mm-radius-lg);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .mm-hero-copy,
-  .mm-hero-footer {
-    position: relative;
-    z-index: 1;
-  }
-
-  .mm-hero-title {
-    margin: 22px 0 18px;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(68px, 9vw, 118px);
-    line-height: 0.82;
-    letter-spacing: -0.05em;
-    color: var(--mm-ink);
-    font-weight: 600;
-  }
-
-  .mm-hero-title em {
-    display: block;
-    color: var(--mm-warm);
-    font-style: italic;
-  }
-
-  .mm-hero-sub {
-    max-width: 580px;
-    margin: 0 0 24px;
-    font-size: 17px;
-    line-height: 1.8;
-    color: var(--mm-muted);
-  }
-
-  .mm-hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .mm-hero-footer {
-    display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 18px;
-    align-items: end;
-    margin-top: 36px;
-    padding-top: 24px;
-    border-top: 1px solid rgba(23, 19, 17, 0.08);
-  }
-
-  .mm-hero-points {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .mm-hero-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 38px;
-    padding: 0 14px;
-    border-radius: 999px;
-    background: rgba(23, 19, 17, 0.035);
-    border: 1px solid rgba(23, 19, 17, 0.07);
-    font-size: 11px;
-    color: var(--mm-ink-soft);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .mm-hero-note {
-    max-width: 260px;
-    justify-self: end;
-    text-align: right;
-    color: var(--mm-muted);
-    font-size: 13px;
-    line-height: 1.75;
-  }
-
-  .mm-hero-side {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .mm-side-categories,
-  .mm-side-stats {
-    padding: 24px;
-    border-radius: 32px;
-  }
-
-  .mm-side-head {
-    position: relative;
-    z-index: 1;
-    margin-bottom: 18px;
-  }
-
-  .mm-side-title {
-    margin: 0 0 8px;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 35px;
-    line-height: 0.98;
-    letter-spacing: -0.03em;
-    font-weight: 600;
-  }
-
-  .mm-side-text {
-    margin: 0;
-    max-width: 340px;
-    color: var(--mm-muted);
-    font-size: 14px;
-    line-height: 1.75;
-  }
-
-  .mm-category-grid {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-
-  .mm-category-card {
-    min-height: 132px;
-    padding: 18px;
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(249, 245, 239, 0.94));
-    border: 1px solid rgba(23, 19, 17, 0.08);
-    text-decoration: none;
-    color: var(--mm-ink);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  }
-
-  .mm-category-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--mm-shadow-sm);
-    border-color: rgba(182, 90, 36, 0.18);
-    color: var(--mm-ink);
-  }
-
-  .mm-category-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--mm-warm);
-    font-weight: 700;
-  }
-
-  .mm-category-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 31px;
-    line-height: 0.92;
-    letter-spacing: -0.03em;
-    font-weight: 600;
-  }
-
-  .mm-category-meta {
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--mm-muted);
-  }
-
-  .mm-hero-mini-stats {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-
-  .mm-mini-stat {
-    padding: 18px 16px;
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 245, 239, 0.94));
-    border: 1px solid rgba(23, 19, 17, 0.08);
-  }
-
-  .mm-mini-stat-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 34px;
-    line-height: 0.94;
-    letter-spacing: -0.03em;
-    color: var(--mm-ink);
-    font-weight: 600;
-  }
-
-  .mm-mini-stat-label {
-    margin-top: 8px;
-    font-size: 10px;
-    line-height: 1.55;
-    text-transform: uppercase;
-    letter-spacing: 0.13em;
-    color: var(--mm-muted);
-    font-weight: 700;
   }
 
   .mm-products-shell {
@@ -942,6 +612,10 @@
     text-align: right;
   }
 
+  .mm-hours-row.special .mm-hours-day {
+    color: var(--mm-warm);
+  }
+
   .mm-location-section {
     padding: 96px 0;
   }
@@ -1092,20 +766,9 @@
   }
 
   @media (max-width: 1100px) {
-    .mm-hero-grid,
     .mm-about-grid,
     .mm-location-card {
       grid-template-columns: 1fr;
-    }
-
-    .mm-hero-main {
-      min-height: auto;
-    }
-
-    .mm-hero-note {
-      justify-self: start;
-      text-align: left;
-      max-width: 100%;
     }
   }
 
@@ -1114,10 +777,6 @@
     .mm-about,
     .mm-location-section {
       padding: 78px 0;
-    }
-
-    .mm-hero-main {
-      padding: 34px;
     }
 
     .mm-products-shell,
@@ -1141,34 +800,19 @@
       width: calc(100% + 16px);
       margin-left: -8px;
       margin-right: -8px;
-    }
-
-    .mm-hero {
-      padding: 20px 0 28px;
+      padding-top: 10px;
     }
 
     .mm-section,
     .mm-about,
     .mm-location-section {
-      padding: 62px 0;
+      padding: 48px 0 62px;
     }
 
-    .mm-hero-main,
-    .mm-side-categories,
-    .mm-side-stats,
     .mm-products-shell,
     .mm-about-shell,
     .mm-location-card {
       border-radius: 24px;
-    }
-
-    .mm-hero-main {
-      padding: 26px;
-    }
-
-    .mm-side-categories,
-    .mm-side-stats {
-      padding: 18px;
     }
 
     .mm-products-shell,
@@ -1181,11 +825,6 @@
       gap: 14px;
     }
 
-    .mm-hero-title {
-      font-size: clamp(54px, 16vw, 84px);
-    }
-
-    .mm-hero-footer,
     .mm-section-head,
     .mm-card-meta {
       grid-template-columns: 1fr;
@@ -1193,8 +832,6 @@
       align-items: flex-start;
     }
 
-    .mm-category-grid,
-    .mm-hero-mini-stats,
     .mm-grid {
       grid-template-columns: 1fr;
     }
@@ -1220,15 +857,6 @@
       padding-right: 14px;
     }
 
-    .mm-btn-lg {
-      width: 100%;
-    }
-
-    .mm-hero-actions {
-      width: 100%;
-      flex-direction: column;
-    }
-
     .mm-card-topline {
       flex-direction: column;
       align-items: flex-start;
@@ -1250,167 +878,7 @@
   }
 </style>
 
-{% set public_brand_name = public_brand_name or 'Mini Moda' %}
-{% set public_city = public_city or 'Tashkent' %}
-{% set public_country = public_country or 'Uzbekistan' %}
-{% set public_location_name = public_location_name or 'Abu Saxiy Bazar' %}
-{% set public_address = public_address or (public_location_name ~ ', ' ~ public_city ~ ', ' ~ public_country) %}
-{% set public_phone = public_phone or '+998 99 000 00 00' %}
-{% set public_phone_href = public_phone_href or '+998990000000' %}
-{% set public_year_started = public_year_started or '2013' %}
-{% set public_best_time = public_best_time or 'Early morning market hours' %}
-{% set public_map_lat = public_map_lat or '41.24625' %}
-{% set public_map_lng = public_map_lng or '69.167761' %}
-{% set public_catalog_url = url_for('public.catalog') %}
-{% set public_maps_url = 'https://www.google.com/maps?q=' ~ public_map_lat ~ ',' ~ public_map_lng %}
-{% set public_directions_url = 'https://www.google.com/maps/dir/?api=1&destination=' ~ public_map_lat ~ ',' ~ public_map_lng %}
-
 <div class="mm-root">
-
-  <div class="mm-ticker" aria-hidden="true">
-    {% set items = [
-      public_brand_name,
-      '|',
-      public_city,
-      '|',
-      (t('public_home_ticker_wholesale') if t else 'Wholesale'),
-      '|',
-      (t('public_home_ticker_kids_clothing') if t else 'Kids clothing'),
-      '|',
-      (t('public_home_ticker_export') if t else 'Export'),
-      '|',
-      (t('public_home_ticker_since_2013') if t else 'Since ' ~ public_year_started),
-      '|'
-    ] %}
-    <div class="mm-ticker-track">
-      <div class="mm-ticker-group">
-        {% for item in items %}
-          {% if item == '|' %}
-            <span class="dot">&middot;</span>
-          {% else %}
-            <span>{{ item }}</span>
-          {% endif %}
-        {% endfor %}
-      </div>
-      <div class="mm-ticker-group">
-        {% for item in items %}
-          {% if item == '|' %}
-            <span class="dot">&middot;</span>
-          {% else %}
-            <span>{{ item }}</span>
-          {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <section class="mm-hero">
-    <div class="mm-container">
-      <div class="mm-hero-grid">
-
-        <div class="mm-hero-main">
-          <div class="mm-hero-copy">
-            <div class="mm-kicker">
-              <span class="mm-dot"></span>
-              {{ public_city }}, {{ public_country }} · {{ t('public_home_ticker_since_2013') if t else 'Since ' ~ public_year_started }}
-            </div>
-
-            <h1 class="mm-hero-title">
-              {{ public_brand_name.split(' ')[0] if ' ' in public_brand_name else public_brand_name }}
-              <em>{{ public_brand_name.split(' ', 1)[1] if ' ' in public_brand_name else 'Kids' }}</em>
-            </h1>
-
-            <p class="mm-hero-sub">
-              {{ t('public_tagline') if t else 'Wholesale kids clothing for shops and resellers.' }}
-            </p>
-
-            <div class="mm-hero-actions">
-              <a href="{{ public_catalog_url }}" class="mm-btn-lg primary">
-                {{ t('public_view_catalog') if t else 'View catalog' }}
-              </a>
-
-              {% if public_telegram_url %}
-                <a href="{{ public_telegram_url }}" target="_blank" rel="noopener" class="mm-btn-lg secondary">
-                  {{ t('public_order_tg') if t else 'Order via Telegram' }}
-                </a>
-              {% endif %}
-            </div>
-          </div>
-
-          <div class="mm-hero-footer">
-            <div class="mm-hero-points">
-              <span class="mm-hero-pill">{{ t('public_home_hero_pill_wholesale_only') if t else 'Wholesale only' }}</span>
-              <span class="mm-hero-pill">{{ t('public_home_hero_pill_product_codes') if t else 'Product codes ready' }}</span>
-              <span class="mm-hero-pill">{{ t('public_home_hero_pill_fast_order') if t else 'Fast order flow' }}</span>
-            </div>
-
-            <div class="mm-hero-note">
-              {{ t('public_home_hero_note') if t else 'Clear catalog, direct contact, quick ordering.' }}
-            </div>
-          </div>
-        </div>
-
-        <div class="mm-hero-side">
-          <div class="mm-side-categories">
-            <div class="mm-side-head">
-              <h2 class="mm-side-title">{{ t('public_home_categories_title') if t else 'Categories' }}</h2>
-              <p class="mm-side-text">
-                {{ t('public_home_categories_subtitle') if t else 'Browse the main product groups.' }}
-              </p>
-            </div>
-
-            <div class="mm-category-grid">
-              <a href="{{ public_catalog_url }}" class="mm-category-card">
-                <div class="mm-category-label">{{ t('public_home_collection') if t else 'Collection' }}</div>
-                <div class="mm-category-name">{{ t('public_home_category_baby') if t else 'Baby' }}</div>
-                <div class="mm-category-meta">{{ t('public_home_category_baby_meta') if t else 'Soft essentials' }}</div>
-              </a>
-
-              <a href="{{ public_catalog_url }}" class="mm-category-card">
-                <div class="mm-category-label">{{ t('public_home_collection') if t else 'Collection' }}</div>
-                <div class="mm-category-name">{{ t('public_home_category_girls') if t else 'Girls' }}</div>
-                <div class="mm-category-meta">{{ t('public_home_category_girls_meta') if t else 'Dresses & sets' }}</div>
-              </a>
-
-              <a href="{{ public_catalog_url }}" class="mm-category-card">
-                <div class="mm-category-label">{{ t('public_home_collection') if t else 'Collection' }}</div>
-                <div class="mm-category-name">{{ t('public_home_category_boys') if t else 'Boys' }}</div>
-                <div class="mm-category-meta">{{ t('public_home_category_boys_meta') if t else 'Dailywear' }}</div>
-              </a>
-
-              <a href="{{ public_catalog_url }}" class="mm-category-card">
-                <div class="mm-category-label">{{ t('public_home_collection') if t else 'Collection' }}</div>
-                <div class="mm-category-name">{{ t('public_home_category_new') if t else 'New' }}</div>
-                <div class="mm-category-meta">{{ t('public_home_category_new_meta') if t else 'Latest arrivals' }}</div>
-              </a>
-            </div>
-          </div>
-
-          <div class="mm-side-stats">
-            <div class="mm-hero-mini-stats">
-              <div class="mm-mini-stat">
-                <div class="mm-mini-stat-num">10+</div>
-                <div class="mm-mini-stat-label">{{ t('public_home_years_in_business') if t else 'Years' }}</div>
-              </div>
-              <div class="mm-mini-stat">
-                <div class="mm-mini-stat-num">14</div>
-                <div class="mm-mini-stat-label">{{ t('public_home_regions_supplied') if t else 'Regions' }}</div>
-              </div>
-              <div class="mm-mini-stat">
-                <div class="mm-mini-stat-num">{{ t('public_home_export_markets_value') if t else 'CIS' }}</div>
-                <div class="mm-mini-stat-label">{{ t('public_home_export_markets') if t else 'Markets' }}</div>
-              </div>
-              <div class="mm-mini-stat">
-                <div class="mm-mini-stat-num">{{ t('public_home_business_model') if t else 'B2B' }}</div>
-                <div class="mm-mini-stat-label">{{ t('public_home_hero_pill_wholesale_only') if t else 'Wholesale' }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
 
   {% if products %}
     <section class="mm-section">
@@ -1420,15 +888,15 @@
             <div class="mm-section-head-copy">
               <div class="mm-section-eyebrow">{{ t('public_catalog') if t else 'Catalog' }}</div>
               <h2 class="mm-section-title">
-                {{ t('public_latest_products') if t else 'Latest products' }}
+                {{ t('public_latest_products') if t else 'Latest arrivals' }}
               </h2>
               <p class="mm-section-text">
-                {{ t('public_home_catalog_subtitle') if t else 'View prices, stock, and product details in one place.' }}
+                {{ t('public_home_catalog_subtitle') if t else 'A refined selection view designed to surface the wholesale details buyers need most at a glance.' }}
               </p>
             </div>
 
-            <a href="{{ public_catalog_url }}" class="mm-section-link">
-              {{ t('public_all') if t else 'All products' }}
+            <a href="{{ url_for('public.catalog') }}" class="mm-section-link">
+              {{ t('public_all') if t else 'All' }}
             </a>
           </div>
 
@@ -1466,7 +934,7 @@
                 <div class="mm-card-body">
                   <div class="mm-card-topline">
                     <div class="mm-card-cat">
-                      {{ p.category or (t('products_no_category') if t else 'Category') }}
+                      {{ p.category or (t('products_no_category') if t else 'Uncategorised') }}
                     </div>
                     <div class="mm-card-code">MM-{{ "%05d"|format(p.id) }}</div>
                   </div>
@@ -1475,18 +943,18 @@
 
                   <div class="mm-card-meta">
                     <div>
-                      <span class="mm-card-price-label">{{ t('public_home_wholesale_price') if t else 'Price' }}</span>
+                      <span class="mm-card-price-label">{{ t('public_home_wholesale_price') if t else 'Wholesale price' }}</span>
                       <div class="mm-card-price">
                         {{ format_money(p.sell_price_per_item, p.currency) }}
                       </div>
                     </div>
 
                     <div class="mm-card-stock">
-                      <span class="mm-card-stock-label">{{ t('public_home_availability') if t else 'Stock' }}</span>
+                      <span class="mm-card-stock-label">{{ t('public_home_availability') if t else 'Availability' }}</span>
                       {% if in_stock %}
                         {{ t('public_home_qty') if t else 'Qty' }}: {{ p.quantity or 0 }}
                       {% else %}
-                        {{ t('public_home_currently_unavailable') if t else 'Unavailable' }}
+                        {{ t('public_home_currently_unavailable') if t else 'Currently unavailable' }}
                       {% endif %}
                     </div>
                   </div>
@@ -1496,13 +964,9 @@
                       {{ t('public_view') if t else 'View details' }}
                     </a>
 
-                    {% if in_stock and public_telegram_url %}
+                    {% if in_stock %}
                       <a href="{{ tg_order_link(p) }}" target="_blank" rel="noopener" class="mm-btn-sm telegram">
                         {{ t('public_order_tg') if t else 'Order via Telegram' }}
-                      </a>
-                    {% elif in_stock %}
-                      <a href="tel:{{ public_phone_href }}" class="mm-btn-sm telegram">
-                        {{ t('public_home_phone_label') if t else 'Call to order' }}
                       </a>
                     {% else %}
                       <button class="mm-btn-sm disabled" disabled>
@@ -1527,22 +991,25 @@
           <div class="mm-about-copy">
             <div class="mm-kicker">
               <span class="mm-dot"></span>
-              {{ t('public_home_about_kicker') if t else 'About' }}
+              {{ t('public_home_about_kicker') if t else 'About Mini Moda' }}
             </div>
 
             <h2 class="mm-about-title">
-              {{ (t('public_home_about_title') if t else 'Simple wholesale,<br><em>clear contact</em>') | safe }}
+              {{ (t('public_home_about_title') if t else 'Reliable supply with a more <em>refined</em><br>wholesale experience') | safe }}
             </h2>
 
             <p class="mm-about-body">
-              {{ (t('public_home_about_body_1') if t else 'Mini Moda has been supplying kids clothing since <strong>' ~ public_year_started ~ '</strong>. We focus on stable assortment, clear pricing, and direct communication.') | safe }}
+              {{ (t('public_home_about_body_1') if t else 'Founded in <strong>2013</strong> at <strong>Abu Saxiy Bazar</strong> in Tashkent, Mini Moda supplies kids clothing to retailers across Uzbekistan and neighbouring CIS markets.') | safe }}
+              <br><br>
+              {{ t('public_home_about_body_2') if t else 'Our focus is simple: reliable stock, clear product codes, competitive wholesale pricing, and direct ordering.' }}
             </p>
 
             <div class="mm-about-tags">
               <span class="mm-tag">{{ t('public_home_tag_wholesale') if t else 'Wholesale' }}</span>
               <span class="mm-tag">{{ t('public_home_tag_kids_clothing') if t else 'Kids clothing' }}</span>
               <span class="mm-tag">{{ t('public_home_tag_export') if t else 'Export' }}</span>
-              <span class="mm-tag">{{ t('public_home_tag_tashkent') if t else public_city }}</span>
+              <span class="mm-tag">{{ t('public_home_tag_since_2013') if t else 'Since 2013' }}</span>
+              <span class="mm-tag">{{ t('public_home_tag_tashkent') if t else 'Tashkent' }}</span>
             </div>
           </div>
 
@@ -1551,50 +1018,70 @@
               <div class="mm-info-icon">📍</div>
               <div>
                 <div class="mm-info-label">{{ t('public_home_location_label') if t else 'Location' }}</div>
-                <div class="mm-info-value">{{ public_address }}</div>
+                <div class="mm-info-value">{{ t('public_home_location_value') if t else 'Abu Saxiy Bazar, Tashkent, Uzbekistan' }}</div>
               </div>
             </div>
 
-            {% if public_working_hours %}
-              <div class="mm-info-row">
-                <div class="mm-info-icon">🕐</div>
-                <div>
-                  <div class="mm-info-label">{{ t('public_home_working_hours') if t else 'Working hours' }}</div>
-                  <div class="mm-hours">
-                    {% for row in public_working_hours %}
-                      <div class="mm-hours-row">
-                        <span class="mm-hours-day">{{ row.day }}</span>
-                        <span class="mm-hours-time">{{ row.time }}</span>
-                      </div>
-                    {% endfor %}
+            <div class="mm-info-row">
+              <div class="mm-info-icon">🕐</div>
+              <div>
+                <div class="mm-info-label">{{ t('public_home_working_hours') if t else 'Working hours' }}</div>
+                <div class="mm-hours">
+                  <div class="mm-hours-row">
+                    <span class="mm-hours-day">{{ t('public_home_day_mon') if t else 'Mon' }}</span>
+                    <span class="mm-hours-time">{{ t('public_home_closed') if t else 'Closed' }}</span>
+                  </div>
+                  <div class="mm-hours-row special">
+                    <span class="mm-hours-day">{{ t('public_home_day_tue') if t else 'Tue' }}</span>
+                    <span class="mm-hours-time">04:00 – 10:00</span>
+                  </div>
+                  <div class="mm-hours-row">
+                    <span class="mm-hours-day">{{ t('public_home_day_wed') if t else 'Wed' }}</span>
+                    <span class="mm-hours-time">05:00 – 10:00</span>
+                  </div>
+                  <div class="mm-hours-row">
+                    <span class="mm-hours-day">{{ t('public_home_day_thu') if t else 'Thu' }}</span>
+                    <span class="mm-hours-time">05:00 – 10:00</span>
+                  </div>
+                  <div class="mm-hours-row special">
+                    <span class="mm-hours-day">{{ t('public_home_day_fri') if t else 'Fri' }}</span>
+                    <span class="mm-hours-time">04:00 – 10:00</span>
+                  </div>
+                  <div class="mm-hours-row">
+                    <span class="mm-hours-day">{{ t('public_home_day_sat') if t else 'Sat' }}</span>
+                    <span class="mm-hours-time">05:00 – 10:00</span>
+                  </div>
+                  <div class="mm-hours-row">
+                    <span class="mm-hours-day">{{ t('public_home_day_sun') if t else 'Sun' }}</span>
+                    <span class="mm-hours-time">05:00 – 10:00</span>
                   </div>
                 </div>
               </div>
-            {% endif %}
+            </div>
 
             <div class="mm-info-row">
               <div class="mm-info-icon">📞</div>
               <div>
                 <div class="mm-info-label">{{ t('public_home_phone_label') if t else 'Phone' }}</div>
                 <div class="mm-info-value">
-                  <a href="tel:{{ public_phone_href }}">{{ public_phone }}</a>
+                  <a href="tel:+9989900000000">+998 99 000 00 00</a>
                 </div>
               </div>
             </div>
 
-            {% if public_telegram_url %}
-              <div class="mm-info-row">
-                <div class="mm-info-icon">💬</div>
-                <div>
-                  <div class="mm-info-label">{{ t('public_home_order_via') if t else 'Order via' }}</div>
-                  <div class="mm-info-value">
-                    <a href="{{ public_telegram_url }}" target="_blank" rel="noopener">
-                      {{ t('public_telegram') if t else 'Telegram' }}
-                    </a>
-                  </div>
+            <div class="mm-info-row">
+              <div class="mm-info-icon">💬</div>
+              <div>
+                <div class="mm-info-label">{{ t('public_home_order_via') if t else 'Order via' }}</div>
+                <div class="mm-info-value">
+                  {% if public_telegram_url %}
+                    <a href="{{ public_telegram_url }}" target="_blank" rel="noopener">{{ t('public_telegram') if t else 'Telegram' }}</a>
+                  {% else %}
+                    {{ t('public_home_direct_contact') if t else 'Direct contact' }}
+                  {% endif %}
                 </div>
               </div>
-            {% endif %}
+            </div>
           </div>
 
         </div>
@@ -1609,7 +1096,7 @@
         <div class="mm-map-wrap">
           <div class="mm-map-badge">
             <span>📍</span>
-            {{ t('public_home_store_location') if t else 'Location' }}
+            {{ t('public_home_store_location') if t else 'Store location' }}
           </div>
 
           <iframe
@@ -1617,14 +1104,14 @@
             loading="lazy"
             allowfullscreen
             referrerpolicy="no-referrer-when-downgrade"
-            src="https://maps.google.com/maps?q={{ public_map_lat }},{{ public_map_lng }}&z=16&output=embed">
+            src="https://maps.google.com/maps?q=41.24625,69.167761&z=16&output=embed">
           </iframe>
         </div>
 
         <div class="mm-location-panel">
           <div class="mm-kicker">
             <span class="mm-dot"></span>
-            {{ t('public_home_visit_kicker') if t else 'Visit us' }}
+            {{ t('public_home_visit_kicker') if t else 'Visit Mini Moda' }}
           </div>
 
           <h2 class="mm-location-title">
@@ -1632,7 +1119,7 @@
           </h2>
 
           <p class="mm-location-text">
-            {{ t('public_home_location_text') if t else 'Visit us for wholesale orders and product selection.' }}
+            {{ t('public_home_location_text') if t else 'Visit Mini Moda at Abu Saxiy Bazar, Tashkent.' }}
           </p>
 
           <div class="mm-location-list">
@@ -1640,7 +1127,9 @@
               <div class="mm-location-icon">📍</div>
               <div>
                 <div class="mm-location-label">{{ t('public_home_address') if t else 'Address' }}</div>
-                <div class="mm-location-value">{{ public_address }}</div>
+                <div class="mm-location-value">
+                  {{ t('public_home_location_value') if t else 'Abu Saxiy Bazar, Tashkent, Uzbekistan' }}
+                </div>
               </div>
             </div>
 
@@ -1648,34 +1137,38 @@
               <div class="mm-location-icon">🧭</div>
               <div>
                 <div class="mm-location-label">{{ t('public_home_coordinates') if t else 'Coordinates' }}</div>
-                <div class="mm-location-value">{{ public_map_lat }}, {{ public_map_lng }}</div>
+                <div class="mm-location-value">
+                  41.24625, 69.167761
+                </div>
               </div>
             </div>
 
             <div class="mm-location-item">
               <div class="mm-location-icon">🕐</div>
               <div>
-                <div class="mm-location-label">{{ t('public_home_best_time') if t else 'Best time' }}</div>
-                <div class="mm-location-value">{{ public_best_time }}</div>
+                <div class="mm-location-label">{{ t('public_home_best_time') if t else 'Best time to visit' }}</div>
+                <div class="mm-location-value">
+                  {{ t('public_home_best_time_value') if t else 'Early morning market hours - especially Tuesday and Friday.' }}
+                </div>
               </div>
             </div>
           </div>
 
           <div class="mm-location-actions">
             <a
-              href="{{ public_maps_url }}"
+              href="https://www.google.com/maps?q=41.24625,69.167761"
               target="_blank"
               rel="noopener"
               class="mm-location-btn primary">
-              {{ t('public_home_open_maps') if t else 'Open map' }}
+              {{ t('public_home_open_maps') if t else 'Open in Google Maps' }}
             </a>
 
             <a
-              href="{{ public_directions_url }}"
+              href="https://www.google.com/maps/dir/?api=1&destination=41.24625,69.167761"
               target="_blank"
               rel="noopener"
               class="mm-location-btn secondary">
-              {{ t('public_home_get_directions') if t else 'Directions' }}
+              {{ t('public_home_get_directions') if t else 'Get directions' }}
             </a>
           </div>
         </div>
