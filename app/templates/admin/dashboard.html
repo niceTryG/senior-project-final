@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mm-admin-page {
+    padding-top: 12px;
+    padding-bottom: 108px;
+  }
+
+  .mm-admin-head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .mm-admin-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: fit-content;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .mm-admin-sub {
+    color: #6c757d;
+    max-width: 720px;
+  }
+
+  .mm-admin-grid .col-6,
+  .mm-admin-grid .col-12 {
+    display: flex;
+  }
+
+  .mm-admin-card {
+    width: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 250, 0.98));
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+  }
+
+  .mm-admin-card .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+
+  .mm-admin-card-title {
+    font-size: 1rem;
+    font-weight: 800;
+    margin: 0;
+    color: #111827;
+  }
+
+  .mm-admin-card-text {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    flex-grow: 1;
+  }
+
+  .mm-admin-card .btn {
+    border-radius: 14px;
+    font-weight: 700;
+  }
+
+  @media (min-width: 768px) {
+    .mm-admin-page {
+      padding-top: 18px;
+    }
+
+    .mm-admin-card .card-body {
+      padding: 1.2rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mm-admin-page">
+  <div class="mm-admin-head">
+    <div class="mm-admin-kicker">Admin Control Panel</div>
+    <h1 class="h4 fw-bold mb-0">Admin Dashboard</h1>
+    <p class="mm-admin-sub mb-0">
+      Quick access to core administration areas for factories, shops, users, products, and future reporting.
+    </p>
+  </div>
+
+  <div class="row g-3 mm-admin-grid">
+    {% for card in cards %}
+    <div class="col-6 col-xl-4">
+      <div class="card mm-admin-card">
+        <div class="card-body">
+          <div>
+            <h2 class="mm-admin-card-title">{{ card.title }}</h2>
+          </div>
+          <p class="mm-admin-card-text">{{ card.description }}</p>
+
+          {% if card.disabled %}
+          <button type="button" class="btn btn-outline-secondary w-100" disabled>
+            {{ card.button_label }}
+          </button>
+          {% else %}
+          <a href="{{ card.href }}" class="btn btn-primary w-100">
+            {{ card.button_label }}
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

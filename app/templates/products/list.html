@@ -383,6 +383,18 @@
                 </button>
               </form>
             </div>
+
+            {% if current_user.is_admin %}
+            <div class="col-12">
+              <form method="post"
+                    action="{{ url_for('products.delete_product', product_id=p.id) }}"
+                    onsubmit="return confirm('Delete this product?');">
+                <button type="submit" class="btn btn-danger w-100 mm-card-btn">
+                  <i class="bi bi-trash me-1"></i>Delete
+                </button>
+              </form>
+            </div>
+            {% endif %}
           </div>
 
           <div class="mt-2">
@@ -392,8 +404,9 @@
                 <div class="mm-media-grid mb-2">
                   <div class="mm-media-card">
                     <div class="mm-media-label">{{ t('products_photo_product') }}</div>
-                    {% if p.image_path %}
-                      <img src="{{ url_for('static', filename=p.image_path) }}"
+                    {% set product_photo = product_image_url(p.image_path) %}
+                    {% if product_photo %}
+                      <img src="{{ product_photo }}"
                            alt="{{ p.name }}"
                            class="mm-media-image">
                     {% else %}
@@ -403,8 +416,9 @@
 
                   <div class="mm-media-card">
                     <div class="mm-media-label">{{ t('products_photo_website') }}</div>
-                    {% if p.website_image %}
-                      <img src="{{ url_for('static', filename=p.website_image) }}"
+                    {% set website_photo = product_image_url(p.website_image) %}
+                    {% if website_photo %}
+                      <img src="{{ website_photo }}"
                            alt="{{ p.name }}"
                            class="mm-media-image">
                     {% else %}
@@ -677,8 +691,9 @@
                         <div class="mm-media-grid mb-3">
                           <div class="mm-media-card">
                             <div class="mm-media-label">{{ t('products_photo_product') }}</div>
-                            {% if p.image_path %}
-                              <img src="{{ url_for('static', filename=p.image_path) }}"
+                            {% set product_photo = product_image_url(p.image_path) %}
+                            {% if product_photo %}
+                              <img src="{{ product_photo }}"
                                    alt="{{ p.name }}"
                                    class="mm-media-image">
                             {% else %}
@@ -688,8 +703,9 @@
 
                           <div class="mm-media-card">
                             <div class="mm-media-label">{{ t('products_photo_website') }}</div>
-                            {% if p.website_image %}
-                              <img src="{{ url_for('static', filename=p.website_image) }}"
+                            {% set website_photo = product_image_url(p.website_image) %}
+                            {% if website_photo %}
+                              <img src="{{ website_photo }}"
                                    alt="{{ p.name }}"
                                    class="mm-media-image">
                             {% else %}
@@ -777,6 +793,17 @@
                             {% if p.is_published %}<i class="bi bi-eye-slash me-1"></i>{{ t('products_unpublish_hide') }}{% else %}<i class="bi bi-globe-americas me-1"></i>{{ t('products_publish_show') }}{% endif %}
                           </button>
                         </form>
+
+                        {% if current_user.is_admin %}
+                        <form method="post"
+                              action="{{ url_for('products.delete_product', product_id=p.id) }}"
+                              class="mt-2"
+                              onsubmit="return confirm('Delete this product?');">
+                          <button type="submit" class="btn btn-sm btn-danger w-100">
+                            <i class="bi bi-trash me-1"></i>Delete
+                          </button>
+                        </form>
+                        {% endif %}
                       </div>
                     </div>
 

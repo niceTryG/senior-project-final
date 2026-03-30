@@ -4,6 +4,7 @@ import json
 import hashlib
 from io import BytesIO
 from datetime import datetime, date
+from uuid import uuid4
 
 import pandas as pd
 from werkzeug.utils import secure_filename
@@ -47,6 +48,7 @@ from ..shop_utils import get_or_create_default_shop
 fabric_service = FabricService()
 products_bp = Blueprint("products", __name__, url_prefix="/products")
 service = ProductService()
+DEFAULT_ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
 
 
 # ==========================
@@ -186,6 +188,38 @@ def _ensure_shop_stock(product: Product) -> ShopStock:
     return stock
 
 
+def allowed_file(filename: str) -> bool:
+    if not filename or "." not in filename:
+        return False
+
+    configured_extensions = current_app.config.get("ALLOWED_EXTENSIONS") or set()
+    allowed_extensions = {
+        str(extension).lower()
+        for extension in configured_extensions
+    } | DEFAULT_ALLOWED_IMAGE_EXTENSIONS
+
+    return filename.rsplit(".", 1)[-1].lower() in allowed_extensions
+
+
+def save_product_image(file_obj):
+    if not file_obj or not file_obj.filename:
+        return None
+
+    filename = secure_filename(file_obj.filename)
+    if not filename or not allowed_file(filename):
+        return False
+
+    upload_dir = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(upload_dir, exist_ok=True)
+
+    _, ext = os.path.splitext(filename)
+    generated_filename = f"{uuid4().hex}{ext.lower()}"
+    save_path = os.path.join(upload_dir, generated_filename)
+    file_obj.save(save_path)
+
+    return f"/uploads/{generated_filename}"
+
+
 # ==========================
 #   📦 PRODUCT LIST
 # ==========================
@@ -308,25 +342,6 @@ def add_product():
         flash("Название модели обязательно.", "warning")
         return redirect(url_for("products.list_products"))
 
-    upload_dir = current_app.config.get(
-        "UPLOAD_FOLDER",
-        os.path.join("app", "static", "uploads", "products")
-    )
-    os.makedirs(upload_dir, exist_ok=True)
-
-    def save_product_image(file_obj):
-        if not file_obj or not file_obj.filename:
-            return None
-
-        ext = file_obj.filename.rsplit(".", 1)[-1].lower()
-        if ext not in {"png", "jpg", "jpeg", "webp"}:
-            return None
-
-        filename = secure_filename(file_obj.filename)
-        save_path = os.path.join(upload_dir, filename)
-        file_obj.save(save_path)
-        return f"uploads/products/{filename}"
-
     image_file = request.files.get("image")
     website_image_file = request.files.get("website_image")
 
@@ -357,8 +372,6 @@ def add_product():
 
     flash("Товар добавлен / обновлён.", "success")
     return redirect(url_for("products.list_products"))
-
-
 # ==========================
 #   ➕ ADD STOCK (FACTORY)
 # ==========================
@@ -1081,6 +1094,37 @@ def toggle_publish(product_id: int):
     return redirect(url_for("products.list_products"))
 
 
+@products_bp.route("/<int:product_id>/delete", methods=["POST"])
+@login_required
+def delete_product(product_id: int):
+    if not current_user.is_admin:
+        abort(403)
+
+    factory_id = _ensure_factory_bound()
+    if factory_id is None and not getattr(current_user, "is_superadmin", False):
+        return redirect(url_for("products.list_products"))
+
+    query = Product.query.filter(Product.id == product_id)
+    if not getattr(current_user, "is_superadmin", False):
+        query = query.filter(Product.factory_id == factory_id)
+
+    product = query.first()
+    if not product:
+        flash("Product not found.", "danger")
+        return redirect(url_for("products.list_products"))
+        flash("Ð¢Ð¾Ð²Ð°Ñ€ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    # Safe delete for products with historical sales and stock links.
+    product.is_published = False
+    db.session.commit()
+    flash("Product deleted.", "success")
+    return redirect(url_for("products.list_products"))
+
+    flash("Ð¢Ð¾Ð²Ð°Ñ€ ÑƒÐ´Ð°Ð»Ñ‘Ð½.", "success")
+    return redirect(url_for("products.list_products"))
+
+
 @products_bp.route("/<int:product_id>/produce", methods=["POST"])
 @login_required
 @roles_required("admin", "manager")
@@ -1130,25 +1174,6 @@ def update_product_info(product_id: int):
     category = request.form.get("category", "").strip() or None
     fabric_used = request.form.get("fabric_used", "").strip() or None
     notes = request.form.get("notes", "").strip() or None
-
-    upload_dir = current_app.config.get(
-        "UPLOAD_FOLDER",
-        os.path.join("app", "static", "uploads", "products")
-    )
-    os.makedirs(upload_dir, exist_ok=True)
-
-    def save_product_image(file_obj):
-        if not file_obj or not file_obj.filename:
-            return None
-
-        ext = file_obj.filename.rsplit(".", 1)[-1].lower()
-        if ext not in {"png", "jpg", "jpeg", "webp"}:
-            return False
-
-        filename = secure_filename(file_obj.filename)
-        save_path = os.path.join(upload_dir, filename)
-        file_obj.save(save_path)
-        return f"uploads/products/{filename}"
 
     image_file = request.files.get("image")
     website_image_file = request.files.get("website_image")

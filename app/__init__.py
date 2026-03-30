@@ -332,6 +332,35 @@ def create_app(config_class="config.DevConfig"):
                 formatted = formatted.replace(",", " ")
             return f"{formatted} {currency}".strip()
 
+        def product_image_url(value):
+            if isinstance(value, Undefined) or value is None:
+                return None
+
+            raw = str(value).strip()
+            if not raw:
+                return None
+
+            lowered = raw.lower()
+            if lowered.startswith(("http://", "https://")):
+                return raw
+
+            if raw.startswith("/uploads/"):
+                filename = raw[len("/uploads/"):].lstrip("/")
+                if not filename:
+                    return None
+                return url_for("public.uploaded_file", filename=filename)
+
+            if raw.startswith("uploads/"):
+                return url_for("static", filename=raw)
+
+            if raw.startswith("/static/"):
+                return raw
+
+            if raw.startswith("/"):
+                return raw
+
+            return url_for("static", filename=f"uploads/products/{raw}")
+
         now_utc = datetime.now(timezone.utc)
 
         return {
@@ -343,6 +372,7 @@ def create_app(config_class="config.DevConfig"):
             "current_date": now_utc.date(),
             "format_money": format_money,
             "format_money_compact": format_money_compact,
+            "product_image_url": product_image_url,
         }
 
     # -------------------------
@@ -385,8 +415,10 @@ def create_app(config_class="config.DevConfig"):
     from app.cost.routes import bp as cost_bp
     from .routes.factory_routes import factory_bp
     from .routes.public_routes import public_bp
+    from .routes.admin_routes import admin_bp
 
     app.register_blueprint(public_bp)
+    app.register_blueprint(admin_bp)
     app.register_blueprint(factory_bp)
     app.register_blueprint(cost_bp)
     app.register_blueprint(auth_bp)
