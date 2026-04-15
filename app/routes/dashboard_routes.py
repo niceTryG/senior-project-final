@@ -15,6 +15,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from sqlalchemy import and_, func, or_
+from sqlalchemy.orm import joinedload
 
 from ..extensions import db
 from ..forms import (
@@ -26,7 +27,7 @@ from ..forms import (
     WorkspaceOwnershipTransferForm,
     WorkspaceTeamMemberForm,
 )
-from ..models import CashRecord, OperationalTask, Production, ProductionPlan, Product, ProductComposition, ShopOrder, ShopOrderItem, ShopStock, Sale, StockMovement, User, TelegramLinkCode, WholesaleSale, WholesaleSaleItem, Factory, Shop, ShopFactoryLink, Fabric, SupplierReceipt
+from ..models import CashRecord, CuttingOrder, CuttingOrderMaterial, OperationalTask, Production, ProductionPlan, Product, ProductComposition, ShopOrder, ShopOrderItem, ShopStock, Sale, StockMovement, User, TelegramLinkCode, WholesaleSale, WholesaleSaleItem, Factory, Shop, ShopFactoryLink, Fabric, SupplierReceipt
 from ..services.product_service import ProductService
 from ..translations import t as translate
 from ..user_identity import build_login_username, normalize_phone
@@ -7136,6 +7137,7 @@ REPORT_DEFINITIONS = {
     "shop_stock": {"title": "Shop Stock Report", "subtitle": "Branch-facing inventory, low-stock pressure, and sell-side coverage.", "icon": "SS"},
     "sales": {"title": "Sales Report", "subtitle": "Recorded sales performance across recent activity windows.", "icon": "SL"},
     "orders": {"title": "Orders Report", "subtitle": "Pending, ready, completed, and cancelled order flow.", "icon": "OR"},
+    "cutting_orders": {"title": "Cutting Orders", "subtitle": "Track sets cut, estimated material cost, and order status.", "icon": "CO"},
     "movements": {"title": "Movement History Report", "subtitle": "Stock transfers, sales-linked movements, and adjustments.", "icon": "MV"},
     "low_stock": {"title": "Low Stock Report", "subtitle": "Priority products that need replenishment or urgent attention.", "icon": "LS"},
     "cash": {"title": "Cash / Finance Summary", "subtitle": "Cash records, inflow, outflow, and current balance.", "icon": "CA"},
@@ -7584,6 +7586,164 @@ def _build_orders_report(factory_id: int):
     return state
 
 
+def _build_cutting_orders_report(factory_id: int):
+    state = _report_base_state("cutting_orders")
+    q = (request.args.get("q") or "").strip()
+    status_filter = (request.args.get("status") or "").strip().lower()
+    date_range = _report_parse_date_range(default_days=30)
+
+    query = (
+        CuttingOrder.query
+        .options(
+            joinedload(CuttingOrder.product),
+            joinedload(CuttingOrder.created_by),
+            joinedload(CuttingOrder.materials).joinedload(CuttingOrderMaterial.material),
+        )
+        .filter(CuttingOrder.factory_id == factory_id)
+    )
+
+    if status_filter:
+        query = query.filter(func.lower(CuttingOrder.status) == status_filter)
+    if date_range["from"]:
+        query = query.filter(CuttingOrder.cut_date >= date_range["from"])
+    if date_range["to"]:
+        query = query.filter(CuttingOrder.cut_date <= date_range["to"])
+
+    orders = query.order_by(CuttingOrder.cut_date.desc(), CuttingOrder.id.desc()).all()
+
+    if q:
+        q_lower = q.lower()
+        filtered_orders = []
+        for order in orders:
+            search_blob = " ".join(
+                [
+                    str(getattr(order, "id", "") or ""),
+                    getattr(getattr(order, "product", None), "name", None) or "",
+                    getattr(order, "status", None) or "",
+                    getattr(order, "notes", None) or "",
+                    getattr(getattr(order, "created_by", None), "full_name", None) or "",
+                    getattr(getattr(order, "created_by", None), "username", None) or "",
+                ]
+            ).lower()
+            if q_lower in search_blob:
+                filtered_orders.append(order)
+        orders = filtered_orders
+
+    known_statuses = ["open", "in_progress", "closed"]
+    discovered_statuses = {
+        str(value or "").strip().lower()
+        for (value,) in db.session.query(CuttingOrder.status)
+        .filter(CuttingOrder.factory_id == factory_id)
+        .distinct()
+        .all()
+        if str(value or "").strip()
+    }
+    ordered_statuses = [status for status in known_statuses if status in discovered_statuses]
+    ordered_statuses.extend(sorted(status for status in discovered_statuses if status not in known_statuses))
+
+    total_orders = len(orders)
+    total_sets = 0
+    total_estimated_material_cost = 0.0
+    status_counts = {}
+    product_rollup = {}
+    report_rows = []
+
+    for order in orders:
+        sets_cut = int(getattr(order, "sets_cut", 0) or 0)
+        material_rows = getattr(order, "materials", None) or []
+        material_cost = sum(float(getattr(material, "total_cost_snapshot", 0) or 0) for material in material_rows)
+        material_lines = len(material_rows)
+        total_sets += sets_cut
+        total_estimated_material_cost += material_cost
+
+        status_key = str(getattr(order, "status", None) or "open").strip().lower() or "open"
+        status_counts[status_key] = status_counts.get(status_key, 0) + 1
+
+        product = getattr(order, "product", None)
+        product_id = getattr(order, "product_id", None)
+        product_name = getattr(product, "name", None) or f"Product #{product_id or '-'}"
+        product_rollup[product_id or product_name] = {
+            "name": product_name,
+            "sets": product_rollup.get(product_id or product_name, {}).get("sets", 0) + sets_cut,
+        }
+
+        cut_date = getattr(order, "cut_date", None)
+        created_by = getattr(order, "created_by", None)
+        created_by_label = getattr(created_by, "full_name", None) or getattr(created_by, "username", None) or "Unknown user"
+        status_label = status_key.replace("_", " ").title()
+
+        report_rows.append(
+            {
+                "primary": product_name,
+                "secondary_lines": [
+                    f"Order #{getattr(order, 'id', '-')}",
+                    cut_date.strftime("%Y-%m-%d") if cut_date else "-",
+                    f"{material_lines} material lines",
+                    created_by_label,
+                ],
+                "image_path": getattr(product, "image_path", None),
+                "cells": [
+                    cut_date.strftime("%Y-%m-%d") if cut_date else "-",
+                    str(sets_cut),
+                    f"{material_cost:,.2f}",
+                    status_label,
+                ],
+                "mobile_value": str(sets_cut),
+                "mobile_subvalue": f"Est. cost {material_cost:,.2f}",
+                "badge_label": status_label,
+                "badge_tone": "up" if status_key == "closed" else _report_tone_from_status(status_key),
+                "export": {
+                    "order_id": getattr(order, "id", None),
+                    "cut_date": cut_date.strftime("%Y-%m-%d") if cut_date else "",
+                    "product": product_name,
+                    "sets_cut": sets_cut,
+                    "status": status_label,
+                    "estimated_material_cost": round(material_cost, 2),
+                    "material_lines": material_lines,
+                    "created_by": created_by_label,
+                    "notes": getattr(order, "notes", None) or "",
+                },
+            }
+        )
+
+    avg_sets_per_order = (total_sets / total_orders) if total_orders else 0.0
+    status_breakdown = ", ".join(
+        f"{status.replace('_', ' ').title()}: {status_counts[status]}"
+        for status in ordered_statuses
+        if status_counts.get(status)
+    ) or "No status rows in this view"
+    top_products = sorted(
+        product_rollup.items(),
+        key=lambda item: (-int(item[1]["sets"] or 0), item[1]["name"].lower()),
+    )
+    product_breakdown = ", ".join(
+        f"{row['name']}: {row['sets']} sets"
+        for _, row in top_products[:3]
+    ) or "No product rows in this view"
+
+    state["summary_cards"] = [
+        _report_summary_card("Cutting orders", str(total_orders), "Orders matching the current filters", "info"),
+        _report_summary_card("Sets cut", str(total_sets), "Total sets recorded in this report", "up"),
+        _report_summary_card("Avg sets / order", f"{avg_sets_per_order:,.1f}", "Average sets cut per cutting order", "neutral"),
+        _report_summary_card("Est. material cost", f"{total_estimated_material_cost:,.2f}", "Sum of stored material cost snapshots", "info"),
+        _report_summary_card("Status breakdown", str(sum(1 for count in status_counts.values() if count)), status_breakdown, "neutral"),
+        _report_summary_card("Sets by product", str(len(product_rollup)), product_breakdown, "neutral"),
+    ]
+    state["table_columns"] = ["Cut date", "Sets", "Est. material cost", "Status"]
+    state["rows"] = report_rows
+    state["filter_fields"] = [
+        {"name": "q", "label": "Search", "type": "search", "value": q, "placeholder": "Order, product, note, or user"},
+        {"name": "status", "label": "Status", "type": "select", "value": status_filter, "options": [{"value": "", "label": "All"}, *[{"value": status, "label": status.replace("_", " ").title()} for status in ordered_statuses]]},
+        {"name": "from", "label": "From", "type": "date", "value": date_range["from_str"]},
+        {"name": "to", "label": "To", "type": "date", "value": date_range["to_str"]},
+    ]
+    state["export_columns"] = ["Order ID", "Cut date", "Product", "Sets cut", "Status", "Estimated material cost", "Material lines", "Created by", "Notes"]
+    state["export_rows"] = [row["export"] for row in report_rows]
+    state["empty_title"] = "No cutting orders in this view"
+    state["empty_copy"] = "No cutting orders matched the current search, status, or date filters."
+    return state
+
+
 def _build_movements_report(factory_id: int):
     state = _report_base_state("movements")
     q = (request.args.get("q") or "").strip()
@@ -7892,6 +8052,7 @@ def _build_report_state(report_key: str, workspace):
         "shop_stock": lambda: _build_shop_stock_report(factory_id),
         "sales": lambda: _build_sales_report(factory_id),
         "orders": lambda: _build_orders_report(factory_id),
+        "cutting_orders": lambda: _build_cutting_orders_report(factory_id),
         "movements": lambda: _build_movements_report(factory_id),
         "low_stock": lambda: _build_low_stock_report(factory_id),
         "cash": lambda: _build_cash_report(factory_id),
@@ -7913,6 +8074,7 @@ def _build_reports_hub_state(workspace_id: int):
     factory_products = Product.query.filter(Product.factory_id == workspace_id).all()
     shop_stock_rows = ShopStock.query.filter(ShopStock.source_factory_id == workspace_id).all()
     order_rows = ShopOrder.query.filter(ShopOrder.factory_id == workspace_id).all()
+    cutting_order_rows = CuttingOrder.query.filter(CuttingOrder.factory_id == workspace_id).all()
     movement_count = StockMovement.query.filter(StockMovement.factory_id == workspace_id).count()
     cash_rows = CashRecord.query.filter(CashRecord.factory_id == workspace_id).all()
     production_rows = Production.query.join(Product, Product.id == Production.product_id).filter(Product.factory_id == workspace_id).all()
@@ -7929,6 +8091,7 @@ def _build_reports_hub_state(workspace_id: int):
             {"title": "Shop Stock Report", "description": "Live branch stock and current low-stock pressure in shops.", "icon": "SS", "stat": f"{sum(int(getattr(row, 'quantity', 0) or 0) for row in shop_stock_rows)} units", "href": url_for("main.report_detail", report_key="shop_stock")},
             {"title": "Sales Report", "description": "Sales totals, sale rows, and recent performance windows.", "icon": "SL", "stat": _report_money(sales_stats.get("today_sales_uzs", 0), "UZS"), "href": url_for("main.report_detail", report_key="sales")},
             {"title": "Orders Report", "description": "Pending, ready, completed, and cancelled customer orders.", "icon": "OR", "stat": f"{sum(1 for row in order_rows if getattr(row, 'status', '') == 'pending')} pending", "href": url_for("main.report_detail", report_key="orders")},
+            {"title": "Cutting Orders", "description": "Track sets cut, estimated material cost, and order status.", "icon": "CO", "stat": f"{len(cutting_order_rows)} orders", "href": url_for("main.report_detail", report_key="cutting_orders")},
             {"title": "Movement History Report", "description": "Factory-to-shop, sales-linked, and adjustment movement rows.", "icon": "MV", "stat": f"{movement_count} rows", "href": url_for("main.report_detail", report_key="movements")},
             {"title": "Low Stock Report", "description": "Priority items at low stock or already out in factory or shops.", "icon": "LS", "stat": f"{factory_low + shop_low} alerts", "href": url_for("main.report_detail", report_key="low_stock")},
             {"title": "Cash / Finance Summary", "description": "Cash inflow, outflow, and current balance across recent records.", "icon": "CA", "stat": _report_money(cash_balance, "UZS"), "href": url_for("main.report_detail", report_key="cash")},

@@ -1,24 +1,17 @@
-﻿# Virtual environments
 venv/
 .venv/
+.venv_clean/
 
-# Python cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Editor / tool history
-.history/
-
-# Environment variables
 .env
+fabric.db
 
-# Local database / runtime files
-*.db
-logs/
-*.log
-.tmp_test/
+.history/
+final_project_tree.txt
 
-# Uploads & imports (generated files)
-app/static/uploads/
-app/static/uploads/excel_imports/
-
+.DS_Store
+Thumbs.db
