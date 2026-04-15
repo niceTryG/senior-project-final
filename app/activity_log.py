@@ -1,7 +1,13 @@
 # app/models/activity_log.py
-from app import db
 from datetime import datetime
-from sqlalchemy.dialects.postgresql import JSONB  # works on postgres, fallback to JSON
+
+from sqlalchemy import JSON
+from sqlalchemy.dialects.postgresql import JSONB
+
+from app import db
+
+
+activity_log_json_type = JSON().with_variant(JSONB, "postgresql")
 
 class ActivityLog(db.Model):
     __tablename__ = "activity_log"
@@ -16,8 +22,8 @@ class ActivityLog(db.Model):
     entity = db.Column(db.String(100), nullable=False)
     entity_id = db.Column(db.Integer, nullable=True)
 
-    before = db.Column(JSONB, nullable=True)
-    after = db.Column(JSONB, nullable=True)
+    before = db.Column(activity_log_json_type, nullable=True)
+    after = db.Column(activity_log_json_type, nullable=True)
 
     ip = db.Column(db.String(50), nullable=True)
     comment = db.Column(db.Text, nullable=True)

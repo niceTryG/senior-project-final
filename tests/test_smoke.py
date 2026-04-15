@@ -1,5 +1,6 @@
 import importlib.util
 import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,12 +18,10 @@ class SmokeTestCase(unittest.TestCase):
     def setUp(self):
         base_tmp_dir = Path(__file__).resolve().parents[1] / ".tmp_test"
         base_tmp_dir.mkdir(exist_ok=True)
-        fd, raw_path = tempfile.mkstemp(dir=base_tmp_dir, suffix=".db")
-        os.close(fd)
-        Path(raw_path).unlink(missing_ok=True)
-        self.db_path = Path(raw_path).resolve()
+        self.temp_dir = Path(tempfile.mkdtemp(dir=base_tmp_dir)).resolve()
+        self.db_path = (self.temp_dir / "test.db").resolve()
         db_uri = f"sqlite:///{self.db_path}"
-        self.upload_dir = (base_tmp_dir / f"{self.db_path.stem}_uploads").resolve()
+        self.upload_dir = (self.temp_dir / "uploads").resolve()
         self.upload_dir.mkdir(parents=True, exist_ok=True)
 
         class TestConfig:
@@ -42,7 +41,7 @@ class SmokeTestCase(unittest.TestCase):
             REMEMBER_COOKIE_HTTPONLY = True
             AUTO_DB_BOOTSTRAP = True
             PROD_ALLOW_SQLITE = True
-            PUBLIC_TELEGRAM_URL = "https://t.me/minimoda_sklad_bot"
+            PUBLIC_TELEGRAM_URL = "https://t.me/adras_demo_bot"
 
         self.app = create_app(TestConfig)
         self.client = self.app.test_client()
@@ -51,13 +50,9 @@ class SmokeTestCase(unittest.TestCase):
         with self.app.app_context():
             db.session.remove()
             db.engine.dispose()
-        self.db_path.unlink(missing_ok=True)
-        if self.upload_dir.exists():
-            for path in sorted(self.upload_dir.rglob("*"), reverse=True):
-                if path.is_file():
-                    path.unlink()
-                elif path.is_dir():
-                    path.rmdir()
+        self.client = None
+        self.app = None
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_public_pages_render(self):
         self.assertEqual(self.client.get("/").status_code, 200)
@@ -196,7 +191,7 @@ class ProductionConfigGuardTestCase(unittest.TestCase):
             SESSION_COOKIE_SECURE = True
             REMEMBER_COOKIE_SECURE = True
             REMEMBER_COOKIE_HTTPONLY = True
-            PUBLIC_TELEGRAM_URL = "https://t.me/minimoda_sklad_bot"
+            PUBLIC_TELEGRAM_URL = "https://t.me/adras_demo_bot"
 
         with self.assertRaisesRegex(RuntimeError, "SECRET_KEY"):
             create_app(UnsafeProdConfig)
@@ -206,10 +201,8 @@ class DeployPreflightCommandTestCase(unittest.TestCase):
     def setUp(self):
         base_tmp_dir = Path(__file__).resolve().parents[1] / ".tmp_test"
         base_tmp_dir.mkdir(exist_ok=True)
-        fd, raw_path = tempfile.mkstemp(dir=base_tmp_dir, suffix=".db")
-        os.close(fd)
-        Path(raw_path).unlink(missing_ok=True)
-        self.db_path = Path(raw_path).resolve()
+        self.temp_dir = Path(tempfile.mkdtemp(dir=base_tmp_dir)).resolve()
+        self.db_path = (self.temp_dir / "test.db").resolve()
         self.old_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
 
     def tearDown(self):
@@ -217,10 +210,14 @@ class DeployPreflightCommandTestCase(unittest.TestCase):
             os.environ.pop("TELEGRAM_BOT_TOKEN", None)
         else:
             os.environ["TELEGRAM_BOT_TOKEN"] = self.old_bot_token
-        self.db_path.unlink(missing_ok=True)
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def _make_prod_like_app(self, *, bootstrap: bool):
+        import tempfile
+        from pathlib import Path
+
         db_uri = f"sqlite:///{self.db_path}"
+        upload_dir = Path(tempfile.mkdtemp(prefix="adras_uploads_"))
 
         class ProdLikeConfig:
             DEBUG = False
@@ -229,7 +226,7 @@ class DeployPreflightCommandTestCase(unittest.TestCase):
             SQLALCHEMY_DATABASE_URI = db_uri
             SQLALCHEMY_TRACK_MODIFICATIONS = False
             SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
-            UPLOAD_FOLDER = "app/static/uploads/products"
+            UPLOAD_FOLDER = str(upload_dir)
             ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
             MAX_CONTENT_LENGTH = 5 * 1024 * 1024
             SESSION_COOKIE_HTTPONLY = True
@@ -239,10 +236,9 @@ class DeployPreflightCommandTestCase(unittest.TestCase):
             REMEMBER_COOKIE_HTTPONLY = True
             AUTO_DB_BOOTSTRAP = bootstrap
             PROD_ALLOW_SQLITE = True
-            PUBLIC_TELEGRAM_URL = "https://t.me/minimoda_sklad_bot"
+            PUBLIC_TELEGRAM_URL = "https://t.me/adras_demo_bot"
 
         return create_app(ProdLikeConfig)
-
     def test_deploy_preflight_passes_for_safe_config(self):
         os.environ["TELEGRAM_BOT_TOKEN"] = "test-bot-token"
         app = self._make_prod_like_app(bootstrap=False)
