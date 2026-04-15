@@ -1,0 +1,200 @@
+{% extends "fabrics/base_fabrics.html" %}
+
+{% block title %}{{ t('supplier_receipt_history_page_title') }}{% endblock %}
+
+{% block fabrics_content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
+    <div>
+      <div class="small text-muted">{{ t('supplier_receipts_label') }}</div>
+      <h1 class="h4 mb-1">{{ t('supplier_receipt_history') }}</h1>
+      <div class="text-muted small">{{ t('supplier_receipt_history_subtitle') }}</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('fabrics.list') }}">{{ t('back_to_materials') }}</a>
+    </div>
+  </div>
+
+  <div class="row row-cols-2 row-cols-lg-4 g-2 mb-3">
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('supplier_receipt_history') }}</div>
+          <div class="fw-bold">{{ overview.receipts|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('payment_paid') }}</div>
+          <div class="fw-bold">{{ overview.counts.paid }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('payment_unpaid') }}</div>
+          <div class="fw-bold">{{ overview.counts.unpaid }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('suppliers_label') }}</div>
+          <div class="fw-bold">{{ overview.supplier_count }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">{{ t('movement_filters_title') }}</h2>
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label small mb-1">{{ t('search_label') if t('search_label') != 'search_label' else 'Search' }}</label>
+          <input type="text" name="q" class="form-control form-control-sm" value="{{ search_query or '' }}" placeholder="{{ t('supplier_receipt_search_placeholder') }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">{{ t('supplier_label') }}</label>
+          <select name="supplier_name" class="form-select form-select-sm">
+            <option value="">{{ t('all_suppliers') }}</option>
+            {% for supplier in overview.available_suppliers %}
+              <option value="{{ supplier }}" {% if selected_supplier_name == supplier %}selected{% endif %}>{{ supplier }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">{{ t('payment_status_label') }}</label>
+          <select name="payment_status" class="form-select form-select-sm">
+            <option value="" {% if not selected_payment_status %}selected{% endif %}>All</option>
+            <option value="paid" {% if selected_payment_status == 'paid' %}selected{% endif %}>{{ t('payment_paid') }}</option>
+            <option value="unpaid" {% if selected_payment_status == 'unpaid' %}selected{% endif %}>{{ t('payment_unpaid') }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">{{ t('invoice_label') }}</label>
+          <input type="text" name="invoice_number" class="form-control form-control-sm" value="{{ selected_invoice_number or '' }}">
+        </div>
+        <div class="col-md-1">
+          <label class="form-label small mb-1">{{ t('from_date') }}</label>
+          <input type="date" name="from" class="form-control form-control-sm" value="{{ filter_from or '' }}">
+        </div>
+        <div class="col-md-1">
+          <label class="form-label small mb-1">{{ t('to_date') }}</label>
+          <input type="date" name="to" class="form-control form-control-sm" value="{{ filter_to or '' }}">
+        </div>
+        <div class="col-md-1">
+          <button type="submit" class="btn btn-primary btn-sm w-100">{{ t('apply') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('totals_by_currency') }}</h2>
+          {% if overview.totals_by_currency %}
+            <div class="d-flex flex-column gap-2">
+              {% for currency, total in overview.totals_by_currency.items() %}
+                <div class="d-flex justify-content-between border rounded px-3 py-2">
+                  <span class="text-muted">{{ currency }}</span>
+                  <strong>{{ "%.2f"|format(total) }}</strong>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('no_priced_receipts_in_filter') }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('open_payable') }}</h2>
+          {% if overview.unpaid_by_currency %}
+            <div class="d-flex flex-column gap-2">
+              {% for currency, total in overview.unpaid_by_currency.items() %}
+                <div class="d-flex justify-content-between border rounded px-3 py-2">
+                  <span class="text-muted">{{ currency }}</span>
+                  <strong>{{ "%.2f"|format(total) }}</strong>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('no_unpaid_totals_in_filter') }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h2 class="h6 mb-3">{{ t('receipt_rows') }}</h2>
+      {% if overview.receipts %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>{{ t('table_date') }}</th>
+                <th>{{ t('supplier_label') }}</th>
+                <th>{{ t('material_label') }}</th>
+                <th>{{ t('invoice_label') }}</th>
+                <th>{{ t('status') }}</th>
+                <th class="text-end">{{ t('quantity') }}</th>
+                <th class="text-end">{{ t('total_amount') }}</th>
+                <th>{{ t('table_actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for receipt in overview.receipts %}
+                <tr>
+                  <td>{{ receipt.received_at }}</td>
+                  <td>
+                    <a class="text-decoration-none fw-semibold" href="{{ url_for('fabrics.supplier_detail', supplier_name=receipt.supplier_name) }}">{{ receipt.supplier_name }}</a>
+                  </td>
+                  <td>
+                    <div class="fw-semibold">{{ receipt.material_name }}</div>
+                    {% if receipt.note %}
+                      <div class="small text-muted">{{ receipt.note }}</div>
+                    {% endif %}
+                  </td>
+                  <td>{{ receipt.invoice_number or "-" }}</td>
+                  <td>
+                    <span class="badge {% if (receipt.payment_status or 'unpaid') == 'paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                      {{ (receipt.payment_status or 'unpaid')|title }}
+                    </span>
+                  </td>
+                  <td class="text-end">{{ "%.2f"|format(receipt.quantity_received or 0) }} {{ receipt.unit }}</td>
+                  <td class="text-end">
+                    {% if receipt.line_total %}
+                      {{ "%.2f"|format(receipt.line_total) }} {{ receipt.currency or '' }}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex gap-2 flex-wrap">
+                      <a href="{{ url_for('fabrics.supplier_receipt_detail', receipt_id=receipt.id) }}" class="btn btn-outline-primary btn-sm">{{ t('view') if t('view') != 'view' else 'View' }}</a>
+                      <a href="{{ url_for('fabrics.supplier_receipt_pdf', receipt_id=receipt.id) }}" class="btn btn-outline-success btn-sm">PDF</a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-muted small">{{ t('no_receipts_match_filters') }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

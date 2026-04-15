@@ -1,14 +1,128 @@
-{% extends "base.html" %}
+{% extends "shop/base_shop.html" %}
 {% block content %}
 
 <style>
-  .mm-orders-page .mm-order-card {
-    border-radius: 18px;
-    border: 1px solid rgba(0,0,0,.08);
-    background: rgba(255,255,255,.96);
+  .mm-orders-page {
+    position: relative;
+    padding-bottom: 110px;
   }
 
-  .mm-orders-page .mm-order-head {
+  .mm-orders-page::before {
+    content: "";
+    position: absolute;
+    inset: -18px -12px -18px -12px;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 14% 12%, rgba(13, 110, 253, 0.1), transparent 34%),
+      radial-gradient(circle at 86% 18%, rgba(111, 66, 193, 0.08), transparent 36%),
+      radial-gradient(circle at 28% 90%, rgba(32, 201, 151, 0.08), transparent 38%);
+    opacity: 0.95;
+  }
+
+  .mm-orders-page > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mm-orders-hero,
+  .mm-orders-kpi,
+  .mm-order-card,
+  .mm-orders-side-card,
+  .mm-orders-empty {
+    border-radius: 20px;
+    border: 1px solid rgba(0,0,0,.08);
+    background: linear-gradient(180deg, rgba(255,255,255,.84), rgba(255,255,255,.96));
+    box-shadow: 0 14px 36px rgba(0,0,0,.08);
+  }
+
+  .mm-orders-hero {
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .mm-orders-title {
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: -.03em;
+    font-size: clamp(1.45rem, 2.6vw, 2.15rem);
+    line-height: 1.04;
+  }
+
+  .mm-orders-sub {
+    margin-top: 8px;
+    color: #6c757d;
+    font-size: .95rem;
+    line-height: 1.5;
+  }
+
+  .mm-orders-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .34rem .72rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.08);
+    background: rgba(255,255,255,.76);
+    font-size: .78rem;
+    color: rgba(0,0,0,.7);
+    white-space: nowrap;
+  }
+
+  .mm-orders-top-actions .btn {
+    border-radius: 999px;
+    font-weight: 800;
+  }
+
+  .mm-orders-kpi-row {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 16px;
+  }
+
+  .mm-orders-kpi {
+    padding: 16px;
+  }
+
+  .mm-orders-kpi-label {
+    font-size: .73rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: #6c757d;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .mm-orders-kpi-value {
+    font-size: 1.3rem;
+    font-weight: 900;
+    line-height: 1.08;
+    color: rgba(0,0,0,.82);
+  }
+
+  .mm-orders-kpi-sub {
+    color: #6c757d;
+    font-size: .8rem;
+    margin-top: 4px;
+  }
+
+  .mm-orders-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, .95fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .mm-orders-stack {
+    display: grid;
+    gap: 16px;
+  }
+
+  .mm-order-card {
+    padding: 16px;
+  }
+
+  .mm-order-head {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -16,175 +130,347 @@
     flex-wrap: wrap;
   }
 
-  .mm-orders-page .mm-order-title {
+  .mm-order-title {
     font-weight: 900;
     font-size: 1rem;
+    line-height: 1.15;
   }
 
-  .mm-orders-page .mm-order-meta {
+  .mm-order-meta {
     font-size: .84rem;
     color: #6c757d;
+    margin-top: 4px;
   }
 
-  .mm-orders-page .mm-item-box {
+  .mm-item-box {
     border: 1px solid rgba(0,0,0,.06);
     border-radius: 14px;
     background: #fff;
     padding: 10px 12px;
   }
 
-  .mm-orders-page .mm-item-name {
+  .mm-item-name {
     font-weight: 800;
   }
 
-  .mm-orders-page .mm-progress-line {
+  .mm-progress-line {
     height: 10px;
     border-radius: 999px;
     background: #eef1f4;
     overflow: hidden;
   }
 
-  .mm-orders-page .mm-progress-fill {
+  .mm-progress-fill {
     height: 100%;
     border-radius: 999px;
     background: linear-gradient(90deg, #0d6efd, #20c997);
   }
 
-  .mm-orders-page .mm-mini {
+  .mm-mini {
     font-size: .83rem;
     color: #6c757d;
   }
 
-  .mm-orders-page .mm-status {
+  .mm-status {
     border-radius: 999px;
     font-weight: 800;
     padding: .42rem .75rem;
   }
+
+  .mm-orders-side-card {
+    padding: 16px;
+  }
+
+  .mm-orders-side-title {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    margin-bottom: 12px;
+  }
+
+  .mm-founder-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mm-founder-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #495057;
+    font-size: .92rem;
+    line-height: 1.45;
+  }
+
+  .mm-founder-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    margin-top: .35rem;
+    background: #0d6efd;
+    flex: 0 0 auto;
+  }
+
+  .mm-orders-empty {
+    padding: 18px;
+    color: #6c757d;
+    font-size: .92rem;
+  }
+
+  @media (max-width: 991.98px) {
+    .mm-orders-kpi-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mm-orders-main-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .mm-orders-hero,
+    .mm-orders-kpi,
+    .mm-order-card,
+    .mm-orders-side-card,
+    .mm-orders-empty {
+      padding: 14px;
+      border-radius: 18px;
+    }
+
+    .mm-orders-kpi-row {
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mm-orders-kpi-value {
+      font-size: 1.08rem;
+    }
+
+    .mm-orders-kpi-label {
+      font-size: .68rem;
+    }
+  }
 </style>
 
-<div class="container py-3 mm-orders-page">
-  <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 mb-3">
-    <div>
-      <h1 class="h5 mb-1">{{ t('shop_orders_title') }}</h1>
-      <div class="text-muted small">
-        {{ t('shop_orders_subtitle') }}
+<div class="container-fluid py-3 mm-orders-page">
+
+  {% set pending_count = counts.pending if counts and counts.pending is defined else 0 %}
+  {% set ready_count = counts.ready if counts and counts.ready is defined else 0 %}
+  {% set completed_count = counts.completed if counts and counts.completed is defined else 0 %}
+  {% set cancelled_count = counts.cancelled if counts and counts.cancelled is defined else 0 %}
+
+  <div class="mm-orders-hero">
+    <div class="d-flex justify-content-between flex-wrap align-items-md-center gap-3">
+      <div>
+        <div class="d-flex gap-2 flex-wrap mb-2">
+          <span class="mm-orders-chip">🛒 {{ t('menu_orders_short') }}</span>
+          <span class="mm-orders-chip">🏪 {{ t('menu_shop') }}</span>
+        </div>
+        <h1 class="mm-orders-title">{{ t('shop_orders_title') }}</h1>
+        <div class="mm-orders-sub">
+          {{ t('shop_orders_subtitle') }}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 flex-wrap mm-orders-top-actions">
+        <a href="{{ url_for('main.more') }}" class="btn btn-sm btn-outline-primary">
+          {{ t('more_label') }}
+        </a>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+          {{ t('shop_orders_back') }}
+        </a>
       </div>
     </div>
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary rounded-pill">{{ t('shop_orders_back') }}</a>
   </div>
 
-  {% if orders %}
-    {% for order in orders %}
-      <div class="card shadow-sm border-0 mb-3 mm-order-card">
-        <div class="card-body py-3">
-          <div class="mm-order-head mb-2">
-            <div>
-              <div class="mm-order-title">{{ t('shop_orders_order_label') }} #{{ order.id }}</div>
-              <div class="mm-order-meta">
-                {{ order.created_at }}
-                {% if order.customer_name %} · {{ order.customer_name }}{% endif %}
-                {% if order.customer_phone %} · {{ order.customer_phone }}{% endif %}
+  <div class="mm-orders-kpi-row">
+    <div class="mm-orders-kpi">
+      <div class="mm-orders-kpi-label">{{ t('shop_orders_status_pending') }}</div>
+      <div class="mm-orders-kpi-value">{{ pending_count }}</div>
+      <div class="mm-orders-kpi-sub">{{ t('shop_orders_waiting_fulfillment') }}</div>
+    </div>
+
+    <div class="mm-orders-kpi">
+      <div class="mm-orders-kpi-label">{{ t('shop_orders_status_ready') }}</div>
+      <div class="mm-orders-kpi-value">{{ ready_count }}</div>
+      <div class="mm-orders-kpi-sub">{{ t('shop_orders_ready_handover') }}</div>
+    </div>
+
+    <div class="mm-orders-kpi">
+      <div class="mm-orders-kpi-label">{{ t('shop_orders_status_completed') }}</div>
+      <div class="mm-orders-kpi-value">{{ completed_count }}</div>
+      <div class="mm-orders-kpi-sub">{{ t('shop_orders_completed_sub') }}</div>
+    </div>
+
+    <div class="mm-orders-kpi">
+      <div class="mm-orders-kpi-label">{{ t('shop_orders_status_cancelled') }}</div>
+      <div class="mm-orders-kpi-value">{{ cancelled_count }}</div>
+      <div class="mm-orders-kpi-sub">{{ t('shop_orders_cancelled_sub') }}</div>
+    </div>
+  </div>
+
+  <div class="mm-orders-main-grid">
+    <div class="mm-orders-stack">
+      {% if orders %}
+        {% for order in orders %}
+          <div class="mm-order-card">
+            <div class="mm-order-head mb-2">
+              <div>
+                <div class="mm-order-title">{{ t('shop_orders_order_label') }} #{{ order.id }}</div>
+                <div class="mm-order-meta">
+                  {{ order.created_at }}
+                  {% if order.customer_name %} · {{ order.customer_name }}{% endif %}
+                  {% if order.customer_phone %} · {{ order.customer_phone }}{% endif %}
+                </div>
+              </div>
+
+              <div>
+                {% if order.status == "pending" %}
+                  <span class="badge bg-warning text-dark mm-status">{{ t('shop_orders_status_pending') }}</span>
+                {% elif order.status == "ready" %}
+                  <span class="badge bg-info text-dark mm-status">{{ t('shop_orders_status_ready') }}</span>
+                {% elif order.status == "completed" %}
+                  <span class="badge bg-success mm-status">{{ t('shop_orders_status_completed') }}</span>
+                {% elif order.status == "cancelled" %}
+                  <span class="badge bg-secondary mm-status">{{ t('shop_orders_status_cancelled') }}</span>
+                {% else %}
+                  <span class="badge bg-light text-dark mm-status">{{ order.status }}</span>
+                {% endif %}
               </div>
             </div>
 
-            <div>
-              {% if order.status == "pending" %}
-                <span class="badge bg-warning text-dark mm-status">{{ t('shop_orders_status_pending') }}</span>
-              {% elif order.status == "ready" %}
-                <span class="badge bg-info text-dark mm-status">{{ t('shop_orders_status_ready') }}</span>
-              {% elif order.status == "completed" %}
-                <span class="badge bg-success mm-status">{{ t('shop_orders_status_completed') }}</span>
-              {% elif order.status == "cancelled" %}
-                <span class="badge bg-secondary mm-status">{{ t('shop_orders_status_cancelled') }}</span>
-              {% else %}
-                <span class="badge bg-light text-dark mm-status">{{ order.status }}</span>
-              {% endif %}
-            </div>
-          </div>
+            {% if order.note %}
+              <div class="small text-muted mb-2">
+                <b>{{ t('comment') }}:</b> {{ order.note }}
+              </div>
+            {% endif %}
 
-          {% if order.note %}
-            <div class="small text-muted mb-2">
-              <b>{{ t('comment') }}:</b> {{ order.note }}
-            </div>
-          {% endif %}
+            <div class="d-grid gap-2 mt-2">
+              {% for item in order.items %}
+                {% set requested = item.qty_requested or 0 %}
+                {% set fulfilled = item.qty_from_shop_now or 0 %}
+                {% set remaining = item.qty_remaining or 0 %}
+                {% set done_pct = ((fulfilled * 100 / requested) if requested else 0) %}
 
-          <div class="d-grid gap-2 mt-2">
-            {% for item in order.items %}
-              {% set requested = item.qty_requested or 0 %}
-              {% set fulfilled = item.qty_from_shop_now or 0 %}
-              {% set remaining = item.qty_remaining or 0 %}
-              {% set done_pct = ((fulfilled * 100 / requested) if requested else 0) %}
+                <div class="mm-item-box">
+                  <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                    <div>
+                      <div class="mm-item-name">{{ item.product.name }}</div>
+                      <div class="mm-mini">
+                        {% if item.product.category %}
+                          {{ item.product.category }}
+                        {% else %}
+                          {{ t('products_no_category') }}
+                        {% endif %}
+                      </div>
+                    </div>
 
-              <div class="mm-item-box">
-                <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-                  <div>
-                    <div class="mm-item-name">{{ item.product.name }}</div>
-                    <div class="mm-mini">
-                      {% if item.product.category %}
-                        {{ item.product.category }}
+                    <div class="text-end">
+                      {% if remaining <= 0 %}
+                        <span class="badge bg-success">{{ t('shop_orders_item_ready') }}</span>
+                      {% elif fulfilled > 0 %}
+                        <span class="badge bg-info text-dark">{{ t('shop_orders_item_partial') }}</span>
                       {% else %}
-                        {{ t('products_no_category') }}
+                        <span class="badge bg-warning text-dark">{{ t('shop_orders_item_waiting') }}</span>
                       {% endif %}
                     </div>
                   </div>
 
-                  <div class="text-end">
-                    {% if remaining <= 0 %}
-                      <span class="badge bg-success">{{ t('shop_orders_item_ready') }}</span>
-                    {% elif fulfilled > 0 %}
-                      <span class="badge bg-info text-dark">{{ t('shop_orders_item_partial') }}</span>
-                    {% else %}
-                      <span class="badge bg-warning text-dark">{{ t('shop_orders_item_waiting') }}</span>
-                    {% endif %}
-                  </div>
-                </div>
-
-                <div class="row g-2 mt-1">
-                  <div class="col-4">
-                    <div class="mm-mini">{{ t('shop_orders_needed') }}</div>
-                    <div class="fw-bold">{{ requested }} {{ t('pieces_short') }}</div>
-                  </div>
-                  <div class="col-4">
-                    <div class="mm-mini">{{ t('shop_orders_already_in_shop') }}</div>
-                    <div class="fw-bold text-primary">{{ fulfilled }} {{ t('pieces_short') }}</div>
-                  </div>
-                  <div class="col-4">
-                    <div class="mm-mini">{{ t('shop_orders_remaining') }}</div>
-                    <div class="fw-bold {% if remaining > 0 %}text-danger{% else %}text-success{% endif %}">
-                      {{ remaining }} {{ t('pieces_short') }}
+                  <div class="row g-2 mt-1">
+                    <div class="col-4">
+                      <div class="mm-mini">{{ t('shop_orders_needed') }}</div>
+                      <div class="fw-bold">{{ requested }} {{ t('pieces_short') }}</div>
+                    </div>
+                    <div class="col-4">
+                      <div class="mm-mini">{{ t('shop_orders_already_in_shop') }}</div>
+                      <div class="fw-bold text-primary">{{ fulfilled }} {{ t('pieces_short') }}</div>
+                    </div>
+                    <div class="col-4">
+                      <div class="mm-mini">{{ t('shop_orders_remaining') }}</div>
+                      <div class="fw-bold {% if remaining > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ remaining }} {{ t('pieces_short') }}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div class="mm-progress-line mt-2">
-                  <div class="mm-progress-fill" style="width: {{ done_pct }}%;"></div>
+                  <div class="mm-progress-line mt-2">
+                    <div class="mm-progress-fill" style="width: {{ done_pct }}%;"></div>
+                  </div>
                 </div>
+              {% endfor %}
+            </div>
+
+            {% if order.status == "ready" %}
+              <div class="alert alert-info py-2 small mt-3 mb-2">
+                {{ t('shop_orders_ready_notice') }}
               </div>
-            {% endfor %}
+
+              <form method="post" action="{{ url_for('shop.complete_shop_order', order_id=order.id) }}">
+                <button type="submit" class="btn btn-success btn-sm w-100" style="border-radius:999px;font-weight:800;">
+                  {{ t('shop_orders_complete_button') }}
+                </button>
+              </form>
+
+            {% elif order.status == "completed" %}
+              <div class="alert alert-success py-2 small mt-3 mb-0">
+                {{ t('shop_orders_completed_notice') }}
+              </div>
+            {% endif %}
           </div>
+        {% endfor %}
+      {% else %}
+        <div class="mm-orders-empty">
+          {{ t('shop_orders_no_orders') }}
+        </div>
+      {% endif %}
+    </div>
 
-          {% if order.status == "ready" %}
-            <div class="alert alert-info py-2 small mt-3 mb-2">
-              {{ t('shop_orders_ready_notice') }}
-            </div>
+    <div class="mm-orders-stack">
+      <div class="mm-orders-side-card">
+        <div class="mm-orders-side-title">{{ t('founder_view') }}</div>
 
-            <form method="post" action="{{ url_for('shop.complete_shop_order', order_id=order.id) }}">
-              <button type="submit" class="btn btn-success btn-sm w-100">
-                {{ t('shop_orders_complete_button') }}
-              </button>
-            </form>
-
-          {% elif order.status == "completed" %}
-            <div class="alert alert-success py-2 small mt-3 mb-0">
-              {{ t('shop_orders_completed_notice') }}
-            </div>
-          {% endif %}
+        <div class="mm-founder-list">
+          <div class="mm-founder-item">
+            <span class="mm-founder-dot"></span>
+            <span>{{ t('founder_orders_question_1') }}</span>
+          </div>
+          <div class="mm-founder-item">
+            <span class="mm-founder-dot"></span>
+            <span>{{ t('founder_orders_question_2') }}</span>
+          </div>
+          <div class="mm-founder-item">
+            <span class="mm-founder-dot"></span>
+            <span>{{ t('founder_orders_question_3') }}</span>
+          </div>
+          <div class="mm-founder-item">
+            <span class="mm-founder-dot"></span>
+            <span>{{ t('founder_orders_question_4') }}</span>
+          </div>
         </div>
       </div>
-    {% endfor %}
-  {% else %}
-    <p class="text-muted small">{{ t('shop_orders_no_orders') }}</p>
-  {% endif %}
+
+      <div class="mm-orders-side-card">
+        <div class="mm-orders-side-title">{{ t('shop_orders_title') }}</div>
+        <div class="small text-muted mb-2">{{ t('current_order_flow_snapshot') }}</div>
+
+        <div class="d-grid gap-2">
+          {% for order in orders[:5] %}
+            <div class="mm-item-box">
+              <div class="d-flex justify-content-between gap-2">
+                <div class="fw-semibold">#{{ order.id }}</div>
+                <div class="small text-muted">{{ order.status }}</div>
+              </div>
+              <div class="small text-muted mt-1">
+                {% if order.customer_name %}{{ order.customer_name }}{% else %}{{ t('shop_orders_no_customer_name') }}{% endif %}
+              </div>
+            </div>
+          {% else %}
+            <div class="small text-muted">{{ t('shop_orders_no_orders') }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% endblock %}

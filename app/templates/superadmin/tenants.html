@@ -1,0 +1,88 @@
+{% extends "superadmin/base.html" %}
+{% block title %}Tenants{% endblock %}
+{% block page_title %}Tenants{% endblock %}
+{% block page_crumb %}All factories / businesses on the platform{% endblock %}
+
+{% block content %}
+<div class="sa-page-header">
+  <div>
+    <div class="sa-page-header-title">Tenants</div>
+    <div class="sa-page-header-sub">{{ rows|length }} tenant{{ 's' if rows|length != 1 else '' }} registered</div>
+  </div>
+</div>
+
+<!-- Search -->
+<form method="get" style="margin-bottom:20px;">
+  <div class="sa-search" style="max-width:380px;">
+    <span style="color:var(--sa-muted);">🔍</span>
+    <input name="q" value="{{ q }}" placeholder="Search by name…" autocomplete="off" />
+    {% if q %}
+    <a href="{{ url_for('superadmin.tenants') }}" style="color:var(--sa-muted);font-size:.82rem;">Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+<div class="sa-panel">
+  <table class="sa-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Business Name</th>
+        <th>Owner</th>
+        <th>Phone</th>
+        <th>Location</th>
+        <th>Users</th>
+        <th>Shops</th>
+        <th>Products</th>
+        <th>Last Sale</th>
+        <th>Created</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      {% set f = row.factory %}
+      <tr>
+        <td style="color:var(--sa-muted);font-size:.78rem;">{{ f.id }}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="sa-avatar sa-avatar-gold" style="border-radius:12px;font-size:.76rem;">
+              {{ f.name[:2]|upper }}
+            </div>
+            <div>
+              <div style="font-weight:800;">{{ f.name }}</div>
+              {% if f.note %}
+              <div style="font-size:.74rem;color:var(--sa-muted);">{{ f.note[:50] }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </td>
+        <td style="font-size:.86rem;">{{ f.owner_name or '—' }}</td>
+        <td style="font-size:.82rem;color:var(--sa-muted);">{{ f.phone or '—' }}</td>
+        <td style="font-size:.82rem;color:var(--sa-muted);">{{ f.location or '—' }}</td>
+        <td><span class="sa-badge sa-badge-purple">{{ row.user_count }}</span></td>
+        <td><span class="sa-badge sa-badge-gold">{{ row.shop_count }}</span></td>
+        <td><span class="sa-badge sa-badge-green">{{ row.product_count }}</span></td>
+        <td style="font-size:.8rem;color:var(--sa-muted);">
+          {{ row.last_sale.strftime('%d %b %Y') if row.last_sale else '—' }}
+        </td>
+        <td style="font-size:.8rem;color:var(--sa-muted);">
+          {{ f.created_at.strftime('%d %b %Y') }}
+        </td>
+        <td>
+          <a href="{{ url_for('superadmin.tenant_detail', tenant_id=f.id) }}" class="sa-btn sa-btn-ghost" style="padding:5px 12px;font-size:.78rem;">
+            View →
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="11" style="text-align:center;padding:32px;color:var(--sa-muted);">
+          No tenants found{% if q %} matching "{{ q }}"{% endif %}.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

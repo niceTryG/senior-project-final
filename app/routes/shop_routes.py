@@ -14,7 +14,7 @@ from flask import (
     abort,
 )
 from flask_login import login_required, current_user
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 
 from ..extensions import db
 from ..auth_utils import roles_required
@@ -29,6 +29,8 @@ from ..models import (
     ShopOrderItem,
     StockMovement,
     Sale,
+    WholesaleSale,
+    WholesaleSaleItem,
 )
 from ..services.shop_service import ShopService
 from app.telegram_notify import send_telegram_message
@@ -519,6 +521,38 @@ def list_shop():
         Factory.name.asc(), Product.name.asc()
     ).all()
 
+    visible_shop_ids = [shop_scope] if isinstance(shop_scope, int) else list(shop_scope)
+    visible_product_ids = sorted({row.product_id for row in all_visible_items if row.product_id})
+    wholesale_attention_map = {}
+
+    if visible_shop_ids and visible_product_ids:
+        wholesale_rows = (
+            db.session.query(
+                WholesaleSale.shop_id,
+                WholesaleSaleItem.product_id,
+                WholesaleSaleItem.source_factory_id,
+                func.count(WholesaleSaleItem.id).label("requests_count"),
+                func.coalesce(func.sum(WholesaleSaleItem.quantity), 0).label("requested_qty"),
+            )
+            .join(WholesaleSale, WholesaleSale.id == WholesaleSaleItem.wholesale_sale_id)
+            .filter(
+                WholesaleSale.shop_id.in_(visible_shop_ids),
+                WholesaleSaleItem.product_id.in_(visible_product_ids),
+            )
+            .group_by(
+                WholesaleSale.shop_id,
+                WholesaleSaleItem.product_id,
+                WholesaleSaleItem.source_factory_id,
+            )
+            .all()
+        )
+
+        for row in wholesale_rows:
+            wholesale_attention_map[(row.shop_id, row.product_id, row.source_factory_id)] = {
+                "count": int(row.requests_count or 0),
+                "qty": int(row.requested_qty or 0),
+            }
+
     overall_total_qty = 0
     overall_total_value_uzs = 0
     overall_low_stock_count = 0
@@ -626,7 +660,16 @@ def list_shop():
     for row in items:
         qty = row.quantity or 0
         price = row.product.sell_price_per_item or 0
-        total_value_uzs += qty * price
+        row.total_value = qty * price
+        total_value_uzs += row.total_value
+
+        attention = wholesale_attention_map.get(
+            (row.shop_id, row.product_id, row.source_factory_id),
+            None,
+        )
+        row.wholesale_attention = bool(attention)
+        row.wholesale_attention_count = int(attention.get("count") or 0) if attention else 0
+        row.wholesale_attention_qty = int(attention.get("qty") or 0) if attention else 0
 
         if qty <= 0:
             out_of_stock_count += 1
@@ -855,7 +898,7 @@ def export_shop():
     return send_file(
         buf,
         as_attachment=True,
-        download_name="mini_moda_shop_report.xlsx",
+        download_name="adras_shop_report.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         max_age=0,
     )

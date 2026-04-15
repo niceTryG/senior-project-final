@@ -15,6 +15,12 @@ from .extensions import db, login_manager, migrate
 from .translations import t as translate
 from .models import User
 from .db_migrations import migration_status, pending_migrations, upgrade_database
+from .user_display import (
+    display_value,
+    get_user_display_name,
+    get_user_initials,
+    get_workspace_name,
+)
 
 
 def _validate_runtime_config(app: Flask) -> None:
@@ -158,7 +164,7 @@ def create_app(config_class="config.DevConfig"):
             return
 
         # Allow auth endpoints
-        if request.endpoint in ("auth.login", "auth.logout"):
+        if request.endpoint in ("auth.login", "auth.logout", "auth.security_wall"):
             return
 
         # Allow language switch even before login
@@ -177,6 +183,14 @@ def create_app(config_class="config.DevConfig"):
         if not current_user.is_authenticated:
             return redirect(url_for("auth.login"))
 
+        if getattr(current_user, "must_change_password", False):
+            if request.endpoint not in {"auth.security_wall", "auth.logout", "switch_language"}:
+                return redirect(url_for("auth.security_wall"))
+
+        # Superadmins operate across all tenants — no factory context needed
+        if getattr(current_user, "is_superadmin", False):
+            return
+
         # Auto-select a factory if none selected yet
         if "factory_id" not in session:
             from .models import Factory  # local import avoids circular imports
@@ -187,7 +201,7 @@ def create_app(config_class="config.DevConfig"):
             elif app.config.get("AUTO_DB_BOOTSTRAP", False):
                 # Create a default factory ONLY for admin users
                 if getattr(current_user, "role", None) == "admin":
-                    default_factory = Factory(name="Mini Moda Factory")
+                    default_factory = Factory(name="Adras Factory")
                     db.session.add(default_factory)
                     db.session.commit()
                     session["factory_id"] = default_factory.id
@@ -200,12 +214,12 @@ def create_app(config_class="config.DevConfig"):
     @click.option("--password", prompt=True, hide_input=True, confirmation_prompt=True)
     @with_appcontext
     def create_superadmin(username, password):
-        existing_admin = User.query.filter_by(role="admin").first()
-        if existing_admin:
-            click.echo("An admin already exists. Aborting.")
+        existing = User.query.filter_by(role="superadmin").first()
+        if existing:
+            click.echo("A superadmin already exists. Aborting.")
             return
 
-        user = User(username=username, role="admin")
+        user = User(username=username, role="superadmin", factory_id=None, shop_id=None)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -373,6 +387,10 @@ def create_app(config_class="config.DevConfig"):
             "format_money": format_money,
             "format_money_compact": format_money_compact,
             "product_image_url": product_image_url,
+            "display_value": display_value,
+            "user_display_name": get_user_display_name,
+            "user_initials": get_user_initials,
+            "workspace_name": get_workspace_name,
         }
 
     # -------------------------
@@ -400,7 +418,7 @@ def create_app(config_class="config.DevConfig"):
     # -------------------------
     from .routes.auth_routes import auth_bp
     from .routes.dashboard_routes import main_bp
-    from .routes.fabric_routes import fabrics_bp
+    from .routes.fabric_routes import fabrics_bp, legacy_fabrics_bp
     from .routes.product_routes import products_bp
     from .routes.sale_routes import sales_bp
     from .routes.cash_routes import cash_bp
@@ -414,15 +432,20 @@ def create_app(config_class="config.DevConfig"):
     from .routes.history_routes import history_bp
     from app.cost.routes import bp as cost_bp
     from .routes.factory_routes import factory_bp
+    from .routes.factory_cutting_routes import cutting_bp
     from .routes.public_routes import public_bp
     from .routes.admin_routes import admin_bp
+    from .routes.superadmin_routes import superadmin_bp
 
     app.register_blueprint(public_bp)
+    app.register_blueprint(superadmin_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(factory_bp)
+    app.register_blueprint(cutting_bp)
     app.register_blueprint(cost_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
+    app.register_blueprint(legacy_fabrics_bp)
     app.register_blueprint(fabrics_bp)
     app.register_blueprint(products_bp)
     app.register_blueprint(sales_bp)

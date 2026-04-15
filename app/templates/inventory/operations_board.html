@@ -1,0 +1,311 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('operations_board') }}{% endblock %}
+{% block topbar_title %}{{ t('operations_board') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <section class="adras-hero-card">
+    <div class="adras-hero-left">
+      <div class="adras-chip-row mb-3" style="display:flex; flex-wrap:wrap; gap:10px;">
+        <span class="badge text-bg-dark">{{ workspace_page_name }}</span>
+        <span class="badge text-bg-secondary">{{ workspace_role_label }}</span>
+      </div>
+      <h1 class="adras-hero-title">{{ t('operations_board') }}</h1>
+      <p class="dashboard-subtitle">
+        {{ t('operations_board_subtitle') }}
+      </p>
+    </div>
+  </section>
+
+  <section class="adras-kpi-grid">
+    <article class="adras-kpi-card adras-kpi-card-dark">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('order_lines') }}</div>
+        <div class="adras-kpi-number">{{ queue_counts.all }}</div>
+      </div>
+      <div class="text-muted small">{{ t('pending_production_queue') }}</div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('waiting_materials') }}</div>
+        <div class="adras-kpi-number">{{ queue_counts.waiting_materials }}</div>
+      </div>
+      <div class="text-muted small">{{ t('cannot_start_cleanly') }}</div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('in_production') }}</div>
+        <div class="adras-kpi-number">{{ queue_counts.in_production + queue_counts.cutting + queue_counts.sewing + queue_counts.packing }}</div>
+      </div>
+      <div class="text-muted small">{{ t('runs_or_stages_moving') }}</div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('ready_to_ship') }}</div>
+        <div class="adras-kpi-number">{{ queue_counts.ready_to_ship + queue_counts.ready }}</div>
+      </div>
+      <div class="text-muted small">{{ t('produced_ready_handoff') }}</div>
+    </article>
+  </section>
+
+  <section class="adras-main-grid">
+    <div class="adras-main-left">
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+          <div>
+            <div class="adras-panel-title mb-1">{{ t('production_queue') }}</div>
+            <div class="text-muted small">{{ t('production_queue_subtitle') }}</div>
+          </div>
+          <a href="{{ url_for('shop.factory_pending_orders') }}" class="btn btn-sm btn-outline-light">{{ t('open_factory_queue') }}</a>
+        </div>
+
+        {% if queue_rows %}
+          <div class="d-grid" style="gap:14px;">
+            {% for row in queue_rows %}
+              <div class="adras-action-card" style="padding:16px 18px; border:1px solid rgba(255,255,255,.08);">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                  <div>
+                    <div class="adras-action-card-title">{{ row.product_name }}</div>
+                    <div class="adras-action-card-sub">
+                      {{ t('customer_label') }}: {{ row.customer_name }}
+                      {% if row.created_at %} · {{ row.created_at.strftime('%Y-%m-%d') }}{% endif %}
+                    </div>
+                  </div>
+                  <span class="badge
+                    {% if row.tone == 'danger' %}text-bg-danger
+                    {% elif row.tone == 'success' %}text-bg-success
+                    {% elif row.tone == 'warning' %}text-bg-warning
+                    {% elif row.tone == 'primary' %}text-bg-primary
+                    {% else %}text-bg-secondary{% endif %}">
+                    {{ row.stage_label }}
+                  </span>
+                </div>
+
+                <div class="row g-2 mt-1">
+                  <div class="col-md-3">
+                    <div class="small text-muted">{{ t('requested_label') }}</div>
+                    <div><strong>{{ row.qty_requested }}</strong></div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="small text-muted">{{ t('remaining_label') }}</div>
+                    <div><strong>{{ row.qty_remaining }}</strong></div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="small text-muted">{{ t('shop_covered_now') }}</div>
+                    <div><strong>{{ row.qty_from_shop_now }}</strong></div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="small text-muted">{{ t('factory_stock_label') }}</div>
+                    <div><strong>{{ row.factory_stock_now }}</strong></div>
+                  </div>
+                </div>
+
+                {% if row.progress %}
+                  <div class="adras-action-card-sub mt-2">
+                    {{ t('executed_remaining_complete').format(executed=row.progress.executed_qty, remaining=row.progress.remaining_qty, pct=row.progress.completion_pct) }}
+                  </div>
+                {% endif %}
+
+                {% if row.stage_history %}
+                  <div class="mt-3">
+                    <div class="small text-muted mb-2">{{ t('stage_timeline') }}</div>
+                    <div class="d-flex gap-2 flex-wrap">
+                      {% for entry in row.stage_history %}
+                        <span class="badge {% if entry.status == 'done' %}text-bg-success{% elif entry.status == 'in_progress' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">
+                          {{ entry.stage_label }} Â· {{ entry.assignee_name }}
+                        </span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endif %}
+
+                <div class="d-flex gap-2 flex-wrap mt-3">
+                  <a href="{{ row.action_href }}" class="btn btn-sm btn-outline-light">{{ row.action_label }}</a>
+                  {% if row.stage_action_href and row.stage_action_label %}
+                    <form method="post" action="{{ row.stage_action_href }}">
+                      <button type="submit" class="btn btn-sm btn-primary">
+                        {% if row.active_stage %}{{ t('move_to_stage').format(stage=row.stage_action_label) }}{% else %}{{ row.stage_action_label }}{% endif %}
+                      </button>
+                    </form>
+                  {% endif %}
+                  <a href="{{ url_for('shop.history_by_order', order_id=row.order_id) }}" class="btn btn-sm btn-outline-light">{{ t('order_log') }}</a>
+                  {% if not row.task_exists %}
+                    <form method="post" action="{{ url_for('main.operations_board_create_queue_task', order_item_id=row.order_item_id) }}">
+                      <button type="submit" class="btn btn-sm btn-primary">{{ t('create_follow_up_task') }}</button>
+                    </form>
+                  {% else %}
+                    <a href="{{ url_for('main.command_center') }}" class="btn btn-sm btn-outline-light">{{ t('open_existing_task') }}</a>
+                  {% endif %}
+                </div>
+
+                {% if row.worker_options and (row.active_stage or row.can_start_stage_flow) %}
+                  <form method="post" action="{{ url_for('main.operations_board_assign_worker', order_item_id=row.order_item_id) }}" class="mt-3">
+                    <div class="row g-2 align-items-end">
+                      <div class="col-md-8">
+                        <label class="form-label small mb-1">{{ t('assign_worker') }}</label>
+                        <select name="assigned_user_id" class="form-select form-select-sm">
+                          <option value="">{{ t('choose_worker') }}</option>
+                          {% for worker in row.worker_options %}
+                            <option value="{{ worker.id }}">{{ worker.label }} · {{ worker.role }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <button type="submit" class="btn btn-sm btn-outline-light w-100">
+                          {% if row.active_stage %}{{ t('assign_current_stage') }}{% else %}{{ t('start_and_assign') }}{% endif %}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_pending_order_lines_now') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+          <div>
+            <div class="adras-panel-title mb-1">{{ t('product_costing_pressure') }}</div>
+            <div class="text-muted small">{{ t('product_costing_subtitle') }}</div>
+          </div>
+          <a href="{{ url_for('products.list_products') }}" class="btn btn-sm btn-outline-light">{{ t('open_products') }}</a>
+        </div>
+
+        {% if cost_rows %}
+          <div class="table-responsive">
+            <table class="table table-dark table-borderless align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th class="text-end">Materials</th>
+                  <th class="text-end">{{ t('estimated_input_cost') }}</th>
+                  <th class="text-end">{{ t('saved_cost') }}</th>
+                  <th class="text-end">{{ t('sell_price') }}</th>
+                  <th class="text-end">{{ t('gross_room') }}</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in cost_rows %}
+                  <tr>
+                    <td>
+                      <div class="fw-semibold">{{ row.product_name }}</div>
+                      <div class="small text-muted">
+                        {{ row.category or 'No category' }} · {{ row.cost_source_label }}
+                        {% if row.missing_cost_count %} · {{ row.missing_cost_count }} missing price{% if row.missing_cost_count != 1 %}s{% endif %}{% endif %}
+                      </div>
+                    </td>
+                    <td class="text-end">{{ row.materials_count }}</td>
+                    <td class="text-end">{{ "%.2f"|format(row.estimated_material_cost or 0) }} {{ row.currency }}</td>
+                    <td class="text-end">{{ "%.2f"|format(row.saved_cost or 0) }} {{ row.currency }}</td>
+                    <td class="text-end">{{ "%.2f"|format(row.sell_price or 0) }} {{ row.currency }}</td>
+                    <td class="text-end {% if row.gross_margin < 0 %}text-danger{% elif row.gross_margin < (row.sell_price * 0.15 if row.sell_price else 0) %}text-warning{% endif %}">
+                      {{ "%.2f"|format(row.gross_margin or 0) }} {{ row.currency }}
+                    </td>
+                    <td class="text-end">
+                      <div class="d-flex justify-content-end gap-2 flex-wrap">
+                        <a href="{{ row.cost_href }}" class="btn btn-sm btn-outline-light">{{ t('cost_sheet') }}</a>
+                        <a href="{{ row.composition_href }}" class="btn btn-sm btn-outline-light">{{ t('open_composition') }}</a>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_composition_products_cost_review') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <div class="adras-main-right">
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('live_alerts') }}</div>
+        <div class="d-grid" style="gap:12px;">
+          {% for alert in alert_rows %}
+            <div class="adras-action-card" style="padding:14px 16px;">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <div class="adras-action-card-title">{{ alert.title }}</div>
+                  <div class="adras-action-card-sub">{{ alert.copy }}</div>
+                </div>
+                <span class="badge
+                  {% if alert.tone == 'danger' %}text-bg-danger
+                  {% elif alert.tone == 'warning' %}text-bg-warning
+                  {% else %}text-bg-secondary{% endif %}">
+                  {{ alert.value }}
+                </span>
+              </div>
+              <div class="mt-3">
+                <a href="{{ alert.href }}" class="btn btn-sm btn-outline-light">{{ alert.action_label }}</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="adras-panel">
+        <div class="adras-panel-title">Open task snapshot</div>
+        {% if open_task_rows %}
+          <div class="d-grid" style="gap:12px;">
+            {% for task in open_task_rows %}
+              <div class="adras-action-card" style="padding:14px 16px;">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <div class="adras-action-card-title">{{ task.title }}</div>
+                    <div class="adras-action-card-sub">{{ task.description or 'No extra note' }}</div>
+                  </div>
+                  <span class="badge {% if task.priority == 'urgent' %}text-bg-danger{% elif task.priority == 'high' %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
+                    {{ task.priority|title }}
+                  </span>
+                </div>
+                <div class="mt-3">
+                  <a href="{{ task.href }}" class="btn btn-sm btn-outline-light">Open task</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>Command Center is calm right now.</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel adras-snapshot-dark">
+        <div class="adras-panel-title adras-panel-title-light">Quick lanes</div>
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('main.worker_floor') }}" class="btn btn-outline-light">Worker page</a>
+          <a href="{{ url_for('main.stage_history') }}" class="btn btn-outline-light">Stage history</a>
+          <a href="{{ url_for('main.production_plan') }}" class="btn btn-outline-light">Production planner</a>
+          <a href="{{ url_for('main.production_plan_history') }}" class="btn btn-outline-light">Saved plans</a>
+          <a href="{{ url_for('main.command_center') }}" class="btn btn-outline-light">Command Center</a>
+          <a href="{{ url_for('fabrics.supplier_receipts') }}" class="btn btn-outline-light">Receipt history</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

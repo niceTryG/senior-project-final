@@ -9,15 +9,79 @@ from flask import (
     session,
 )
 from flask_login import login_user, logout_user, current_user, login_required
-from sqlalchemy import or_
+from sqlalchemy import or_, func
+from datetime import datetime
 
+from ..forms import SecurityWallPasswordForm
 from ..models import User, Factory, Shop, ShopFactoryLink
 from ..extensions import db
+from ..user_identity import build_login_username, normalize_phone, normalize_username
 
 import os
 
 
 auth_bp = Blueprint("auth", __name__)
+LOGIN_LOCK_THRESHOLD = 5
+LOGIN_LOCK_MINUTES = 10
+
+
+def _post_login_redirect_for(user):
+    next_page = session.pop("post_security_redirect", None) or request.args.get("next")
+    if next_page and str(next_page).startswith("/"):
+        return redirect(next_page)
+
+    if user.is_superadmin:
+        return redirect(url_for("superadmin.dashboard"))
+
+    if user.role == "shop":
+        return redirect(url_for("shop.dashboard_shop"))
+
+    return redirect(url_for("main.dashboard"))
+
+
+def _find_user_by_login(login_value: str):
+    normalized_login = normalize_username(login_value)
+    normalized_phone = normalize_phone(normalized_login)
+
+    clauses = [func.lower(User.username) == func.lower(normalized_login)]
+
+    if normalized_phone:
+        clauses.append(User.username == normalized_phone)
+        clauses.append(User.phone == normalized_phone)
+
+    return User.query.filter(or_(*clauses)).first()
+
+
+def _username_taken(username: str, *, exclude_user_id: int | None = None) -> bool:
+    normalized_username = normalize_username(username)
+    if not normalized_username:
+        return False
+
+    clauses = [func.lower(User.username) == func.lower(normalized_username)]
+    normalized_phone = normalize_phone(normalized_username)
+    if normalized_phone:
+        clauses.append(User.phone == normalized_phone)
+
+    q = User.query.filter(or_(*clauses))
+    if exclude_user_id is not None:
+        q = q.filter(User.id != exclude_user_id)
+    return q.first() is not None
+
+
+def _phone_taken(phone: str | None, *, exclude_user_id: int | None = None) -> bool:
+    normalized_phone = normalize_phone(phone)
+    if not normalized_phone:
+        return False
+
+    q = User.query.filter(
+        or_(
+            User.phone == normalized_phone,
+            func.lower(User.username) == func.lower(normalized_phone),
+        )
+    )
+    if exclude_user_id is not None:
+        q = q.filter(User.id != exclude_user_id)
+    return q.first() is not None
 
 
 # =========================
@@ -26,36 +90,82 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        if getattr(current_user, "role", None) == "shop":
-            return redirect(url_for("shop.dashboard_shop"))
-        return redirect(url_for("main.dashboard"))
+        if getattr(current_user, "must_change_password", False):
+            return redirect(url_for("auth.security_wall"))
+        return _post_login_redirect_for(current_user)
 
     error_key = None
+    error_message = None
 
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         remember = request.form.get("remember") == "1"
 
-        user = User.query.filter_by(username=username).first()
+        user = _find_user_by_login(username)
 
-        if user and user.check_password(password):
+        if user and user.is_login_locked():
+            locked_until = getattr(user, "locked_until", None)
+            error_message = (
+                f"Too many failed attempts. Try again after {locked_until.strftime('%H:%M')}"
+                if locked_until
+                else "Too many failed attempts. Try again later."
+            )
+        elif user and user.check_password(password):
+            user.clear_login_lock()
+            user.last_login_at = datetime.utcnow()
+            db.session.commit()
             login_user(user, remember=remember)
             session.permanent = True
 
             next_page = request.args.get("next")
             if next_page and next_page.startswith("/"):
-                return redirect(next_page)
+                session["post_security_redirect"] = next_page
 
-            if user.role == "shop":
-                return redirect(url_for("shop.dashboard_shop"))
+            if getattr(user, "must_change_password", False):
+                flash("Update your temporary password before entering the workspace.", "warning")
+                return redirect(url_for("auth.security_wall"))
 
-            return redirect(url_for("main.dashboard"))
+            return _post_login_redirect_for(user)
 
         else:
+            if user:
+                user.register_failed_login(
+                    threshold=LOGIN_LOCK_THRESHOLD,
+                    minutes=LOGIN_LOCK_MINUTES,
+                )
+                db.session.commit()
+                if user.is_login_locked():
+                    locked_until = getattr(user, "locked_until", None)
+                    error_message = (
+                        f"Too many failed attempts. This account is locked until {locked_until.strftime('%H:%M')}."
+                        if locked_until
+                        else "Too many failed attempts. This account is temporarily locked."
+                    )
             error_key = "error_wrong_credentials"
 
-    return render_template("auth/login.html", error_key=error_key)
+    return render_template("auth/login.html", error_key=error_key, error_message=error_message)
+
+
+@auth_bp.route("/login/security", methods=["GET", "POST"])
+@login_required
+def security_wall():
+    if not getattr(current_user, "must_change_password", False):
+        return _post_login_redirect_for(current_user)
+
+    form = SecurityWallPasswordForm()
+
+    if request.method == "POST":
+        if form.validate_on_submit():
+            current_user.set_password(form.new_password.data or "")
+            current_user.must_change_password = False
+            current_user.clear_login_lock()
+            db.session.commit()
+            flash("Password updated successfully. Your workspace access is now unlocked.", "success")
+            return _post_login_redirect_for(current_user)
+        flash("Please review the new password fields and try again.", "danger")
+
+    return render_template("auth/security_wall.html", form=form)
 
 
 # =========================
@@ -64,6 +174,7 @@ def login():
 @auth_bp.route("/logout")
 @login_required
 def logout():
+    session.pop("post_security_redirect", None)
     logout_user()
     return redirect(url_for("auth.login"))
 
@@ -264,15 +375,16 @@ def create_shop():
             return redirect(url_for("auth.create_shop"))
 
         if not selected_factory_ids:
-            flash("Выберите хотя бы одну фабрику.", "danger")
+            flash("Ð’Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ Ð¾Ð´Ð½Ñƒ Ñ„Ð°Ð±Ñ€Ð¸ÐºÑƒ.", "danger")
             return redirect(url_for("auth.create_shop"))
 
         existing = Shop.query.filter(Shop.name == name).first()
         if existing:
-            flash("Магазин с таким названием уже существует.", "danger")
+            flash("ÐœÐ°Ð³Ð°Ð·Ð¸Ð½ Ñ Ñ‚Ð°ÐºÐ¸Ð¼ Ð½Ð°Ð·Ð²Ð°Ð½Ð¸ÐµÐ¼ ÑƒÐ¶Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÐµÑ‚.", "danger")
             return redirect(url_for("auth.create_shop"))
-
+        legacy_factory_id = selected_factory_ids[0]
         shop = Shop(
+            factory_id=legacy_factory_id,
             name=name,
             location=location,
             note=note,
@@ -339,7 +451,7 @@ def edit_shop(shop_id):
             return redirect(url_for("auth.edit_shop", shop_id=shop.id))
 
         if not selected_factory_ids:
-            flash("Выберите хотя бы одну фабрику.", "danger")
+            flash("Ð’Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ Ð¾Ð´Ð½Ñƒ Ñ„Ð°Ð±Ñ€Ð¸ÐºÑƒ.", "danger")
             return redirect(url_for("auth.edit_shop", shop_id=shop.id))
 
         existing = Shop.query.filter(
@@ -347,13 +459,14 @@ def edit_shop(shop_id):
             Shop.id != shop.id,
         ).first()
         if existing:
-            flash("Другой магазин с таким названием уже существует.", "danger")
+            flash("Ð”Ñ€ÑƒÐ³Ð¾Ð¹ Ð¼Ð°Ð³Ð°Ð·Ð¸Ð½ Ñ Ñ‚Ð°ÐºÐ¸Ð¼ Ð½Ð°Ð·Ð²Ð°Ð½Ð¸ÐµÐ¼ ÑƒÐ¶Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÐµÑ‚.", "danger")
             return redirect(url_for("auth.edit_shop", shop_id=shop.id))
 
         shop.name = name
         shop.location = location
         shop.note = note
         shop.is_active = is_active
+        shop.factory_id = selected_factory_ids[0]
 
         if current_user.is_superadmin:
             ShopFactoryLink.query.filter_by(shop_id=shop.id).delete()
@@ -418,7 +531,13 @@ def list_users():
 
     if search:
         like = f"%{search}%"
-        q = q.filter(User.username.ilike(like))
+        q = q.filter(
+            or_(
+                User.username.ilike(like),
+                User.full_name.ilike(like),
+                User.phone.ilike(like),
+            )
+        )
 
     if role_filter:
         q = q.filter(User.role == role_filter)
@@ -455,18 +574,29 @@ def create_user():
     factories = _manageable_factories()
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        username_input = request.form.get("username", "").strip()
+        full_name = (request.form.get("full_name") or "").strip() or None
+        phone = normalize_phone(request.form.get("phone"))
         password = request.form.get("password", "")
         role = (request.form.get("role", "manager") or "manager").strip()
         factory_id = request.form.get("factory_id", type=int)
         shop_id = request.form.get("shop_id", type=int)
+        username = build_login_username(username_input, phone)
 
         if not username or not password:
-            flash("Username and password required.", "danger")
+            flash("Username or phone, and password, are required.", "danger")
             return redirect(url_for("auth.create_user"))
 
-        if User.query.filter_by(username=username).first():
+        if len(password) < 6:
+            flash("Password must be at least 6 characters.", "danger")
+            return redirect(url_for("auth.create_user"))
+
+        if _username_taken(username):
             flash("Username already exists.", "danger")
+            return redirect(url_for("auth.create_user"))
+
+        if _phone_taken(phone):
+            flash("Phone number already exists.", "danger")
             return redirect(url_for("auth.create_user"))
 
         allowed_roles = {"manager", "viewer", "shop", "accountant"}
@@ -506,16 +636,20 @@ def create_user():
 
         user = User(
             username=username,
+            full_name=full_name,
+            phone=phone,
             role=role,
             factory_id=factory_id if role != "admin" or not current_user.is_superadmin else None,
             shop_id=shop_id if role == "shop" else None,
+            must_change_password=True,
         )
         user.set_password(password)
+        user.clear_login_lock()
 
         db.session.add(user)
         db.session.commit()
 
-        flash("User created successfully.", "success")
+        flash(f"User created successfully. Login: {user.username}. First login will require a private password update.", "success")
         return redirect(url_for("auth.list_users"))
 
     selected_factory_id = None
@@ -545,18 +679,24 @@ def edit_user(user_id):
     factories = _manageable_factories()
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        username_input = request.form.get("username", "").strip()
+        full_name = (request.form.get("full_name") or "").strip() or None
+        phone = normalize_phone(request.form.get("phone"))
         role = (request.form.get("role", user.role) or user.role).strip()
         factory_id = request.form.get("factory_id", type=int)
         shop_id = request.form.get("shop_id", type=int)
+        username = build_login_username(username_input, phone)
 
         if not username:
-            flash("Username is required.", "danger")
+            flash("Username or phone is required.", "danger")
             return redirect(url_for("auth.edit_user", user_id=user.id))
 
-        existing = User.query.filter(User.username == username, User.id != user.id).first()
-        if existing:
+        if _username_taken(username, exclude_user_id=user.id):
             flash("Username already exists.", "danger")
+            return redirect(url_for("auth.edit_user", user_id=user.id))
+
+        if _phone_taken(phone, exclude_user_id=user.id):
+            flash("Phone number already exists.", "danger")
             return redirect(url_for("auth.edit_user", user_id=user.id))
 
         allowed_roles = {"manager", "viewer", "shop", "accountant"}
@@ -595,6 +735,8 @@ def edit_user(user_id):
                 return redirect(url_for("auth.edit_user", user_id=user.id))
 
         user.username = username
+        user.full_name = full_name
+        user.phone = phone
         user.role = role
         user.factory_id = factory_id if role != "admin" or not current_user.is_superadmin else None
         user.shop_id = shop_id if role == "shop" else None
@@ -631,8 +773,8 @@ def change_user_password(user_id):
         flash("Password is required.", "danger")
         return redirect(url_for("auth.edit_user", user_id=user.id))
 
-    if len(new_password) < 4:
-        flash("Password must be at least 4 characters.", "danger")
+    if len(new_password) < 6:
+        flash("Password must be at least 6 characters.", "danger")
         return redirect(url_for("auth.edit_user", user_id=user.id))
 
     if new_password != confirm_password:
@@ -640,10 +782,40 @@ def change_user_password(user_id):
         return redirect(url_for("auth.edit_user", user_id=user.id))
 
     user.set_password(new_password)
+    user.must_change_password = True
+    user.clear_login_lock()
     db.session.commit()
 
-    flash("Password updated successfully.", "success")
+    flash("Password updated successfully. The user will be asked to set a private password at next login.", "success")
     return redirect(url_for("auth.edit_user", user_id=user.id))
+
+
+@auth_bp.route("/admin/users/<int:user_id>/delete", methods=["POST"])
+@login_required
+def delete_user(user_id):
+    if not _can_manage_users():
+        abort(403)
+
+    user = _get_manageable_user_or_404(user_id)
+    next_url = request.form.get("next") or request.referrer or url_for("auth.list_users")
+
+    if user.id == current_user.id:
+        flash("You cannot delete your own account.", "danger")
+        return redirect(next_url)
+
+    if user.is_superadmin:
+        flash("Superadmin cannot be deleted from this screen.", "danger")
+        return redirect(next_url)
+
+    if user.is_admin and not current_user.is_superadmin:
+        flash("Workspace owner account cannot be deleted here.", "danger")
+        return redirect(next_url)
+
+    db.session.delete(user)
+    db.session.commit()
+
+    flash("User deleted successfully.", "success")
+    return redirect(next_url)
 
 
 @auth_bp.route("/admin/shops/by-factory")
@@ -849,3 +1021,4 @@ def setup_superadmin(token):
     db.session.commit()
 
     return "Superadmin created. Go to /login and sign in. Then remove SETUP_TOKEN env var." 
+

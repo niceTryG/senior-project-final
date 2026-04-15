@@ -1,0 +1,711 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('workspace') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard-page">
+  <section class="adras-detail-hero">
+    <div>
+      <div class="adras-detail-kicker">{{ t('workspace') }}</div>
+      <h1 class="adras-detail-title">{{ workspace_page_name }}</h1>
+      <p class="adras-detail-subtitle">
+        {{ t('workspace_details_subtitle') }}
+      </p>
+    </div>
+
+    <div class="adras-detail-hero-stack">
+      <div class="adras-detail-hero-chip">
+        <span>{{ t('current_role') }}</span>
+        <strong>{{ workspace_role_label }}</strong>
+      </div>
+      <div class="adras-detail-hero-chip">
+        <span>{{ t('setup_readiness') }}</span>
+        <strong>{{ workspace_completion_pct }}%</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="adras-detail-stat-grid">
+    <article class="adras-detail-stat-card">
+      <div class="adras-detail-stat-label">{{ t('workspace_team_linked') }}</div>
+      <div class="adras-detail-stat-value">{{ workspace_team_count }}</div>
+      <div class="adras-detail-stat-sub">{{ t('workspace_team_linked_sub') }}</div>
+    </article>
+
+    <article class="adras-detail-stat-card">
+      <div class="adras-detail-stat-label">{{ t('workspace_shops_linked') }}</div>
+      <div class="adras-detail-stat-value">{{ workspace_shop_count }}</div>
+      <div class="adras-detail-stat-sub">{{ t('workspace_shops_linked_sub') }}</div>
+    </article>
+
+    <article class="adras-detail-stat-card">
+      <div class="adras-detail-stat-label">{{ t('workspace_contact_status') }}</div>
+      <div class="adras-detail-stat-value">{{ workspace_contact_status }}</div>
+      <div class="adras-detail-stat-sub">{{ t('workspace_contact_status_sub') }}</div>
+    </article>
+
+    <article class="adras-detail-stat-card">
+      <div class="adras-detail-stat-label">{{ t('workspace_fields_ready') }}</div>
+      <div class="adras-detail-stat-value">{{ workspace_ready_rows }}/{{ workspace_total_rows }}</div>
+      <div class="adras-detail-stat-sub">{{ t('workspace_fields_ready_sub') }}</div>
+    </article>
+  </section>
+
+  <section class="adras-detail-grid">
+    <article class="adras-panel">
+      <h2 class="adras-panel-title">{{ t('workspace_business_identity') }}</h2>
+      <p class="adras-detail-panel-copy">
+        {{ t('workspace_business_identity_copy') }}
+      </p>
+
+      <div class="adras-company-table adras-detail-table">
+        {% for row in workspace_rows %}
+          <div class="adras-company-row">
+            <span>{{ row.label }}</span>
+            <strong>{{ row.value }}</strong>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <aside class="adras-panel adras-detail-sidebar">
+      <div class="adras-detail-side-section">
+        <div class="adras-detail-side-label">{{ t('workspace_owner_access') }}</div>
+
+        <div class="adras-owner-focus-card">
+          <div class="adras-owner-focus-top">
+            <div class="adras-team-avatar">
+              {% if workspace_owner_user %}
+                {{ user_initials(workspace_owner_user) }}
+              {% else %}
+                WS
+              {% endif %}
+            </div>
+            <div class="adras-owner-focus-copy">
+              <strong>{{ workspace_owner_display_name }}</strong>
+              <span>{{ workspace_owner_login }}</span>
+            </div>
+          </div>
+          <p class="adras-detail-side-copy">
+            {{ t('workspace_owner_access_copy') }}
+          </p>
+        </div>
+
+        <div class="adras-checklist">
+          {% for point in workspace_owner_points %}
+            <div class="adras-checklist-row">
+              <span class="adras-checklist-dot ready"></span>
+              <span>{{ point }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="adras-detail-side-section">
+        <div class="adras-detail-side-label">{{ t('workspace_what_needs_attention') }}</div>
+
+        {% if workspace_missing_fields %}
+          <div class="adras-tag-row">
+            {% for item in workspace_missing_fields %}
+              <span class="ad-tag">{{ item }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="adras-detail-side-copy">
+            {{ t('workspace_complete_now_copy') }}
+          </p>
+        {% endif %}
+      </div>
+    </aside>
+  </section>
+
+  <section class="adras-detail-grid">
+    <article class="adras-panel">
+      <h2 class="adras-panel-title">{{ t('workspace_settings_title') }}</h2>
+      <p class="adras-detail-panel-copy">
+        {{ t('workspace_settings_copy') }}
+      </p>
+
+      {% if workspace_can_edit %}
+        <details class="adras-disclosure" {% if workspace_disclosure_state.workspace_settings %}open{% endif %}>
+          <summary class="adras-disclosure-trigger">
+            <span class="adras-disclosure-copy">
+              <strong>{{ t('workspace_update_details_title') }}</strong>
+              <span>{{ t('workspace_update_details_sub') }}</span>
+            </span>
+            <span class="adras-disclosure-chip">{{ t('edit') }}</span>
+          </summary>
+
+          <div class="adras-disclosure-body">
+            <form method="post" class="adras-settings-form">
+              {{ workspace_form.hidden_tag() }}
+
+              <div class="adras-form-grid">
+                <div class="adras-form-field">
+                  <label class="adras-form-label" for="{{ workspace_form.name.id }}">{{ t('workspace_business_name') }}</label>
+                  {{ workspace_form.name(class="adras-form-input") }}
+                  {% for error in workspace_form.name.errors %}
+                    <div class="adras-form-error">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <div class="adras-form-field">
+                  <label class="adras-form-label" for="{{ workspace_form.owner_name.id }}">{{ t('workspace_owner_name') }}</label>
+                  {{ workspace_form.owner_name(class="adras-form-input") }}
+                  {% for error in workspace_form.owner_name.errors %}
+                    <div class="adras-form-error">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <div class="adras-form-field">
+                  <label class="adras-form-label" for="{{ workspace_form.location.id }}">{{ t('location') }}</label>
+                  {{ workspace_form.location(class="adras-form-input") }}
+                  {% for error in workspace_form.location.errors %}
+                    <div class="adras-form-error">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <div class="adras-form-field">
+                  <label class="adras-form-label" for="{{ workspace_form.phone.id }}">{{ t('phone') }}</label>
+                  {{ workspace_form.phone(class="adras-form-input") }}
+                  {% for error in workspace_form.phone.errors %}
+                    <div class="adras-form-error">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <div class="adras-form-field adras-form-field-full">
+                  <label class="adras-form-label" for="{{ workspace_form.note.id }}">{{ t('workspace_internal_note') }}</label>
+                  {{ workspace_form.note(class="adras-form-input adras-form-textarea", rows="4") }}
+                  {% for error in workspace_form.note.errors %}
+                    <div class="adras-form-error">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="adras-form-actions">
+                {{ workspace_form.submit_workspace(class="ad-btn ad-btn-primary") }}
+                <a href="{{ url_for('main.dashboard') }}" class="ad-btn ad-btn-secondary">{{ t('back_to_dashboard') }}</a>
+              </div>
+            </form>
+          </div>
+        </details>
+      {% else %}
+        <div class="adras-readonly-state">
+          <div class="adras-readonly-state-title">{{ t('read_only_access') }}</div>
+          <div class="adras-readonly-state-copy">
+            {{ t('workspace_read_only_copy') }}
+          </div>
+        </div>
+      {% endif %}
+    </article>
+
+    <aside class="adras-panel adras-detail-sidebar">
+      <div class="adras-detail-side-section">
+        <div class="adras-detail-side-label">{{ t('workspace_actions') }}</div>
+
+        <div class="adras-mini-action-grid adras-mini-action-grid-single">
+          {% if workspace_can_manage_team %}
+            <a href="#workspace-team" class="adras-mini-action-card">
+              <div class="adras-mini-action-title">{{ t('workspace_team_access') }}</div>
+              <div class="adras-mini-action-sub">{{ t('workspace_team_access_sub') }}</div>
+            </a>
+          {% endif %}
+
+          <a href="{{ url_for('main.dashboard') }}" class="adras-mini-action-card">
+            <div class="adras-mini-action-title">{{ t('back_to_dashboard') }}</div>
+            <div class="adras-mini-action-sub">{{ t('workspace_back_to_dashboard_sub') }}</div>
+          </a>
+
+          <a href="{{ url_for('main.more') }}" class="adras-mini-action-card">
+            <div class="adras-mini-action-title">{{ t('workspace_open_reports') }}</div>
+            <div class="adras-mini-action-sub">{{ t('workspace_open_reports_sub') }}</div>
+          </a>
+
+          <a href="{{ url_for('main.inventory') }}" class="adras-mini-action-card">
+            <div class="adras-mini-action-title">{{ t('workspace_open_inventory') }}</div>
+            <div class="adras-mini-action-sub">{{ t('workspace_open_inventory_sub') }}</div>
+          </a>
+
+          <a href="{{ url_for('main.profile_overview') }}" class="adras-mini-action-card">
+            <div class="adras-mini-action-title">{{ t('workspace_open_profile') }}</div>
+            <div class="adras-mini-action-sub">{{ t('workspace_open_profile_sub') }}</div>
+          </a>
+
+          <a href="{{ url_for('main.command_center') }}" class="adras-mini-action-card">
+            <div class="adras-mini-action-title">{{ t('open_command_center') }}</div>
+            <div class="adras-mini-action-sub">{{ t('open_command_center_sub') }}</div>
+          </a>
+
+          {% if workspace_can_view_activity %}
+            <a href="{{ url_for('main.workspace_activity') }}" class="adras-mini-action-card">
+              <div class="adras-mini-action-title">{{ t('workspace_activity_center') }}</div>
+              <div class="adras-mini-action-sub">{{ t('workspace_activity_center_sub') }}</div>
+            </a>
+          {% endif %}
+
+          {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('auth.list_users') }}" class="adras-mini-action-card">
+              <div class="adras-mini-action-title">{{ t('workspace_open_admin_users') }}</div>
+              <div class="adras-mini-action-sub">{{ t('workspace_open_admin_users_sub') }}</div>
+            </a>
+
+            <a href="{{ url_for('auth.list_shops') }}" class="adras-mini-action-card">
+              <div class="adras-mini-action-title">{{ t('workspace_review_branches') }}</div>
+              <div class="adras-mini-action-sub">{{ t('workspace_review_branches_sub') }}</div>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  {% if workspace_can_view_activity %}
+    <section class="adras-detail-grid">
+      <article class="adras-panel">
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('workspace_recent_activity') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('workspace_recent_activity_copy') }}
+            </p>
+          </div>
+          <a href="{{ url_for('main.workspace_activity') }}" class="ad-btn ad-btn-secondary">{{ t('open_activity_center') }}</a>
+        </div>
+
+        {% if workspace_activity_preview %}
+          <div class="adras-activity-list">
+            {% for item in workspace_activity_preview %}
+              <div class="adras-activity-row">
+                <div class="adras-team-avatar adras-team-avatar-small">{{ item.actor_initials }}</div>
+                <div class="adras-activity-body">
+                  <div class="adras-activity-top">
+                    <strong>{{ item.title }}</strong>
+                    <span>{{ item.timestamp }}</span>
+                  </div>
+                  <div class="adras-activity-meta">{{ item.group_label }} · {{ item.actor_name }}</div>
+                  <div class="adras-activity-copy">{{ item.comment }}</div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-readonly-state">
+            <div class="adras-readonly-state-title">{{ t('workspace_no_activity_yet') }}</div>
+            <div class="adras-readonly-state-copy">
+              {{ t('workspace_no_activity_yet_copy') }}
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <aside class="adras-panel adras-detail-sidebar">
+        <div class="adras-detail-side-section">
+          <div class="adras-detail-side-label">{{ t('workspace_activity_breakdown') }}</div>
+
+          <div class="adras-compact-metric-list">
+            <div class="adras-compact-metric-row">
+              <span>{{ t('workspace_activity_all') }}</span>
+              <strong>{{ workspace_activity_counts.all }}</strong>
+            </div>
+            <div class="adras-compact-metric-row">
+              <span>{{ t('workspace_activity_workspace_changes') }}</span>
+              <strong>{{ workspace_activity_counts.workspace }}</strong>
+            </div>
+            <div class="adras-compact-metric-row">
+              <span>{{ t('workspace_activity_team_changes') }}</span>
+              <strong>{{ workspace_activity_counts.team }}</strong>
+            </div>
+            <div class="adras-compact-metric-row">
+              <span>{{ t('workspace_activity_operations') }}</span>
+              <strong>{{ workspace_activity_counts.operations }}</strong>
+            </div>
+            <div class="adras-compact-metric-row">
+              <span>{{ t('workspace_activity_security') }}</span>
+              <strong>{{ workspace_activity_counts.security }}</strong>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+  {% endif %}
+
+  <section class="adras-detail-grid" id="workspace-team">
+    <article class="adras-panel">
+      <div class="adras-team-section-head">
+        <div>
+          <h2 class="adras-panel-title">{{ t('workspace_team_access') }}</h2>
+          <p class="adras-detail-panel-copy">
+            {{ t('workspace_team_access_main_copy') }}
+          </p>
+        </div>
+        <div class="adras-team-count-chip">{{ workspace_team_users|length }} {{ t('members') }}</div>
+      </div>
+
+      <div class="adras-notice-strip adras-notice-strip-soft">
+        <div>
+          <div class="adras-notice-title">{{ t('workspace_owner_rule') }}</div>
+          <div class="adras-notice-copy">
+            {{ t('workspace_owner_rule_copy') }}
+          </div>
+        </div>
+      </div>
+
+      {% if workspace_team_users %}
+        <div class="adras-team-list">
+          {% for member in workspace_team_users %}
+            {% set member_is_owner = member.id == workspace_owner_user_id %}
+            {% set member_display_name = user_display_name(member) %}
+            <div class="adras-team-card">
+              <div class="adras-team-card-top">
+                <div class="adras-team-avatar">{{ user_initials(member) }}</div>
+
+                <div class="adras-team-identity">
+                  <strong>{{ member_display_name }}</strong>
+                  <span>{{ member.username or '-' }}</span>
+                </div>
+
+                <div class="adras-tag-row">
+                  {% if member_is_owner %}
+                    <span class="ad-tag ad-tag-strong">{{ t('owner') }}</span>
+                  {% endif %}
+                  {% if member.id == current_user.id %}
+                    <span class="ad-tag">{{ t('current_user_label') }}</span>
+                  {% endif %}
+                  {% if member.role == 'admin' %}
+                    <span class="ad-tag">{{ t('role_admin') }}</span>
+                  {% endif %}
+                  {% if member.must_change_password %}
+                    <span class="ad-tag">{{ t('password_setup_pending') }}</span>
+                  {% endif %}
+                  {% if member.shop %}
+                    <span class="ad-tag">{{ t('label_shop_linked') }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="adras-company-table adras-detail-table adras-team-meta">
+                <div class="adras-company-row">
+                  <span>{{ t('full_name') }}</span>
+                  <strong>{{ member.full_name or '-' }}</strong>
+                </div>
+                <div class="adras-company-row">
+                  <span>{{ t('login_username') }}</span>
+                  <strong>{{ member.username or '-' }}</strong>
+                </div>
+                <div class="adras-company-row">
+                  <span>{{ t('phone') }}</span>
+                  <strong>{{ member.phone or '-' }}</strong>
+                </div>
+                <div class="adras-company-row">
+                  <span>{{ t('label_role') }}</span>
+                  <strong>{{ member.role|replace('_', ' ')|title }}</strong>
+                </div>
+                <div class="adras-company-row">
+                  <span>{{ t('label_shop') }}</span>
+                  <strong>{{ member.shop.name if member.shop else '-' }}</strong>
+                </div>
+              </div>
+
+              {% if workspace_can_manage_team %}
+                {% if (member_is_owner and not current_user.is_superadmin) or (member.role == 'admin' and not workspace_can_assign_admin) %}
+                  <div class="adras-readonly-state adras-readonly-state-tight">
+                    <div class="adras-readonly-state-title">
+                      {% if member_is_owner and not current_user.is_superadmin %}
+                        {{ t('workspace_owner_access_locked') }}
+                      {% else %}
+                        {{ t('workspace_admin_access_protected') }}
+                      {% endif %}
+                    </div>
+                    <div class="adras-readonly-state-copy">
+                      {% if member_is_owner and not current_user.is_superadmin %}
+                        {{ t('workspace_owner_access_locked_copy') }}
+                      {% else %}
+                        {{ t('workspace_admin_access_protected_copy') }}
+                      {% endif %}
+                    </div>
+                  </div>
+                {% else %}
+                  <details class="adras-disclosure adras-disclosure-embedded">
+                    <summary class="adras-disclosure-trigger">
+                      <span class="adras-disclosure-copy">
+                        <strong>{{ t('workspace_edit_identity_access') }}</strong>
+                        <span>{{ t('workspace_edit_identity_access_sub') }}</span>
+                      </span>
+                      <span class="adras-disclosure-chip">{{ t('manage') }}</span>
+                    </summary>
+
+                    <div class="adras-disclosure-body">
+                      <form method="post" id="workspace-member-{{ member.id }}" class="adras-team-access-form">
+                        <input type="hidden" name="workspace_action" value="update_member">
+                        <input type="hidden" name="member_id" value="{{ member.id }}">
+
+                        <div class="adras-form-grid adras-team-access-grid">
+                          <div class="adras-form-field">
+                            <label class="adras-form-label" for="full-name-{{ member.id }}">{{ t('full_name') }}</label>
+                            <input id="full-name-{{ member.id }}" name="full_name" type="text" class="adras-form-input" value="{{ member.full_name or '' }}">
+                          </div>
+
+                          <div class="adras-form-field">
+                            <label class="adras-form-label" for="username-{{ member.id }}">{{ t('login_username') }}</label>
+                            <input id="username-{{ member.id }}" name="username" type="text" class="adras-form-input" value="{{ member.username or '' }}">
+                            <div class="adras-form-help">{{ t('workspace_login_blank_phone_help') }}</div>
+                          </div>
+
+                          <div class="adras-form-field">
+                            <label class="adras-form-label" for="phone-{{ member.id }}">{{ t('phone') }}</label>
+                            <input id="phone-{{ member.id }}" name="phone" type="text" class="adras-form-input" value="{{ member.phone or '' }}">
+                          </div>
+
+                          <div class="adras-form-field">
+                            <label class="adras-form-label" for="role-{{ member.id }}">{{ t('label_role') }}</label>
+                            <select id="role-{{ member.id }}" name="role" class="adras-form-input">
+                              {% for role_value, role_label in member_form.role.choices %}
+                                <option value="{{ role_value }}" {% if member.role == role_value %}selected{% endif %}>{{ role_label }}</option>
+                              {% endfor %}
+                            </select>
+                          </div>
+
+                          <div class="adras-form-field">
+                            <label class="adras-form-label" for="shop-{{ member.id }}">{{ t('label_shop') }}</label>
+                            <select id="shop-{{ member.id }}" name="shop_id" class="adras-form-input">
+                              <option value="0" {% if not member.shop_id %}selected{% endif %}>{{ t('label_no_shop') }}</option>
+                              {% for shop in workspace_shop_options %}
+                                <option value="{{ shop.id }}" {% if member.shop_id == shop.id %}selected{% endif %}>{{ shop.name }}</option>
+                              {% endfor %}
+                            </select>
+                            <div class="adras-form-help">{{ t('workspace_shop_role_only_help') }}</div>
+                          </div>
+                        </div>
+                      </form>
+
+                      <div class="adras-form-actions">
+                        <button type="submit" form="workspace-member-{{ member.id }}" class="ad-btn ad-btn-secondary">{{ t('save_details') }}</button>
+
+                        {% if member.id != current_user.id %}
+                          <form method="post" class="adras-inline-form">
+                            <input type="hidden" name="workspace_action" value="delete_member">
+                            <input type="hidden" name="member_id" value="{{ member.id }}">
+                            <button type="submit" class="ad-btn ad-btn-danger">{{ t('delete_label') }}</button>
+                          </form>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </details>
+
+                  {% if workspace_can_reset_passwords and member.id != current_user.id %}
+                    <details class="adras-disclosure adras-disclosure-embedded">
+                      <summary class="adras-disclosure-trigger">
+                        <span class="adras-disclosure-copy">
+                          <strong>{{ t('reset_password') }}</strong>
+                          <span>{{ t('workspace_reset_password_sub') }}</span>
+                        </span>
+                        <span class="adras-disclosure-chip">{{ t('security') }}</span>
+                      </summary>
+
+                      <div class="adras-disclosure-body">
+                        <div class="adras-inline-card">
+                          <div class="adras-inline-card-title">{{ t('workspace_temp_password_reset') }}</div>
+                          <div class="adras-inline-card-copy">
+                            {{ t('workspace_temp_password_reset_copy') }}
+                          </div>
+
+                          <form method="post" class="adras-settings-form adras-settings-form-tight">
+                            <input type="hidden" name="workspace_action" value="reset_member_password">
+                            <input type="hidden" name="member_id" value="{{ member.id }}">
+
+                            <div class="adras-form-grid adras-team-password-grid">
+                              <div class="adras-form-field">
+                                <label class="adras-form-label" for="reset-password-{{ member.id }}">{{ t('workspace_temporary_password') }}</label>
+                                <input id="reset-password-{{ member.id }}" name="new_password" type="password" class="adras-form-input" minlength="6" required>
+                              </div>
+
+                              <div class="adras-form-field">
+                                <label class="adras-form-label" for="reset-password-confirm-{{ member.id }}">{{ t('confirm_password') }}</label>
+                                <input id="reset-password-confirm-{{ member.id }}" name="confirm_password" type="password" class="adras-form-input" minlength="6" required>
+                              </div>
+                            </div>
+
+                            <div class="adras-form-actions">
+                              <button type="submit" class="ad-btn ad-btn-secondary">{{ t('reset_password') }}</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </details>
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="adras-readonly-state">
+          <div class="adras-readonly-state-title">{{ t('workspace_no_team_members_yet') }}</div>
+          <div class="adras-readonly-state-copy">
+            {{ t('workspace_no_team_members_yet_copy') }}
+          </div>
+        </div>
+      {% endif %}
+    </article>
+
+    <aside class="adras-panel adras-detail-sidebar">
+      <div class="adras-detail-side-section">
+        <div class="adras-detail-side-label">{{ t('workspace_add_team_member') }}</div>
+        <p class="adras-detail-side-copy">
+          {{ t('workspace_add_team_member_copy') }}
+        </p>
+
+        {% if workspace_can_manage_team %}
+          <details class="adras-disclosure" {% if workspace_disclosure_state.add_member %}open{% endif %}>
+            <summary class="adras-disclosure-trigger">
+              <span class="adras-disclosure-copy">
+                <strong>{{ t('workspace_create_teammate_account') }}</strong>
+                <span>{{ t('workspace_create_teammate_account_sub') }}</span>
+              </span>
+              <span class="adras-disclosure-chip">{{ t('admin_add') }}</span>
+            </summary>
+
+            <div class="adras-disclosure-body">
+              <form method="post" class="adras-settings-form">
+                {{ member_form.hidden_tag() }}
+
+                <div class="adras-form-grid">
+                  <div class="adras-form-field adras-form-field-full">
+                    <label class="adras-form-label" for="{{ member_form.full_name.id }}">{{ t('full_name') }}</label>
+                    {{ member_form.full_name(class="adras-form-input") }}
+                    {% for error in member_form.full_name.errors %}
+                      <div class="adras-form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="adras-form-field">
+                    <label class="adras-form-label" for="{{ member_form.phone.id }}">{{ t('phone') }}</label>
+                    {{ member_form.phone(class="adras-form-input") }}
+                    <div class="adras-form-help">{{ t('workspace_member_phone_help') }}</div>
+                    {% for error in member_form.phone.errors %}
+                      <div class="adras-form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="adras-form-field">
+                    <label class="adras-form-label" for="{{ member_form.username.id }}">{{ t('label_username') }}</label>
+                    {{ member_form.username(class="adras-form-input") }}
+                    <div class="adras-form-help">{{ t('workspace_member_username_help') }}</div>
+                    {% for error in member_form.username.errors %}
+                      <div class="adras-form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="adras-form-field">
+                    <label class="adras-form-label" for="{{ member_form.password.id }}">{{ t('workspace_temporary_password') }}</label>
+                    {{ member_form.password(class="adras-form-input") }}
+                    <div class="adras-form-help">{{ t('workspace_member_password_help') }}</div>
+                    {% for error in member_form.password.errors %}
+                      <div class="adras-form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="adras-form-field">
+                    <label class="adras-form-label" for="{{ member_form.role.id }}">{{ t('label_role') }}</label>
+                    {{ member_form.role(class="adras-form-input") }}
+                    {% if workspace_can_assign_admin %}
+                      <div class="adras-form-help">{{ t('workspace_can_assign_admin_help') }}</div>
+                    {% endif %}
+                    {% for error in member_form.role.errors %}
+                      <div class="adras-form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="adras-form-field adras-form-field-full">
+                    <label class="adras-form-label" for="{{ member_form.shop_id.id }}">{{ t('linked_shop') }}</label>
+                    {{ member_form.shop_id(class="adras-form-input") }}
+                    <div class="adras-form-help">{{ t('workspace_linked_shop_help') }}</div>
+                    {% for error in member_form.shop_id.errors %}
+                      <div class="adras-form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="adras-form-actions">
+                  {{ member_form.submit_member(class="ad-btn ad-btn-primary") }}
+                </div>
+              </form>
+            </div>
+          </details>
+        {% else %}
+          <div class="adras-readonly-state">
+            <div class="adras-readonly-state-title">{{ t('workspace_team_management_locked') }}</div>
+            <div class="adras-readonly-state-copy">
+              {{ t('workspace_team_management_locked_copy') }}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if workspace_can_transfer_owner %}
+        <div class="adras-detail-side-section">
+          <div class="adras-detail-side-label">{{ t('workspace_owner_controls') }}</div>
+          <p class="adras-detail-side-copy">
+            {{ t('workspace_owner_controls_copy') }}
+          </p>
+
+          {% if workspace_transfer_candidate_count %}
+            <details class="adras-disclosure" {% if workspace_disclosure_state.owner_controls %}open{% endif %}>
+              <summary class="adras-disclosure-trigger">
+                <span class="adras-disclosure-copy">
+                  <strong>{{ t('workspace_transfer_ownership') }}</strong>
+                  <span>{{ t('workspace_transfer_ownership_sub') }}</span>
+                </span>
+                <span class="adras-disclosure-chip">{{ t('owner') }}</span>
+              </summary>
+
+              <div class="adras-disclosure-body">
+                <form method="post" class="adras-settings-form">
+                  {{ transfer_form.hidden_tag() }}
+
+                  <div class="adras-form-grid">
+                    <div class="adras-form-field adras-form-field-full">
+                      <label class="adras-form-label" for="{{ transfer_form.new_owner_id.id }}">{{ t('workspace_new_owner_account') }}</label>
+                      {{ transfer_form.new_owner_id(class="adras-form-input") }}
+                    </div>
+
+                    <div class="adras-form-field adras-form-field-full">
+                      <label class="adras-form-label" for="{{ transfer_form.current_password.id }}">{{ t('workspace_confirm_current_password') }}</label>
+                      {{ transfer_form.current_password(class="adras-form-input") }}
+                      <div class="adras-form-help">{{ t('workspace_transfer_password_help') }}</div>
+                      {% for error in transfer_form.current_password.errors %}
+                        <div class="adras-form-error">{{ error }}</div>
+                      {% endfor %}
+                      {% for error in transfer_form.new_owner_id.errors %}
+                        <div class="adras-form-error">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+
+                  <div class="adras-inline-card adras-inline-card-soft">
+                    <div class="adras-inline-card-title">{{ t('workspace_transfer_note') }}</div>
+                    <div class="adras-inline-card-copy">
+                      {{ t('workspace_transfer_note_copy') }}
+                    </div>
+                  </div>
+
+                  <div class="adras-form-actions">
+                    {{ transfer_form.submit_transfer(class="ad-btn ad-btn-secondary") }}
+                  </div>
+                </form>
+              </div>
+            </details>
+          {% else %}
+            <div class="adras-readonly-state">
+              <div class="adras-readonly-state-title">{{ t('workspace_no_transfer_target_yet') }}</div>
+              <div class="adras-readonly-state-copy">
+                {{ t('workspace_no_transfer_target_yet_copy') }}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </aside>
+  </section>
+</div>
+{% endblock %}

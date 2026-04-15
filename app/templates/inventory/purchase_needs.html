@@ -1,0 +1,95 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('purchase_needs') }}{% endblock %}
+{% block topbar_title %}{{ t('purchase_needs') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <div class="card mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <div class="small text-muted">AI predicted shopping</div>
+        <div class="fw-bold">{{ buy_now_rows|length }} urgent materials</div>
+      </div>
+      <a href="{{ url_for('fabrics.list') }}" class="btn btn-outline-primary btn-sm">{{ t('open_materials') }}</a>
+    </div>
+  </div>
+
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3"><div class="card"><div class="card-body py-2"><div class="small text-muted">Buy now</div><div class="fw-bold fs-5">{{ buy_now_rows|length }}</div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card"><div class="card-body py-2"><div class="small text-muted">Blocked</div><div class="fw-bold fs-5">{{ blocked_products_total }}</div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card"><div class="card-body py-2"><div class="small text-muted">At risk</div><div class="fw-bold fs-5">{{ risk_products_total }}</div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card"><div class="card-body py-2"><div class="small text-muted">Low materials</div><div class="fw-bold fs-5">{{ low_materials|length }}</div></div></div></div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header fw-bold">Really needed purchase materials</div>
+    <div class="card-body p-2 p-md-3">
+      {% if buy_now_rows %}
+        <div class="d-grid gap-2">
+          {% for item in buy_now_rows %}
+            <div class="border rounded p-2 p-md-3">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <div class="fw-bold">{{ item.material_name }}</div>
+                  <div class="small text-muted">{{ item.priority_reason }}</div>
+                </div>
+                <span class="badge {% if item.status == 'out' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                  {% if item.status == 'out' %}{{ t('out_of_stock') }}{% else %}{{ t('low_stock') }}{% endif %}
+                </span>
+              </div>
+
+              <div class="row g-2 mt-1 small">
+                <div class="col-6 col-md-3"><span class="text-muted">Available:</span> <span class="fw-bold">{{ "%.2f"|format(item.available or 0) }} {{ item.unit or '' }}</span></div>
+                <div class="col-6 col-md-3"><span class="text-muted">To minimum:</span> <span class="fw-bold">{{ "%.2f"|format(item.reorder_gap or 0) }} {{ item.unit or '' }}</span></div>
+                <div class="col-6 col-md-3"><span class="text-muted">Blocked:</span> <span class="fw-bold">{{ item.blocked_products_count }}</span></div>
+                <div class="col-6 col-md-3"><span class="text-muted">At risk:</span> <span class="fw-bold">{{ item.risk_products_count }}</span></div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center mt-2 gap-2 flex-wrap">
+                <div class="small text-muted">
+                  {% if item.category %}{{ item.category }}{% endif %}
+                  {% if item.category and item.supplier_name %} · {% endif %}
+                  {% if item.supplier_name %}{{ t('supplier_label') }}: {{ item.supplier_name }}{% endif %}
+                </div>
+                <form method="post" action="{{ url_for('main.dismiss_purchase_need') }}">
+                  <input type="hidden" name="material_id" value="{{ item.material_id }}" />
+                  <button type="submit" class="btn btn-outline-secondary btn-sm">Dismiss</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-muted small">{{ t('no_urgent_purchase_priorities') }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header fw-bold">Still below minimum</div>
+    <div class="card-body p-2 p-md-3">
+      {% if low_materials %}
+        <div class="d-grid gap-2">
+          {% for item in low_materials[:8] %}
+            <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-2 flex-wrap">
+              <div>
+                <div class="fw-bold">{{ item.name }}</div>
+                <div class="small text-muted">
+                  {{ "%.2f"|format(item.quantity or 0) }} {{ item.unit or '' }} available · minimum {{ "%.2f"|format(item.min_stock_quantity or 5) }} {{ item.unit or '' }}
+                </div>
+              </div>
+              <form method="post" action="{{ url_for('main.dismiss_purchase_need') }}">
+                <input type="hidden" name="material_id" value="{{ item.id }}" />
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Dismiss</button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-muted small">{{ t('no_low_stock_alerts') }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

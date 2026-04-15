@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+{% extends "shop/base_shop.html" %}
 
-{% block title %}{{ t('dashboard_shop_title') }} — Mini Moda{% endblock %}
+{% block title %}{{ t('dashboard_shop_title') }} — Adras{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -15,6 +15,10 @@
     --mm-shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.07);
     --mm-radius: 22px;
     position: relative;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    padding-bottom: 110px;
   }
 
   .mm-page-shop-dashboard::before {
@@ -32,16 +36,72 @@
   .mm-page-shop-dashboard > * {
     position: relative;
     z-index: 1;
+    min-width: 0;
+    max-width: 100%;
   }
 
+  .mm-shop-hero-top,
+  .mm-shop-hero-copy,
+  .mm-shop-hero-actions,
+  .mm-main-grid,
+  .mm-main-stack,
+  .mm-kpi-row-4,
+  .mm-orders-kpi-grid,
+  .mm-factory-grid,
+  .mm-chart-grid,
+  .mm-kpi-link,
+  .mm-kpi-card,
+  .mm-chart-card,
+  .mm-factory-box,
+  .mm-side-card {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mm-shop-hero,
   .mm-card-soft,
   .mm-section,
   .mm-kpi-card,
-  .mm-chart-card {
+  .mm-chart-card,
+  .mm-factory-box,
+  .mm-empty-card {
     border: 1px solid var(--mm-line);
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.84);
     box-shadow: var(--mm-shadow-soft);
+  }
+
+  .mm-shop-hero {
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .mm-shop-hero-title {
+    margin: 0;
+    font-size: clamp(1.45rem, 2.6vw, 2.15rem);
+    font-weight: 900;
+    letter-spacing: -.03em;
+    line-height: 1.04;
+  }
+
+  .mm-shop-hero-sub {
+    margin-top: 8px;
+    color: var(--mm-muted);
+    font-size: .95rem;
+    line-height: 1.5;
+  }
+
+  .mm-shop-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.34rem 0.72rem;
+    border-radius: 999px;
+    border: 1px solid var(--mm-line);
+    background: rgba(255, 255, 255, 0.72);
+    font-size: 0.78rem;
+    color: var(--mm-soft);
+    white-space: nowrap;
   }
 
   .mm-kpi-link {
@@ -66,17 +126,11 @@
   }
 
   .mm-kpi-row-4 {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
     width: 100%;
-    margin: 0;
-  }
-
-  .mm-kpi-row-4 > .col-12 {
-    width: 100%;
-    padding: 0;
-    margin: 0;
+    margin: 0 0 1rem 0;
   }
 
   .mm-kpi-inner {
@@ -84,8 +138,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 0.58rem 0.82rem;
-    min-height: 50px;
+    padding: 0.72rem 0.88rem;
+    min-height: 68px;
     width: 100%;
   }
 
@@ -119,7 +173,7 @@
   }
 
   .mm-kpi-group-head {
-    margin: 0.15rem 0 0.35rem;
+    margin: 0.15rem 0 0.55rem;
   }
 
   .mm-kpi-group-title {
@@ -134,7 +188,7 @@
   .mm-orders-kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 4px;
+    gap: 8px;
     width: 100%;
     margin: 0 0 1rem 0;
   }
@@ -145,22 +199,22 @@
   }
 
   .mm-orders-kpi-inner {
-    padding: 0.56rem 0.4rem;
-    min-height: 62px;
+    padding: 0.68rem 0.55rem;
+    min-height: 74px;
     display: flex;
     flex-direction: column;
     justify-content: center;
   }
 
   .mm-orders-kpi-card .mm-kpi-label {
-    font-size: 0.5rem;
+    font-size: 0.54rem;
     line-height: 1.02;
     letter-spacing: 0.04em;
     margin-bottom: 0.12rem;
   }
 
   .mm-orders-kpi-card .mm-kpi-value {
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     line-height: 1;
     margin-bottom: 0.08rem;
     white-space: nowrap;
@@ -170,7 +224,7 @@
   }
 
   .mm-orders-kpi-card .mm-kpi-foot {
-    font-size: 0.54rem;
+    font-size: 0.58rem;
     line-height: 1.02;
     white-space: nowrap;
     overflow: hidden;
@@ -198,22 +252,31 @@
     color: var(--mm-muted);
   }
 
+  .mm-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(320px, .95fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .mm-main-stack {
+    display: grid;
+    gap: 16px;
+  }
+
   .mm-factory-head {
     margin: 0.15rem 0 0.45rem;
   }
 
   .mm-factory-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
     margin-bottom: 1rem;
   }
 
   .mm-factory-box {
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: 16px;
-    background: #fff;
     padding: 0.85rem;
     width: 100%;
     box-shadow: var(--mm-shadow-soft);
@@ -331,10 +394,61 @@
   }
 
   .mm-empty-card {
-    border: 1px dashed rgba(0, 0, 0, 0.12);
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.78);
     padding: 0.9rem;
+  }
+
+  .mm-side-card {
+    padding: 0.95rem;
+  }
+
+  .mm-side-title {
+    font-size: 0.96rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    margin-bottom: 12px;
+  }
+
+  .mm-founder-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mm-founder-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #495057;
+    font-size: .92rem;
+    line-height: 1.45;
+  }
+
+  .mm-founder-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    margin-top: .35rem;
+    background: #0d6efd;
+    flex: 0 0 auto;
+  }
+
+  @media (max-width: 1199.98px) {
+    .mm-main-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 991.98px) {
+    .mm-kpi-row-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mm-orders-kpi-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mm-factory-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 767.98px) {
@@ -342,9 +456,41 @@
       display: none;
     }
 
+    .mm-page-shop-dashboard {
+      padding-bottom: 104px;
+    }
+
+    .mm-shop-hero {
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .mm-shop-hero-top {
+      display: grid !important;
+      grid-template-columns: 1fr;
+      gap: 12px !important;
+      align-items: stretch !important;
+    }
+
+    .mm-shop-hero-copy {
+      min-width: 0;
+    }
+
+    .mm-shop-hero-actions {
+      display: grid !important;
+      grid-template-columns: 1fr;
+      gap: 8px !important;
+      width: 100%;
+    }
+
+    .mm-shop-chip {
+      max-width: 100%;
+      white-space: normal;
+    }
+
     .mm-kpi-inner {
-      padding: 0.54rem 0.72rem;
-      min-height: 48px;
+      padding: 0.64rem 0.72rem;
+      min-height: 56px;
       gap: 8px;
     }
 
@@ -361,25 +507,25 @@
     }
 
     .mm-orders-kpi-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 4px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
     }
 
     .mm-orders-kpi-inner {
-      padding: 0.5rem 0.34rem;
-      min-height: 60px;
+      padding: 0.6rem 0.45rem;
+      min-height: 66px;
     }
 
     .mm-orders-kpi-card .mm-kpi-label {
-      font-size: 0.48rem;
+      font-size: 0.5rem;
     }
 
     .mm-orders-kpi-card .mm-kpi-value {
-      font-size: 0.8rem;
+      font-size: 0.84rem;
     }
 
     .mm-orders-kpi-card .mm-kpi-foot {
-      font-size: 0.52rem;
+      font-size: 0.54rem;
     }
 
     .mm-chart-card {
@@ -387,26 +533,76 @@
     }
 
     .mm-chart-wrap {
-      height: 230px;
+      height: 200px;
     }
 
     .mm-action-btn {
       width: 100%;
     }
+  }
 
-    .mm-factory-grid {
-      gap: 6px;
+  @media (max-width: 575.98px) {
+    .mm-page-shop-dashboard {
+      padding-left: 8px !important;
+      padding-right: 8px !important;
     }
 
-    .mm-factory-box {
-      padding: 0.78rem;
+    .mm-kpi-row-4,
+    .mm-orders-kpi-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .mm-main-grid,
+    .mm-main-stack {
+      gap: 12px;
+    }
+
+    .mm-shop-hero,
+    .mm-chart-card,
+    .mm-factory-box,
+    .mm-empty-card,
+    .mm-side-card {
+      padding: 14px;
+      border-radius: 18px;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .mm-page-shop-dashboard {
+      padding-left: 6px !important;
+      padding-right: 6px !important;
+    }
+
+    .mm-kpi-row-4,
+    .mm-orders-kpi-grid,
+    .mm-factory-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-kpi-inner,
+    .mm-orders-kpi-inner {
+      min-height: 0;
+    }
+
+    .mm-shop-hero-title {
+      font-size: 1.2rem;
+    }
+
+    .mm-shop-hero-sub {
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .mm-chart-wrap {
+      height: 180px;
     }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3 py-md-4 mm-page-shop-dashboard">
+<div class="container-fluid px-2 px-sm-3 py-3 py-md-4 mm-page-shop-dashboard">
   {% set display_name = current_user.full_name or current_user.username or t('generic_user') %}
   {% set ds = stats if stats is defined and stats else {} %}
   {% set pending_count = shop_orders_pending|default(ds.get('orders_pending', 0)) %}
@@ -427,9 +623,20 @@
   {% set factory_sales_labels = factory_sales_labels if factory_sales_labels is defined and factory_sales_labels else [] %}
   {% set factory_sales_values = factory_sales_values if factory_sales_values is defined and factory_sales_values else [] %}
 
-  <div class="mm-shop-top mb-3">
-    <div class="mm-shop-top-actions mb-3">
-      <div class="d-grid gap-2 d-md-flex">
+  <div class="mm-shop-hero">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mm-shop-hero-top">
+      <div class="mm-shop-hero-copy">
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <span class="mm-shop-chip">🏪 {{ t('menu_shop') }}</span>
+          <span class="mm-shop-chip">📦 {{ t('dashboard_shop_summary_line') }}</span>
+        </div>
+        <h1 class="mm-shop-hero-title">{{ t('dashboard_shop_title') }}</h1>
+        <div class="mm-shop-hero-sub">
+          {{ t('dashboard_shop_hero_subtitle', display_name=display_name) if false else t('dashboard_greeting') ~ ', ' ~ display_name ~ '. ' ~ t('dashboard_shop_hero_subtitle_plain') }}
+        </div>
+      </div>
+
+      <div class="d-grid gap-2 d-md-flex mm-shop-hero-actions">
         <a href="{{ url_for('sales.shop_sell') }}" class="btn btn-success mm-action-btn mm-action-btn-main">
           🧾 {{ t('dashboard_shop_action_sell_btn') }}
         </a>
@@ -440,8 +647,13 @@
     </div>
   </div>
 
-    <div class="row g-2 mm-kpi-row-4">
-      <div class="col-12">
+  <div class="mm-main-grid">
+    <div class="mm-main-stack">
+      <div class="mm-kpi-group-head">
+        <div class="mm-kpi-group-title">{{ t('dashboard_shop_summary_line') }}</div>
+      </div>
+
+      <div class="mm-kpi-row-4">
         <a href="{{ url_for('sales.list_sales') }}" class="mm-kpi-link">
           <div class="mm-kpi-card">
             <div class="mm-kpi-inner">
@@ -453,9 +665,7 @@
             </div>
           </div>
         </a>
-      </div>
 
-      <div class="col-12">
         <a href="{{ url_for('sales.list_sales') }}" class="mm-kpi-link">
           <div class="mm-kpi-card">
             <div class="mm-kpi-inner">
@@ -467,9 +677,7 @@
             </div>
           </div>
         </a>
-      </div>
 
-      <div class="col-12">
         <a href="{{ url_for('sales.list_sales') }}" class="mm-kpi-link">
           <div class="mm-kpi-card">
             <div class="mm-kpi-inner">
@@ -481,9 +689,7 @@
             </div>
           </div>
         </a>
-      </div>
 
-      <div class="col-12">
         <a href="{{ url_for('shop.list_shop') }}" class="mm-kpi-link">
           <div class="mm-kpi-card">
             <div class="mm-kpi-inner">
@@ -496,142 +702,186 @@
           </div>
         </a>
       </div>
+
+      <div class="mm-kpi-group-head">
+        <div class="mm-kpi-group-title">{{ t('dashboard_shop_orders') }}</div>
+      </div>
+
+      <div class="mm-orders-kpi-grid">
+        <a href="{{ url_for('shop.list_shop_orders') }}" class="mm-kpi-link">
+          <div class="mm-kpi-card mm-orders-kpi-card">
+            <div class="mm-orders-kpi-inner">
+              <div class="mm-kpi-label">{{ t('dashboard_shop_orders_summary_pending') }}</div>
+              <div class="mm-kpi-value">{{ pending_count }}</div>
+              <div class="mm-kpi-foot">{{ t('dashboard_shop_pending_orders_hint') }}</div>
+            </div>
+          </div>
+        </a>
+
+        <a href="{{ url_for('shop.list_shop_orders', status='ready') }}" class="mm-kpi-link">
+          <div class="mm-kpi-card mm-orders-kpi-card">
+            <div class="mm-orders-kpi-inner">
+              <div class="mm-kpi-label">{{ t('dashboard_shop_orders_summary_ready') }}</div>
+              <div class="mm-kpi-value text-info">{{ ready_count }}</div>
+              <div class="mm-kpi-foot">{{ t('dashboard_shop_ready_orders_hint') }}</div>
+            </div>
+          </div>
+        </a>
+
+        <a href="{{ url_for('shop.list_shop_orders', status='completed') }}" class="mm-kpi-link">
+          <div class="mm-kpi-card mm-orders-kpi-card">
+            <div class="mm-orders-kpi-inner">
+              <div class="mm-kpi-label">{{ t('dashboard_shop_completed_orders') }}</div>
+              <div class="mm-kpi-value text-success">{{ completed_count }}</div>
+              <div class="mm-kpi-foot">{{ t('dashboard_shop_completed_orders_hint') }}</div>
+            </div>
+          </div>
+        </a>
+
+        <a href="{{ url_for('shop.list_shop') }}" class="mm-kpi-link">
+          <div class="mm-kpi-card mm-orders-kpi-card">
+            <div class="mm-orders-kpi-inner">
+              <div class="mm-kpi-label">{{ t('dashboard_shop_low_stock_count') }}</div>
+              <div class="mm-kpi-value {% if low_stock_count > 0 %}text-danger{% endif %}">{{ low_stock_count }}</div>
+              <div class="mm-kpi-foot">{{ t('dashboard_shop_low_stock_hint') }}</div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="mm-factory-head">
+        <div class="mm-kpi-group-title">{{ t('dashboard_shop_factory_breakdown_title') }}</div>
+      </div>
+
+      {% if factory_breakdown %}
+      <div class="mm-factory-grid">
+        {% for f in factory_breakdown %}
+          {% set factory_value = f.total_value_uzs or 0 %}
+          {% set factory_share = ((factory_value / shop_uzs) * 100) if shop_uzs else 0 %}
+          <div class="mm-factory-box">
+            <div class="mm-factory-name">
+              🏭 {{ f.factory_name or f.name or t('dashboard_factory') }}
+            </div>
+
+            <div class="row g-2">
+              <div class="col-6">
+                <div class="mm-inline-stat">
+                  <div class="mm-inline-stat-k">{{ t('dashboard_shop_total_skus') }}</div>
+                  <div class="mm-inline-stat-v">{{ f.sku_count or f.items_count or 0 }}</div>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="mm-inline-stat">
+                  <div class="mm-inline-stat-k">{{ t('dashboard_shop_total_qty') }}</div>
+                  <div class="mm-inline-stat-v">{{ f.total_qty or 0 }}</div>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="mm-inline-stat">
+                  <div class="mm-inline-stat-k">{{ t('dashboard_shop_factory_value') }}</div>
+                  <div class="mm-inline-stat-v">{{ format_money_compact(factory_value, 'UZS') }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mm-factory-share">
+              <div class="mm-factory-share-top">
+                <div class="mm-factory-share-label">{{ t('dashboard_shop_factory_share_label') }}</div>
+                <div class="mm-factory-share-value">{{ '%.1f'|format(factory_share or 0) }}%</div>
+              </div>
+              <div class="mm-bar">
+                <div class="mm-bar-fill" style="width: {{ '%.2f'|format(factory_share if factory_share < 100 else 100) }}%;"></div>
+              </div>
+            </div>
+
+            {% if f.low_stock_count is defined %}
+            <div class="mm-mini-note mt-2">
+              {{ t('dashboard_shop_low_stock_count') }}: {{ f.low_stock_count or 0 }}
+            </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="mm-empty-card mb-3">
+        <div class="mm-mini-note">{{ t('dashboard_shop_factory_breakdown_empty') }}</div>
+      </div>
+      {% endif %}
+
+      <div class="mm-chart-headline">
+        <div class="mm-kpi-group-title">{{ t('dashboard_shop_analytics_title') }}</div>
+      </div>
+
+      <div class="mm-chart-grid">
+        <div class="mm-chart-card">
+          <div class="mm-chart-head">
+            <div>
+              <h3 class="mm-chart-title">{{ t('dashboard_shop_daily_sales_trend_title') }}</h3>
+              <p class="mm-chart-sub">{{ t('dashboard_shop_daily_sales_trend_subtitle') }}</p>
+            </div>
+          </div>
+          <div class="mm-chart-wrap">
+            <canvas id="mmDailySalesChart"></canvas>
+          </div>
+        </div>
+
+        <div class="mm-chart-card">
+          <div class="mm-chart-head">
+            <div>
+              <h3 class="mm-chart-title">{{ t('dashboard_shop_factory_contribution_title') }}</h3>
+              <p class="mm-chart-sub">{{ t('dashboard_shop_factory_contribution_subtitle') }}</p>
+            </div>
+          </div>
+          <div class="mm-chart-wrap">
+            <canvas id="mmFactorySalesChart"></canvas>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="mm-kpi-group-head">
-    <div class="mm-kpi-group-title">{{ t('dashboard_shop_orders') }}</div>
-  </div>
+    <div class="mm-main-stack">
+      <div class="mm-side-card">
+        <div class="mm-side-title">{{ t('founder_view') }}</div>
 
-  <div class="mm-orders-kpi-grid mb-3">
-    <a href="{{ url_for('shop.list_shop_orders') }}" class="mm-kpi-link">
-      <div class="mm-kpi-card mm-orders-kpi-card">
-        <div class="mm-orders-kpi-inner">
-          <div class="mm-kpi-label">{{ t('dashboard_shop_orders_summary_pending') }}</div>
-          <div class="mm-kpi-value">{{ pending_count }}</div>
-          <div class="mm-kpi-foot">{{ t('dashboard_shop_pending_orders_hint') }}</div>
-        </div>
-      </div>
-    </a>
-
-    <a href="{{ url_for('shop.list_shop_orders', status='ready') }}" class="mm-kpi-link">
-      <div class="mm-kpi-card mm-orders-kpi-card">
-        <div class="mm-orders-kpi-inner">
-          <div class="mm-kpi-label">{{ t('dashboard_shop_orders_summary_ready') }}</div>
-          <div class="mm-kpi-value text-info">{{ ready_count }}</div>
-          <div class="mm-kpi-foot">{{ t('dashboard_shop_ready_orders_hint') }}</div>
-        </div>
-      </div>
-    </a>
-
-    <a href="{{ url_for('shop.list_shop_orders', status='completed') }}" class="mm-kpi-link">
-      <div class="mm-kpi-card mm-orders-kpi-card">
-        <div class="mm-orders-kpi-inner">
-          <div class="mm-kpi-label">{{ t('dashboard_shop_completed_orders') }}</div>
-          <div class="mm-kpi-value text-success">{{ completed_count }}</div>
-          <div class="mm-kpi-foot">{{ t('dashboard_shop_completed_orders_hint') }}</div>
-        </div>
-      </div>
-    </a>
-
-    <a href="{{ url_for('shop.list_shop') }}" class="mm-kpi-link">
-      <div class="mm-kpi-card mm-orders-kpi-card">
-        <div class="mm-orders-kpi-inner">
-          <div class="mm-kpi-label">{{ t('dashboard_shop_low_stock_count') }}</div>
-          <div class="mm-kpi-value {% if low_stock_count > 0 %}text-danger{% endif %}">{{ low_stock_count }}</div>
-          <div class="mm-kpi-foot">{{ t('dashboard_shop_low_stock_hint') }}</div>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <div class="mm-factory-head">
-    <div class="mm-kpi-group-title">{{ t('dashboard_shop_factory_breakdown_title') }}</div>
-  </div>
-
-  {% if factory_breakdown %}
-  <div class="mm-factory-grid">
-    {% for f in factory_breakdown %}
-      {% set factory_value = f.total_value_uzs or 0 %}
-      {% set factory_share = ((factory_value / shop_uzs) * 100) if shop_uzs else 0 %}
-      <div class="mm-factory-box">
-        <div class="mm-factory-name">
-          🏭 {{ f.factory_name or f.name or t('dashboard_factory') }}
-        </div>
-
-        <div class="row g-2">
-          <div class="col-6">
-            <div class="mm-inline-stat">
-              <div class="mm-inline-stat-k">{{ t('dashboard_shop_total_skus') }}</div>
-              <div class="mm-inline-stat-v">{{ f.sku_count or f.items_count or 0 }}</div>
-            </div>
+        <div class="mm-founder-list">
+          <div class="mm-founder-item">
+            <span class="mm-founder-dot"></span>
+            <span>{{ t('founder_view_point_sales') }}</span>
           </div>
-
-          <div class="col-6">
-            <div class="mm-inline-stat">
-              <div class="mm-inline-stat-k">{{ t('dashboard_shop_total_qty') }}</div>
-              <div class="mm-inline-stat-v">{{ f.total_qty or 0 }}</div>
-            </div>
+          <div class="mm-founder-item">
+            <span class="mm-founder-dot"></span>
+            <span>{{ t('founder_view_point_factory_contribution') }}</span>
           </div>
-
-          <div class="col-12">
-            <div class="mm-inline-stat">
-              <div class="mm-inline-stat-k">{{ t('dashboard_shop_factory_value') }}</div>
-              <div class="mm-inline-stat-v">{{ format_money_compact(factory_value, 'UZS') }}</div>
-            </div>
+          <div class="mm-founder-item">
+            <span class="mm-founder-dot"></span>
+            <span>{{ t('founder_view_point_orders') }}</span>
+          </div>
+          <div class="mm-founder-item">
+            <span class="mm-founder-dot"></span>
+            <span>{{ t('founder_view_point_restock') }}</span>
           </div>
         </div>
-
-        <div class="mm-factory-share">
-          <div class="mm-factory-share-top">
-            <div class="mm-factory-share-label">{{ t('dashboard_shop_factory_share_label') }}</div>
-            <div class="mm-factory-share-value">{{ '%.1f'|format(factory_share or 0) }}%</div>
-          </div>
-          <div class="mm-bar">
-            <div class="mm-bar-fill" style="width: {{ '%.2f'|format(factory_share if factory_share < 100 else 100) }}%;"></div>
-          </div>
-        </div>
-
-        {% if f.low_stock_count is defined %}
-        <div class="mm-mini-note mt-2">
-          {{ t('dashboard_shop_low_stock_count') }}: {{ f.low_stock_count or 0 }}
-        </div>
-        {% endif %}
       </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="mm-empty-card mb-3">
-    <div class="mm-mini-note">{{ t('dashboard_shop_factory_breakdown_empty') }}</div>
-  </div>
-  {% endif %}
 
-  <div class="mm-chart-headline">
-    <div class="mm-kpi-group-title">{{ t('dashboard_shop_analytics_title') }}</div>
-  </div>
+      <div class="mm-side-card">
+        <div class="mm-side-title">{{ t('quick_access') }}</div>
 
-  <div class="mm-chart-grid">
-    <div class="mm-chart-card">
-      <div class="mm-chart-head">
-        <div>
-          <h3 class="mm-chart-title">{{ t('dashboard_shop_daily_sales_trend_title') }}</h3>
-          <p class="mm-chart-sub">{{ t('dashboard_shop_daily_sales_trend_subtitle') }}</p>
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('shop.list_shop') }}" class="btn btn-outline-primary mm-action-btn">
+            📦 {{ t('menu_shop') }}
+          </a>
+          <a href="{{ url_for('shop.list_shop_orders') }}" class="btn btn-outline-secondary mm-action-btn">
+            🛒 {{ t('menu_orders_short') }}
+          </a>
+          <a href="{{ url_for('sales.list_sales') }}" class="btn btn-outline-success mm-action-btn">
+            💸 {{ t('menu_sales') }}
+          </a>
+          <a href="{{ url_for('shop.movement_history') }}" class="btn btn-outline-dark mm-action-btn">
+            📜 {{ t('reports_shop_history') }}
+          </a>
         </div>
-      </div>
-      <div class="mm-chart-wrap">
-        <canvas id="mmDailySalesChart"></canvas>
-      </div>
-    </div>
-
-    <div class="mm-chart-card">
-      <div class="mm-chart-head">
-        <div>
-          <h3 class="mm-chart-title">{{ t('dashboard_shop_factory_contribution_title') }}</h3>
-          <p class="mm-chart-sub">{{ t('dashboard_shop_factory_contribution_subtitle') }}</p>
-        </div>
-      </div>
-      <div class="mm-chart-wrap">
-        <canvas id="mmFactorySalesChart"></canvas>
       </div>
     </div>
   </div>

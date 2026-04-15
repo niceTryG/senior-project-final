@@ -1,0 +1,752 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if step_key == 'verify' and not telegram_verify_ready %}
+<script>
+  window.setTimeout(function () {
+    window.location.reload();
+  }, 7000);
+</script>
+{% endif %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+  :root {
+    --ad-onboard-bg: #f3f6fb;
+    --ad-onboard-surface: #ffffff;
+    --ad-onboard-surface-soft: #f8fbff;
+    --ad-onboard-text: #10233e;
+    --ad-onboard-muted: #65758c;
+    --ad-onboard-line: rgba(16, 35, 62, 0.10);
+    --ad-onboard-line-strong: rgba(16, 35, 62, 0.16);
+    --ad-onboard-navy: #122540;
+    --ad-onboard-blue: #2d68b2;
+    --ad-onboard-blue-soft: rgba(45, 104, 178, 0.10);
+    --ad-onboard-gold-soft: rgba(200, 136, 58, 0.12);
+    --ad-onboard-green-soft: rgba(36, 112, 76, 0.12);
+    --ad-onboard-danger: #c53030;
+    --ad-onboard-shadow: 0 24px 68px rgba(18, 37, 64, 0.10);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(45, 104, 178, 0.10), transparent 26%),
+      linear-gradient(180deg, #f8fbff 0%, #eef3f8 100%) !important;
+  }
+
+  .ad-onboard-root {
+    width: calc(100% + 24px);
+    margin-left: -12px;
+    margin-right: -12px;
+    min-height: 100vh;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ad-onboard-text);
+  }
+
+  .ad-onboard-shell {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 24px 26px 88px;
+  }
+
+  .ad-onboard-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.06fr) minmax(320px, 0.84fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  .ad-onboard-card {
+    border-radius: 30px;
+    border: 1px solid var(--ad-onboard-line);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.98));
+    box-shadow: var(--ad-onboard-shadow);
+  }
+
+  .ad-onboard-main {
+    padding: 30px;
+  }
+
+  .ad-onboard-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 13px;
+    border-radius: 999px;
+    background: var(--ad-onboard-blue-soft);
+    color: var(--ad-onboard-blue);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .ad-onboard-kicker::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .ad-onboard-title {
+    margin: 16px 0 0;
+    font-family: 'Fraunces', serif;
+    font-size: clamp(34px, 5vw, 54px);
+    line-height: 0.98;
+    letter-spacing: -0.05em;
+  }
+
+  .ad-onboard-subtitle {
+    margin: 14px 0 0;
+    max-width: 640px;
+    color: var(--ad-onboard-muted);
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  .ad-onboard-steps {
+    margin-top: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .ad-onboard-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--ad-onboard-line);
+    background: rgba(255, 255, 255, 0.84);
+    color: var(--ad-onboard-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .ad-onboard-step.current {
+    background: var(--ad-onboard-navy);
+    border-color: var(--ad-onboard-navy);
+    color: #ffffff;
+  }
+
+  .ad-onboard-step.done {
+    background: var(--ad-onboard-green-soft);
+    border-color: rgba(36, 112, 76, 0.12);
+    color: #225f42;
+  }
+
+  .ad-onboard-form {
+    margin-top: 26px;
+    display: grid;
+    gap: 16px;
+  }
+
+  .ad-onboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .ad-onboard-field {
+    display: grid;
+    gap: 7px;
+  }
+
+  .ad-onboard-field.full {
+    grid-column: 1 / -1;
+  }
+
+  .ad-onboard-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--ad-onboard-muted);
+  }
+
+  .ad-onboard-input,
+  .ad-onboard-select,
+  .ad-onboard-textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--ad-onboard-line);
+    background: #ffffff;
+    color: var(--ad-onboard-text);
+    font-size: 0.94rem;
+  }
+
+  .ad-onboard-textarea {
+    min-height: 112px;
+    resize: vertical;
+  }
+
+  .ad-onboard-help {
+    color: var(--ad-onboard-muted);
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  .ad-onboard-phone-row {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .ad-onboard-verify-panel {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 24px;
+    border: 1px solid var(--ad-onboard-line);
+    background: linear-gradient(180deg, rgba(248, 251, 255, 0.98), rgba(255, 255, 255, 0.98));
+  }
+
+  .ad-onboard-verify-status {
+    display: grid;
+    gap: 6px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    border: 1px solid var(--ad-onboard-line);
+    background: #ffffff;
+  }
+
+  .ad-onboard-verify-status strong {
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ad-onboard-verify-status span {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--ad-onboard-muted);
+  }
+
+  .ad-onboard-verify-status.done {
+    border-color: rgba(36, 112, 76, 0.18);
+    background: rgba(36, 112, 76, 0.08);
+  }
+
+  .ad-onboard-verify-status.done strong {
+    color: #225f42;
+  }
+
+  .ad-onboard-verify-status.pending strong {
+    color: var(--ad-onboard-blue);
+  }
+
+  .ad-onboard-verify-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ad-onboard-verify-list li {
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(45, 104, 178, 0.06);
+    color: var(--ad-onboard-text);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .ad-onboard-error {
+    color: var(--ad-onboard-danger);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .ad-onboard-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .ad-onboard-btn,
+  .ad-onboard-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 18px;
+    border-radius: 16px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+  }
+
+  .ad-onboard-btn:hover,
+  .ad-onboard-link:hover {
+    transform: translateY(-2px);
+  }
+
+  .ad-onboard-btn.primary {
+    border: none;
+    background: var(--ad-onboard-navy);
+    color: #ffffff;
+    box-shadow: 0 18px 36px rgba(18, 37, 64, 0.18);
+  }
+
+  .ad-onboard-btn.primary:hover {
+    background: var(--ad-onboard-blue);
+  }
+
+  .ad-onboard-link.secondary {
+    border: 1px solid var(--ad-onboard-line-strong);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--ad-onboard-text);
+  }
+
+  .ad-onboard-side {
+    padding: 24px;
+    display: grid;
+    gap: 16px;
+    background:
+      linear-gradient(180deg, rgba(18, 37, 64, 0.98), rgba(24, 50, 83, 0.98)),
+      var(--ad-onboard-navy);
+    color: #ffffff;
+  }
+
+  .ad-onboard-side-kicker {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(233, 240, 250, 0.62);
+  }
+
+  .ad-onboard-side-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+  }
+
+  .ad-onboard-side-copy {
+    color: rgba(233, 240, 250, 0.78);
+    font-size: 0.92rem;
+    line-height: 1.75;
+  }
+
+  .ad-onboard-side-box {
+    padding: 16px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .ad-onboard-side-box strong {
+    display: block;
+    font-size: 0.96rem;
+    font-weight: 700;
+  }
+
+  .ad-onboard-side-box span {
+    display: block;
+    margin-top: 7px;
+    color: rgba(233, 240, 250, 0.74);
+    font-size: 0.85rem;
+    line-height: 1.65;
+  }
+
+  .ad-onboard-review-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .ad-onboard-review-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--ad-onboard-line);
+    background: #ffffff;
+  }
+
+  .ad-onboard-review-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+
+  .ad-onboard-review-badge.done {
+    background: var(--ad-onboard-green-soft);
+    color: #225f42;
+  }
+
+  .ad-onboard-review-badge.pending {
+    background: var(--ad-onboard-gold-soft);
+    color: #9a650d;
+  }
+
+  .ad-onboard-summary-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .ad-onboard-summary-card {
+    padding: 16px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .ad-onboard-summary-card strong {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(233, 240, 250, 0.58);
+  }
+
+  .ad-onboard-summary-card span {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  @media (max-width: 980px) {
+    .ad-onboard-layout,
+    .ad-onboard-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .ad-onboard-phone-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .ad-onboard-shell {
+      padding: 18px 14px 74px;
+    }
+
+    .ad-onboard-main,
+    .ad-onboard-side {
+      padding: 22px;
+      border-radius: 24px;
+    }
+  }
+</style>
+
+<div class="ad-onboard-root">
+  <div class="ad-onboard-shell">
+    <div class="ad-onboard-layout">
+      <section class="ad-onboard-card ad-onboard-main">
+        <div class="ad-onboard-kicker">{{ step_meta.kicker }}</div>
+        <h1 class="ad-onboard-title">{{ step_meta.title }}</h1>
+        <p class="ad-onboard-subtitle">{{ step_meta.subtitle }}</p>
+
+        <div class="ad-onboard-steps">
+          {% for item in onboarding_steps %}
+            <a href="{{ item.href }}" class="ad-onboard-step {{ item.state }}">{{ item.label }}</a>
+          {% endfor %}
+        </div>
+
+        {% if step_key != 'review' %}
+          <form method="post" class="ad-onboard-form">
+            {{ form.hidden_tag() }}
+
+            {% if step_key == 'account' %}
+              <div class="ad-onboard-grid">
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.full_name.id }}">{{ t('full_name') }}</label>
+                  {{ form.full_name(class="ad-onboard-input") }}
+                  {% for error in form.full_name.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.phone_number.id }}">{{ t('phone') }}</label>
+                  <div class="ad-onboard-phone-row">
+                    {{ form.phone_country_code(class="ad-onboard-select") }}
+                    {{ form.phone_number(class="ad-onboard-input", placeholder=t('number_placeholder'), inputmode="tel", autocomplete="tel-national") }}
+                  </div>
+                  <div class="ad-onboard-help">{{ t('onboard_phone_help') }}</div>
+                  {% for error in form.phone_country_code.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                  {% for error in form.phone_number.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.username.id }}">{{ t('username') }}</label>
+                  {{ form.username(class="ad-onboard-input") }}
+                  <div class="ad-onboard-help">{{ t('onboard_username_help') }}</div>
+                  {% for error in form.username.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.password.id }}">{{ t('password') }}</label>
+                  {{ form.password(class="ad-onboard-input") }}
+                  {% for error in form.password.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.confirm_password.id }}">{{ t('confirm_password') }}</label>
+                  {{ form.confirm_password(class="ad-onboard-input") }}
+                  {% for error in form.confirm_password.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.language.id }}">{{ t('language') }}</label>
+                  {{ form.language(class="ad-onboard-select") }}
+                  {% for error in form.language.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+              </div>
+
+              <div class="ad-onboard-actions">
+                {{ form.submit_owner(class="ad-onboard-btn primary") }}
+                <a href="{{ url_for('auth.login') }}" class="ad-onboard-link secondary">{{ t('sign_in_instead') }}</a>
+              </div>
+            {% elif step_key == 'verify' %}
+              <div class="ad-onboard-verify-panel">
+                <div class="ad-onboard-verify-status {% if telegram_verify_ready %}done{% else %}pending{% endif %}">
+                  <strong>{% if telegram_verify_ready %}{{ t('telegram_confirmed') }}{% else %}{{ t('waiting_for_telegram_confirmation') }}{% endif %}</strong>
+                  <span>
+                    {{ t('owner_phone_label') }}: {{ owner_state.phone or '-' }}.
+                    {% if telegram_verify_ready %}
+                      {{ t('telegram_signup_confirmed_continue') }}
+                    {% else %}
+                      {{ t('open_bot_press_start_return') }}
+                    {% endif %}
+                  </span>
+                </div>
+
+                <ol class="ad-onboard-verify-list">
+                  <li>{{ t('verify_step_1') }}</li>
+                  <li>{{ t('verify_step_2')|safe }}</li>
+                  <li>{{ t('verify_step_3') }}</li>
+                </ol>
+              </div>
+
+              <div class="ad-onboard-actions">
+                <a href="{{ telegram_verify_url }}" class="ad-onboard-link secondary" target="_blank" rel="noreferrer">{{ t('open_telegram_bot') }}</a>
+                <a href="{{ url_for('public.start_workspace', step='verify') }}" class="ad-onboard-link secondary">{{ t('check_status') }}</a>
+                {{ form.submit_verify(class="ad-onboard-btn primary") }}
+                <a href="{{ url_for('public.start_workspace', step=prev_step) }}" class="ad-onboard-link secondary">{{ t('back') }}</a>
+              </div>
+            {% elif step_key == 'workspace' %}
+              <div class="ad-onboard-grid">
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.name.id }}">{{ t('business_name') }}</label>
+                  {{ form.name(class="ad-onboard-input") }}
+                  {% for error in form.name.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.owner_name.id }}">{{ t('owner_name') }}</label>
+                  {{ form.owner_name(class="ad-onboard-input") }}
+                  {% for error in form.owner_name.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.phone.id }}">{{ t('business_phone') }}</label>
+                  {{ form.phone(class="ad-onboard-input") }}
+                  {% for error in form.phone.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.location.id }}">{{ t('location') }}</label>
+                  {{ form.location(class="ad-onboard-input") }}
+                  {% for error in form.location.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.note.id }}">{{ t('internal_note') }}</label>
+                  {{ form.note(class="ad-onboard-textarea") }}
+                  <div class="ad-onboard-help">{{ t('workspace_note_help') }}</div>
+                  {% for error in form.note.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+              </div>
+
+              <div class="ad-onboard-actions">
+                {{ form.submit_workspace_setup(class="ad-onboard-btn primary") }}
+                <a href="{{ url_for('public.start_workspace', step=prev_step) }}" class="ad-onboard-link secondary">{{ t('back') }}</a>
+              </div>
+            {% elif step_key == 'shop' %}
+              <div class="ad-onboard-grid">
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.name.id }}">{{ t('shop_name') }}</label>
+                  {{ form.name(class="ad-onboard-input") }}
+                  <div class="ad-onboard-help">{{ t('shop_step_optional_help') }}</div>
+                  {% for error in form.name.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.location.id }}">{{ t('shop_location') }}</label>
+                  {{ form.location(class="ad-onboard-input") }}
+                  {% for error in form.location.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.note.id }}">{{ t('shop_note') }}</label>
+                  {{ form.note(class="ad-onboard-textarea") }}
+                  {% for error in form.note.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+              </div>
+
+              <div class="ad-onboard-actions">
+                {{ form.submit_shop(class="ad-onboard-btn primary") }}
+                <a href="{{ url_for('public.start_workspace', step=prev_step) }}" class="ad-onboard-link secondary">{{ t('back') }}</a>
+              </div>
+            {% elif step_key == 'team' %}
+              <div class="ad-onboard-grid">
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.full_name.id }}">{{ t('full_name') }}</label>
+                  {{ form.full_name(class="ad-onboard-input") }}
+                  <div class="ad-onboard-help">{{ t('team_step_optional_help') }}</div>
+                  {% for error in form.full_name.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.phone.id }}">{{ t('phone') }}</label>
+                  {{ form.phone(class="ad-onboard-input") }}
+                  {% for error in form.phone.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.username.id }}">{{ t('username') }}</label>
+                  {{ form.username(class="ad-onboard-input") }}
+                  {% for error in form.username.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.password.id }}">{{ t('password') }}</label>
+                  {{ form.password(class="ad-onboard-input") }}
+                  {% for error in form.password.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field">
+                  <label class="ad-onboard-label" for="{{ form.role.id }}">{{ t('role') }}</label>
+                  {{ form.role(class="ad-onboard-select") }}
+                  {% for error in form.role.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="ad-onboard-field full">
+                  <label class="ad-onboard-label" for="{{ form.shop_target.id }}">{{ t('linked_shop') }}</label>
+                  {{ form.shop_target(class="ad-onboard-select") }}
+                  <div class="ad-onboard-help">{{ t('linked_shop_help') }}</div>
+                  {% for error in form.shop_target.errors %}<div class="ad-onboard-error">{{ error }}</div>{% endfor %}
+                </div>
+              </div>
+
+              <div class="ad-onboard-actions">
+                {{ form.submit_team(class="ad-onboard-btn primary") }}
+                <a href="{{ url_for('public.start_workspace', step=prev_step) }}" class="ad-onboard-link secondary">{{ t('back') }}</a>
+              </div>
+            {% endif %}
+          </form>
+        {% else %}
+          <form method="post" class="ad-onboard-form">
+            {{ form.hidden_tag() }}
+
+            <div class="ad-onboard-review-list">
+              {% for item in review_items %}
+                <div class="ad-onboard-review-item">
+                  <div class="ad-onboard-review-badge {% if item.done %}done{% else %}pending{% endif %}">
+                    {% if item.done %}{{ t('ok_label') }}{% else %}--{% endif %}
+                  </div>
+                  <div>
+                    <strong>{{ item.label }}</strong>
+                    <div class="ad-onboard-help">{{ item.summary }}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            <div class="ad-onboard-actions">
+              {{ form.submit_launch(class="ad-onboard-btn primary") }}
+              <a href="{{ url_for('public.start_workspace', step=prev_step) }}" class="ad-onboard-link secondary">{{ t('back') }}</a>
+            </div>
+          </form>
+        {% endif %}
+      </section>
+
+      <aside class="ad-onboard-card ad-onboard-side">
+        <div class="ad-onboard-side-kicker">{{ t('launch_preview') }}</div>
+        <div class="ad-onboard-side-title">{{ t('owner_should_understand_before_dashboard') }}</div>
+        <div class="ad-onboard-side-copy">
+          {{ t('onboard_side_copy') }}
+        </div>
+
+        {% if step_key == 'review' %}
+          <div class="ad-onboard-summary-grid">
+            <div class="ad-onboard-summary-card">
+              <strong>{{ t('owner_name') }}</strong>
+              <span>{{ owner_state.full_name or '-' }}</span>
+            </div>
+            <div class="ad-onboard-summary-card">
+              <strong>{{ t('login_label') }}</strong>
+              <span>{{ owner_state.login_username or '-' }}</span>
+            </div>
+            <div class="ad-onboard-summary-card">
+              <strong>{{ t('workspace') }}</strong>
+              <span>{{ workspace_state.name or '-' }}</span>
+            </div>
+            <div class="ad-onboard-summary-card">
+              <strong>{{ t('telegram') }}</strong>
+              <span>{% if owner_verified %}{{ t('verified') }}{% else %}{{ t('pending_verification') }}{% endif %}</span>
+            </div>
+            <div class="ad-onboard-summary-card">
+              <strong>{{ t('first_shop') }}</strong>
+              <span>{{ shop_state.name or t('not_added_yet') }}</span>
+            </div>
+            <div class="ad-onboard-summary-card">
+              <strong>{{ t('first_teammate') }}</strong>
+              <span>{{ team_state.full_name or t('will_be_added_later') }}</span>
+            </div>
+          </div>
+        {% else %}
+          <div class="ad-onboard-side-box">
+            <strong>{{ t('owner_first_rule') }}</strong>
+            <span>{{ t('owner_first_rule_text') }}</span>
+          </div>
+
+          <div class="ad-onboard-side-box">
+            <strong>{{ t('phone_based_login') }}</strong>
+            <span>{{ t('phone_based_login_text') }}</span>
+          </div>
+
+          <div class="ad-onboard-side-box">
+            <strong>{{ t('launch_now_refine_later') }}</strong>
+            <span>{{ t('launch_now_refine_later_text') }}</span>
+          </div>
+        {% endif %}
+
+        <div class="ad-onboard-side-box">
+          <strong>{{ t('need_help_first') }}</strong>
+          <span>
+            {% if public_telegram_url %}
+              {{ t('telegram_available_for_quick_contact') }}
+            {% else %}
+              {{ t('use_public_contact_number_before_launch') }}
+            {% endif %}
+            {{ t('call_any_time') }} {{ public_phone }}.
+          </span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+{% endblock %}

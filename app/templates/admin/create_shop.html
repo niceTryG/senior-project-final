@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Create Shop{% endblock %}
+{% block title %}{{ t('create_shop_title') }}{% endblock %}
 
 {% block content %}
 <style>
@@ -35,14 +35,14 @@
 <div class="container-fluid mm-shop-form-page">
   <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
     <div>
-      <h1 class="h4 mb-0">Создать магазин</h1>
+      <h1 class="h4 mb-0">{{ t('create_shop_title') }}</h1>
       <div class="small text-muted">
-        Добавление нового магазина и привязка к нескольким фабрикам
+        {{ t('create_shop_subtitle') }}
       </div>
     </div>
 
     <a href="{{ url_for('auth.list_shops') }}" class="btn btn-outline-secondary btn-sm mm-btn">
-      ← Назад
+      ← {{ t('back') }}
     </a>
   </div>
 
@@ -51,17 +51,17 @@
       <form method="post" class="row g-3">
 
         <div class="col-12 col-md-6">
-          <label class="form-label small mb-1">Название магазина</label>
+          <label class="form-label small mb-1">{{ t('shop_name') }}</label>
           <input type="text" name="name" class="form-control" required>
         </div>
 
         <div class="col-12 col-md-6">
-          <label class="form-label small mb-1">Адрес / локация</label>
+          <label class="form-label small mb-1">{{ t('address_location') }}</label>
           <input type="text" name="location" class="form-control">
         </div>
 
         <div class="col-12">
-          <label class="form-label small mb-1">Заметка</label>
+          <label class="form-label small mb-1">{{ t('note') }}</label>
           <textarea name="note" rows="3" class="form-control"></textarea>
         </div>
 
@@ -69,13 +69,13 @@
           <div class="form-check">
             <input class="form-check-input" type="checkbox" name="is_active" id="isActive" value="1" checked>
             <label class="form-check-label" for="isActive">
-              Магазин активен
+              {{ t('shop_is_active') }}
             </label>
           </div>
         </div>
 
         <div class="col-12">
-          <label class="form-label small mb-2">Привязанные фабрики</label>
+          <label class="form-label small mb-2">{{ t('linked_factories') }}</label>
 
           <div class="mm-factory-box">
             <div class="row g-2">
@@ -98,16 +98,16 @@
           </div>
 
           <div class="form-text">
-            Один магазин может быть привязан к нескольким фабрикам.
+            {{ t('shop_multi_factory_hint') }}
           </div>
         </div>
 
         <div class="col-12 d-flex gap-2 flex-wrap">
           <button type="submit" class="btn btn-success mm-btn">
-            ✅ Создать магазин
+            ✅ {{ t('create_shop_button') }}
           </button>
           <a href="{{ url_for('auth.list_shops') }}" class="btn btn-outline-secondary mm-btn">
-            Отмена
+            {{ t('cancel') }}
           </a>
         </div>
 

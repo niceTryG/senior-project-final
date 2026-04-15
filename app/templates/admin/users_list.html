@@ -274,7 +274,7 @@
                    class="form-control form-control-sm"
                    name="q"
                    value="{{ q or '' }}"
-                   placeholder="{{ t('label_username') }}">
+                   placeholder="Username, full name, or phone">
           </div>
 
           <div class="col-6 col-md-3">
@@ -345,6 +345,7 @@
             <div class="d-flex justify-content-between align-items-start gap-2">
               <div style="min-width:0;">
                 <div class="fw-semibold text-truncate">{{ user.username }}</div>
+                <div class="small text-muted text-truncate">{{ user.full_name or '—' }}</div>
                 <div class="small text-muted">
                   {{ t('table_id') }}: {{ user.id }}
                 </div>
@@ -385,6 +386,13 @@
                 <div class="mm-k">{{ t('label_shop') }}</div>
                 <div class="mm-v">
                   {{ user.shop.name if user.shop else '—' }}
+                </div>
+              </div>
+
+              <div class="mm-kv">
+                <div class="mm-k">Phone</div>
+                <div class="mm-v">
+                  {{ user.phone or 'â€”' }}
                 </div>
               </div>
 
@@ -456,6 +464,8 @@
                 <td class="text-muted small">{{ user.id }}</td>
                 <td>
                   <div class="fw-semibold">{{ user.username }}</div>
+                  <div class="small text-muted">{{ user.full_name or 'â€”' }}</div>
+                  <div class="small text-muted">{{ user.phone or 'â€”' }}</div>
                 </td>
                 <td>
                   <span class="mm-role-badge {{ role_class }}">

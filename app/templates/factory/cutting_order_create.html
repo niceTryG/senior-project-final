@@ -1,0 +1,228 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Create Cutting Order{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+    <section class="adras-hero-card">
+        <div class="adras-hero-left">
+            <div class="adras-chip-row mb-3" style="display:flex; flex-wrap:wrap; gap:10px;">
+                <span class="badge text-bg-dark">New batch</span>
+                <span class="badge text-bg-secondary">Cutting</span>
+            </div>
+            <h1 class="adras-hero-title">Create Cutting Order</h1>
+            <p class="dashboard-subtitle">
+                Record one daily cutting session: model, total pieces cut, and exact meters used per fabric.
+            </p>
+        </div>
+    </section>
+
+    <form method="post" class="adras-main-grid">
+        {{ form.hidden_tag() }}
+
+        <div class="adras-main-left">
+            <article class="adras-panel">
+                <div class="adras-panel-title mb-3">Batch Setup</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.cut_date.label.text }}</label>
+                        {{ form.cut_date(class="form-control", type="date") }}
+                        {% if form.cut_date.errors %}
+                            <div class="text-danger small mt-1">{{ form.cut_date.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.product_id.label.text }}</label>
+                        {{ form.product_id(class="form-select") }}
+                        {% if form.product_id.errors %}
+                            <div class="text-danger small mt-1">{{ form.product_id.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.sets_cut.label.text }}</label>
+                        {{ form.sets_cut(class="form-control", min="1", placeholder="300") }}
+                        <div class="small text-muted mt-1">
+                            If one model has 2-3 pieces in one set, enter total output pieces for this session.
+                        </div>
+                        {% if form.sets_cut.errors %}
+                            <div class="text-danger small mt-1">{{ form.sets_cut.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ form.notes.label.text }}</label>
+                        {{ form.notes(class="form-control", rows="4", placeholder="Optional batch note, issue, or planning remark") }}
+                    </div>
+                </div>
+            </article>
+
+            <article class="adras-panel">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+                    <div>
+                        <div class="adras-panel-title mb-1">Component Cutting Rows</div>
+                        <div class="text-muted small">Use this for products with multiple parts (for example T-shirt + Short).</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-light" id="addComponentRowBtn">Add row</button>
+                </div>
+
+                <div class="d-grid" id="componentRows" style="gap:10px;"></div>
+
+                <template id="componentRowTemplate">
+                    <div class="border rounded p-2 component-row">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small mb-1">Component</label>
+                                <input type="text" class="form-control form-control-sm component-name-input" name="component_name[]" placeholder="T-shirt / Short">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Pieces</label>
+                                <input type="number" min="0" class="form-control form-control-sm" name="component_pieces[]" placeholder="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small mb-1">Fabric</label>
+                                <select class="form-select form-select-sm" name="component_fabric_id[]">
+                                    <option value="">Select fabric</option>
+                                    {% for f in fabrics %}
+                                        <option value="{{ f.id }}">{{ f.name }} ({{ f.unit or 'm' }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Used m</label>
+                                <input type="number" min="0" step="0.01" class="form-control form-control-sm" name="component_used_meters[]" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="mt-2 d-flex justify-content-end">
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-component-row">Remove</button>
+                        </div>
+                    </div>
+                </template>
+            </article>
+
+            <article class="adras-panel">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+                    <div>
+                        <div class="adras-panel-title mb-1">Legacy Material Input (Optional)</div>
+                        <div class="text-muted small">If you do not use component rows above, you can still record by fabric totals here.</div>
+                    </div>
+                </div>
+
+                <div class="d-grid" style="gap:14px;">
+                    {% for row in material_rows %}
+                        <div class="adras-action-card" style="padding:18px; border:1px solid rgba(255,255,255,.08);">
+                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                <div>
+                                    <div class="adras-action-card-title">{{ row.fabric.name }}</div>
+                                    <div class="adras-action-card-sub">
+                                        {{ row.fabric.material_type|replace('_', ' ')|title if row.fabric.material_type else 'Material' }}
+                                        · stock {{ '%.2f'|format(row.fabric.quantity or 0) }} {{ row.fabric.unit or 'unit' }}
+                                    </div>
+                                </div>
+                                <span class="badge text-bg-secondary">
+                                    {{ '{:,.2f}'.format(row.fabric.price_per_unit or 0) }} {{ row.fabric.price_currency or 'UZS' }}/{{ row.fabric.unit or 'unit' }}
+                                </span>
+                            </div>
+
+                            <div class="mt-3">
+                                {{ row.form.material_id(value=row.fabric.id) }}
+                                <label class="form-label">Used amount</label>
+                                {{ row.form.used_amount(class="form-control", min="0", step="0.01", placeholder="0 = not used") }}
+                                {% if row.form.used_amount.errors %}
+                                    <div class="text-danger small mt-1">{{ row.form.used_amount.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+
+        <div class="adras-main-right">
+            <article class="adras-panel">
+                <div class="adras-panel-title">What Will Be Stored</div>
+                <div class="adras-focus-box">
+                    <div class="adras-focus-item">
+                        <span class="adras-focus-dot"></span>
+                        <span>The selected product is the model this cut belongs to.</span>
+                    </div>
+                    <div class="adras-focus-item">
+                        <span class="adras-focus-dot"></span>
+                        <span>Each material line stores a frozen unit cost snapshot at the moment you save.</span>
+                    </div>
+                    <div class="adras-focus-item">
+                        <span class="adras-focus-dot"></span>
+                        <span>One product can use many fabrics; fill only rows you used and keep others as 0.</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="adras-panel adras-snapshot-dark">
+                <div class="adras-panel-title adras-panel-title-light">Actions</div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Save Cutting Order</button>
+                    <a href="{{ url_for('cutting.cutting_order_list') }}" class="btn btn-outline-light">Cancel</a>
+                </div>
+            </article>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        const rowsHost = document.getElementById('componentRows');
+        const rowTemplate = document.getElementById('componentRowTemplate');
+        const addBtn = document.getElementById('addComponentRowBtn');
+        const productSelect = document.getElementById('{{ form.product_id.id }}');
+        const suggestionsMap = {{ component_suggestions_by_product|tojson }};
+        let datalistCounter = 0;
+
+        function applySuggestionsToRow(row) {
+            if (!row) return;
+            const input = row.querySelector('.component-name-input');
+            if (!input) return;
+
+            const productId = productSelect ? String(productSelect.value || '') : '';
+            const values = suggestionsMap[productId] || [];
+            const listId = 'componentSuggestions_' + (++datalistCounter);
+            let datalist = row.querySelector('datalist');
+            if (!datalist) {
+                datalist = document.createElement('datalist');
+                row.appendChild(datalist);
+            }
+            datalist.id = listId;
+            datalist.innerHTML = values.map(function (value) {
+                return '<option value="' + String(value).replace(/"/g, '&quot;') + '"></option>';
+            }).join('');
+            input.setAttribute('list', listId);
+        }
+
+        function addRow() {
+            if (!rowsHost || !rowTemplate) return;
+            const fragment = rowTemplate.content.cloneNode(true);
+            const row = fragment.querySelector('.component-row');
+            const removeBtn = fragment.querySelector('.remove-component-row');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function () {
+                    if (row) row.remove();
+                });
+            }
+            rowsHost.appendChild(fragment);
+            const lastRow = rowsHost.lastElementChild;
+            applySuggestionsToRow(lastRow);
+        }
+
+        if (addBtn) {
+            addBtn.addEventListener('click', addRow);
+        }
+
+        if (productSelect) {
+            productSelect.addEventListener('change', function () {
+                rowsHost.querySelectorAll('.component-row').forEach(function (row) {
+                    applySuggestionsToRow(row);
+                });
+            });
+        }
+
+        addRow();
+    })();
+</script>
+{% endblock %}

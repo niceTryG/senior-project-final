@@ -1,0 +1,353 @@
+{% extends "fabrics/base_fabrics.html" %}
+
+{% block fabrics_content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
+    <div>
+      <div class="small text-muted">{{ t('supplier_label') }}</div>
+      <h1 class="h4 mb-1">{{ supplier_name }}</h1>
+      <div class="text-muted small">{{ t('supplier_detail_subtitle') }}</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-dark btn-sm" href="{{ url_for('fabrics.supplier_receipts') }}">{{ t('supplier_receipt_history') }}</a>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('fabrics.supplier_statement', supplier_name=supplier_name) }}">{{ t('supplier_statement_title_short') }}</a>
+      <a class="btn btn-outline-success btn-sm" href="{{ url_for('fabrics.export_supplier_statement', supplier_name=supplier_name) }}">{{ t('export_statement') }}</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('fabrics.list', supplier_name=supplier_name, all=1) }}">{{ t('open_filtered_materials') }}</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('fabrics.list') }}">{{ t('back_to_materials') }}</a>
+    </div>
+  </div>
+
+  <div class="row row-cols-2 row-cols-lg-6 g-2 mb-3">
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('materials_title') if t('materials_title') != 'materials_title' else 'Materials' }}</div>
+          <div class="fw-bold">{{ snapshot.materials|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('stock_low') }}</div>
+          <div class="fw-bold">{{ snapshot.low_stock_items|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('stock_out') }}</div>
+          <div class="fw-bold">{{ snapshot.out_of_stock_items|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('supplier_unpaid_receipts') }}</div>
+          <div class="fw-bold">{{ snapshot.unpaid_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">Value USD</div>
+          <div class="fw-bold">
+            {% if snapshot.total_value_usd %}
+              {{ "%.2f"|format(snapshot.total_value_usd) }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">Value UZS</div>
+          <div class="fw-bold">
+            {% if snapshot.total_value_uzs %}
+              {{ "%.2f"|format(snapshot.total_value_uzs) }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('supplier_contact_title') }}</h2>
+          <form method="post" action="{{ url_for('fabrics.save_supplier_profile') }}" class="row g-2 mb-3">
+            <input type="hidden" name="supplier_name" value="{{ supplier_name }}">
+            <div class="col-md-6">
+              <label class="form-label small mb-1">{{ t('contact_person_label') }}</label>
+              <input type="text" name="contact_person" class="form-control form-control-sm" value="{{ snapshot.profile.contact_person if snapshot.profile else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">{{ t('phone') }}</label>
+              <input type="text" name="phone" class="form-control form-control-sm" value="{{ snapshot.profile.phone if snapshot.profile else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">{{ t('telegram_label') }}</label>
+              <input type="text" name="telegram_handle" class="form-control form-control-sm" value="{{ snapshot.profile.telegram_handle if snapshot.profile else '' }}" placeholder="@username">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">{{ t('note') }}</label>
+              <input type="text" name="note" class="form-control form-control-sm" value="{{ snapshot.profile.note if snapshot.profile else '' }}" placeholder="Preferred contact time, address, note">
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-outline-primary btn-sm">{{ t('save_contact') }}</button>
+            </div>
+          </form>
+
+          <h2 class="h6 mb-3">{{ t('stock_by_unit') }}</h2>
+          {% if snapshot.totals_by_unit %}
+            <div class="d-flex flex-column gap-2">
+              {% for unit, total in snapshot.totals_by_unit.items() %}
+                <div class="d-flex justify-content-between border rounded px-3 py-2">
+                  <span class="text-muted">{{ unit }}</span>
+                  <strong>{{ "%.2f"|format(total) }}</strong>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('no_stock_totals_yet') }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('supplier_spend_title') }}</h2>
+          {% if snapshot.spend_by_currency %}
+            <div class="d-flex flex-column gap-2">
+              {% for currency, total in snapshot.spend_by_currency.items() %}
+                <div class="d-flex justify-content-between border rounded px-3 py-2">
+                  <span class="text-muted">{{ currency }}</span>
+                  <strong>{{ "%.2f"|format(total) }}</strong>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('no_priced_supplier_receipts') }}</div>
+          {% endif %}
+
+          {% if snapshot.unpaid_by_currency %}
+            <div class="mt-3">
+              <div class="small text-muted mb-2">{{ t('open_payable') }}</div>
+              <div class="d-flex flex-column gap-2">
+                {% for currency, total in snapshot.unpaid_by_currency.items() %}
+                  <div class="d-flex justify-content-between border rounded px-3 py-2">
+                    <span class="text-muted">{{ currency }}</span>
+                    <strong>{{ "%.2f"|format(total) }}</strong>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('receive_supplier_delivery') }}</h2>
+          {% if snapshot.materials %}
+            <form method="post" action="{{ url_for('fabrics.receive_from_supplier') }}" class="row g-2 align-items-end">
+              <input type="hidden" name="supplier_name" value="{{ supplier_name }}">
+
+              <div class="col-md-5">
+                <label class="form-label small mb-1">{{ t('material_label') }}</label>
+                <select name="fabric_id" class="form-select form-select-sm" required>
+                  {% for material in snapshot.materials %}
+                    <option value="{{ material.id }}">{{ material.name }} · {{ material.unit }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label small mb-1">{{ t('quantity') }}</label>
+                <input type="number" step="0.01" min="0.01" name="quantity_received" class="form-control form-control-sm" required>
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label small mb-1">{{ t('cost_label') }}</label>
+                <input type="number" step="0.01" min="0" name="unit_cost" class="form-control form-control-sm" placeholder="Optional">
+              </div>
+
+              <div class="col-md-1">
+                <label class="form-label small mb-1">{{ t('currency_short') }}</label>
+                <input type="text" name="currency" class="form-control form-control-sm" placeholder="UZS">
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label small mb-1">{{ t('table_date') }}</label>
+                <input type="date" name="received_at" class="form-control form-control-sm">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small mb-1">{{ t('invoice_label') }}</label>
+                <input type="text" name="invoice_number" class="form-control form-control-sm" placeholder="{{ t('invoice_auto_placeholder') }}">
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label small mb-1">{{ t('payment_status_label') }}</label>
+                <select name="payment_status" class="form-select form-select-sm">
+                  <option value="unpaid">{{ t('payment_unpaid') }}</option>
+                  <option value="paid">{{ t('payment_paid') }}</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small mb-1">{{ t('note') }}</label>
+                <input type="text" name="note" class="form-control form-control-sm" placeholder="{{ t('supplier_delivery_note_placeholder') }}">
+              </div>
+
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary btn-sm">{{ t('save_receipt') }}</button>
+              </div>
+            </form>
+          {% else %}
+            <div class="text-muted small">{{ t('supplier_add_materials_first') }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+            <h2 class="h6 mb-0">{{ t('supplier_materials_title') }}</h2>
+            <span class="badge bg-light text-dark border">{{ snapshot.material_mix.counts_by_type|length }} {{ t('types_label') }}</span>
+          </div>
+          {% if snapshot.materials %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>{{ t('type') }}</th>
+                    <th>{{ t('category') }}</th>
+                    <th class="text-end">{{ t('quantity') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for material in snapshot.materials %}
+                    {% set qty = material.quantity or 0 %}
+                    {% set threshold = material.min_stock_quantity or LOW_STOCK_THRESHOLD %}
+                    <tr>
+                      <td>
+                        <div class="fw-semibold">{{ material.name }}</div>
+                        <div class="small text-muted">
+                          {% if material.color %}{{ material.color }}{% endif %}
+                        </div>
+                      </td>
+                      <td>{{ (material.material_type or 'fabric')|replace('_', ' ')|title }}</td>
+                      <td>{{ material.category or '-' }}</td>
+                      <td class="text-end">
+                        {{ "%.2f"|format(qty) }} {{ material.unit }}
+                        {% if qty <= 0 %}
+                          <span class="badge bg-danger ms-1">Out</span>
+                        {% elif qty < threshold %}
+                          <span class="badge bg-warning text-dark ms-1">Low</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-muted small">No materials are linked to this supplier yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h2 class="h6 mb-3">Needs attention</h2>
+          {% if snapshot.low_stock_items %}
+            <div class="d-flex flex-column gap-2">
+              {% for material in snapshot.low_stock_items[:8] %}
+                <div class="border rounded px-3 py-2">
+                  <div class="fw-semibold">{{ material.name }}</div>
+                  <div class="small text-muted">
+                    {{ "%.2f"|format(material.quantity or 0) }} {{ material.unit }}
+                    / min {{ "%.2f"|format(material.min_stock_quantity or LOW_STOCK_THRESHOLD) }}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">No low-stock materials for this supplier right now.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h2 class="h6 mb-3">Recent supplier receipts</h2>
+          {% if snapshot.recent_receipts %}
+            <div class="d-flex flex-column gap-2">
+              {% for receipt in snapshot.recent_receipts %}
+                <div class="border rounded px-3 py-2">
+                  <div class="fw-semibold">{{ receipt.material_name }}</div>
+                  <div class="small text-muted">
+                    {{ receipt.received_at }} · {{ "%.2f"|format(receipt.quantity_received or 0) }} {{ receipt.unit }}
+                    {% if receipt.unit_cost %}
+                      · {{ "%.2f"|format(receipt.unit_cost) }} {{ receipt.currency or '' }}
+                    {% endif %}
+                  </div>
+                  <div class="small text-muted">
+                    {% if receipt.invoice_number %}Invoice {{ receipt.invoice_number }} · {% endif %}
+                    <span class="badge {% if (receipt.payment_status or 'unpaid') == 'paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                      {{ (receipt.payment_status or 'unpaid')|title }}
+                    </span>
+                    {% if receipt.line_total %}
+                      <span class="ms-1">{{ "%.2f"|format(receipt.line_total) }} {{ receipt.currency or '' }}</span>
+                    {% endif %}
+                  </div>
+                  {% if receipt.note %}
+                    <div class="small text-muted">{{ receipt.note }}</div>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('fabrics.update_supplier_receipt_status') }}" class="mt-2">
+                    <input type="hidden" name="receipt_id" value="{{ receipt.id }}">
+                    <input type="hidden" name="supplier_name" value="{{ supplier_name }}">
+                    <input type="hidden" name="payment_status" value="{{ 'unpaid' if (receipt.payment_status or 'unpaid') == 'paid' else 'paid' }}">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                      Mark as {{ 'unpaid' if (receipt.payment_status or 'unpaid') == 'paid' else 'paid' }}
+                    </button>
+                  </form>
+                  <div class="mt-2 d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('fabrics.supplier_receipt_detail', receipt_id=receipt.id) }}" class="btn btn-outline-primary btn-sm">View receipt</a>
+                    <a href="{{ url_for('fabrics.supplier_receipt_pdf', receipt_id=receipt.id) }}" class="btn btn-outline-success btn-sm">PDF</a>
+                    <form method="post" action="{{ url_for('fabrics.supplier_receipt_send_telegram', receipt_id=receipt.id) }}">
+                      <button type="submit" class="btn btn-outline-dark btn-sm">Send to Telegram</button>
+                    </form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">No supplier receipts recorded for this supplier.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

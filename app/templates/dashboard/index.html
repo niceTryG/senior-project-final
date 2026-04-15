@@ -1,0 +1,228 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('dashboard') }}{% endblock %}
+{% block topbar_title %}{{ t('dashboard') }}{% endblock %}
+{% block dashboard_body_class %}dashboard-home-page{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard adras-dashboard-home adras-loom-stage">
+  <section class="adras-hero-card adras-hero-card-compact adras-loom-hero adras-home-hero" data-animate="slide-left" data-tilt data-glow data-spotlight>
+    <div class="adras-loom-strands" aria-hidden="true">
+      <span class="adras-loom-strand strand-gold" data-parallax data-parallax-speed="0.16"></span>
+      <span class="adras-loom-strand strand-blue" data-parallax data-parallax-speed="0.22"></span>
+      <span class="adras-loom-strand strand-cyan" data-parallax data-parallax-speed="0.12"></span>
+    </div>
+    <div class="adras-hero-left">
+      <div class="topbar-eyebrow">{{ t('dashboard_home_overview') }}</div>
+      <h1 class="adras-hero-title">
+        {{ t('dashboard_home_welcome_back').format(name=current_user.username) }}
+      </h1>
+      <p class="dashboard-subtitle adras-hero-subtitle">
+        {{ t('dashboard_home_subtitle') }}
+      </p>
+
+      <div class="adras-loom-chip-row" data-parallax data-parallax-speed="0.08">
+        <span class="adras-loom-chip">{{ t('dashboard_home_overview') }}</span>
+        <span class="adras-loom-chip">{{ t('inventory') }}</span>
+        <span class="adras-loom-chip">{{ t('sales') }}</span>
+      </div>
+    </div>
+    <div class="adras-hero-side-stack">
+      <div class="adras-detail-hero-chip" data-magnetic>
+        <span>{{ t('workspace') }}</span>
+        <strong>{{ current_user.factory.name if current_user.factory else 'Adras' }}</strong>
+      </div>
+      <div class="adras-loom-mini-board" data-magnetic data-ripple data-parallax data-parallax-speed="0.1">
+        <div class="adras-loom-mini-label">{{ t('workspace_health') }}</div>
+        <div class="adras-loom-mini-bars" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="adras-loom-mini-note">{{ t('dashboard_home_subtitle') }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="adras-kpi-grid adras-home-kpi-grid">
+    <article class="adras-kpi-card adras-kpi-card-signature" data-animate="zoom" data-tilt data-glow data-spotlight data-ripple>
+      <div class="adras-kpi-aura"></div>
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('products') }}</div>
+        <div class="adras-kpi-number" data-countup>{{ stats.total_products or 0 }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card adras-kpi-card-signature" data-animate="zoom" data-tilt data-glow data-spotlight data-ripple>
+      <div class="adras-kpi-aura"></div>
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('factory_stock') }}</div>
+        <div class="adras-kpi-number" data-countup>{{ stats.factory_stock_count or 0 }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card adras-kpi-card-signature" data-animate="zoom" data-tilt data-glow data-spotlight data-ripple>
+      <div class="adras-kpi-aura"></div>
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('shop_stock') }}</div>
+        <div class="adras-kpi-number" data-countup>{{ stats.shop_stock_count or 0 }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card adras-kpi-card-dark adras-kpi-card-signature" data-animate="zoom" data-tilt data-glow data-spotlight data-ripple>
+      <div class="adras-kpi-aura"></div>
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('sales') }}</div>
+        <div class="adras-kpi-number" data-countup>{{ stats.total_sales or 0 }}</div>
+      </div>
+    </article>
+  </section>
+
+  <section class="adras-main-grid adras-home-main-grid adras-home-command-grid">
+    <div class="adras-main-left">
+      <article class="adras-panel adras-home-launchpad" data-animate="slide-left" data-glow data-spotlight>
+        <div class="adras-home-panel-head">
+          <div class="adras-panel-title">{{ t('quick_actions') }}</div>
+          <span class="adras-home-panel-meta">Pick up to 4</span>
+        </div>
+
+        <div class="adras-home-quick-picks" id="homeQuickActionPicker">
+          <button type="button" class="adras-home-quick-pick" data-pick-id="inventory">Inventory</button>
+          <button type="button" class="adras-home-quick-pick" data-pick-id="shop">Shop</button>
+          <button type="button" class="adras-home-quick-pick" data-pick-id="transfer">Transfer</button>
+          <button type="button" class="adras-home-quick-pick" data-pick-id="products">Products</button>
+          <button type="button" class="adras-home-quick-pick" data-pick-id="sales">Sales</button>
+          <button type="button" class="adras-home-quick-pick" data-pick-id="more">More</button>
+        </div>
+
+        <div class="adras-action-grid adras-home-action-grid adras-home-launch-grid" id="homeQuickActionGrid">
+          <a href="{{ url_for('main.inventory') }}" class="adras-action-card adras-action-card-signature adras-home-launch-card adras-home-launch-card-primary" data-quick-id="inventory" data-tilt data-glow data-magnetic data-spotlight data-ripple>
+            <div class="adras-action-card-mark">IN</div>
+            <div class="adras-action-card-title">Inventory</div>
+          </a>
+
+          <a href="{{ url_for('shop.list_shop') }}" class="adras-action-card adras-action-card-signature adras-home-launch-card adras-home-launch-card-primary" data-quick-id="shop" data-tilt data-glow data-magnetic data-spotlight data-ripple>
+            <div class="adras-action-card-mark">SH</div>
+            <div class="adras-action-card-title">Shop</div>
+          </a>
+
+          <a href="{{ url_for('shop.transfer_to_shop') }}" class="adras-action-card adras-action-card-signature adras-home-launch-card" data-quick-id="transfer" data-tilt data-glow data-magnetic data-spotlight data-ripple>
+            <div class="adras-action-card-mark">TR</div>
+            <div class="adras-action-card-title">Transfer</div>
+          </a>
+
+          <a href="{{ url_for('products.list_products') }}" class="adras-action-card adras-action-card-signature adras-home-launch-card" data-quick-id="products" data-tilt data-glow data-magnetic data-spotlight data-ripple>
+            <div class="adras-action-card-mark">PD</div>
+            <div class="adras-action-card-title">Products</div>
+          </a>
+
+          <a href="{{ url_for('sales.list_sales') }}" class="adras-action-card adras-action-card-signature adras-home-launch-card" data-quick-id="sales" data-tilt data-glow data-magnetic data-spotlight data-ripple>
+            <div class="adras-action-card-mark">SL</div>
+            <div class="adras-action-card-title">Sales</div>
+          </a>
+
+          <a href="{{ url_for('main.more') }}" class="adras-action-card adras-action-card-signature adras-home-launch-card" data-quick-id="more" data-tilt data-glow data-magnetic data-spotlight data-ripple>
+            <div class="adras-action-card-mark">MX</div>
+            <div class="adras-action-card-title">More</div>
+          </a>
+        </div>
+      </article>
+
+      <article class="adras-panel adras-home-watchlist" data-animate="slide-left" data-glow data-spotlight>
+        <div class="adras-home-panel-head">
+          <div class="adras-panel-title">Today pulse</div>
+          <span class="adras-home-panel-meta">Live overview</span>
+        </div>
+
+        <div class="adras-home-pulse-grid">
+          <div class="adras-home-pulse-tile">
+            <span class="adras-home-pulse-label">Products tracked</span>
+            <strong class="adras-home-pulse-value">{{ stats.total_products or 0 }}</strong>
+          </div>
+          <div class="adras-home-pulse-tile">
+            <span class="adras-home-pulse-label">Factory units</span>
+            <strong class="adras-home-pulse-value">{{ stats.factory_stock_count or 0 }}</strong>
+          </div>
+          <div class="adras-home-pulse-tile">
+            <span class="adras-home-pulse-label">Shop units</span>
+            <strong class="adras-home-pulse-value">{{ stats.shop_stock_count or 0 }}</strong>
+          </div>
+          <div class="adras-home-pulse-tile">
+            <span class="adras-home-pulse-label">Sales records</span>
+            <strong class="adras-home-pulse-value">{{ stats.total_sales or 0 }}</strong>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var storageKey = 'dashboard.home.quickActions.v1';
+  var maxItems = 4;
+  var defaultItems = ['inventory', 'shop', 'transfer', 'products'];
+  var pickButtons = Array.prototype.slice.call(document.querySelectorAll('#homeQuickActionPicker [data-pick-id]'));
+  var actionCards = Array.prototype.slice.call(document.querySelectorAll('#homeQuickActionGrid [data-quick-id]'));
+  if (!pickButtons.length || !actionCards.length) return;
+
+  function safeLoad() {
+    try {
+      var raw = localStorage.getItem(storageKey);
+      if (!raw) return defaultItems.slice();
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return defaultItems.slice();
+      var ids = actionCards.map(function (card) { return card.getAttribute('data-quick-id'); });
+      var normalized = parsed.filter(function (id) { return ids.indexOf(id) >= 0; }).slice(0, maxItems);
+      return normalized.length ? normalized : defaultItems.slice();
+    } catch (e) {
+      return defaultItems.slice();
+    }
+  }
+
+  function save(items) {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(items.slice(0, maxItems)));
+    } catch (e) {}
+  }
+
+  var selected = safeLoad();
+
+  function render() {
+    pickButtons.forEach(function (btn) {
+      var id = btn.getAttribute('data-pick-id');
+      var isOn = selected.indexOf(id) >= 0;
+      btn.classList.toggle('is-selected', isOn);
+      btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+      btn.disabled = !isOn && selected.length >= maxItems;
+    });
+
+    actionCards.forEach(function (card) {
+      var id = card.getAttribute('data-quick-id');
+      var idx = selected.indexOf(id);
+      var visible = idx >= 0;
+      card.hidden = !visible;
+      if (visible) card.style.order = String(idx + 1);
+    });
+  }
+
+  pickButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-pick-id');
+      var idx = selected.indexOf(id);
+      if (idx >= 0) {
+        selected.splice(idx, 1);
+      } else if (selected.length < maxItems) {
+        selected.push(id);
+      }
+      save(selected);
+      render();
+    });
+  });
+
+  render();
+})();
+</script>
+{% endblock %}

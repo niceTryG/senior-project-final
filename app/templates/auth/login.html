@@ -18,17 +18,22 @@
     {% if error_key %}
     <div class="alert alert-danger">{{ t(error_key) }}</div>
     {% endif %}
+    {% if error_message %}
+    <div class="alert alert-warning">{{ error_message }}</div>
+    {% endif %}
 
     <form method="post">
       <div class="mb-3">
-        <label class="form-label">{{ t('login_username') }}</label>
+        <label class="form-label">Username or phone</label>
         <input
           type="text"
           name="username"
           class="form-control"
+          value="{{ request.form.get('username', '') }}"
           required
           autofocus
         />
+        <div class="form-text">Use your username, or enter the phone number linked to your account.</div>
       </div>
 
       <div class="mb-3">
@@ -53,6 +58,10 @@
         {{ t('login_button') }}
       </button>
     </form>
+
+    <div class="mt-3 small text-muted">
+      If your owner gave you a temporary password, the first login will ask you to create a private one before entering the workspace.
+    </div>
 
     <p class="mt-3 mb-0">
       <small class="text-muted"> {{ t('login_default_user') }} </small>

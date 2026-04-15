@@ -1,0 +1,608 @@
+﻿{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('business_summary_title') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .adras-report-hub {
+    display: grid;
+    gap: 16px;
+    margin: 18px 0 6px;
+  }
+
+  .adras-report-hub-card {
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    padding: 20px;
+    box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08);
+  }
+
+  .adras-report-hub-top {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+          <h2 class="adras-report-hub-title">{{ t('reports') }}</h2>
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.12;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .adras-report-hub-sub {
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.55;
+    max-width: 760px;
+  }
+
+  .adras-report-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .adras-report-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 112px;
+    border-radius: 20px;
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    background: #fff;
+    padding: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+
+  .adras-report-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(37, 99, 235, 0.18);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10);
+  }
+
+  .adras-report-card-main {
+    min-width: 0;
+  }
+
+  .adras-report-card-title {
+    font-size: 16px;
+    line-height: 1.2;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .adras-report-card-sub {
+    margin-top: 7px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #64748b;
+  }
+
+          <div class="adras-report-card-action">&rsaquo;</div>
+    flex-shrink: 0;
+    color: #0f172a;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  @media (max-width: 820px) {
+    .adras-report-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .adras-report-hub-top {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-summary-page adras-loom-stage">
+  <section class="adras-detail-hero adras-summary-hero adras-loom-hero" data-animate="slide-left" data-tilt data-glow data-spotlight>
+    <div class="adras-loom-strands" aria-hidden="true">
+      <span class="adras-loom-strand strand-gold" data-parallax data-parallax-speed="0.16"></span>
+      <span class="adras-loom-strand strand-blue" data-parallax data-parallax-speed="0.22"></span>
+      <span class="adras-loom-strand strand-cyan" data-parallax data-parallax-speed="0.12"></span>
+    </div>
+    <div class="adras-summary-hero-copy">
+      <div class="adras-detail-kicker">{{ t('owner_summary') }}</div>
+      <h1 class="adras-detail-title">{{ workspace_page_name }}</h1>
+      <p class="adras-detail-subtitle">
+        {{ t('business_summary_subtitle') }}
+      </p>
+
+      <div class="adras-summary-pill-row">
+        <span class="ad-chip chip-info">{{ t('role_label') }}: {{ workspace_role_label }}</span>
+        <span class="ad-chip chip-neutral">{{ t('owner_label') }}: {{ workspace_owner_name }}</span>
+        <span class="ad-chip chip-neutral">{{ t('login_label') }}: {{ workspace_owner_login }}</span>
+      </div>
+
+      <div class="adras-loom-chip-row" data-parallax data-parallax-speed="0.08">
+        <span class="adras-loom-chip">{{ t('owner_summary') }}</span>
+        <span class="adras-loom-chip">{{ t('month_sales') }}</span>
+        <span class="adras-loom-chip">{{ t('branch_performance') }}</span>
+      </div>
+
+      <div class="adras-detail-actions">
+        <a href="{{ url_for('main.business_summary_pdf') }}" class="ad-btn ad-btn-primary">{{ t('export_pdf') }}</a>
+        <a href="{{ url_for('main.business_summary_xlsx') }}" class="ad-btn ad-btn-secondary">{{ t('export_xlsx') }}</a>
+      </div>
+    </div>
+
+    <div class="adras-summary-health-card tone-{{ health_tone }} adras-summary-health-card-signature" data-magnetic data-ripple data-parallax data-parallax-speed="0.1">
+      <div class="adras-summary-health-label">{{ t('workspace_health') }}</div>
+      <div class="adras-summary-health-score" data-countup>{{ health_score }}</div>
+      <div class="adras-summary-health-band">{{ health_label }}</div>
+      <p class="adras-summary-health-copy">{{ health_copy }}</p>
+      <div class="adras-summary-health-ring" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <section class="adras-report-hub">
+    <article class="adras-report-hub-card">
+      <div class="adras-report-hub-top">
+        <div>
+          <h2 class="adras-report-hub-title">{{ t('reports') }}</h2>
+          <p class="adras-report-hub-sub">Choose the report you want to review. Use the cards below to jump into sales, stock, movement, order, and low-stock reporting without digging through generic summary sections first.</p>
+        </div>
+        <span class="ad-chip chip-info">Pick a report</span>
+      </div>
+
+      <div class="adras-report-grid">
+        <a href="{{ url_for('sales.list_sales') }}" class="adras-report-card">
+          <div class="adras-report-card-main">
+            <div class="adras-report-card-title">Sales report</div>
+            <div class="adras-report-card-sub">Review recorded sales by period and inspect revenue movement over time.</div>
+          </div>
+          <div class="adras-report-card-action">&rsaquo;</div>
+        </a>
+
+        <a href="{{ url_for('main.inventory') }}" class="adras-report-card">
+          <div class="adras-report-card-main">
+            <div class="adras-report-card-title">Inventory report</div>
+            <div class="adras-report-card-sub">Open the inventory hub to review materials, operations, and production-related stock context.</div>
+          </div>
+          <div class="adras-report-card-action">&rsaquo;</div>
+        </a>
+
+        <a href="{{ url_for('products.factory_stock') }}" class="adras-report-card">
+          <div class="adras-report-card-main">
+            <div class="adras-report-card-title">Factory stock report</div>
+            <div class="adras-report-card-sub">See finished goods currently sitting in the factory and inspect on-hand quantity/value.</div>
+          </div>
+          <div class="adras-report-card-action">&rsaquo;</div>
+        </a>
+
+        <a href="{{ url_for('shop.list_shop') }}" class="adras-report-card">
+          <div class="adras-report-card-main">
+            <div class="adras-report-card-title">Shop stock report</div>
+            <div class="adras-report-card-sub">Review linked shop stock, sell-side inventory, and what is already placed in branches.</div>
+          </div>
+          <div class="adras-report-card-action">&rsaquo;</div>
+        </a>
+
+        <a href="{{ url_for('shop.movement_history') }}" class="adras-report-card">
+          <div class="adras-report-card-main">
+            <div class="adras-report-card-title">Movement history</div>
+            <div class="adras-report-card-sub">Trace product movement between factory and shop with a dedicated movement log.</div>
+          </div>
+          <div class="adras-report-card-action">&rsaquo;</div>
+        </a>
+
+        <a href="{{ url_for('shop.factory_pending_orders') }}" class="adras-report-card">
+          <div class="adras-report-card-main">
+            <div class="adras-report-card-title">Orders report</div>
+            <div class="adras-report-card-sub">See shop orders flowing into factory work and monitor what is still waiting.</div>
+          </div>
+          <div class="adras-report-card-action">&rsaquo;</div>
+        </a>
+
+        <a href="{{ url_for('main.low_stock') }}" class="adras-report-card">
+          <div class="adras-report-card-main">
+            <div class="adras-report-card-title">Low stock report</div>
+            <div class="adras-report-card-sub">Jump directly into low materials and low shop stock items that need replenishment.</div>
+          </div>
+          <div class="adras-report-card-action">&rsaquo;</div>
+        </a>
+
+        <a href="{{ url_for('manager_report.manager_report') }}" class="adras-report-card">
+          <div class="adras-report-card-main">
+            <div class="adras-report-card-title">Manager summary report</div>
+            <div class="adras-report-card-sub">Open the manager-facing summary report with the broader operational and low-stock overview.</div>
+          </div>
+          <div class="adras-report-card-action">&rsaquo;</div>
+        </a>
+      </div>
+    </article>
+  </section>
+
+  <section class="adras-summary-hero-metrics">
+    {% for item in hero_metrics %}
+      <article class="adras-summary-hero-metric tone-{{ item.tone }} adras-summary-hero-metric-signature" data-animate="zoom" data-tilt data-glow data-spotlight data-ripple>
+        <div class="adras-summary-hero-metric-thread"></div>
+        <div class="adras-summary-hero-metric-label">{{ item.label }}</div>
+        <div class="adras-summary-hero-metric-value" data-countup>{{ item.value }}</div>
+        <div class="adras-summary-hero-metric-sub">{{ t('reference_label') }}: {{ item.sub }}</div>
+        <div class="adras-summary-hero-metric-hint">{{ item.hint }}</div>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="adras-detail-stat-grid">
+    {% for card in summary_cards %}
+      <article class="adras-detail-stat-card" data-animate="zoom" data-tilt data-glow data-spotlight>
+        <div class="adras-detail-stat-label">{{ card.label }}</div>
+        <div class="adras-detail-stat-value" data-countup>{{ card.value }}</div>
+        <div class="adras-detail-stat-sub">{{ card.sub }}</div>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="adras-summary-main-grid">
+    <div class="adras-summary-stack">
+      <article class="adras-panel" data-animate="slide-left" data-glow data-spotlight>
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('branch_performance') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('branch_performance_copy') }}
+            </p>
+          </div>
+          <div class="adras-summary-head-actions">
+            <span class="ad-chip chip-info">{{ branch_rows|length }} {{ t('tracked_label') }}</span>
+            <a href="{{ branch_summary_href }}" class="ad-btn ad-btn-secondary">{{ t('view_all') }}</a>
+          </div>
+        </div>
+
+        {% if branch_rows %}
+          <div class="adras-summary-card-list">
+            {% for branch in branch_rows %}
+              <article class="adras-summary-card">
+                <div class="adras-summary-card-top">
+                  <div>
+                    <div class="adras-summary-card-title">{{ branch.name }}</div>
+                    <div class="adras-summary-card-copy">{{ branch.note }}</div>
+                  </div>
+                  <span class="ad-chip {% if branch.low_stock_count %}chip-warn{% elif branch.sold_units_30 %}chip-up{% else %}chip-neutral{% endif %}">
+                    {{ branch.stock_units }} {{ t('in_stock_suffix') }}
+                  </span>
+                </div>
+
+                <div class="adras-summary-metric-grid">
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('today_sales') }}</span>
+                    <strong>{{ branch.today_sales_display.primary }}</strong>
+                    {% if branch.today_sales_display.secondary %}
+                      <small>{{ branch.today_sales_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('month_sales') }}</span>
+                    <strong>{{ branch.month_sales_display.primary }}</strong>
+                    {% if branch.month_sales_display.secondary %}
+                      <small>{{ branch.month_sales_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('month_profit') }}</span>
+                    <strong>{{ branch.month_profit_display.primary }}</strong>
+                    {% if branch.month_profit_display.secondary %}
+                      <small>{{ branch.month_profit_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('branch_stock_value') }}</span>
+                    <strong>{{ branch.stock_value_display.primary }}</strong>
+                    {% if branch.stock_value_display.secondary %}
+                      <small>{{ branch.stock_value_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-summary-empty">
+            {{ t('branch_performance_empty') }}
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel" data-animate="slide-left" data-glow data-spotlight>
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('best_sellers') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('best_sellers_copy') }}
+            </p>
+          </div>
+          <a href="{{ product_summary_href }}" class="ad-btn ad-btn-secondary">{{ t('view_all') }}</a>
+        </div>
+
+        {% if top_product_rows %}
+          <div class="adras-summary-card-list">
+            {% for product in top_product_rows %}
+              <article class="adras-summary-card">
+                <div class="adras-summary-card-top">
+                  <div>
+                    <div class="adras-summary-card-title">{{ product.name }}</div>
+                    <div class="adras-summary-card-copy">{{ product.category }}</div>
+                  </div>
+                  <span class="ad-chip {% if product.pace_label == 'Strong' %}chip-up{% elif product.pace_label == 'Moving' %}chip-info{% else %}chip-neutral{% endif %}">
+                    {{ product.pace_label }}
+                  </span>
+                </div>
+
+                <div class="adras-summary-metric-grid">
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('sold_in_30d') }}</span>
+                    <strong>{{ product.sold_qty_30 }}</strong>
+                    <small>{{ product.on_hand_qty }} {{ t('on_hand_suffix') }}</small>
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('revenue') }}</span>
+                    <strong>{{ product.revenue_display.primary }}</strong>
+                    {% if product.revenue_display.secondary %}
+                      <small>{{ product.revenue_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('profit') }}</span>
+                    <strong>{{ product.profit_display.primary }}</strong>
+                    {% if product.profit_display.secondary %}
+                      <small>{{ product.profit_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('stock_split') }}</span>
+                    <strong>{{ product.factory_qty }} {{ t('factory_label_short') }}</strong>
+                    <small>{{ product.shop_qty }} {{ t('shop_label_short') }}</small>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-summary-empty">
+            {{ t('best_sellers_empty') }}
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel" data-animate="slide-left" data-glow data-spotlight>
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('slow_movers') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('slow_movers_copy') }}
+            </p>
+          </div>
+          <a href="{{ product_summary_href }}" class="ad-btn ad-btn-secondary">{{ t('product_page') }}</a>
+        </div>
+
+        {% if slow_mover_rows %}
+          <div class="adras-summary-card-list">
+            {% for product in slow_mover_rows %}
+              <article class="adras-summary-card">
+                <div class="adras-summary-card-top">
+                  <div>
+                    <div class="adras-summary-card-title">{{ product.name }}</div>
+                    <div class="adras-summary-card-copy">{{ product.dormant_label }}</div>
+                  </div>
+                  <span class="ad-chip chip-warn">{{ product.on_hand_qty }} {{ t('stuck_suffix') }}</span>
+                </div>
+
+                <div class="adras-summary-metric-grid">
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('sold_in_30d') }}</span>
+                    <strong>{{ product.sold_qty_30 }}</strong>
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('factory_stock') }}</span>
+                    <strong>{{ product.factory_qty }}</strong>
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('shop_stock') }}</span>
+                    <strong>{{ product.shop_qty }}</strong>
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('category') }}</span>
+                    <strong>{{ product.category }}</strong>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-summary-empty">
+            {{ t('slow_movers_empty') }}
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel" data-animate="slide-left" data-glow data-spotlight>
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('top_customers') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('top_customers_copy') }}
+            </p>
+          </div>
+        </div>
+
+        {% if customer_rows %}
+          <div class="adras-summary-card-list">
+            {% for customer in customer_rows %}
+              <article class="adras-summary-card">
+                <div class="adras-summary-card-top">
+                  <div>
+                    <div class="adras-summary-card-title">{{ customer.name }}</div>
+                    <div class="adras-summary-card-copy">{{ customer.phone }}</div>
+                  </div>
+                  <span class="ad-chip chip-info">{{ customer.orders_count }} {{ t('orders') }}</span>
+                </div>
+
+                <div class="adras-summary-metric-grid">
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('revenue') }}</span>
+                    <strong>{{ customer.revenue_display.primary }}</strong>
+                    {% if customer.revenue_display.secondary %}
+                      <small>{{ customer.revenue_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('profit') }}</span>
+                    <strong>{{ customer.profit_display.primary }}</strong>
+                    {% if customer.profit_display.secondary %}
+                      <small>{{ customer.profit_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('last_seen') }}</span>
+                    <strong>{{ customer.last_seen }}</strong>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-summary-empty">
+            {{ t('top_customers_empty') }}
+          </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <div class="adras-summary-side-stack">
+      <article class="adras-panel" data-animate="slide-right" data-glow data-spotlight>
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('needs_owner_attention') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('needs_owner_attention_copy') }}
+            </p>
+          </div>
+          <span class="ad-chip {% if command_center_overdue_count %}chip-down{% else %}chip-info{% endif %}">
+            {{ command_center_open_count }} {{ t('open_label') }}
+          </span>
+        </div>
+
+        {% if attention_items %}
+          <div class="adras-task-list">
+            {% for item in attention_items %}
+              <article class="adras-task-card priority-{{ item.priority }}">
+                <div class="adras-task-card-top">
+                  <div>
+                    <span class="ad-chip {% if item.priority == 'urgent' %}chip-down{% elif item.priority == 'high' %}chip-warn{% else %}chip-info{% endif %}">
+                      {{ item.priority_label }}
+                    </span>
+                    <h3 class="adras-task-title">{{ item.title }}</h3>
+                  </div>
+                  <span class="ad-chip chip-neutral">{{ item.status_label }}</span>
+                </div>
+                <p class="adras-task-copy">{{ item.summary_line }}</p>
+                <div class="adras-task-meta">
+                  <span>{{ item.origin_label }}</span>
+                  <span>{{ item.group }}</span>
+                  <span>{{ item.due_label }}</span>
+                </div>
+                <div class="adras-form-actions">
+                  <a class="btn btn-outline btn-sm" href="{{ item.href }}">{{ item.action_label }}</a>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-summary-empty">
+            {{ t('needs_owner_attention_empty') }}
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel" data-animate="slide-right" data-glow data-spotlight>
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('setup_progress') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('setup_progress_copy') }}
+            </p>
+          </div>
+          <span class="ad-chip {% if setup_remaining %}chip-warn{% else %}chip-up{% endif %}">
+            {{ setup_remaining }} {{ t('remaining_label') }}
+          </span>
+        </div>
+
+        <div class="adras-checklist">
+          {% for item in setup_items %}
+            <a href="{{ item.href }}" class="adras-checklist-row">
+              <span class="adras-checklist-dot {% if item.done %}ready{% else %}warn{% endif %}"></span>
+              <span>
+                <strong>{{ item.label }}</strong><br />
+                {{ item['copy'] }}
+              </span>
+            </a>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="adras-panel" data-animate="slide-right" data-glow data-spotlight>
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('low_stock_watch') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('low_stock_watch_copy') }}
+            </p>
+          </div>
+        </div>
+
+        {% if shop_low_stock_items %}
+          <div class="adras-compact-metric-list">
+            {% for item in shop_low_stock_items %}
+              <div class="adras-compact-metric-row">
+                <span>{{ item.name }}</span>
+                <strong>{{ item.qty }} {{ t('pcs_suffix') }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-summary-empty">
+            {{ t('low_stock_watch_empty') }}
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel" data-animate="slide-right" data-glow data-spotlight>
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('quick_actions') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('quick_actions_copy') }}
+            </p>
+          </div>
+        </div>
+
+        <div class="adras-mini-action-grid adras-mini-action-grid-single">
+          {% for action in quick_actions %}
+            <a href="{{ action.href }}" class="adras-mini-action-card">
+              <div class="adras-mini-action-title">{{ action.title }}</div>
+              <div class="adras-mini-action-sub">{{ action.subtitle }}</div>
+            </a>
+          {% endfor %}
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

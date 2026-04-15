@@ -1,252 +1,1587 @@
-{% extends "base.html" %}
-
-{% block top_banner %}
-  {% set display_name = current_user.full_name or current_user.username or t('generic_user') %}
-
-  <div class="mm-top-banner">
-    <div class="container-fluid">
-      <div class="container-lg">
-        <div class="d-flex justify-content-between align-items-center gap-2">
-          <div class="mm-top-banner-greet">
-            {{ t('dashboard_greeting') }}, {{ display_name }} 👋
-          </div>
-          <span class="badge bg-primary mm-pill" style="white-space:nowrap;">
-            {{ current_date|default('') }}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-{% endblock %}
-
+﻿{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{{ t('home') }}{% endblock %}
+{% block dashboard_body_class %}dashboard-manager-page{% endblock %}
 {% block extra_css %}
-<style>
-  .mm-dash { padding-top: 10px; padding-bottom: 96px; }
-  .mm-card { border-radius: 18px; }
-  .mm-pill { border-radius: 999px; font-weight: 800; }
-  .mm-btn-neo { border-radius: 16px; font-weight: 800; padding: .85rem 1rem; }
-  .mm-btn-neo-sm { border-radius: 14px; font-weight: 800; padding: .60rem .75rem; }
-  .mm-muted { color: #6c757d; }
-  .mm-mini { font-size: .85rem; }
-  .mm-kpi-title { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: #6c757d; }
-  .mm-kpi-value { font-weight: 900; font-size: 1.15rem; }
 
-  .mm-chip{
-    display:inline-flex; align-items:center; justify-content:center;
-    border-radius: 999px;
-    padding: .45rem .75rem;
-    border: 1px solid rgba(0,0,0,.10);
-    background: #fff;
-    font-size: .85rem;
-    font-weight: 800;
-    color: #111;
-    text-decoration: none;
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --d-navy:     #0b1c30;
+  --d-navy2:    #122540;
+  --d-navy3:    #1d3557;
+  --d-blue:     #2563a8;
+  --d-blue-l:   #3b82d4;
+  --d-gold:     #c8883a;
+  --d-gold-l:   #e5aa64;
+  --d-gold-bg:  #fdf3e7;
+  --d-red:      #c53030;
+  --d-red-bg:   #fff0f0;
+  --d-red-bd:   #fecaca;
+  --d-green:    #1e6b44;
+  --d-green-bg: #edfaf3;
+  --d-amber:    #92600a;
+  --d-amber-bg: #fef9ec;
+  --d-surface:  #f4f6f9;
+  --d-card:     #ffffff;
+  --d-border:   #e2e7ef;
+  --d-border2:  #cdd4df;
+  --d-text:     #0b1c30;
+  --d-sub:      #5a7089;
+  --d-hint:     #96aabf;
+  --d-ff:       'DM Sans', sans-serif;
+  --d-mono:     'DM Mono', monospace;
+  --r-sm:       8px;
+  --r-md:       12px;
+  --r-lg:       18px;
+}
+
+.ad-dash {
+  font-family: var(--d-ff);
+  background: var(--d-surface);
+  color: var(--d-text);
+  min-height: 100%;
+  padding: 20px 28px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: none;
+  margin: 0;
+}
+
+.ad-dash,
+.ad-main-grid,
+.ad-col,
+.ad-card,
+.ad-card-head,
+.ad-card-body,
+.ad-kpi,
+.ad-kpi-foot,
+.ad-stock-visual,
+.ad-stock-side,
+.ad-bar-legend,
+.ad-alert-row,
+.ad-alert-body,
+.ad-lowstock-row,
+.ad-cash-grid,
+.ad-cash-tile,
+.ad-action-row {
+  min-width: 0;
+}
+
+.ad-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 4px;
+}
+.ad-context {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ad-context-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--d-text);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.ad-context-sub {
+  font-size: 12px;
+  color: var(--d-hint);
+  font-family: var(--d-mono);
+}
+.ad-topbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.ad-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--r-md);
+  font-family: var(--d-ff);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.16s ease;
+  border: none;
+  white-space: nowrap;
+}
+.ad-btn-primary {
+  background: var(--d-navy);
+  color: #fff;
+}
+.ad-btn-primary:hover { background: var(--d-navy3); transform: translateY(-1px); }
+.ad-btn-secondary {
+  background: var(--d-card);
+  color: var(--d-text);
+  border: 1px solid var(--d-border);
+}
+.ad-btn-secondary:hover { border-color: var(--d-border2); background: var(--d-surface); }
+
+.ad-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.ad-kpi {
+  background: var(--d-card);
+  border: 1px solid var(--d-border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  transition: all 0.16s ease;
+  position: relative;
+  overflow: hidden;
+}
+.ad-kpi:hover { border-color: var(--d-border2); box-shadow: 0 4px 16px rgba(11,28,48,0.08); transform: translateY(-1px); }
+.ad-kpi-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.ad-kpi-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--d-hint);
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+.ad-kpi-val {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--d-text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ad-kpi-val-sm { font-size: 18px; }
+.ad-kpi-foot {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ad-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.chip-up    { background: var(--d-green-bg); color: var(--d-green); }
+.chip-down  { background: var(--d-red-bg);   color: var(--d-red);   }
+.chip-warn  { background: var(--d-amber-bg); color: var(--d-amber); }
+.chip-info  { background: #eef4ff;           color: var(--d-blue);  }
+.chip-neutral { background: var(--d-surface); color: var(--d-sub);  }
+
+.ad-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 320px;
+  gap: 14px;
+  align-items: start;
+}
+.ad-col { display: flex; flex-direction: column; gap: 14px; }
+
+.ad-card {
+  background: var(--d-card);
+  border: 1px solid var(--d-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.ad-card-head {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--d-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ad-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--d-text);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ad-card-icon {
+  width: 24px; height: 24px;
+  border-radius: 7px;
+  background: var(--d-surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+.ad-card-body { padding: 16px 18px; }
+.ad-card-foot {
+  padding: 10px 18px 14px;
+  border-top: 1px solid var(--d-border);
+}
+
+.ad-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.ad-mini-card {
+  border: 1px solid var(--d-border);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 13px 14px;
+}
+.ad-mini-card-k {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--d-hint);
+  font-weight: 700;
+}
+.ad-mini-card-v {
+  margin-top: 8px;
+  font-size: 18px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  color: var(--d-text);
+}
+.ad-mini-card-sub {
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--d-sub);
+  line-height: 1.4;
+}
+
+.ad-attention-empty {
+  border: 1px dashed var(--d-border2);
+  border-radius: 14px;
+  padding: 16px;
+  background: #fbfcfe;
+  color: var(--d-sub);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ad-list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ad-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--d-border);
+}
+.ad-list-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.ad-list-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--d-text);
+  line-height: 1.3;
+}
+.ad-list-sub {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--d-sub);
+  line-height: 1.4;
+}
+.ad-list-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--d-surface);
+  border: 1px solid var(--d-border);
+  color: var(--d-text);
+  font-size: 11px;
+  font-weight: 800;
+}
+.ad-list-badge.is-alert {
+  background: var(--d-red-bg);
+  border-color: var(--d-red-bd);
+  color: var(--d-red);
+}
+
+
+.ad-stock-visual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.ad-stock-side {
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ad-stock-side.factory { background: var(--d-navy); }
+.ad-stock-side.shop    { background: var(--d-gold-bg); border: 1px solid #f0d9b5; }
+.ad-stock-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.factory .ad-stock-label { color: rgba(255,255,255,0.5); }
+.shop    .ad-stock-label { color: var(--d-gold); }
+.ad-stock-amt {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-family: var(--d-mono);
+  line-height: 1.15;
+  word-break: break-word;
+}
+.factory .ad-stock-amt { color: #fff; }
+.shop    .ad-stock-amt { color: var(--d-navy); }
+.ad-stock-pct {
+  font-size: 12px;
+  font-weight: 600;
+}
+.factory .ad-stock-pct { color: rgba(255,255,255,0.55); }
+.shop    .ad-stock-pct { color: var(--d-gold); }
+
+.ad-bar-wrap { margin: 4px 0 8px; }
+.ad-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--d-border);
+  overflow: hidden;
+  display: flex;
+}
+.ad-bar-seg { height: 100%; transition: width 0.5s ease; }
+.ad-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+.ad-legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--d-sub);
+}
+.ad-legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 2px; flex-shrink: 0;
+}
+
+.ad-alert-list { display: flex; flex-direction: column; gap: 8px; }
+.ad-alert-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+}
+.ad-alert-row.urgent {
+  background: var(--d-red-bg);
+  border-color: var(--d-red-bd);
+}
+.ad-alert-row.warn {
+  background: var(--d-amber-bg);
+  border-color: #f8deaa;
+}
+.ad-alert-row.ok {
+  background: var(--d-green-bg);
+  border-color: #b6efd4;
+}
+.ad-alert-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.urgent .ad-alert-icon { background: #fecaca; }
+.warn   .ad-alert-icon { background: #fde68a; }
+.ok     .ad-alert-icon { background: #bbf7d0; }
+.ad-alert-body { flex: 1; min-width: 0; }
+.ad-alert-title {
+  font-size: 13px; font-weight: 600; color: var(--d-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ad-alert-sub { font-size: 11.5px; color: var(--d-sub); margin-top: 1px; }
+.ad-alert-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 11px; font-weight: 700; color: var(--d-blue);
+  text-decoration: none; white-space: nowrap;
+  padding: 3px 8px; border-radius: 6px;
+  transition: background 0.12s;
+}
+.ad-alert-action:hover { background: #dbeafe; }
+
+.ad-lowstock-list { display: flex; flex-direction: column; }
+.ad-lowstock-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 80px auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--d-border);
+}
+.ad-lowstock-row:last-child { border-bottom: none; padding-bottom: 0; }
+.ad-lowstock-name {
+  font-size: 13px; font-weight: 500; color: var(--d-text);
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ad-lowstock-bar-wrap {
+  width: 80px; height: 5px; border-radius: 999px;
+  background: var(--d-border); flex-shrink: 0; overflow: hidden;
+}
+.ad-lowstock-bar { height: 100%; border-radius: 999px; }
+.ad-lowstock-qty {
+  font-family: var(--d-mono);
+  font-size: 12px; font-weight: 500;
+  min-width: 38px; text-align: right;
+}
+
+.ad-cash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ad-cash-tile {
+  border: 1px solid var(--d-border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+}
+.ad-cash-tile-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--d-hint); margin-bottom: 6px;
+}
+.ad-cash-tile-val {
+  font-size: 17px; font-weight: 800;
+  letter-spacing: -0.03em; color: var(--d-text);
+  font-family: var(--d-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ad-actions-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ad-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--d-border);
+  background: var(--d-card);
+  text-decoration: none;
+  transition: all 0.14s ease;
+}
+.ad-action-row:hover {
+  border-color: var(--d-border2);
+  background: var(--d-surface);
+  transform: translateX(2px);
+}
+.ad-action-row-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--d-surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.ad-action-row-label {
+  font-size: 13px; font-weight: 600; color: var(--d-text); flex: 1;
+}
+.ad-action-row-arrow {
+  font-size: 14px; color: var(--d-hint);
+  transition: transform 0.14s;
+}
+.ad-action-row:hover .ad-action-row-arrow { transform: translateX(2px); }
+
+.ad-qa-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.ad-qa-pick {
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--d-border);
+  background: var(--d-surface);
+  color: var(--d-sub);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.ad-qa-pick.is-selected {
+  border-color: var(--d-blue);
+  color: var(--d-blue);
+  background: #eaf3ff;
+}
+.ad-qa-pick:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ad-qa-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.ad-qa-slot {
+  position: relative;
+  min-width: 0;
+}
+.ad-qa-card {
+  border: 1px solid var(--d-border);
+  border-radius: 14px;
+  background: var(--d-card);
+  text-decoration: none;
+  color: var(--d-text);
+  min-height: 124px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  text-align: left;
+  gap: 10px;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+  position: relative;
+  overflow: hidden;
+}
+.ad-qa-card:hover {
+  border-color: var(--d-border2);
+  background: #fbfcfe;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(11, 28, 48, 0.08);
+}
+.ad-qa-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -26px -30px auto;
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: rgba(37, 99, 168, 0.06);
+}
+.ad-qa-card.is-fixed::after {
+  background: rgba(29, 53, 87, 0.08);
+}
+.ad-qa-card.is-custom::after {
+  background: rgba(200, 136, 58, 0.11);
+}
+.ad-qa-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--d-surface);
+  font-size: 18px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+}
+.ad-qa-copy {
+  position: relative;
+  z-index: 1;
+}
+.ad-qa-label {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--d-text);
+}
+.ad-qa-sub {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--d-sub);
+}
+
+.ad-qa-add-btn {
+  width: 100%;
+  border: 2px dashed var(--d-border2);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(244,246,249,0.96));
+  cursor: pointer;
+  min-height: 124px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  gap: 10px;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.ad-qa-add-btn:hover {
+  border-color: var(--d-blue);
+  background: rgba(37, 99, 168, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(37, 99, 168, 0.09);
+}
+.ad-qa-add-btn .ad-qa-icon {
+  font-size: 24px;
+  color: var(--d-blue);
+}
+.ad-qa-add-btn .ad-qa-label {
+  color: var(--d-text);
+}
+
+.ad-qa-menu-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(11,28,48,0.08);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.92);
+  color: var(--d-sub);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+.ad-qa-menu-btn:hover,
+.ad-qa-menu-btn.is-open {
+  background: #fff;
+  border-color: var(--d-border2);
+  color: var(--d-text);
+}
+.ad-qa-menu-dots {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ad-qa-menu-dots span {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.ad-qa-menu {
+  position: absolute;
+  top: 42px;
+  right: 8px;
+  min-width: 120px;
+  padding: 6px;
+  border: 1px solid var(--d-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 30px rgba(11,28,48,0.14);
+  display: none;
+  z-index: 4;
+}
+.ad-qa-menu.is-open {
+  display: block;
+}
+.ad-qa-menu-item {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--d-text);
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 10px;
+}
+.ad-qa-menu-item:hover {
+  background: var(--d-surface);
+}
+.ad-qa-menu-item.is-danger {
+  color: var(--d-red);
+}
+
+.qa-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 1200;
+}
+.qa-modal.is-open {
+  display: flex;
+}
+.qa-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 28, 48, 0.48);
+  backdrop-filter: blur(3px);
+}
+.qa-modal-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.38);
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(11, 28, 48, 0.24);
+  overflow: hidden;
+}
+.qa-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--d-border);
+}
+.qa-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--d-text);
+}
+.qa-modal-sub {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--d-sub);
+}
+.qa-modal-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--d-border);
+  border-radius: 11px;
+  background: #fff;
+  color: var(--d-sub);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+.qa-modal-close:hover {
+  border-color: var(--d-border2);
+  color: var(--d-text);
+}
+.qa-modal-body {
+  padding: 18px 20px 20px;
+}
+.qa-modal-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.qa-modal-option {
+  border: 1px solid var(--d-border);
+  border-radius: 14px;
+  background: var(--d-surface);
+  color: var(--d-text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+  padding: 14px;
+}
+.qa-modal-option:hover {
+  border-color: var(--d-border2);
+  background: #fff;
+  transform: translateY(-1px);
+}
+.qa-modal-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.qa-modal-option-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.qa-modal-option-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  font-size: 17px;
+}
+.qa-modal-option-title {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.qa-modal-option-sub {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--d-sub);
+}
+.qa-modal-empty {
+  border: 1px dashed var(--d-border2);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  color: var(--d-sub);
+  font-size: 12px;
+}
+
+.ad-sub  { color: var(--d-sub); font-size: 12px; }
+.ad-w100 { width: 100%; }
+.ad-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  background: var(--d-surface); color: var(--d-sub);
+  border: 1px solid var(--d-border);
+}
+.ad-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+
+@media (max-width: 1200px) {
+  .ad-main-grid { grid-template-columns: 1fr 1fr; }
+  .ad-main-grid .ad-col:last-child { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+  .ad-main-grid .ad-col:last-child > * { flex: 1 1 240px; }
+  .ad-kpi-row { grid-template-columns: repeat(4, 1fr); }
+  .ad-kpi-row .ad-kpi:nth-child(5) { display: none; }
+}
+@media (max-width: 860px) {
+  .ad-main-grid { grid-template-columns: 1fr; }
+  .ad-kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .ad-dash { padding: 12px 14px 32px; }
+  .ad-main-grid .ad-col:last-child {
+    grid-column: auto;
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .ad-dash {
+    padding: 12px 8px 28px;
+    gap: 12px;
+    max-width: none;
+  }
+
+  .ad-topbar { gap: 8px; }
+
+  .ad-context-name {
+    font-size: 1rem;
+    line-height: 1.15;
+  }
+
+  .ad-context-sub { font-size: 0.7rem; }
+
+  .ad-kpi-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .ad-kpi-row .ad-kpi:nth-child(5) { display: none; }
+
+  .ad-kpi,
+  .ad-card { border-radius: 16px; }
+
+  .ad-kpi {
+    padding: 10px 8px;
+    min-height: 84px;
+  }
+
+  .ad-kpi-label {
+    font-size: 0.48rem;
+    margin-bottom: 4px;
+    letter-spacing: 0.06em;
+    line-height: 1.15;
+  }
+
+  .ad-kpi-val {
+    font-size: 1.02rem;
+    line-height: 1.1;
+  }
+  .ad-kpi-val-sm { font-size: 0.8rem; }
+  .ad-kpi-foot { display: none; }
+
+  .ad-card-head,
+  .ad-card-body,
+  .ad-card-foot {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .ad-card-head {
+    padding-top: 12px;
+    padding-bottom: 10px;
+    gap: 8px;
+  }
+
+  .ad-card-body {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .ad-card-foot {
+    padding-top: 10px;
+    padding-bottom: 12px;
+  }
+
+  .ad-main-grid,
+  .ad-col,
+  .ad-alert-list,
+  .ad-actions-compact {
+    gap: 12px;
+  }
+
+  .ad-stock-visual { gap: 10px; }
+  .ad-cash-grid { gap: 10px; }
+
+  .ad-stock-side,
+  .ad-cash-tile {
+    padding: 12px 13px;
+  }
+
+  .ad-stock-amt {
+    font-size: 1rem;
+    word-break: break-word;
+  }
+
+  .ad-alert-row {
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: start;
+    padding: 10px;
+  }
+
+  .ad-alert-title,
+  .ad-lowstock-name {
+    line-height: 1.3;
+  }
+
+  .ad-alert-sub { line-height: 1.35; }
+
+  .ad-alert-action {
+    align-self: center;
+    padding: 2px 6px;
+  }
+
+  .ad-lowstock-row {
+    grid-template-columns: minmax(0, 1fr) 72px auto;
+    gap: 8px;
+  }
+
+  .ad-lowstock-bar-wrap {
+    width: 72px;
+  }
+
+  .ad-action-row {
+    padding: 10px 11px;
+  }
+
+  .ad-qa-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .ad-qa-card {
+    min-height: 78px;
+    padding: 8px 6px;
+    border-radius: 11px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .ad-qa-card::after {
+    display: none;
+  }
+
+  .ad-qa-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    font-size: 14px;
+  }
+
+  .ad-qa-copy {
     width: 100%;
   }
 
-  .mm-rowline{
-    display:flex; justify-content:space-between; gap:.75rem;
-    padding:.35rem 0; border-bottom: 1px dashed rgba(0,0,0,.10);
-  }
-  .mm-rowline:last-child { border-bottom: 0; }
-
-  .mm-topitem{
-    border: 1px solid rgba(0,0,0,.08);
-    border-radius: 14px;
-    padding: .45rem .65rem;
-    background:#fff;
+  .ad-qa-label {
+    font-size: 9px;
   }
 
-  .mm-progress { height: 9px; border-radius: 999px; overflow:hidden; }
-  .mm-progress .progress-bar { border-radius: 999px; }
+  .ad-qa-sub {
+    display: none;
+  }
+
+  .ad-qa-add-btn {
+    min-height: 78px;
+    padding: 8px 6px;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .ad-qa-add-btn .ad-qa-icon {
+    font-size: 20px;
+  }
+
+  .ad-qa-menu-btn {
+    width: 22px;
+    height: 22px;
+    top: 4px;
+    right: 4px;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .ad-dash {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .ad-card-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+
+  .ad-card-title,
+  .ad-action-row-label {
+    font-size: 12px;
+  }
+
+  .ad-kpi {
+    padding: 9px 7px;
+    min-height: 78px;
+  }
+
+  .ad-kpi-val { font-size: 0.95rem; }
+
+  .ad-kpi-label {
+    font-size: 0.44rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 3px;
+  }
+
+  .ad-stock-label,
+  .ad-cash-tile-label {
+    font-size: 0.58rem;
+  }
+
+  .ad-kpi-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  .ad-qa-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  .ad-qa-card,
+  .ad-qa-add-btn {
+    min-height: 72px;
+    padding: 7px 5px;
+  }
+
+  .ad-qa-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .ad-qa-label {
+    font-size: 8px;
+  }
+
+  .ad-stock-visual,
+  .ad-cash-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .ad-alert-row,
+  .ad-lowstock-row {
+    align-items: flex-start;
+  }
+
+  .ad-alert-row {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .ad-alert-action {
+    grid-column: 2;
+    white-space: normal;
+    padding-left: 0;
+    padding-right: 0;
+    justify-content: flex-start;
+  }
+
+  .ad-lowstock-bar-wrap {
+    width: 100%;
+  }
+
+  .ad-lowstock-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .ad-lowstock-bar-wrap {
+    grid-column: 1 / -1;
+  }
+
+  .ad-lowstock-qty { min-width: 0; }
+
+  .ad-stock-amt,
+  .ad-cash-tile-val {
+    font-size: 0.94rem;
+  }
+
+  .ad-card-foot[style],
+  .ad-card-body[style] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .qa-modal {
+    padding: 10px;
+  }
+
+  .qa-modal-head,
+  .qa-modal-body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .qa-modal-options {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
 {% endblock %}
 
-{% block content %}
+{% block dashboard_content %}
 
-{% set factory_uzs_v = factory_uzs|default(0) %}
-{% set shop_uzs_v = shop_uzs|default(0) %}
+{% set factory_uzs_v   = factory_uzs   | default(0) %}
+{% set shop_uzs_v      = shop_uzs      | default(0) %}
 {% set total_stock_uzs = factory_uzs_v + shop_uzs_v %}
-{% set factory_pct = (factory_uzs_v * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
-{% set shop_pct = (shop_uzs_v * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
+{% set factory_pct     = (factory_uzs_v * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
+{% set shop_pct        = (shop_uzs_v   * 100 // total_stock_uzs) if total_stock_uzs else 0 %}
+{% set today_sales_v = today_sales_uzs | default(0) %}
 
-<div class="container-fluid mm-dash dad-padding">
+<div class="ad-dash">
 
-  <div class="card shadow-sm border-0 mb-3 mm-card">
-    <div class="card-body py-2">
-      <div class="mm-kpi-title mb-2">{{ t('dashboard_main_actions') }}</div>
-
-      <div class="row g-2">
-        <div class="col-12 col-md-4">
-          <a href="{{ url_for('factory.produce_today') }}" class="btn btn-primary w-100 mm-btn-neo">
-            🏭 {{ t('dashboard_production_today') }}
-          </a>
-        </div>
-
-        <div class="col-12 col-md-4">
-          <a href="{{ url_for('shop.transfer_to_shop') }}" class="btn btn-warning w-100 mm-btn-neo">
-            🚚 {{ t('dashboard_transfer_to_shop') }}
-          </a>
-        </div>
-
-        <div class="col-12 col-md-4">
-          <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-primary w-100 mm-btn-neo">
-            ➕ {{ t('dashboard_products_add_prices') }}
-          </a>
-        </div>
-
-        <div class="col-12">
-          <a href="{{ url_for('shop.list_shop') }}" class="mm-chip">
-            🏪 {{ t('dashboard_shop_stock_remaining') }}
-          </a>
-        </div>
+  <div class="ad-kpi-row">
+    <a href="{{ url_for('factory.produce_today') }}" class="ad-kpi">
+      <div class="ad-kpi-bar" style="background: linear-gradient(90deg,#1d3557,#2563a8)"></div>
+      <div class="ad-kpi-label">{{ t('dashboard_produced_today') }}</div>
+      <div class="ad-kpi-val">{{ produced_today_total | default(0) }}</div>
+      <div class="ad-kpi-foot">
+        <span class="ad-chip chip-info">{{ produced_today_models | default(0) }} {{ t('dashboard_models_count') }}</span>
       </div>
-    </div>
+    </a>
+
+    <a href="{{ url_for('sales.list_sales') }}" class="ad-kpi">
+      <div class="ad-kpi-bar" style="background: linear-gradient(90deg,#2e7d50,#3db870)"></div>
+      <div class="ad-kpi-label">Sales today</div>
+      <div class="ad-kpi-val ad-kpi-val-sm">{{ format_money(today_sales_v, 'UZS') }}</div>
+      <div class="ad-kpi-foot">
+        <span class="ad-chip chip-up">live sales</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('products.factory_stock') }}" class="ad-kpi">
+      <div class="ad-kpi-bar" style="background: linear-gradient(90deg,#c8883a,#e5aa64)"></div>
+      <div class="ad-kpi-label">{{ t('dashboard_total_goods') }}</div>
+      <div class="ad-kpi-val ad-kpi-val-sm ad-mono">{{ format_money(total_uzs | default(0), 'UZS') }}</div>
+      <div class="ad-kpi-foot">
+        <span class="ad-chip chip-neutral">{{ t('dashboard_factory_plus_shop') }}</span>
+      </div>
+    </a>
+
+    <a href="{{ url_for('shop.list_shop') }}" class="ad-kpi">
+      <div class="ad-kpi-bar" style="background: linear-gradient(90deg,#8a2f2f,#d16d57)"></div>
+      <div class="ad-kpi-label">Shop low stock</div>
+      <div class="ad-kpi-val">{{ shop_low_stock_count | default(0) }}</div>
+      <div class="ad-kpi-foot">
+        <span class="ad-chip {% if (shop_low_stock_count | default(0)) > 0 %}chip-warn{% else %}chip-up{% endif %}">items below 5 pcs</span>
+      </div>
+    </a>
   </div>
 
-  <div class="row g-2 g-md-3 mb-3">
-
-    <div class="col-6 col-md-3">
-      <a href="{{ url_for('shop.movement_history') }}" class="text-decoration-none text-reset">
-        <div class="card shadow-sm border-0 h-100 mm-card">
-          <div class="card-body py-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="mm-kpi-title">{{ t('dashboard_yesterday_transferred') }}</span>
-            </div>
-            <div class="mm-kpi-value">{{ yesterday_transfer_total|default(0) }} {{ t('pieces_short') }}</div>
-            <div class="mm-mini mm-muted">{{ t('dashboard_factory_to_shop') }}</div>
+  <div class="ad-main-grid">
+    <div class="ad-col">
+      <div class="ad-card">
+        <div class="ad-card-head">
+          <div class="ad-card-title">
+            <div class="ad-card-icon">ST</div>
+            {{ t('dashboard_stock_split') }}
           </div>
+          <span class="ad-tag">
+            <span class="ad-dot" style="background: var(--d-navy)"></span>
+            {{ factory_pct }}% {{ t('dashboard_factory')|lower }}
+          </span>
         </div>
-      </a>
-    </div>
-
-    <div class="col-6 col-md-3">
-      <a href="{{ url_for('shop.list_shop') }}" class="text-decoration-none text-reset">
-        <div class="card shadow-sm border-0 h-100 mm-card">
-          <div class="card-body py-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="mm-kpi-title">{{ t('dashboard_shop_low') }}</span>
+        <div class="ad-card-body">
+          <div class="ad-stock-visual">
+            <div class="ad-stock-side factory">
+              <div class="ad-stock-label">{{ t('dashboard_factory') }}</div>
+              <div class="ad-stock-amt">{{ format_money(factory_uzs_v, 'UZS') }}</div>
+              <div class="ad-stock-pct">{{ factory_pct }}% {{ t('of_total') }}</div>
             </div>
-            <div class="mm-kpi-value {% if (shop_low_stock_count|default(0))|int > 0 %}text-danger{% else %}text-success{% endif %}">
-              {{ shop_low_stock_count|default(0) }}
+            <div class="ad-stock-side shop">
+              <div class="ad-stock-label">{{ t('dashboard_shop') }}</div>
+              <div class="ad-stock-amt">{{ format_money(shop_uzs_v, 'UZS') }}</div>
+              <div class="ad-stock-pct">{{ shop_pct }}% {{ t('of_total') }}</div>
             </div>
-            <div class="mm-mini mm-muted">{{ t('dashboard_items_less_than_5') }}</div>
           </div>
-        </div>
-      </a>
-    </div>
-
-    <div class="col-6 col-md-3">
-      <a href="{{ url_for('factory.produce_today') }}" class="text-decoration-none text-reset">
-        <div class="card shadow-sm border-0 h-100 mm-card">
-          <div class="card-body py-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="mm-kpi-title">{{ t('dashboard_produced_today') }}</span>
-            </div>
-            <div class="mm-kpi-value">{{ produced_today_total|default(0) }} {{ t('pieces_short') }}</div>
-            <div class="mm-mini mm-muted">{{ t('dashboard_models_count') }}: {{ produced_today_models|default(0) }}</div>
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <div class="col-6 col-md-3">
-      <a href="{{ url_for('products.factory_stock') }}" class="text-decoration-none text-reset">
-        <div class="card shadow-sm border-0 h-100 mm-card">
-          <div class="card-body py-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="mm-kpi-title">{{ t('dashboard_total_goods') }}</span>
-            </div>
-            <div class="mm-kpi-value">{{ format_money(total_uzs|default(0), 'UZS') }}</div>
-            <div class="mm-mini mm-muted">{{ t('dashboard_factory_plus_shop') }}</div>
-          </div>
-        </div>
-      </a>
-    </div>
-
-  </div>
-
-  <div class="card shadow-sm border-0 mb-3 mm-card">
-    <div class="card-body py-2">
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <div class="fw-semibold">📦 {{ t('dashboard_stock_split') }}</div>
-        <a href="{{ url_for('products.factory_stock') }}" class="mm-mini text-decoration-none">{{ t('dashboard_open_report') }}</a>
-      </div>
-
-      <div class="mt-2">
-        <div class="mm-rowline">
-          <div class="mm-mini mm-muted">{{ t('dashboard_factory') }}</div>
-          <div class="fw-bold">{{ format_money(factory_uzs_v, 'UZS') }}</div>
-        </div>
-        <div class="mm-rowline">
-          <div class="mm-mini mm-muted">{{ t('dashboard_shop') }}</div>
-          <div class="fw-bold">{{ format_money(shop_uzs_v, 'UZS') }}</div>
-        </div>
-      </div>
-
-      {% if total_stock_uzs %}
-        <div class="progress mt-2 mm-progress">
-          <div class="progress-bar" role="progressbar" style="width: {{ factory_pct }}%;"
-               aria-valuenow="{{ factory_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-          <div class="progress-bar bg-warning" role="progressbar" style="width: {{ shop_pct }}%;"
-               aria-valuenow="{{ shop_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-        <div class="mm-mini mm-muted mt-1">
-          {{ t('dashboard_factory') }}: {{ factory_pct }}% • {{ t('dashboard_shop') }}: {{ shop_pct }}%
-        </div>
-      {% else %}
-        <div class="mm-mini mm-muted mt-2">{{ t('dashboard_no_stock_data') }}</div>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="card shadow-sm border-0 mb-3 mm-card">
-    <div class="card-body py-2">
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <div class="fw-semibold">⚠️ {{ t('dashboard_shop_running_out') }}</div>
-        <a href="{{ url_for('shop.list_shop') }}" class="mm-mini text-decoration-none">{{ t('dashboard_open_stock') }}</a>
-      </div>
-
-      {% if shop_low_stock_items and shop_low_stock_items|length %}
-        <div class="d-grid gap-2 mt-2">
-          {% for it in shop_low_stock_items %}
-            <div class="d-flex justify-content-between align-items-center mm-topitem">
-              <div class="text-truncate" style="min-width:0;">{{ it.name }}</div>
-              <div class="fw-bold {% if (it.qty|int) <= 0 %}text-danger{% endif %}">
-                {{ it.qty }} {{ t('pieces_short') }}
+          <div class="ad-bar-wrap">
+            {% if total_stock_uzs %}
+              <div class="ad-bar">
+                <div class="ad-bar-seg" style="width: {{ factory_pct }}%; background: var(--d-navy)"></div>
+                <div class="ad-bar-seg" style="width: {{ shop_pct }}%;    background: var(--d-gold)"></div>
               </div>
-            </div>
-          {% endfor %}
+              <div class="ad-bar-legend">
+                <div class="ad-legend-item"><div class="ad-legend-dot" style="background: var(--d-navy)"></div>{{ t('dashboard_factory') }}</div>
+                <div class="ad-legend-item"><div class="ad-legend-dot" style="background: var(--d-gold)"></div>{{ t('dashboard_shop') }}</div>
+                <div class="ad-sub" style="margin-left: auto;">{{ t('total') }}: {{ format_money(total_stock_uzs, 'UZS') }}</div>
+              </div>
+            {% else %}
+              <div class="ad-sub">{{ t('dashboard_no_stock_data') }}</div>
+            {% endif %}
+          </div>
         </div>
+      </div>
+    </div>
 
-        <div class="d-grid mt-2">
-          <a href="{{ url_for('shop.transfer_to_shop') }}" class="btn btn-warning mm-btn-neo-sm w-100">
-            🚚 {{ t('dashboard_restock_shop_fast') }}
-          </a>
+    <div class="ad-col">
+      {% if top_selling_models %}
+      <div class="ad-card">
+        <div class="ad-card-head">
+          <div>
+            <div class="ad-card-title">Top selling models</div>
+            <div class="ad-sub" style="margin-top: 4px;">Best performers from recorded sales.</div>
+          </div>
         </div>
-      {% else %}
-        <div class="mm-mini mm-muted mt-2">{{ t('dashboard_no_low_stock') }}</div>
+        <div class="ad-card-body">
+          <div class="ad-list-stack">
+            {% for item in top_selling_models[:5] %}
+              <div class="ad-list-row">
+                <div>
+                  <div class="ad-list-title">{{ item.name }}</div>
+                  <div class="ad-list-sub">{{ format_money(item.amount_uzs, 'UZS') }}</div>
+                </div>
+                <div class="ad-list-badge">{{ item.qty }} pcs</div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
       {% endif %}
-    </div>
-  </div>
 
-  <div class="card shadow-sm border-0 mb-3 mm-card">
-    <div class="card-body py-2 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-      <div>
-        <div class="fw-semibold">💰 {{ t('dashboard_cash') }}</div>
-        <div class="mm-mini mm-muted">{{ t('dashboard_cash_control') }}</div>
-      </div>
-      <div class="text-md-end">
-        <div class="fw-bold">{{ format_money(cash_total_uzs|default(0), 'UZS') }}</div>
-        <div class="mm-mini mm-muted">USD: {{ format_money(cash_total_usd|default(0), 'USD') }}</div>
-      </div>
-      <div class="d-grid d-md-block">
-        <a href="{{ url_for('cash.list_cash') }}" class="btn btn-outline-dark mm-btn-neo-sm w-100">
-          {{ t('dashboard_open_cash') }}
-        </a>
+      <div class="ad-card">
+        <div class="ad-card-head">
+          <div>
+            <div class="ad-card-title">{{ t('quick_actions') }}</div>
+            <div class="ad-sub" style="margin-top: 4px;">{{ t('quick_actions_copy') }}</div>
+          </div>
+        </div>
+        <div class="ad-card-body" style="padding: 10px 12px;">
+          <div class="ad-qa-grid" id="managerQuickActionGrid">
+            <a href="{{ url_for('main.command_center') }}" class="ad-qa-card is-fixed">
+              <div class="ad-qa-icon">IN</div>
+              <div class="ad-qa-copy">
+                <div class="ad-qa-label">{{ t('command_center') }}</div>
+                <div class="ad-qa-sub">Workspace inbox and priority actions.</div>
+              </div>
+            </a>
+
+            <a href="{{ url_for('factory.produce_today') }}" class="ad-qa-card is-fixed">
+              <div class="ad-qa-icon">PD</div>
+              <div class="ad-qa-copy">
+                <div class="ad-qa-label">{{ t('dashboard_production_today') }}</div>
+                <div class="ad-qa-sub">Jump straight into today's production flow.</div>
+              </div>
+            </a>
+
+            <div class="ad-qa-slot" data-slot-index="0"></div>
+            <div class="ad-qa-slot" data-slot-index="1"></div>
+          </div>
+        </div>
       </div>
     </div>
+
   </div>
 
 </div>
+
+<div class="qa-modal" id="qaSelectionModal" aria-hidden="true">
+  <div class="qa-modal-backdrop" data-qa-close></div>
+  <div class="qa-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="qaSelectionModalLabel">
+    <div class="qa-modal-head">
+      <div>
+        <h3 class="qa-modal-title" id="qaSelectionModalLabel">Choose quick action</h3>
+        <p class="qa-modal-sub">Pick one card for this slot. Each custom card can only be used once.</p>
+      </div>
+      <button type="button" class="qa-modal-close" aria-label="Close" data-qa-close>&times;</button>
+    </div>
+    <div class="qa-modal-body">
+      <div class="qa-modal-options" id="qaModalOptions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var storageKey = 'dashboard.manager.quickActions.v4';
+  var selectableIds = ['transfer', 'products', 'shop', 'inventory'];
+  var selectedItems = [null, null];
+  var activeSlotIndex = null;
+  var grid = document.getElementById('managerQuickActionGrid');
+  var slotNodes = grid ? Array.prototype.slice.call(grid.querySelectorAll('.ad-qa-slot')) : [];
+  var modal = document.getElementById('qaSelectionModal');
+  var modalOptions = document.getElementById('qaModalOptions');
+  if (!grid || !slotNodes.length || !modal || !modalOptions) return;
+
+  var itemConfig = {
+    transfer: {
+      label: '{{ t("dashboard_transfer_to_shop") }}',
+      icon: 'TR',
+      sub: 'Move finished goods from factory to shop.',
+      url: '{{ url_for("shop.transfer_to_shop") }}'
+    },
+    products: {
+      label: '{{ t("dashboard_products_add_prices") }}',
+      icon: 'PR',
+      sub: 'Manage product list, pricing, and setup.',
+      url: '{{ url_for("products.list_products") }}'
+    },
+    shop: {
+      label: '{{ t("dashboard_shop_stock_remaining") }}',
+      icon: 'SH',
+      sub: 'Open shop inventory and remaining stock.',
+      url: '{{ url_for("shop.list_shop") }}'
+    },
+    inventory: {
+      label: '{{ t("inventory") }}',
+      icon: 'IV',
+      sub: 'Check materials, finished goods, and flows.',
+      url: '{{ url_for("main.inventory") }}'
+    }
+  };
+
+  function loadSelectedItems() {
+    try {
+      var raw = localStorage.getItem(storageKey);
+      if (!raw) return [null, null];
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [null, null];
+      var normalized = parsed.slice(0, 2).map(function(id){
+        return selectableIds.indexOf(id) >= 0 ? id : null;
+      });
+      while (normalized.length < 2) normalized.push(null);
+      if (normalized[0] && normalized[0] === normalized[1]) {
+        normalized[1] = null;
+      }
+      return normalized;
+    } catch (e) {
+      return [null, null];
+    }
+  }
+
+  function saveSelectedItems(items) {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(items.slice(0, 2)));
+    } catch (e) {}
+  }
+
+  function customCardMarkup(itemId, slotIndex) {
+    var item = itemConfig[itemId];
+    return '' +
+      '<a href="' + item.url + '" class="ad-qa-card is-custom">' +
+        '<div class="ad-qa-icon">' + item.icon + '</div>' +
+        '<div class="ad-qa-copy">' +
+          '<div class="ad-qa-label">' + item.label + '</div>' +
+          '<div class="ad-qa-sub">' + item.sub + '</div>' +
+        '</div>' +
+      '</a>' +
+      '<button type="button" class="ad-qa-menu-btn" aria-label="Quick action menu" data-qa-menu-button data-slot-index="' + slotIndex + '">' +
+        '<span class="ad-qa-menu-dots"><span></span><span></span><span></span></span>' +
+      '</button>' +
+      '<div class="ad-qa-menu" data-qa-menu data-slot-index="' + slotIndex + '">' +
+        '<button type="button" class="ad-qa-menu-item" data-qa-edit data-slot-index="' + slotIndex + '">Edit card</button>' +
+        '<button type="button" class="ad-qa-menu-item is-danger" data-qa-delete data-slot-index="' + slotIndex + '">Delete card</button>' +
+      '</div>';
+  }
+
+  function addCardMarkup(slotIndex) {
+    return '' +
+      '<button type="button" class="ad-qa-add-btn" data-qa-add data-slot-index="' + slotIndex + '">' +
+        '<div class="ad-qa-icon">+</div>' +
+        '<div class="ad-qa-copy">' +
+          '<div class="ad-qa-label">Add card</div>' +
+          '<div class="ad-qa-sub">Choose another quick action for this slot.</div>' +
+        '</div>' +
+      '</button>';
+  }
+
+  function closeMenus() {
+    slotNodes.forEach(function(slot){
+      var button = slot.querySelector('[data-qa-menu-button]');
+      var menu = slot.querySelector('[data-qa-menu]');
+      if (button) button.classList.remove('is-open');
+      if (menu) menu.classList.remove('is-open');
+    });
+  }
+
+  function renderGrid() {
+    slotNodes.forEach(function(slot, slotIndex){
+      var itemId = selectedItems[slotIndex];
+      slot.innerHTML = itemId && itemConfig[itemId] ? customCardMarkup(itemId, slotIndex) : addCardMarkup(slotIndex);
+    });
+    closeMenus();
+  }
+
+  function renderModalOptions(slotIndex) {
+    modalOptions.innerHTML = '';
+    var available = selectableIds.filter(function(itemId){
+      return selectedItems.indexOf(itemId) === -1 || selectedItems[slotIndex] === itemId;
+    });
+
+    if (!available.length) {
+      modalOptions.innerHTML = '<div class="qa-modal-empty">All available cards are already used in the other slot.</div>';
+      return;
+    }
+
+    available.forEach(function(itemId){
+      var item = itemConfig[itemId];
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'qa-modal-option';
+      button.setAttribute('data-qa-pick', itemId);
+      button.innerHTML =
+        '<div class="qa-modal-option-head">' +
+          '<span class="qa-modal-option-icon">' + item.icon + '</span>' +
+          '<span class="qa-modal-option-title">' + item.label + '</span>' +
+        '</div>' +
+        '<div class="qa-modal-option-sub">' + item.sub + '</div>';
+      button.addEventListener('click', function(){
+        selectedItems[slotIndex] = itemId;
+        saveSelectedItems(selectedItems);
+        renderGrid();
+        closeModal();
+      });
+      modalOptions.appendChild(button);
+    });
+  }
+
+  function openModal(slotIndex) {
+    activeSlotIndex = slotIndex;
+    renderModalOptions(slotIndex);
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    activeSlotIndex = null;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('click', function(e){
+    var addButton = e.target.closest ? e.target.closest('[data-qa-add]') : null;
+    if (addButton) {
+      e.preventDefault();
+      openModal(parseInt(addButton.getAttribute('data-slot-index'), 10));
+      return;
+    }
+
+    var menuButton = e.target.closest ? e.target.closest('[data-qa-menu-button]') : null;
+    if (menuButton) {
+      e.preventDefault();
+      var menuSlotIndex = menuButton.getAttribute('data-slot-index');
+      var slot = grid.querySelector('.ad-qa-slot[data-slot-index="' + menuSlotIndex + '"]');
+      var menu = slot ? slot.querySelector('[data-qa-menu]') : null;
+      var willOpen = menu && !menu.classList.contains('is-open');
+      closeMenus();
+      if (willOpen && menu) {
+        menuButton.classList.add('is-open');
+        menu.classList.add('is-open');
+      }
+      return;
+    }
+
+    var editButton = e.target.closest ? e.target.closest('[data-qa-edit]') : null;
+    if (editButton) {
+      e.preventDefault();
+      closeMenus();
+      openModal(parseInt(editButton.getAttribute('data-slot-index'), 10));
+      return;
+    }
+
+    var deleteButton = e.target.closest ? e.target.closest('[data-qa-delete]') : null;
+    if (deleteButton) {
+      e.preventDefault();
+      var deleteSlotIndex = parseInt(deleteButton.getAttribute('data-slot-index'), 10);
+      selectedItems[deleteSlotIndex] = null;
+      saveSelectedItems(selectedItems);
+      closeMenus();
+      renderGrid();
+      return;
+    }
+
+    if (!e.target.closest || !e.target.closest('.ad-qa-slot')) {
+      closeMenus();
+    }
+
+    if (e.target.hasAttribute('data-qa-close')) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      if (modal.classList.contains('is-open')) {
+        closeModal();
+      } else {
+        closeMenus();
+      }
+    }
+  });
+
+  selectedItems = loadSelectedItems();
+  renderGrid();
+})();
+</script>
+
 {% endblock %}
+

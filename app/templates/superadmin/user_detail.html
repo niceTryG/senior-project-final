@@ -1,0 +1,173 @@
+{% extends "superadmin/base.html" %}
+{% block title %}{{ user.username }}{% endblock %}
+{% block page_title %}{{ user.full_name or user.username }}{% endblock %}
+{% block page_crumb %}Users &rsaquo; {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="sa-page-header">
+  <div>
+    <div class="sa-page-header-title">{{ user.full_name or user.username }}</div>
+    <div class="sa-page-header-sub">User ID #{{ user.id }} &middot; @{{ user.username }}</div>
+  </div>
+  <a href="{{ url_for('superadmin.users') }}" class="sa-btn sa-btn-ghost">← Back to Users</a>
+</div>
+
+<!-- Profile + actions -->
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-bottom:24px;" class="sa-two-col">
+
+  <!-- Info -->
+  <div class="sa-panel">
+    <div class="sa-panel-head">
+      <div class="sa-panel-title">Account Info</div>
+    </div>
+    <div class="sa-panel-body">
+      <div class="sa-kv-grid">
+        <div class="sa-kv">
+          <div class="sa-kv-key">Username</div>
+          <div class="sa-kv-val">{{ user.username }}</div>
+        </div>
+        <div class="sa-kv">
+          <div class="sa-kv-key">Full Name</div>
+          <div class="sa-kv-val">{{ user.full_name or '—' }}</div>
+        </div>
+        <div class="sa-kv">
+          <div class="sa-kv-key">Phone</div>
+          <div class="sa-kv-val">{{ user.phone or '—' }}</div>
+        </div>
+        <div class="sa-kv">
+          <div class="sa-kv-key">Role</div>
+          <div class="sa-kv-val">
+            {% if user.role == 'admin' %}<span class="sa-badge sa-badge-gold">Admin</span>
+            {% elif user.role == 'manager' %}<span class="sa-badge sa-badge-purple">Manager</span>
+            {% elif user.role == 'shop' %}<span class="sa-badge sa-badge-green">Shop</span>
+            {% elif user.role == 'accountant' %}<span class="sa-badge sa-badge-gray">Accountant</span>
+            {% else %}<span class="sa-badge sa-badge-gray">{{ user.role }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="sa-kv">
+          <div class="sa-kv-key">Tenant</div>
+          <div class="sa-kv-val">
+            {% if user.factory %}
+            <a href="{{ url_for('superadmin.tenant_detail', tenant_id=user.factory.id) }}" style="color:var(--sa-purple);">{{ user.factory.name }}</a>
+            {% else %}—{% endif %}
+          </div>
+        </div>
+        <div class="sa-kv">
+          <div class="sa-kv-key">Shop</div>
+          <div class="sa-kv-val">{{ user.shop.name if user.shop else '—' }}</div>
+        </div>
+        <div class="sa-kv">
+          <div class="sa-kv-key">Last Login</div>
+          <div class="sa-kv-val">
+            {{ user.last_login_at.strftime('%d %b %Y %H:%M') if user.last_login_at else 'Never' }}
+          </div>
+        </div>
+        <div class="sa-kv">
+          <div class="sa-kv-key">Status</div>
+          <div class="sa-kv-val">
+            {% if user.is_login_locked() %}
+            <span class="sa-badge sa-badge-red">Locked</span>
+            {% else %}
+            <span class="sa-badge sa-badge-green">Active</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="sa-kv">
+          <div class="sa-kv-key">Failed Logins</div>
+          <div class="sa-kv-val">{{ user.failed_login_attempts }}</div>
+        </div>
+        <div class="sa-kv">
+          <div class="sa-kv-key">Must Change PW</div>
+          <div class="sa-kv-val">{{ 'Yes' if user.must_change_password else 'No' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Change Role -->
+    <div class="sa-panel">
+      <div class="sa-panel-head"><div class="sa-panel-title">Change Role</div></div>
+      <div class="sa-panel-body">
+        <form method="post" action="{{ url_for('superadmin.set_user_role', user_id=user.id) }}">
+          <label class="sa-label">New Role</label>
+          <select name="role" class="sa-input" style="margin-bottom:12px;">
+            {% for r in ROLES %}
+            <option value="{{ r }}" {% if user.role == r %}selected{% endif %}>{{ r|capitalize }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="sa-btn sa-btn-purple" style="width:100%;">Update Role</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Lock / Unlock -->
+    <div class="sa-panel">
+      <div class="sa-panel-head"><div class="sa-panel-title">Account Lock</div></div>
+      <div class="sa-panel-body">
+        <p style="font-size:.84rem;color:var(--sa-muted);margin-bottom:14px;">
+          {% if user.is_login_locked() %}
+          Account is currently <strong style="color:var(--sa-danger);">locked</strong> until
+          {{ user.locked_until.strftime('%d %b %Y %H:%M') if user.locked_until else 'indefinitely' }}.
+          {% else %}
+          Account is <strong style="color:var(--sa-success);">active</strong> with no lock.
+          {% endif %}
+        </p>
+        <form method="post" action="{{ url_for('superadmin.toggle_user_lock', user_id=user.id) }}">
+          {% if user.is_login_locked() %}
+          <button type="submit" class="sa-btn sa-btn-success" style="width:100%;">🔓 Unlock Account</button>
+          {% else %}
+          <button type="submit" class="sa-btn sa-btn-danger" style="width:100%;">🔒 Lock Account (24h)</button>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <!-- Reset Password -->
+    <div class="sa-panel">
+      <div class="sa-panel-head"><div class="sa-panel-title">Reset Password</div></div>
+      <div class="sa-panel-body">
+        <form method="post" action="{{ url_for('superadmin.reset_user_password', user_id=user.id) }}">
+          <label class="sa-label">New Password</label>
+          <input type="password" name="new_password" class="sa-input" placeholder="Min 6 characters" style="margin-bottom:12px;" required minlength="6" />
+          <button type="submit" class="sa-btn sa-btn-danger" style="width:100%;">Reset Password</button>
+        </form>
+        <div style="margin-top:10px;font-size:.76rem;color:var(--sa-muted);">
+          User will be forced to change password on next login.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Recent Sales by this user -->
+{% if recent_sales %}
+<div class="sa-panel">
+  <div class="sa-panel-head">
+    <div class="sa-panel-title">Recent Sales Created by This User</div>
+  </div>
+  <table class="sa-table">
+    <thead>
+      <tr><th>ID</th><th>Date</th><th>Amount</th><th>Currency</th></tr>
+    </thead>
+    <tbody>
+      {% for sale in recent_sales %}
+      <tr>
+        <td style="color:var(--sa-muted);font-size:.78rem;">#{{ sale.id }}</td>
+        <td style="font-size:.82rem;">{{ sale.created_at.strftime('%d %b %Y') if sale.created_at else '—' }}</td>
+        <td style="font-weight:700;">{{ '{:,.0f}'.format(sale.total_sell or 0) }}</td>
+        <td style="font-size:.8rem;color:var(--sa-muted);">{{ sale.currency or 'UZS' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<style>
+  @media (max-width: 768px) { .sa-two-col { grid-template-columns: 1fr !important; } }
+</style>
+{% endblock %}

@@ -7,9 +7,23 @@ from sqlalchemy import text
 
 from .db_patch import (
     _log_db_info,
+    patch_factory_owner_column,
+    patch_onboarding_telegram_verifications_table,
+    patch_operational_tasks_table,
+    patch_product_garment_zone_assignments_table,
+    patch_fabrics_material_columns,
+    patch_fabrics_supplier_column,
+    patch_productions_plan_column,
+    patch_production_plans_table,
+    patch_cuts_detail_columns,
+    patch_supplier_profiles_table,
+    patch_supplier_receipts_payment_columns,
+    patch_supplier_receipts_table,
     patch_products_columns,
     patch_sales_table,
     patch_shops_and_shop_stock,
+    patch_user_login_security_columns,
+    patch_users_identity_columns,
 )
 from .extensions import db
 
@@ -76,11 +90,86 @@ def _migration_0004_sales_columns() -> None:
     patch_sales_table()
 
 
+def _migration_0005_users_identity_columns() -> None:
+    patch_users_identity_columns()
+
+
+def _migration_0006_factory_owner_column() -> None:
+    patch_factory_owner_column()
+
+
+def _migration_0007_operational_tasks_table() -> None:
+    patch_operational_tasks_table()
+
+
+def _migration_0008_onboarding_telegram_verifications_table() -> None:
+    patch_onboarding_telegram_verifications_table()
+
+
+def _migration_0009_user_login_security_columns() -> None:
+    patch_user_login_security_columns()
+
+
+def _migration_0010_fabrics_material_columns() -> None:
+    patch_fabrics_material_columns()
+
+
+def _migration_0011_production_plans_table() -> None:
+    patch_production_plans_table()
+
+
+def _migration_0012_fabrics_supplier_column() -> None:
+    patch_fabrics_supplier_column()
+
+
+def _migration_0013_supplier_receipts_table() -> None:
+    patch_supplier_receipts_table()
+
+
+def _migration_0014_supplier_receipts_payment_columns() -> None:
+    patch_supplier_receipts_payment_columns()
+
+
+def _migration_0015_supplier_profiles_table() -> None:
+    patch_supplier_profiles_table()
+
+
+def _migration_0016_productions_plan_column() -> None:
+    patch_productions_plan_column()
+
+
+def _migration_0017_cuts_detail_columns() -> None:
+    patch_cuts_detail_columns()
+
+
+def _migration_0018_product_garment_analysis_columns() -> None:
+    patch_products_columns()
+
+
+def _migration_0019_product_garment_zone_assignments_table() -> None:
+    patch_product_garment_zone_assignments_table()
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration("0001", "create base schema", _migration_0001_initial_schema),
     Migration("0002", "add product publishing columns", _migration_0002_products_columns),
     Migration("0003", "add shops and backfill shop stock", _migration_0003_shops_and_shop_stock),
     Migration("0004", "add shop-aware sales columns", _migration_0004_sales_columns),
+    Migration("0005", "add user full name and phone columns", _migration_0005_users_identity_columns),
+    Migration("0006", "add explicit workspace owner column", _migration_0006_factory_owner_column),
+    Migration("0007", "add operational tasks table", _migration_0007_operational_tasks_table),
+    Migration("0008", "add onboarding telegram verification table", _migration_0008_onboarding_telegram_verifications_table),
+    Migration("0009", "add user login security columns", _migration_0009_user_login_security_columns),
+    Migration("0010", "add materials columns to fabrics table", _migration_0010_fabrics_material_columns),
+    Migration("0011", "add production plans table", _migration_0011_production_plans_table),
+    Migration("0012", "add supplier field to fabrics table", _migration_0012_fabrics_supplier_column),
+    Migration("0013", "add supplier receipts table", _migration_0013_supplier_receipts_table),
+    Migration("0014", "add supplier receipt payment columns", _migration_0014_supplier_receipts_payment_columns),
+    Migration("0015", "add supplier profiles table", _migration_0015_supplier_profiles_table),
+    Migration("0016", "link productions to saved plans", _migration_0016_productions_plan_column),
+    Migration("0017", "add cut detail columns", _migration_0017_cuts_detail_columns),
+    Migration("0018", "add product garment analysis columns", _migration_0018_product_garment_analysis_columns),
+    Migration("0019", "add product garment zone assignments table", _migration_0019_product_garment_zone_assignments_table),
 )
 
 

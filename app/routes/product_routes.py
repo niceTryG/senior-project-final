@@ -37,15 +37,19 @@ from ..models import (
     Sale,
     CashRecord,
     StockMovement,
+    WholesaleSale,
+    WholesaleSaleItem,
     ExcelImportRow,
     ExcelImportBatch,
 )
 from ..services.fabric_service import FabricService
+from ..services.garment_analysis_service import GarmentImageAnalysisService
 from ..services.product_service import ProductService
 from ..shop_utils import get_or_create_default_shop
 
 
 fabric_service = FabricService()
+garment_analysis_service = GarmentImageAnalysisService()
 products_bp = Blueprint("products", __name__, url_prefix="/products")
 service = ProductService()
 DEFAULT_ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
@@ -220,6 +224,119 @@ def save_product_image(file_obj):
     return f"/uploads/{generated_filename}"
 
 
+def _material_type_icon(material_type: str) -> str:
+    icon_map = {
+        "fabric": "bi bi-box-seam",
+        "button": "bi bi-circle",
+        "zipper": "bi bi-gear-wide-connected",
+        "label": "bi bi-tags",
+        "packaging": "bi bi-box2",
+        "accessory": "bi bi-star",
+        "thread": "bi bi-slash-circle",
+        "other": "bi bi-puzzle",
+    }
+    return icon_map.get(material_type, "bi bi-puzzle")
+
+
+def _material_type_label(material_type: str) -> str:
+    label_map = {
+        "fabric": "Fabric",
+        "button": "Button",
+        "zipper": "Zipper",
+        "label": "Label",
+        "packaging": "Packaging",
+        "accessory": "Accessory",
+        "thread": "Thread",
+        "other": "Material",
+    }
+    return label_map.get(material_type, material_type.title())
+
+
+def _material_type_color(material_type: str) -> str:
+    color_map = {
+        "fabric": "bg-primary text-white",
+        "button": "bg-secondary text-white",
+        "zipper": "bg-info text-white",
+        "label": "bg-warning text-dark",
+        "packaging": "bg-success text-white",
+        "accessory": "bg-danger text-white",
+        "thread": "bg-dark text-white",
+        "other": "bg-light text-dark",
+    }
+    return color_map.get(material_type, "bg-light text-dark")
+
+
+def _safe_next_url(default_endpoint: str = "products.list_products"):
+    target = (request.form.get("next") or request.args.get("next") or "").strip()
+    if target.startswith("/") and not target.startswith("//"):
+        return redirect(target)
+    return redirect(url_for(default_endpoint))
+
+
+def _build_product_components(product: Product) -> tuple[list[dict], str, int]:
+    color_hex_map = {
+        "fabric": "#0d6efd",
+        "button": "#6c757d",
+        "zipper": "#0dcaf0",
+        "label": "#ffc107",
+        "packaging": "#198754",
+        "accessory": "#dc3545",
+        "thread": "#212529",
+        "other": "#6c757d",
+    }
+    
+    items = sorted(
+        list(getattr(product, "composition_items", []) or []),
+        key=lambda item: (
+            getattr(getattr(item, "fabric", None), "material_type", ""),
+            getattr(getattr(item, "fabric", None), "name", ""),
+        ),
+    )
+    components = []
+    type_counts: dict[str, int] = {}
+
+    for item in items:
+        fabric = getattr(item, "fabric", None)
+        if not fabric:
+            continue
+
+        material_type = (fabric.material_type or "other").strip().lower()
+        type_counts[material_type] = type_counts.get(material_type, 0) + 1
+
+        qty = float(item.quantity_required or 0)
+        unit = (item.unit or "").strip()
+        qty_text = f"{int(qty)}" if qty.is_integer() else f"{qty:g}"
+        qty_label = f"{qty_text} {unit}" if unit else qty_text
+
+        components.append({
+            "name": fabric.name or _material_type_label(material_type),
+            "type_label": _material_type_label(material_type),
+            "icon": _material_type_icon(material_type),
+            "badge_class": _material_type_color(material_type),
+            "badge_bg": color_hex_map.get(material_type, "#6c757d"),
+            "qty_label": qty_label,
+            "note": item.note,
+        })
+
+    summary = ", ".join(
+        f"{count} {(_material_type_label(kind) + ('s' if count != 1 else ''))}"
+        for kind, count in sorted(type_counts.items())
+    )
+    return components, summary, len(components)
+
+
+def _refresh_garment_analysis(product: Product) -> tuple[str, str | None]:
+    try:
+        result = garment_analysis_service.analyze_and_store(product)
+    except Exception as exc:
+        current_app.logger.exception(
+            "Garment analysis failed for product %s", getattr(product, "id", None)
+        )
+        return "error", str(exc)
+
+    return str(result.get("status") or "skipped"), result.get("reason")
+
+
 # ==========================
 #   📦 PRODUCT LIST
 # ==========================
@@ -356,7 +473,7 @@ def add_product():
         flash("Недопустимый формат фото для сайта.", "danger")
         return redirect(url_for("products.list_products"))
 
-    service.add_product(
+    product = service.add_product(
         factory_id=factory_id,
         name=name,
         category=category,
@@ -370,7 +487,11 @@ def add_product():
         notes=notes,
     )
 
-    flash("Товар добавлен / обновлён.", "success")
+    analysis_status, _analysis_reason = _refresh_garment_analysis(product)
+    if analysis_status == "analyzed":
+        flash("Товар добавлен / обновлён. Карта деталей одежды сгенерирована.", "success")
+    else:
+        flash("Товар добавлен / обновлён.", "success")
     return redirect(url_for("products.list_products"))
 # ==========================
 #   ➕ ADD STOCK (FACTORY)
@@ -1066,10 +1187,308 @@ def product_cost(product_id: int):
     )
 
 
+@products_bp.route("/<int:product_id>/details")
+@login_required
+def product_details(product_id: int):
+    factory_id = _ensure_factory_bound()
+    if factory_id is None:
+        return redirect(url_for("auth.login"))
+
+    product = Product.query.get_or_404(product_id)
+    if not getattr(current_user, "is_superadmin", False) and product.factory_id != factory_id:
+        flash("Нет доступа к этой модели.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    composition_items, type_summary, materials_count = _build_product_components(product)
+    garment_analysis = garment_analysis_service.build_view_model(product)
+    garment_mapping = garment_analysis_service.build_mapping_view_model(
+        product,
+        factory_id=product.factory_id,
+    )
+    return render_template(
+        "products/product_details.html",
+        product=product,
+        composition_items=composition_items,
+        type_summary=type_summary,
+        materials_count=materials_count,
+        garment_analysis=garment_analysis,
+        garment_mapping=garment_mapping,
+    )
+
+
 @products_bp.route("/factory-stock", endpoint="factory_stock")
 @login_required
 def factory_stock():
-    return redirect(url_for("products.list_products"))
+    factory_id = _ensure_factory_bound()
+    if factory_id is None:
+        return redirect(url_for("auth.login"))
+
+    q = (request.args.get("q") or "").strip()
+    sort = request.args.get("sort", "qty_factory")
+    selected_category = (request.args.get("category") or "").strip() or None
+
+    fabrics = (
+        Fabric.query.filter(Fabric.factory_id == factory_id)
+        .order_by(Fabric.name.asc())
+        .all()
+    )
+
+    query = (
+        db.session.query(
+            Product,
+            func.coalesce(func.sum(ShopStock.quantity), 0).label("qty_shop"),
+        )
+        .outerjoin(
+            ShopStock,
+            (ShopStock.product_id == Product.id)
+            & (ShopStock.source_factory_id == Product.factory_id),
+        )
+        .filter(Product.factory_id == factory_id)
+    )
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(or_(Product.name.ilike(like), Product.category.ilike(like)))
+
+    if selected_category:
+        query = query.filter(Product.category == selected_category)
+
+    query = query.group_by(Product.id).having(Product.quantity > 0)
+
+    if sort == "name":
+        query = query.order_by(Product.name.asc())
+    elif sort == "qty_total":
+        query = query.order_by((Product.quantity + func.coalesce(func.sum(ShopStock.quantity), 0)).desc())
+    elif sort == "qty_shop":
+        query = query.order_by(func.coalesce(func.sum(ShopStock.quantity), 0).desc())
+    else:
+        query = query.order_by(Product.quantity.desc(), Product.name.asc())
+
+    rows = query.all()
+
+    product_ids = [product.id for product, _qty_shop in rows if int(product.quantity or 0) > 0]
+    transfer_rows = []
+    if product_ids:
+        transfer_rows = (
+            StockMovement.query
+            .filter(
+                StockMovement.factory_id == factory_id,
+                StockMovement.product_id.in_(product_ids),
+                StockMovement.movement_type.in_(("factory_to_shop", "factory_to_shop_for_order")),
+            )
+            .order_by(StockMovement.timestamp.desc())
+            .all()
+        )
+
+    transfer_map = {}
+    for movement in transfer_rows:
+        state = transfer_map.setdefault(
+            movement.product_id,
+            {"count": 0, "last_transfer_at": None},
+        )
+        state["count"] += 1
+        if not state["last_transfer_at"]:
+            state["last_transfer_at"] = movement.timestamp
+
+    product_rows = []
+    for product, qty_shop in rows:
+        qty_factory = int(product.quantity or 0)
+        qty_shop_val = int(qty_shop or 0)
+        product_rows.append(
+            {
+                "p": product,
+                "qty_factory": qty_factory,
+                "qty_shop": qty_shop_val,
+                "qty_total": qty_factory + qty_shop_val,
+                "status_key": "return" if int((transfer_map.get(product.id, {}).get("count") or 0)) > 0 else "fresh",
+            }
+        )
+
+    cat_query = (
+        db.session.query(Product.category)
+        .filter(Product.factory_id == factory_id)
+        .distinct()
+    )
+    categories = [c[0] for c in cat_query.order_by(Product.category.asc()).all() if c[0]]
+
+    return render_template(
+        "products/list.html",
+        products=product_rows,
+        fabrics=fabrics,
+        q=q,
+        sort=sort,
+        categories=categories,
+        selected_category=selected_category,
+        quick_actions_mode="limited",
+    )
+
+
+@products_bp.route("/shop-stock", endpoint="shop_stock_products")
+@login_required
+def shop_stock_products():
+    factory_id = _ensure_factory_bound()
+    if factory_id is None:
+        return redirect(url_for("auth.login"))
+
+    rows = (
+        db.session.query(
+            Product,
+            func.coalesce(func.sum(ShopStock.quantity), 0).label("qty_shop"),
+        )
+        .join(
+            ShopStock,
+            (ShopStock.product_id == Product.id)
+            & (ShopStock.source_factory_id == Product.factory_id),
+        )
+        .filter(Product.factory_id == factory_id)
+        .group_by(Product.id)
+        .order_by(func.sum(ShopStock.quantity).desc(), Product.name.asc())
+        .all()
+    )
+
+    products = []
+    total_shop_units = 0
+
+    for product, qty_shop in rows:
+        qty_shop_int = int(qty_shop or 0)
+        if qty_shop_int <= 0:
+            continue
+
+        total_shop_units += qty_shop_int
+        products.append(
+            {
+                "id": product.id,
+                "name": product.name,
+                "category": product.category,
+                "qty_shop": qty_shop_int,
+                "qty_factory": int(product.quantity or 0),
+                "image_path": product.image_path,
+                "is_published": bool(product.is_published),
+            }
+        )
+
+    product_ids = [item["id"] for item in products]
+    wholesale_map = {}
+    if product_ids:
+        wholesale_rows = (
+            db.session.query(
+                WholesaleSaleItem.product_id,
+                func.count(WholesaleSaleItem.id).label("request_count"),
+                func.coalesce(func.sum(WholesaleSaleItem.quantity), 0).label("request_qty"),
+            )
+            .join(WholesaleSale, WholesaleSale.id == WholesaleSaleItem.wholesale_sale_id)
+            .filter(
+                WholesaleSale.factory_id == factory_id,
+                WholesaleSaleItem.product_id.in_(product_ids),
+            )
+            .group_by(WholesaleSaleItem.product_id)
+            .all()
+        )
+        wholesale_map = {
+            int(row.product_id): {
+                "count": int(row.request_count or 0),
+                "qty": int(row.request_qty or 0),
+            }
+            for row in wholesale_rows
+        }
+
+    for item in products:
+        info = wholesale_map.get(item["id"], {"count": 0, "qty": 0})
+        item["wholesale_attention"] = info["count"] > 0
+        item["wholesale_attention_count"] = info["count"]
+        item["wholesale_attention_qty"] = info["qty"]
+
+    return render_template(
+        "products/shop_stock.html",
+        products=products,
+        total_shop_units=total_shop_units,
+        wholesale_marked_count=sum(1 for p in products if p["wholesale_attention"]),
+    )
+
+
+@products_bp.route("/<int:product_id>/analyze-garment", methods=["POST"])
+@login_required
+@roles_required("admin", "manager")
+def analyze_garment_details(product_id: int):
+    factory_id = _ensure_factory_bound()
+    if factory_id is None and not getattr(current_user, "is_superadmin", False):
+        return redirect(url_for("products.list_products"))
+
+    product = Product.query.get_or_404(product_id)
+    if not getattr(current_user, "is_superadmin", False) and product.factory_id != factory_id:
+        flash("Нет доступа к этой модели.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    status, reason = _refresh_garment_analysis(product)
+    if status == "analyzed":
+        flash("Аннотированный предпросмотр деталей одежды обновлён.", "success")
+    elif reason == "unsupported_category":
+        flash("Эта категория пока не поддерживается для автоанализа.", "warning")
+    elif reason == "missing_image":
+        flash("Сначала загрузите фото товара для анализа.", "warning")
+    elif reason == "missing_source_file":
+        flash("Исходное изображение не найдено на диске.", "warning")
+    else:
+        flash("Не удалось обновить карту деталей одежды.", "danger")
+
+    return redirect(url_for("products.product_details", product_id=product.id))
+
+
+@products_bp.route("/<int:product_id>/garment-component-mapping", methods=["POST"])
+@login_required
+@roles_required("admin", "manager")
+def save_garment_component_mapping(product_id: int):
+    factory_id = _ensure_factory_bound()
+    if factory_id is None and not getattr(current_user, "is_superadmin", False):
+        return redirect(url_for("products.list_products"))
+
+    product = Product.query.get_or_404(product_id)
+    if not getattr(current_user, "is_superadmin", False) and product.factory_id != factory_id:
+        flash("Нет доступа к этой модели.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    component_key = (request.form.get("component_key") or "").strip()
+    selection = request.form.get("assignment_selection")
+    usage_label = request.form.get("usage_label")
+    note = request.form.get("assignment_note")
+
+    if not component_key:
+        flash("Не удалось определить компонент одежды для сохранения.", "danger")
+        return redirect(url_for("products.product_details", product_id=product.id))
+
+    garment_analysis_service.save_component_assignment(
+        product=product,
+        component_key=component_key,
+        selection=selection,
+        usage_label=usage_label,
+        note=note,
+    )
+    flash("Привязка компонента одежды сохранена.", "success")
+    return redirect(url_for("products.product_details", product_id=product.id) + "#garment-map")
+
+
+@products_bp.route("/<int:product_id>/garment-component-mapping/auto", methods=["POST"])
+@login_required
+@roles_required("admin", "manager")
+def auto_map_garment_components(product_id: int):
+    factory_id = _ensure_factory_bound()
+    if factory_id is None and not getattr(current_user, "is_superadmin", False):
+        return redirect(url_for("products.list_products"))
+
+    product = Product.query.get_or_404(product_id)
+    if not getattr(current_user, "is_superadmin", False) and product.factory_id != factory_id:
+        flash("Нет доступа к этой модели.", "danger")
+        return redirect(url_for("products.list_products"))
+
+    result = garment_analysis_service.auto_map_components(
+        product=product,
+        factory_id=product.factory_id,
+    )
+    if result.get("updated"):
+        flash(f"Автопривязка выполнилась: {result['updated']} компонентов обновлено.", "success")
+    else:
+        flash("Автопривязка не нашла достаточно уверенных совпадений по компонентам.", "warning")
+    return redirect(url_for("products.product_details", product_id=product.id) + "#garment-map")
 
 
 @products_bp.route("/<int:product_id>/toggle_publish", methods=["POST"])
@@ -1111,7 +1530,7 @@ def delete_product(product_id: int):
     product = query.first()
     if not product:
         flash("Product not found.", "danger")
-        return redirect(url_for("products.list_products"))
+        return _safe_next_url("products.list_products")
         flash("Ð¢Ð¾Ð²Ð°Ñ€ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½.", "danger")
         return redirect(url_for("products.list_products"))
 
@@ -1119,7 +1538,7 @@ def delete_product(product_id: int):
     product.is_published = False
     db.session.commit()
     flash("Product deleted.", "success")
-    return redirect(url_for("products.list_products"))
+    return _safe_next_url("products.list_products")
 
     flash("Ð¢Ð¾Ð²Ð°Ñ€ ÑƒÐ´Ð°Ð»Ñ‘Ð½.", "success")
     return redirect(url_for("products.list_products"))
@@ -1183,11 +1602,11 @@ def update_product_info(product_id: int):
 
     if image_path is False:
         flash("Недопустимый формат обычного фото товара.", "danger")
-        return redirect(url_for("products.list_products"))
+        return _safe_next_url("products.list_products")
 
     if website_image_path is False:
         flash("Недопустимый формат фото для сайта.", "danger")
-        return redirect(url_for("products.list_products"))
+        return _safe_next_url("products.list_products")
 
     product = service.update_product_info(
         factory_id=factory_id,
@@ -1201,7 +1620,11 @@ def update_product_info(product_id: int):
 
     if not product:
         flash("Товар не найден.", "danger")
-        return redirect(url_for("products.list_products"))
+        return _safe_next_url("products.list_products")
 
-    flash("Информация о товаре обновлена.", "success")
-    return redirect(url_for("products.list_products"))
+    analysis_status, _analysis_reason = _refresh_garment_analysis(product)
+    if analysis_status == "analyzed":
+        flash("Информация о товаре обновлена и карта деталей пересобрана.", "success")
+    else:
+        flash("Информация о товаре обновлена.", "success")
+    return _safe_next_url("products.list_products")

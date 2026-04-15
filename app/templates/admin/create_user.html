@@ -44,8 +44,19 @@
       <form method="post" class="row g-3">
 
         <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">Full name</label>
+          <input type="text" name="full_name" class="form-control">
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label small mb-1">Phone</label>
+          <input type="text" name="phone" class="form-control" placeholder="+998 ...">
+        </div>
+
+        <div class="col-12 col-md-6">
           <label class="form-label small mb-1">{{ t('label_username') }}</label>
-          <input type="text" name="username" class="form-control" required>
+          <input type="text" name="username" class="form-control" placeholder="Leave blank to use phone">
+          <div class="form-text">Recommendation: use the staff phone number as the login username.</div>
         </div>
 
         <div class="col-12 col-md-6">

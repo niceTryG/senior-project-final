@@ -1,5 +1,5 @@
-{% extends "base.html" %}
-{% block title %}{{ t('shop_list_title') }} - Mini Moda{% endblock %}
+{% extends "shop/base_shop.html" %}
+{% block title %}{{ t('shop_list_title') }} - Adras{% endblock %}
 
 {% block content %}
 <style>
@@ -108,6 +108,7 @@
   }
 
   .mm-stock-card {
+    position: relative;
     border: 1px solid var(--mm-line);
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.82);
@@ -220,6 +221,38 @@
     background: rgba(13, 110, 253, 0.1);
     color: #0d6efd;
     border: 1px solid rgba(13, 110, 253, 0.15);
+  }
+
+  .mm-wholesale-dot {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    background: #f5c542;
+    box-shadow: 0 0 0 4px rgba(245, 197, 66, 0.18);
+  }
+
+  .mm-wholesale-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 8px;
+    font-size: 0.76rem;
+    color: #8a6a13;
+    background: rgba(245, 197, 66, 0.16);
+    border: 1px solid rgba(245, 197, 66, 0.26);
+    border-radius: 999px;
+    padding: 0.26rem 0.55rem;
+  }
+
+  .mm-wholesale-dot-inline {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #f5c542;
+    display: inline-block;
   }
 
   @media (max-width: 767.98px) {
@@ -466,6 +499,9 @@
       {% set source_factory_name = item.source_factory.name if item.source_factory else '—' %}
 
       <div class="mm-stock-card mb-2 {% if qty == 0 %}mm-empty{% elif low %}mm-low{% endif %}">
+        {% if item.wholesale_attention %}
+          <span class="mm-wholesale-dot" title="Wholesale demand needs attention"></span>
+        {% endif %}
         <div class="p-3">
           <div class="mm-stock-head">
             <div style="min-width: 0;">
@@ -483,6 +519,12 @@
               <div class="mt-2">
                 <span class="mm-source-badge"><i class="bi bi-building-gear me-1"></i>{{ source_factory_name }}</span>
               </div>
+              {% if item.wholesale_attention %}
+                <div class="mm-wholesale-note">
+                  <span class="mm-wholesale-dot-inline"></span>
+                  Wholesale requested: {{ item.wholesale_attention_qty }} pcs
+                </div>
+              {% endif %}
             </div>
 
             <div class="mm-stock-qtybox">
@@ -591,12 +633,18 @@
                   <div class="d-flex flex-column">
                     <div class="small fw-semibold">
                       {{ p.name }}
+                      {% if item.wholesale_attention %}
+                        <span class="mm-wholesale-dot-inline ms-1" title="Wholesale demand needs attention"></span>
+                      {% endif %}
                       {% if qty == 0 %}
                         <span class="badge bg-secondary ms-1">{{ t('shop_list_badge_no_stock') }}</span>
                       {% elif low %}
                         <span class="badge bg-danger ms-1">{{ t('shop_list_badge_low') }}</span>
                       {% endif %}
                     </div>
+                    {% if item.wholesale_attention %}
+                      <div class="small" style="color:#8a6a13; margin-top:4px;">Wholesale requested: {{ item.wholesale_attention_qty }} pcs</div>
+                    {% endif %}
                   </div>
                 </td>
 

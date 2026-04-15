@@ -1,0 +1,20 @@
+path: C:/Users/Ibrohim/Desktop/uni courses/2024/fall 2024/Games technology/Kivy project/fabric_inventory/training/garment_dataset
+train: images/train
+val: images/val
+nc: 15
+names:
+  0: neck_label
+  1: button
+  2: button_placket
+  3: zipper
+  4: drawcord
+  5: eyelet
+  6: pocket
+  7: kangaroo_pocket
+  8: chest_graphic
+  9: embroidery_patch
+  10: collar
+  11: cuff
+  12: hem_band
+  13: hood
+  14: waistband

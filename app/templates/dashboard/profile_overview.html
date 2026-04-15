@@ -1,0 +1,610 @@
+﻿{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('profile') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .adras-profile-shell {
+    display: grid;
+    gap: 18px;
+  }
+
+  .adras-profile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 22px;
+    border-radius: 28px;
+    background: linear-gradient(145deg, rgba(11, 28, 48, 0.96), rgba(28, 52, 88, 0.94));
+    color: #fff;
+  }
+
+  .adras-profile-top-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .adras-profile-top-copy {
+    min-width: 0;
+  }
+
+  .adras-profile-top-kicker {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.62);
+    font-weight: 700;
+  }
+
+          <h1 class="adras-profile-top-title">{{ t('profile_settings') }}</h1>
+    margin: 6px 0 0;
+    font-size: 26px;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    font-weight: 800;
+  }
+
+          <p class="adras-profile-top-sub">{{ user_chip_name }} &middot; {{ profile_role_label }} &middot; {{ profile_assignment_summary }}</p>
+    margin: 6px 0 0;
+    color: rgba(255,255,255,0.76);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .adras-profile-switch {
+    display: inline-grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding: 4px;
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .adras-profile-switch-link {
+    min-width: 148px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    border-radius: 14px;
+    text-decoration: none;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 800;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+  }
+
+  .adras-profile-switch-link.is-active {
+    background: #0f172a;
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .adras-profile-section-grid {
+    display: grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .adras-profile-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08);
+  }
+
+  .adras-profile-card-title {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.15;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .adras-profile-card-sub {
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .adras-profile-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .adras-profile-info-cell {
+    border-radius: 18px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    background: #fff;
+    padding: 14px 16px;
+  }
+
+  .adras-profile-info-k {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 700;
+  }
+
+  .adras-profile-info-v {
+    margin-top: 8px;
+    font-size: 16px;
+    line-height: 1.25;
+    font-weight: 800;
+    color: #0f172a;
+    word-break: break-word;
+  }
+
+  .adras-settings-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .adras-settings-group {
+    display: grid;
+    gap: 10px;
+  }
+
+  .adras-settings-group-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+
+  .adras-settings-stack {
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #fff;
+  }
+
+  .adras-settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .adras-settings-row:last-child {
+    border-bottom: 0;
+  }
+
+  .adras-settings-row-main {
+    min-width: 0;
+  }
+
+  .adras-settings-row-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.25;
+  }
+
+  .adras-settings-row-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.45;
+  }
+
+  .adras-settings-row-action {
+    flex-shrink: 0;
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .adras-language-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .adras-language-pill {
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #fff;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .adras-language-pill.is-active {
+    background: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+  }
+
+  @media (max-width: 960px) {
+    .adras-profile-section-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .adras-profile-top {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 16px;
+    }
+
+    .adras-profile-switch-link {
+      min-width: 0;
+    }
+
+    .adras-profile-info-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard-page">
+  <div class="adras-profile-shell">
+    <section class="adras-profile-top">
+      <div class="adras-profile-top-main">
+        <div class="adras-profile-avatar">{{ user_chip_initials }}</div>
+        <div class="adras-profile-top-copy">
+          <div class="adras-profile-top-kicker">{{ t('profile') }}</div>
+          <h1 class="adras-profile-top-title">{{ t('profile_settings') }}</h1>
+          <p class="adras-profile-top-sub">{{ user_chip_name }} &middot; {{ profile_role_label }} &middot; {{ profile_assignment_summary }}</p>
+        </div>
+      </div>
+
+      <div class="adras-profile-switch">
+        <a href="{{ url_for('main.profile_overview', tab='profile') }}" class="adras-profile-switch-link {% if profile_active_tab == 'profile' %}is-active{% endif %}">{{ t('profile') }}</a>
+        <a href="{{ url_for('main.profile_overview', tab='settings') }}" class="adras-profile-switch-link {% if profile_active_tab == 'settings' %}is-active{% endif %}">{{ t('more_settings_section') }}</a>
+      </div>
+    </section>
+
+    {% if profile_active_tab == 'profile' %}
+      <section class="adras-profile-section-grid">
+        <article class="adras-profile-card">
+          <h2 class="adras-profile-card-title">{{ t('identity_and_assignment') }}</h2>
+          <p class="adras-profile-card-sub">{{ t('identity_and_assignment_copy') }}</p>
+
+          <div class="adras-profile-info-grid">
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('display_name') }}</div>
+              <div class="adras-profile-info-v">{{ user_chip_name }}</div>
+            </div>
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('username') }}</div>
+              <div class="adras-profile-info-v">{{ profile_username }}</div>
+            </div>
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('phone') }}</div>
+              <div class="adras-profile-info-v">{{ profile_phone }}</div>
+            </div>
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('role_label') }}</div>
+              <div class="adras-profile-info-v">{{ profile_role_label }}</div>
+            </div>
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('workspace') }}</div>
+              <div class="adras-profile-info-v">{{ profile_workspace_name }}</div>
+            </div>
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('shop') }}</div>
+              <div class="adras-profile-info-v">{{ profile_shop_name }}</div>
+            </div>
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('telegram') }}</div>
+              <div class="adras-profile-info-v">{{ profile_telegram_status }}</div>
+            </div>
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('assignment_summary') }}</div>
+              <div class="adras-profile-info-v">{{ profile_assignment_summary }}</div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="adras-profile-card">
+          <h2 class="adras-profile-card-title">{{ profile_role_focus_title }}</h2>
+          <p class="adras-profile-card-sub">{{ profile_role_focus_summary }}</p>
+
+          <div class="adras-checklist" style="margin-top: 16px;">
+            {% for point in profile_role_focus_points %}
+              <div class="adras-checklist-row">
+                <span class="adras-checklist-dot ready"></span>
+                <span>{{ point }}</span>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="adras-profile-info-grid" style="margin-top: 18px;">
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('telegram_chat_id') }}</div>
+              <div class="adras-profile-info-v">{{ profile_telegram_chat_id }}</div>
+            </div>
+            <div class="adras-profile-info-cell">
+              <div class="adras-profile-info-k">{{ t('full_name') }}</div>
+              <div class="adras-profile-info-v">{{ profile_full_name }}</div>
+            </div>
+          </div>
+        </aside>
+      </section>
+    {% else %}
+      <div class="adras-settings-list">
+        <section class="adras-profile-section-grid">
+          <article class="adras-profile-card">
+            <h2 class="adras-profile-card-title">{{ t('account_settings') }}</h2>
+            <p class="adras-profile-card-sub">{{ t('account_settings_copy') }}</p>
+
+            <details class="adras-disclosure" {% if profile_disclosure_state.account %}open{% endif %}>
+        <summary class="adras-disclosure-trigger">
+          <span class="adras-disclosure-copy">
+            <strong>{{ t('edit_account_identity') }}</strong>
+            <span>{{ t('edit_account_identity_copy') }}</span>
+          </span>
+          <span class="adras-disclosure-chip">{{ t('edit') }}</span>
+        </summary>
+
+        <div class="adras-disclosure-body">
+          <form method="post" class="adras-settings-form">
+            <input type="hidden" name="tab" value="settings">
+            {{ profile_form.hidden_tag() }}
+
+            <div class="adras-form-grid">
+              <div class="adras-form-field">
+                <label class="adras-form-label" for="{{ profile_form.full_name.id }}">{{ t('full_name') }}</label>
+                {{ profile_form.full_name(class="adras-form-input") }}
+                {% for error in profile_form.full_name.errors %}
+                  <div class="adras-form-error">{{ error }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="adras-form-field">
+                <label class="adras-form-label" for="{{ profile_form.phone.id }}">{{ t('phone') }}</label>
+                {{ profile_form.phone(class="adras-form-input") }}
+                <div class="adras-form-help">{{ t('profile_phone_help') }}</div>
+                {% for error in profile_form.phone.errors %}
+                  <div class="adras-form-error">{{ error }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="adras-form-field adras-form-field-full">
+                <label class="adras-form-label" for="{{ profile_form.username.id }}">{{ t('username') }}</label>
+                {{ profile_form.username(class="adras-form-input") }}
+                <div class="adras-form-help">{{ t('profile_username_help') }}</div>
+                {% for error in profile_form.username.errors %}
+                  <div class="adras-form-error">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="adras-form-actions">
+              {{ profile_form.submit_profile(class="ad-btn ad-btn-primary") }}
+            </div>
+          </form>
+        </div>
+      </details>
+          </article>
+
+          <aside class="adras-profile-card">
+            <h2 class="adras-profile-card-title">{{ t('security') }}</h2>
+            <p class="adras-profile-card-sub">{{ t('security_copy') }}</p>
+
+            <details class="adras-disclosure" {% if profile_disclosure_state.password %}open{% endif %}>
+          <summary class="adras-disclosure-trigger">
+            <span class="adras-disclosure-copy">
+              <strong>{{ t('change_password') }}</strong>
+              <span>{{ t('change_password_copy') }}</span>
+            </span>
+            <span class="adras-disclosure-chip">{{ t('secure') }}</span>
+          </summary>
+
+          <div class="adras-disclosure-body">
+            <form method="post" class="adras-settings-form">
+              <input type="hidden" name="tab" value="settings">
+              {{ password_form.hidden_tag() }}
+
+              <div class="adras-form-grid">
+                <div class="adras-form-field adras-form-field-full">
+                  <label class="adras-form-label" for="{{ password_form.current_password.id }}">{{ t('current_password') }}</label>
+                  {{ password_form.current_password(class="adras-form-input") }}
+                  {% for error in password_form.current_password.errors %}
+                    <div class="adras-form-error">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <div class="adras-form-field">
+                  <label class="adras-form-label" for="{{ password_form.new_password.id }}">{{ t('new_password') }}</label>
+                  {{ password_form.new_password(class="adras-form-input") }}
+                  {% for error in password_form.new_password.errors %}
+                    <div class="adras-form-error">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <div class="adras-form-field">
+                  <label class="adras-form-label" for="{{ password_form.confirm_new_password.id }}">{{ t('confirm_password') }}</label>
+                  {{ password_form.confirm_new_password(class="adras-form-input") }}
+                  {% for error in password_form.confirm_new_password.errors %}
+                    <div class="adras-form-error">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="adras-form-actions">
+                {{ password_form.submit_password(class="ad-btn ad-btn-secondary") }}
+              </div>
+            </form>
+          </div>
+            </details>
+
+            <div class="adras-settings-group" style="margin-top: 18px;">
+              <div class="adras-settings-group-title">{{ t('switch_language') }}</div>
+              <div class="adras-language-pills">
+                <a href="{{ url_for('switch_language', lang_code='en') }}" class="adras-language-pill {% if current_lang == 'en' %}is-active{% endif %}">{{ t('language_english') }}</a>
+                <a href="{{ url_for('switch_language', lang_code='ru') }}" class="adras-language-pill {% if current_lang == 'ru' %}is-active{% endif %}">{{ t('language_russian') }}</a>
+                <a href="{{ url_for('switch_language', lang_code='uz') }}" class="adras-language-pill {% if current_lang == 'uz' %}is-active{% endif %}">{{ t('language_uzbek') }}</a>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="adras-profile-section-grid">
+          <article class="adras-profile-card">
+            <h2 class="adras-profile-card-title">{{ t('notifications_and_activity') }}</h2>
+            <p class="adras-profile-card-sub">Communication, Telegram linking, and recent account activity live here.</p>
+
+            <details class="adras-disclosure" {% if profile_disclosure_state.telegram %}open{% endif %}>
+        <summary class="adras-disclosure-trigger">
+          <span class="adras-disclosure-copy">
+            <strong>{{ t('telegram_alerts') }}</strong>
+            <span>{{ t('telegram_alerts_copy') }}</span>
+          </span>
+          <span class="adras-disclosure-chip">{{ profile_telegram_status }}</span>
+        </summary>
+
+          <div class="adras-disclosure-body">
+            <div class="adras-notice-strip">
+              <div>
+              <div class="adras-notice-title">{{ t('telegram_status') }}: {{ profile_telegram_status }}</div>
+              <div class="adras-notice-copy">
+                {% if active_telegram_link %}
+                  {{ t('telegram_status_linked_copy') }}
+                {% else %}
+                  {{ t('telegram_status_not_linked_copy') }}
+                {% endif %}
+              </div>
+            </div>
+
+            <form method="post">
+              <input type="hidden" name="tab" value="settings">
+              {{ telegram_form.hidden_tag() }}
+              {{ telegram_form.submit_telegram_code(class="ad-btn ad-btn-primary") }}
+            </form>
+          </div>
+
+          {% if active_telegram_code %}
+            <div class="adras-code-card">
+              <div class="adras-code-label">{{ t('active_link_code') }}</div>
+              <div class="adras-code-value">{{ active_telegram_code.code }}</div>
+              <div class="adras-code-sub">
+                {{ t('use_link_code_before') }} <code>/link {{ active_telegram_code.code }}</code>
+                {{ t('before_label') }}
+                {{ active_telegram_code.expires_at.strftime('%Y-%m-%d %H:%M') if active_telegram_code.expires_at else '-' }}.
+              </div>
+            </div>
+            {% endif %}
+          </div>
+            </details>
+
+            <details class="adras-disclosure" {% if profile_disclosure_state.activity %}open{% endif %}>
+        <summary class="adras-disclosure-trigger">
+          <span class="adras-disclosure-copy">
+            <strong>{{ t('recent_account_activity') }}</strong>
+            <span>{{ t('recent_account_activity_copy') }}</span>
+          </span>
+          <span class="adras-disclosure-chip">{{ t('history') }}</span>
+        </summary>
+
+        <div class="adras-disclosure-body">
+          {% if recent_activity %}
+            <div class="adras-activity-list">
+              {% for item in recent_activity %}
+                <div class="adras-activity-row">
+                  <div class="adras-activity-dot"></div>
+                  <div class="adras-activity-body">
+                    <div class="adras-activity-top">
+                      <strong>{{ item.title }}</strong>
+                      <span>{{ item.timestamp }}</span>
+                    </div>
+                    <div class="adras-activity-meta">{{ item.entity }}</div>
+                    <div class="adras-activity-copy">{{ item.comment }}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="adras-readonly-state">
+              <div class="adras-readonly-state-title">{{ t('no_recent_activity_yet') }}</div>
+              <div class="adras-readonly-state-copy">
+                {{ t('no_recent_activity_yet_copy') }}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+            </details>
+          </article>
+
+          <aside class="adras-profile-card">
+            <h2 class="adras-profile-card-title">{{ t('quick_actions') }}</h2>
+            <p class="adras-profile-card-sub">Settings shortcuts and account actions.</p>
+
+            <div class="adras-settings-group">
+              <div class="adras-settings-stack">
+                <a href="{{ url_for('main.workspace_details') }}" class="adras-settings-row" style="text-decoration:none;">
+                  <div class="adras-settings-row-main">
+                    <div class="adras-settings-row-title">{{ t('open_workspace') }}</div>
+                    <div class="adras-settings-row-sub">{{ t('open_workspace_sub') }}</div>
+                  </div>
+                  <div class="adras-settings-row-action">&rsaquo;</div>
+                </a>
+                <a href="{{ url_for('main.command_center') }}" class="adras-settings-row" style="text-decoration:none;">
+                  <div class="adras-settings-row-main">
+                    <div class="adras-settings-row-title">{{ t('open_command_center') }}</div>
+                    <div class="adras-settings-row-sub">{{ t('open_command_center_sub') }}</div>
+                  </div>
+                  <div class="adras-settings-row-action">&rsaquo;</div>
+                </a>
+                {% if profile_can_view_workspace_activity %}
+                  <a href="{{ url_for('main.workspace_activity') }}" class="adras-settings-row" style="text-decoration:none;">
+                    <div class="adras-settings-row-main">
+                      <div class="adras-settings-row-title">{{ t('open_activity_center') }}</div>
+                      <div class="adras-settings-row-sub">{{ t('open_activity_center_sub') }}</div>
+                    </div>
+                    <div class="adras-settings-row-action">&rsaquo;</div>
+                  </a>
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}" class="adras-settings-row" style="text-decoration:none;">
+                  <div class="adras-settings-row-main">
+                    <div class="adras-settings-row-title">{{ t('sign_out') }}</div>
+                    <div class="adras-settings-row-sub">{{ t('sign_out_sub') }}</div>
+                  </div>
+                  <div class="adras-settings-row-action">&rsaquo;</div>
+                </a>
+              </div>
+            </div>
+
+            <div class="adras-settings-group" style="margin-top: 18px;">
+              <div class="adras-settings-group-title">{{ t('next_steps_i_would_want') }}</div>
+              <div class="adras-checklist">
+                {% for step in profile_next_steps %}
+                  <div class="adras-checklist-row">
+                    <span class="adras-checklist-dot warn"></span>
+                    <span>{{ step }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </aside>
+        </section>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

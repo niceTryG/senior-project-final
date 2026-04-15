@@ -1,0 +1,108 @@
+{% extends "superadmin/base.html" %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block page_crumb %}All user accounts across the platform{% endblock %}
+
+{% block content %}
+<div class="sa-page-header">
+  <div>
+    <div class="sa-page-header-title">Users</div>
+    <div class="sa-page-header-sub">{{ all_users|length }} result{{ 's' if all_users|length != 1 else '' }}</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<form method="get" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;align-items:center;">
+  <div class="sa-search" style="flex:1;min-width:200px;max-width:320px;">
+    <span style="color:var(--sa-muted);">🔍</span>
+    <input name="q" value="{{ q }}" placeholder="Name, username or phone…" autocomplete="off" />
+  </div>
+
+  <select name="role" class="sa-input" style="width:auto;min-width:140px;">
+    <option value="">All Roles</option>
+    {% for r in ['admin','manager','accountant','shop','viewer'] %}
+    <option value="{{ r }}" {% if role_filter == r %}selected{% endif %}>{{ r|capitalize }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="factory_id" class="sa-input" style="width:auto;min-width:180px;">
+    <option value="">All Tenants</option>
+    {% for f in factories %}
+    <option value="{{ f.id }}" {% if factory_filter == f.id|string %}selected{% endif %}>{{ f.name }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit" class="sa-btn sa-btn-purple">Filter</button>
+  {% if q or role_filter or factory_filter %}
+  <a href="{{ url_for('superadmin.users') }}" class="sa-btn sa-btn-ghost">Clear</a>
+  {% endif %}
+</form>
+
+<div class="sa-panel">
+  <table class="sa-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>User</th>
+        <th>Role</th>
+        <th>Tenant</th>
+        <th>Phone</th>
+        <th>Last Login</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in all_users %}
+      {% set initials = (u.full_name[:1] if u.full_name else u.username[:1])|upper %}
+      <tr>
+        <td style="color:var(--sa-muted);font-size:.78rem;">{{ u.id }}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="sa-avatar sa-avatar-purple">{{ initials }}</div>
+            <div>
+              <div style="font-weight:700;">{{ u.full_name or u.username }}</div>
+              {% if u.full_name %}<div style="font-size:.74rem;color:var(--sa-muted);">{{ u.username }}</div>{% endif %}
+            </div>
+          </div>
+        </td>
+        <td>
+          {% if u.role == 'admin' %}<span class="sa-badge sa-badge-gold">Admin</span>
+          {% elif u.role == 'manager' %}<span class="sa-badge sa-badge-purple">Manager</span>
+          {% elif u.role == 'shop' %}<span class="sa-badge sa-badge-green">Shop</span>
+          {% elif u.role == 'accountant' %}<span class="sa-badge sa-badge-gray">Accountant</span>
+          {% else %}<span class="sa-badge sa-badge-gray">{{ u.role }}</span>{% endif %}
+        </td>
+        <td style="font-size:.82rem;color:var(--sa-muted);">
+          {% if u.factory %}
+          <a href="{{ url_for('superadmin.tenant_detail', tenant_id=u.factory.id) }}" style="color:var(--sa-purple);">{{ u.factory.name }}</a>
+          {% elif u.shop %}
+          <span>{{ u.shop.name }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td style="font-size:.82rem;color:var(--sa-muted);">{{ u.phone or '—' }}</td>
+        <td style="font-size:.8rem;color:var(--sa-muted);">
+          {{ u.last_login_at.strftime('%d %b %Y') if u.last_login_at else 'Never' }}
+        </td>
+        <td>
+          {% if u.is_login_locked() %}
+          <span class="sa-badge sa-badge-red">Locked</span>
+          {% else %}
+          <span class="sa-badge sa-badge-green">Active</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{{ url_for('superadmin.user_detail', user_id=u.id) }}" class="sa-btn sa-btn-ghost" style="padding:5px 12px;font-size:.78rem;">
+            View →
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="8" style="text-align:center;padding:32px;color:var(--sa-muted);">No users found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

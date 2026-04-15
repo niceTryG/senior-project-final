@@ -1,0 +1,396 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('production_planning') }}{% endblock %}
+{% block topbar_title %}{{ t('production_planning') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <section class="adras-hero-card">
+    <div class="adras-hero-left">
+      <h1 class="adras-hero-title">{{ t('production_planning') }}</h1>
+      <p class="dashboard-subtitle">
+        {{ t('plan_product_target_subtitle') }}
+      </p>
+      {% if source_order_item %}
+        <div class="adras-focus-box mt-3">
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>
+              {{ t('planning_from_pending_order') }} #{{ source_order_item.order_id }}:
+              {{ source_order_item.product_name }} x {{ source_order_item.qty_remaining }}
+              {% if source_order_item.customer_name %}{{ t('for_customer') }} {{ source_order_item.customer_name }}{% endif %}
+            </span>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="adras-kpi-grid">
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('target_qty_label') }}</div>
+        <div class="adras-kpi-number">{{ target_qty or 0 }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('max_buildable') }}</div>
+        <div class="adras-kpi-number">{{ max_producible_units or 0 }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('shortages_label') }}</div>
+        <div class="adras-kpi-number">{{ shortage_rows|length }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card adras-kpi-card-dark">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('plan_status_label') }}</div>
+        <div class="adras-kpi-number">
+          {% if can_fulfill_plan %}
+            {{ t('ready_label') }}
+          {% elif selected_product %}
+            {{ t('blocked_label') }}
+          {% else %}
+            -
+          {% endif %}
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="adras-main-grid">
+    <div class="adras-main-left">
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('plan_production_run') }}</div>
+
+        <form method="get" class="d-grid" style="gap:12px;">
+          {% if order_item_id %}
+            <input type="hidden" name="order_item_id" value="{{ order_item_id }}">
+          {% endif %}
+
+          <div>
+            <label class="form-label">{{ t('products') }}</label>
+            <select name="product_id" class="form-control-auth" required>
+              <option value="">{{ t('select_product') }}</option>
+              {% for product in products %}
+                <option value="{{ product.id }}" {% if selected_product_id == product.id %}selected{% endif %}>
+                  {{ product.name }}{% if product.category %} · {{ product.category }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label">{{ t('target_quantity_label') }}</label>
+            <input type="number" min="1" name="target_qty" value="{{ target_qty or 1 }}" class="form-control-auth" required>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="auth-btn">{{ t('run_plan') }}</button>
+            <a href="{{ url_for('main.low_stock') }}" class="btn btn-outline-light">{{ t('low_stock_title') }}</a>
+            <a href="{{ url_for('main.composition') }}" class="btn btn-outline-light">{{ t('open_composition') }}</a>
+            <a href="{{ url_for('main.production_plan_history') }}" class="btn btn-outline-light">{{ t('saved_plans') }}</a>
+            {% if selected_product %}
+              <a
+                href="{{ url_for('main.production_plan_xlsx', product_id=selected_product_id, target_qty=target_qty, order_item_id=order_item_id) }}"
+                class="btn btn-outline-light"
+              >
+                {{ t('export_xlsx') }}
+              </a>
+            {% endif %}
+            {% if source_order_item %}
+              <a href="{{ url_for('main.production_plan') }}" class="btn btn-outline-light">{{ t('clear_order_source') }}</a>
+            {% endif %}
+          </div>
+        </form>
+
+        {% if selected_product %}
+          <form method="post" action="{{ url_for('main.production_plan_save') }}" class="d-grid mt-3" style="gap:10px;">
+            <input type="hidden" name="product_id" value="{{ selected_product_id }}">
+            <input type="hidden" name="target_qty" value="{{ target_qty }}">
+            {% if order_item_id %}
+              <input type="hidden" name="order_item_id" value="{{ order_item_id }}">
+            {% endif %}
+            <div>
+              <label class="form-label">{{ t('save_note_label') }}</label>
+              <input type="text" name="note" class="form-control-auth" maxlength="255" placeholder="{{ t('save_note_placeholder') }}">
+            </div>
+            <div>
+              <button type="submit" class="auth-btn">{{ t('save_plan') }}</button>
+            </div>
+          </form>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('material_requirement_breakdown') }}</div>
+          {% if selected_product %}
+            <span class="ad-chip {% if can_fulfill_plan %}chip-up{% else %}chip-warn{% endif %}">
+              {{ selected_product.name }}
+            </span>
+          {% endif %}
+        </div>
+
+        {% if plan_rows %}
+          <div class="adras-focus-box">
+            {% for item in plan_rows %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">
+                  {{ (item.material_type or 'fabric')|replace('_', ' ')|title }} · {{ item.material_name }}
+                </div>
+                <div class="adras-action-card-sub">
+                  {{ t('per_unit') }}: {{ "%.2f"|format(item.required_per_unit or 0) }} {{ item.unit }}
+                  · {{ t('total_needed') }}: {{ "%.2f"|format(item.total_required or 0) }} {{ item.unit }}
+                </div>
+                <div class="adras-action-card-sub">
+                  {{ t('available_label') }}: {{ "%.2f"|format(item.available or 0) }} {{ item.unit }}
+                  · {{ t('supports_units').format(count=item.supported_units or 0) }}
+                  {% if item.shortage_qty > 0 %}
+                    · {{ t('short_by_label').format(qty='%.2f'|format(item.shortage_qty or 0), unit=item.unit) }}
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% elif selected_product %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_composition_items_for_product') }}</span>
+            </div>
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('select_product_to_plan') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <div class="adras-main-right">
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('plan_result') }}</div>
+
+        <div class="adras-focus-box">
+          {% if selected_product %}
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('selected_product_label') }}: {{ selected_product.name }}</span>
+            </div>
+            {% if source_order_item %}
+              <div class="adras-focus-item">
+                <span class="adras-focus-dot"></span>
+                <span>
+                  {{ t('triggered_by_pending_order') }} #{{ source_order_item.order_id }}
+                  {% if source_order_item.customer_name %}{{ t('for_customer') }} {{ source_order_item.customer_name }}{% endif %}
+                </span>
+              </div>
+            {% endif %}
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('target_quantity_label') }}: {{ target_qty or 0 }}</span>
+            </div>
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('maximum_buildable_from_stock') }}: {{ max_producible_units or 0 }}</span>
+            </div>
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>
+                {% if can_fulfill_plan %}
+                  {{ t('plan_can_fulfill') }}
+                {% elif plan_rows %}
+                  {{ t('plan_blocked_missing_materials') }}
+                {% else %}
+                  {{ t('add_composition_first') }}
+                {% endif %}
+              </span>
+            </div>
+          {% else %}
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_plan_run_yet') }}</span>
+            </div>
+          {% endif %}
+        </div>
+      </article>
+
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('blocking_materials') }}</div>
+
+        {% if blocking_rows %}
+          <div class="adras-focus-box">
+            {% for item in blocking_rows %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">
+                  {{ (item.material_type or 'fabric')|replace('_', ' ')|title }} · {{ item.material_name }}
+                </div>
+                <div class="adras-action-card-sub">
+                  {% if item.status == 'blocked' %}{{ t('no_stock_available') }}{% else %}{{ t('insufficient_stock') }}{% endif %}
+                  · {{ t('total_needed') }} {{ "%.2f"|format(item.total_required or 0) }} {{ item.unit }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_blocking_materials_now') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('pending_shop_order_items') }}</div>
+          <a href="{{ url_for('shop.factory_pending_orders') }}" class="btn btn-outline-light btn-sm">{{ t('open_factory_queue') }}</a>
+        </div>
+
+        {% if pending_order_items %}
+          <div class="adras-focus-box">
+            {% for row in pending_order_items %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">
+                  {{ t('order_number_label') }}{{ row.order_id }} · {{ row.product_name }}
+                </div>
+                <div class="adras-action-card-sub">
+                  {{ t('remaining_label') }}: {{ row.qty_remaining }}
+                  {% if row.category %} · {{ row.category }}{% endif %}
+                  {% if row.customer_name %} · {{ row.customer_name }}{% endif %}
+                </div>
+                <div class="mt-2">
+                  <a
+                    href="{{ url_for('main.production_plan', order_item_id=row.item_id) }}"
+                    class="btn btn-outline-light btn-sm"
+                  >
+                    {{ t('plan_this_order') }}
+                  </a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_pending_shop_order_items_now') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('recent_saved_plans') }}</div>
+          <a href="{{ url_for('main.production_plan_history') }}" class="btn btn-outline-light btn-sm">{{ t('view_all') }}</a>
+        </div>
+
+        {% if recent_saved_plans %}
+          <div class="adras-focus-box">
+            {% for row in recent_saved_plans %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">
+                  {{ row.product_name }}
+                  {% if row.can_fulfill_plan %}
+                    <span class="ad-chip chip-up ms-2">{{ t('ready_label') }}</span>
+                  {% else %}
+                    <span class="ad-chip chip-warn ms-2">{{ t('blocked_label') }}</span>
+                  {% endif %}
+                </div>
+                <div class="adras-action-card-sub">
+                  {{ t('target_short_label') }} {{ row.target_qty }} · {{ t('max_buildable_short') }} {{ row.max_producible_units }} · {{ t('shortages_short') }} {{ row.shortage_count }}
+                </div>
+                <div class="adras-action-card-sub">
+                  {% if row.order_id %}{{ t('order_number_label') }}{{ row.order_id }}{% if row.customer_name %} · {{ row.customer_name }}{% endif %}{% else %}{{ t('manual_plan') }}{% endif %}
+                  {% if row.note %} · {{ row.note }}{% endif %}
+                </div>
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                  <a href="{{ url_for('main.production_plan', product_id=row.product_id, target_qty=row.target_qty, order_item_id=row.order_item_id) }}" class="btn btn-outline-light btn-sm">
+                    {{ t('reopen_label') }}
+                  </a>
+                  <a href="{{ url_for('main.production_plan_xlsx', product_id=row.product_id, target_qty=row.target_qty, order_item_id=row.order_item_id) }}" class="btn btn-outline-light btn-sm">
+                    {{ t('export_label') }}
+                  </a>
+                  {% if not row.can_fulfill_plan %}
+                    <form method="post" action="{{ url_for('main.production_plan_create_task', plan_id=row.id) }}">
+                      <button type="submit" class="btn btn-outline-light btn-sm">{{ t('create_task') }}</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_saved_plans_run_and_save') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('purchase_list_for_this_plan') }}</div>
+
+        {% if purchase_rows %}
+          <div class="adras-focus-box">
+            {% for item in purchase_rows %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">
+                  {{ (item.material_type or 'fabric')|replace('_', ' ')|title }} · {{ item.material_name }}
+                </div>
+                <div class="adras-action-card-sub">
+                  {{ t('missing_for_target') }}: {{ "%.2f"|format(item.shortage_qty or 0) }} {{ item.unit }}
+                  · {{ t('suggested_buy') }}: {{ "%.2f"|format(item.suggested_purchase_qty or 0) }} {{ item.unit }}
+                </div>
+                <div class="adras-action-card-sub">
+                  {{ t('purchase_suggestion_restores_min_stock').format(qty='%.2f'|format(item.min_stock_quantity or 0), unit=item.unit) }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_purchase_list_needed') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel adras-snapshot-dark">
+        <div class="adras-panel-title adras-panel-title-light">{{ t('founder_questions') }}</div>
+
+        <div class="adras-snapshot-dark-box">
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-yellow"></span>
+            <span>{{ t('founder_question_1') }}</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-cyan"></span>
+            <span>{{ t('founder_question_2') }}</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-blue"></span>
+            <span>{{ t('founder_question_3') }}</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

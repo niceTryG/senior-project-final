@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh">
+  <div class="col-md-5 bg-white p-4 rounded shadow-lg">
+    <h2 class="mb-2">Security check</h2>
+    <p class="text-muted mb-4">
+      This account is using a temporary password. Set a new private password before entering the workspace.
+    </p>
+
+    <div class="border rounded p-3 mb-4 bg-light">
+      <div><strong>Login:</strong> {{ current_user.username }}</div>
+      <div><strong>Name:</strong> {{ user_display_name(current_user) }}</div>
+      <div><strong>Workspace:</strong> {{ workspace_name(current_user) }}</div>
+    </div>
+
+    <form method="post">
+      {{ form.hidden_tag() }}
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.new_password.id }}">New password</label>
+        {{ form.new_password(class="form-control", autocomplete="new-password") }}
+        {% for error in form.new_password.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.confirm_new_password.id }}">Confirm new password</label>
+        {{ form.confirm_new_password(class="form-control", autocomplete="new-password") }}
+        {% for error in form.confirm_new_password.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100">
+        {{ form.submit_security_password.label.text }}
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,938 @@
+{% extends "sales/base_sales.html" %}
+
+{% block title %}{{ t('create_sale') }}{% endblock %}
+
+{% block content %}
+<style>
+  .mm-sales-modern-page {
+    --mm-bg-a: #07111f;
+    --mm-bg-b: #0c1b30;
+    --mm-card: rgba(255, 255, 255, 0.06);
+    --mm-card-2: rgba(255, 255, 255, 0.08);
+    --mm-line: rgba(255, 255, 255, 0.08);
+    --mm-text: #f8fafc;
+    --mm-muted: rgba(248, 250, 252, 0.68);
+    --mm-soft: rgba(248, 250, 252, 0.84);
+    --mm-accent: #60a5fa;
+    --mm-accent-2: #93c5fd;
+    --mm-good: #22c55e;
+    --mm-warn: #f59e0b;
+    --mm-danger: #ef4444;
+    --mm-radius-xl: 28px;
+    --mm-radius-lg: 22px;
+    --mm-radius-md: 16px;
+    --mm-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    color: var(--mm-text);
+    padding-bottom: 28px;
+  }
+
+  .mm-sales-modern-page a {
+    text-decoration: none;
+  }
+
+  .mm-sales-shell {
+    display: grid;
+    gap: 18px;
+  }
+
+  .mm-sales-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--mm-radius-xl);
+    padding: 24px;
+    background:
+      radial-gradient(circle at top left, rgba(245, 158, 11, 0.18), transparent 28%),
+      radial-gradient(circle at top right, rgba(96, 165, 250, 0.18), transparent 30%),
+      linear-gradient(135deg, var(--mm-bg-a), var(--mm-bg-b));
+    box-shadow: var(--mm-shadow);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .mm-sales-hero-label {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.60);
+    margin-bottom: 10px;
+  }
+
+  .mm-sales-hero-title {
+    margin: 0;
+    font-size: 34px;
+    line-height: 1.06;
+    font-weight: 800;
+  }
+
+  .mm-sales-hero-sub {
+    margin: 10px 0 0;
+    color: var(--mm-muted);
+    max-width: 760px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .mm-sales-toolbar {
+    display: grid;
+    grid-template-columns: 1.5fr 0.8fr auto auto;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .mm-field,
+  .mm-select,
+  .mm-btn,
+  .mm-cart-input {
+    border: 1px solid rgba(255,255,255,0.08);
+    outline: none;
+    border-radius: 16px;
+    min-height: 50px;
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    padding: 0 16px;
+  }
+
+  .mm-field::placeholder {
+    color: rgba(255,255,255,0.45);
+  }
+
+  .mm-select option {
+    color: #111827;
+  }
+
+  .mm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.18s ease;
+    white-space: nowrap;
+  }
+
+  .mm-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .mm-btn-primary {
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    border-color: rgba(59,130,246,0.36);
+  }
+
+  .mm-btn-ghost {
+    background: rgba(255,255,255,0.04);
+  }
+
+  .mm-sales-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) 390px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .mm-panel {
+    border-radius: var(--mm-radius-xl);
+    background: linear-gradient(180deg, rgba(8, 15, 28, 0.94), rgba(11, 20, 36, 0.98));
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: var(--mm-shadow);
+    overflow: hidden;
+  }
+
+  .mm-panel-head {
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid var(--mm-line);
+  }
+
+  .mm-panel-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.52);
+    margin-bottom: 8px;
+  }
+
+  .mm-panel-title {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .mm-panel-sub {
+    margin: 8px 0 0;
+    color: var(--mm-muted);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .mm-product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .mm-product-card {
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 16px;
+    display: grid;
+    gap: 14px;
+    min-height: 220px;
+  }
+
+  .mm-product-top {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mm-product-name {
+    font-size: 18px;
+    line-height: 1.2;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+  }
+
+  .mm-product-meta {
+    font-size: 13px;
+    color: var(--mm-muted);
+    line-height: 1.55;
+    display: grid;
+    gap: 4px;
+  }
+
+  .mm-product-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .mm-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    border-radius: 999px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+  }
+
+  .mm-pill-stock-ok {
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+    border-color: rgba(34,197,94,0.16);
+  }
+
+  .mm-pill-stock-low {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fcd34d;
+    border-color: rgba(245,158,11,0.16);
+  }
+
+  .mm-pill-stock-zero {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    border-color: rgba(239,68,68,0.16);
+  }
+
+  .mm-product-bottom {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: end;
+    margin-top: auto;
+  }
+
+  .mm-product-price {
+    display: grid;
+    gap: 4px;
+  }
+
+  .mm-product-price-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.52);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .mm-product-price-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .mm-add-btn {
+    min-width: 118px;
+    min-height: 46px;
+    border: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .mm-add-btn:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+  }
+
+  .mm-empty-box {
+    margin: 18px;
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px dashed rgba(255,255,255,0.10);
+    color: var(--mm-muted);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .mm-cart-panel {
+    position: sticky;
+    top: 18px;
+  }
+
+  .mm-cart-wrap {
+    display: grid;
+    gap: 0;
+  }
+
+  .mm-cart-body {
+    padding: 18px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .mm-cart-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mm-cart-item {
+    border-radius: 18px;
+    padding: 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.04);
+    display: grid;
+    gap: 10px;
+  }
+
+  .mm-cart-item-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .mm-cart-item-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.3;
+  }
+
+  .mm-cart-item-meta {
+    font-size: 12px;
+    color: var(--mm-muted);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .mm-cart-remove {
+    border: 0;
+    background: transparent;
+    color: #fca5a5;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .mm-cart-row {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .mm-cart-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.60);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .mm-cart-input {
+    min-height: 42px;
+    width: 100%;
+    padding: 0 12px;
+  }
+
+  .mm-cart-summary {
+    border-top: 1px solid var(--mm-line);
+    padding-top: 14px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .mm-sum-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    color: var(--mm-soft);
+    font-size: 14px;
+  }
+
+  .mm-sum-row strong {
+    color: #fff;
+    font-size: 16px;
+  }
+
+  .mm-customer-box {
+    border-top: 1px solid var(--mm-line);
+    padding-top: 14px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .mm-submit-btn {
+    min-height: 54px;
+    border: 0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .mm-submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .mm-note {
+    font-size: 12px;
+    color: var(--mm-muted);
+    line-height: 1.55;
+  }
+
+  .mm-hidden-form {
+    display: none;
+  }
+
+  @media (max-width: 1100px) {
+    .mm-sales-main {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-cart-panel {
+      position: static;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .mm-sales-hero {
+      padding: 18px;
+      border-radius: 22px;
+    }
+
+    .mm-sales-hero-title {
+      font-size: 28px;
+    }
+
+    .mm-sales-toolbar {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-product-grid {
+      grid-template-columns: 1fr;
+      padding: 14px;
+    }
+
+    .mm-panel-head,
+    .mm-cart-body {
+      padding: 14px;
+    }
+  }
+</style>
+
+<div class="mm-sales-modern-page">
+  <div class="mm-sales-shell">
+    {% if sale_success %}
+      <section class="mm-panel" style="border-color: rgba(34,197,94,0.18);">
+        <div class="mm-cart-body">
+          <div
+            style="
+              border-radius: 20px;
+              padding: 18px;
+              background: rgba(34,197,94,0.10);
+              border: 1px solid rgba(34,197,94,0.18);
+              display: grid;
+              gap: 8px;
+            "
+          >
+            <div style="font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:#86efac;">
+              {{ t('sale_completed') }}
+            </div>
+            <div style="font-size:24px; font-weight:800; color:#ffffff;">
+              {{ t('sale_saved_successfully') }}
+            </div>
+            <div style="color: rgba(248,250,252,0.82); font-size:14px; line-height:1.6;">
+              {{ t('items_sold_label') }}: <strong>{{ sale_success.items_sold }}</strong>
+              {% if sale_success.customer_name %}
+                · {{ t('customer') }}: <strong>{{ sale_success.customer_name }}</strong>
+              {% endif %}
+              {% if sale_success.customer_phone %}
+                · {{ t('phone') }}: <strong>{{ sale_success.customer_phone }}</strong>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    <section class="mm-sales-hero">
+      <div class="mm-sales-hero-label">{{ t('sales_workspace') }}</div>
+      <h1 class="mm-sales-hero-title">{{ t('create_sale') }}</h1>
+      <p class="mm-sales-hero-sub">
+        {{ t('create_sale_modern_subtitle') }}
+      </p>
+
+      <form method="GET" class="mm-sales-toolbar">
+        <input
+          type="text"
+          name="q"
+          value="{{ q or '' }}"
+          class="mm-field"
+          placeholder="{{ t('create_sale_search_placeholder') }}"
+        />
+
+        <select name="factory_id" class="mm-select">
+          <option value="">{{ t('all_factories') }}</option>
+          {% for factory in visible_factories %}
+            <option
+              value="{{ factory.id }}"
+              {% if factory_filter == factory.id %}selected{% endif %}
+            >
+              {{ factory.name }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <button type="submit" class="mm-btn mm-btn-primary">{{ t('search') }}</button>
+        <a href="{{ url_for('sales.create_sale_modern') }}" class="mm-btn mm-btn-ghost">{{ t('reset') }}</a>
+      </form>
+    </section>
+
+    <section class="mm-sales-main">
+      <div class="mm-panel">
+        <div class="mm-panel-head">
+          <div class="mm-panel-label">{{ t('products') }}</div>
+          <h2 class="mm-panel-title">{{ t('available_stock') }}</h2>
+          <p class="mm-panel-sub">
+            {{ t('available_stock_subtitle') }}
+          </p>
+        </div>
+
+        {% if stock_rows %}
+          <div class="mm-product-grid">
+            {% for row in stock_rows %}
+              {% set qty = row.quantity or 0 %}
+              {% set price = row.product.sell_price_per_item or 0 %}
+              <article
+                class="mm-product-card"
+                data-product-id="{{ row.product.id }}"
+                data-stock-id="{{ row.id }}"
+                data-product-name="{{ row.product.name }}"
+                data-price="{{ price }}"
+                data-qty="{{ qty }}"
+                data-factory-name="{{ row.source_factory.name if row.source_factory else '' }}"
+                data-sku="{{ row.product.sku or '' }}"
+              >
+                <div class="mm-product-top">
+                  <h3 class="mm-product-name">{{ row.product.name }}</h3>
+
+                  <div class="mm-product-meta">
+                    <div>{{ t('category') }}: {{ row.product.category or '-' }}</div>
+                    <div>SKU: {{ row.product.sku or '-' }}</div>
+                    <div>{{ t('factory') }}: {{ row.source_factory.name if row.source_factory else '-' }}</div>
+                  </div>
+
+                  <div class="mm-product-pills">
+                    {% if qty <= 0 %}
+                      <span class="mm-pill mm-pill-stock-zero">{{ t('out_of_stock') }}</span>
+                    {% elif qty < 5 %}
+                      <span class="mm-pill mm-pill-stock-low">{{ t('low_stock_label') }}: {{ qty }}</span>
+                    {% else %}
+                      <span class="mm-pill mm-pill-stock-ok">{{ t('in_stock_label') }}: {{ qty }}</span>
+                    {% endif %}
+
+                    {% if row.product.size %}
+                      <span class="mm-pill">{{ t('size') }}: {{ row.product.size }}</span>
+                    {% endif %}
+
+                    {% if row.product.color %}
+                      <span class="mm-pill">{{ t('color') }}: {{ row.product.color }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="mm-product-bottom">
+                  <div class="mm-product-price">
+                    <div class="mm-product-price-label">{{ t('unit_price') }}</div>
+                    <div class="mm-product-price-value">
+                      {{ format_money(price, row.product.currency or 'UZS') }}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="mm-add-btn js-add-to-cart"
+                    {% if qty <= 0 %}disabled{% endif %}
+                  >
+                    {{ t('add') }}
+                  </button>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="mm-empty-box">
+            {{ t('no_stock_rows_matched_filter') }}
+          </div>
+        {% endif %}
+      </div>
+
+      <aside class="mm-panel mm-cart-panel">
+        <div class="mm-panel-head">
+          <div class="mm-panel-label">{{ t('cart') }}</div>
+          <h2 class="mm-panel-title">{{ t('sale_draft') }}</h2>
+          <p class="mm-panel-sub">
+            {{ t('sale_draft_subtitle') }}
+          </p>
+        </div>
+
+        <div class="mm-cart-body">
+          <div id="mmCartList" class="mm-cart-list"></div>
+
+          <div class="mm-cart-summary">
+            <div class="mm-sum-row">
+              <span>{{ t('items') }}</span>
+              <strong id="mmCartItemsCount">0</strong>
+            </div>
+            <div class="mm-sum-row">
+              <span>{{ t('total_quantity') }}</span>
+              <strong id="mmCartQtyTotal">0</strong>
+            </div>
+            <div class="mm-sum-row">
+              <span>{{ t('total_amount') }}</span>
+              <strong id="mmCartAmountTotal">0</strong>
+            </div>
+          </div>
+
+          <div class="mm-customer-box">
+            <input
+              type="text"
+              id="customerName"
+              class="mm-field"
+              placeholder="{{ t('customer_name_optional') }}"
+            />
+            <input
+              type="text"
+              id="customerPhone"
+              class="mm-field"
+              placeholder="{{ t('customer_phone_optional') }}"
+            />
+            <textarea
+              id="saleNote"
+              class="mm-field"
+              placeholder="{{ t('note_optional') }}"
+              style="padding-top: 14px; min-height: 90px; resize: vertical;"
+            ></textarea>
+          </div>
+
+          <button type="button" id="submitSaleBtn" class="mm-submit-btn" disabled>
+            {{ t('confirm_sale') }}
+          </button>
+
+          <button type="button" id="clearCartBtn" class="mm-btn mm-btn-ghost">
+            {{ t('clear_cart') }}
+          </button>
+
+          <div class="mm-note">
+            {{ t('create_sale_phase_one_note') }}
+          </div>
+        </div>
+      </aside>
+    </section>
+  </div>
+</div>
+
+<form
+  id="hiddenSaleForm"
+  class="mm-hidden-form"
+  method="POST"
+  action="{{ url_for('sales.create_sale_modern') }}"
+>
+  <input type="hidden" name="payload" id="hiddenSalePayload" />
+</form>
+
+<script>
+  (function () {
+    const I18N = {
+      cartEmpty: {{ t('cart_is_empty')|tojson }},
+      productFallback: {{ t('product_fallback')|tojson }},
+      factoryLabel: {{ t('factory')|tojson }},
+      availableLabel: {{ t('available')|tojson }},
+      skuLabel: "SKU",
+      qtyLabel: {{ t('qty')|tojson }},
+      priceLabel: {{ t('price')|tojson }},
+      subtotalLabel: {{ t('subtotal')|tojson }}
+    };
+
+    const CART_KEY = "mm_sales_create_modern_cart_v1";
+
+    const cartList = document.getElementById("mmCartList");
+    const cartItemsCount = document.getElementById("mmCartItemsCount");
+    const cartQtyTotal = document.getElementById("mmCartQtyTotal");
+    const cartAmountTotal = document.getElementById("mmCartAmountTotal");
+    const submitSaleBtn = document.getElementById("submitSaleBtn");
+    const clearCartBtn = document.getElementById("clearCartBtn");
+
+    const customerNameInput = document.getElementById("customerName");
+    const customerPhoneInput = document.getElementById("customerPhone");
+    const saleNoteInput = document.getElementById("saleNote");
+
+    const hiddenSaleForm = document.getElementById("hiddenSaleForm");
+    const hiddenSalePayload = document.getElementById("hiddenSalePayload");
+
+    function readCart() {
+      try {
+        const raw = localStorage.getItem(CART_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function writeCart(cart) {
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    }
+
+    function money(value) {
+      const num = Number(value || 0);
+      if (!isFinite(num)) return "0";
+      return num.toLocaleString();
+    }
+
+    function sanitizeQty(value, maxQty) {
+      let qty = parseInt(value, 10);
+      if (!isFinite(qty) || qty < 1) qty = 1;
+      if (isFinite(maxQty) && maxQty > 0 && qty > maxQty) qty = maxQty;
+      return qty;
+    }
+
+    function sanitizePrice(value) {
+      let price = parseFloat(value);
+      if (!isFinite(price) || price < 0) price = 0;
+      return price;
+    }
+
+    function renderCart() {
+      const cart = readCart();
+      cartList.innerHTML = "";
+
+      let itemsCount = cart.length;
+      let qtyTotal = 0;
+      let amountTotal = 0;
+
+      if (!cart.length) {
+        cartList.innerHTML = `<div class="mm-empty-box" style="margin:0;">${I18N.cartEmpty}</div>`;
+      }
+
+      cart.forEach((item, index) => {
+        const qty = sanitizeQty(item.qty, item.max_qty);
+        const price = sanitizePrice(item.price);
+        const subtotal = qty * price;
+
+        qtyTotal += qty;
+        amountTotal += subtotal;
+
+        const el = document.createElement("div");
+        el.className = "mm-cart-item";
+        el.innerHTML = `
+          <div class="mm-cart-item-top">
+            <div>
+              <div class="mm-cart-item-name">${item.name}</div>
+              <div class="mm-cart-item-meta">
+                ${I18N.factoryLabel}: ${item.factory_name || "-"}<br>
+                ${I18N.availableLabel}: ${item.max_qty || 0}${item.sku ? ` · ${I18N.skuLabel}: ${item.sku}` : ""}
+              </div>
+            </div>
+            <button type="button" class="mm-cart-remove" data-index="${index}">{{ t('remove') }}</button>
+          </div>
+
+          <div class="mm-cart-row">
+            <div class="mm-cart-label">${I18N.qtyLabel}</div>
+            <input
+              type="number"
+              min="1"
+              max="${item.max_qty || 1}"
+              value="${qty}"
+              class="mm-cart-input js-cart-qty"
+              data-index="${index}"
+            />
+          </div>
+
+          <div class="mm-cart-row">
+            <div class="mm-cart-label">${I18N.priceLabel}</div>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value="${price}"
+              class="mm-cart-input js-cart-price"
+              data-index="${index}"
+            />
+          </div>
+
+          <div class="mm-sum-row">
+            <span>${I18N.subtotalLabel}</span>
+            <strong>${money(subtotal)}</strong>
+          </div>
+        `;
+        cartList.appendChild(el);
+      });
+
+      cartItemsCount.textContent = String(itemsCount);
+      cartQtyTotal.textContent = String(qtyTotal);
+      cartAmountTotal.textContent = money(amountTotal);
+
+      submitSaleBtn.disabled = cart.length === 0;
+    }
+
+    function addToCartFromCard(card) {
+      const cart = readCart();
+
+      const productId = Number(card.dataset.productId);
+      const stockId = Number(card.dataset.stockId);
+      const name = card.dataset.productName || I18N.productFallback;
+      const price = sanitizePrice(card.dataset.price);
+      const maxQty = parseInt(card.dataset.qty, 10) || 0;
+      const factoryName = card.dataset.factoryName || "";
+      const sku = card.dataset.sku || "";
+
+      if (maxQty <= 0) return;
+
+      const existing = cart.find((x) => Number(x.stock_id) === stockId);
+
+      if (existing) {
+        existing.qty = sanitizeQty((existing.qty || 1) + 1, maxQty);
+      } else {
+        cart.push({
+          product_id: productId,
+          stock_id: stockId,
+          name: name,
+          qty: 1,
+          price: price,
+          max_qty: maxQty,
+          factory_name: factoryName,
+          sku: sku
+        });
+      }
+
+      writeCart(cart);
+      renderCart();
+    }
+
+    document.querySelectorAll(".js-add-to-cart").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const card = btn.closest(".mm-product-card");
+        if (!card) return;
+        addToCartFromCard(card);
+      });
+    });
+
+    cartList.addEventListener("click", function (e) {
+      const removeBtn = e.target.closest(".mm-cart-remove");
+      if (!removeBtn) return;
+
+      const index = parseInt(removeBtn.dataset.index, 10);
+      const cart = readCart();
+      if (!isFinite(index) || index < 0 || index >= cart.length) return;
+
+      cart.splice(index, 1);
+      writeCart(cart);
+      renderCart();
+    });
+
+    cartList.addEventListener("input", function (e) {
+      const qtyInput = e.target.closest(".js-cart-qty");
+      const priceInput = e.target.closest(".js-cart-price");
+      const cart = readCart();
+
+      if (qtyInput) {
+        const index = parseInt(qtyInput.dataset.index, 10);
+        if (!isFinite(index) || !cart[index]) return;
+        cart[index].qty = sanitizeQty(qtyInput.value, cart[index].max_qty);
+        writeCart(cart);
+        renderCart();
+      }
+
+      if (priceInput) {
+        const index = parseInt(priceInput.dataset.index, 10);
+        if (!isFinite(index) || !cart[index]) return;
+        cart[index].price = sanitizePrice(priceInput.value);
+        writeCart(cart);
+        renderCart();
+      }
+    });
+
+    clearCartBtn.addEventListener("click", function () {
+      localStorage.removeItem(CART_KEY);
+      renderCart();
+    });
+
+    submitSaleBtn.addEventListener("click", function () {
+      const cart = readCart();
+
+      if (!cart.length) {
+        alert(I18N.cartEmpty);
+        return;
+      }
+
+      const payload = {
+        items: cart.map((item) => ({
+          stock_id: item.stock_id,
+          product_id: item.product_id,
+          qty: sanitizeQty(item.qty, item.max_qty),
+          price: sanitizePrice(item.price)
+        })),
+        customer_name: customerNameInput ? customerNameInput.value.trim() : "",
+        customer_phone: customerPhoneInput ? customerPhoneInput.value.trim() : "",
+        note: saleNoteInput ? saleNoteInput.value.trim() : ""
+      };
+
+      hiddenSalePayload.value = JSON.stringify(payload);
+      hiddenSaleForm.submit();
+    });
+
+    const saleSuccess = {{ 'true' if sale_success else 'false' }};
+
+    if (saleSuccess) {
+      localStorage.removeItem(CART_KEY);
+
+      if (customerNameInput) customerNameInput.value = "";
+      if (customerPhoneInput) customerPhoneInput.value = "";
+      if (saleNoteInput) saleNoteInput.value = "";
+    }
+
+    renderCart();
+  })();
+</script>
+{% endblock %}

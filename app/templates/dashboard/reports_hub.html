@@ -1,0 +1,81 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('reports') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .reports-hub { display: grid; gap: 16px; }
+  .reports-hub-head {
+    display: grid;
+    gap: 8px;
+    padding: 18px 20px;
+    border-radius: 24px;
+    background: linear-gradient(145deg, rgba(11, 28, 48, 0.96), rgba(28, 52, 88, 0.94));
+    color: #fff;
+  }
+  .reports-hub-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.64); font-weight: 800; }
+  .reports-hub-title { margin: 0; font-size: clamp(1.6rem, 4vw, 2rem); line-height: 1.05; font-weight: 900; }
+  .reports-hub-sub { margin: 0; max-width: 720px; color: rgba(255,255,255,0.78); font-size: 13px; line-height: 1.6; }
+  .reports-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .reports-card {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 22px;
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  }
+  .reports-card-top { display: flex; gap: 12px; align-items: flex-start; }
+  .reports-icon {
+    width: 42px; height: 42px; border-radius: 14px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, rgba(37,99,235,0.14), rgba(15,23,42,0.08));
+    color: #0f172a; font-size: 12px; font-weight: 900; letter-spacing: 0.08em;
+  }
+  .reports-card-title { margin: 0; font-size: 16px; line-height: 1.2; font-weight: 800; color: #0f172a; }
+  .reports-card-sub { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: #64748b; }
+  .reports-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .reports-stat {
+    display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px;
+    border-radius: 999px; background: #eef4ff; color: #1d4ed8; font-size: 11px; font-weight: 800;
+  }
+  .reports-open {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 34px; padding: 0 12px; border-radius: 999px; background: #0f172a; color: #fff;
+    font-size: 12px; font-weight: 800; text-decoration: none;
+  }
+  @media (max-width: 760px) {
+    .reports-grid { grid-template-columns: 1fr; }
+    .reports-card { padding: 14px; }
+  }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="reports-hub">
+  <section class="reports-hub-head">
+    <div class="reports-hub-kicker">{{ t('reports') }}</div>
+    <h1 class="reports-hub-title">{{ hub_title }}</h1>
+    <p class="reports-hub-sub">{{ hub_subtitle }}</p>
+  </section>
+
+  <section class="reports-grid">
+    {% for card in report_cards %}
+      <article class="reports-card">
+        <div class="reports-card-top">
+          <div class="reports-icon">{{ card.icon }}</div>
+          <div>
+            <h2 class="reports-card-title">{{ card.title }}</h2>
+            <p class="reports-card-sub">{{ card.description }}</p>
+          </div>
+        </div>
+        <div class="reports-card-foot">
+          <span class="reports-stat">{{ card.stat }}</span>
+          <a href="{{ card.href }}" class="reports-open">Open report</a>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

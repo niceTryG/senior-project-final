@@ -4,8 +4,51 @@ import secrets
 
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import event
 
-from .extensions import db
+from .extensions import db# ==========================
+#   ✂️ CUTTING ORDERS (PHASE 2)
+# ==========================
+
+class CuttingOrder(db.Model):
+    __tablename__ = "cutting_orders"
+
+    id = db.Column(db.Integer, primary_key=True)
+    factory_id = db.Column(db.Integer, db.ForeignKey("factories.id"), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False, index=True)
+    cut_date = db.Column(db.Date, nullable=False, default=date.today)
+    sets_cut = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(32), nullable=False, default="open")
+    notes = db.Column(db.Text)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    factory = db.relationship("Factory")
+    product = db.relationship("Product")
+    created_by = db.relationship("User")
+    materials = db.relationship("CuttingOrderMaterial", back_populates="cutting_order", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<CuttingOrder id={self.id} product_id={self.product_id} sets_cut={self.sets_cut}>"
+
+
+class CuttingOrderMaterial(db.Model):
+    __tablename__ = "cutting_order_materials"
+
+    id = db.Column(db.Integer, primary_key=True)
+    cutting_order_id = db.Column(db.Integer, db.ForeignKey("cutting_orders.id"), nullable=False, index=True)
+    material_id = db.Column(db.Integer, db.ForeignKey("fabrics.id"), nullable=False, index=True)
+    used_amount = db.Column(db.Float, nullable=False)
+    unit_cost_snapshot = db.Column(db.Float, nullable=False)
+    total_cost_snapshot = db.Column(db.Float, nullable=False)
+
+    cutting_order = db.relationship("CuttingOrder", back_populates="materials")
+    material = db.relationship("Fabric")
+
+    def __repr__(self):
+        return f"<CuttingOrderMaterial id={self.id} material_id={self.material_id} used_amount={self.used_amount}>"
+
 
 
 # ==========================
@@ -23,6 +66,7 @@ class Factory(db.Model):
     owner_name = db.Column(db.String(128))
     phone = db.Column(db.String(64))
     note = db.Column(db.String(255))
+    owner_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
@@ -37,6 +81,13 @@ class Factory(db.Model):
         "User",
         back_populates="factory",
         cascade="all, delete-orphan",
+        foreign_keys="User.factory_id",
+    )
+    owner_user = db.relationship(
+        "User",
+        foreign_keys=[owner_user_id],
+        uselist=False,
+        post_update=True,
     )
     shop_links = db.relationship(
         "ShopFactoryLink",
@@ -75,6 +126,11 @@ class Factory(db.Model):
     )
     wholesale_sales = db.relationship(
         "WholesaleSale",
+        back_populates="factory",
+        cascade="all, delete-orphan",
+    )
+    operational_tasks = db.relationship(
+        "OperationalTask",
         back_populates="factory",
         cascade="all, delete-orphan",
     )
@@ -184,11 +240,18 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     username = db.Column(db.String(64), unique=True, nullable=False)
+    full_name = db.Column(db.String(128), nullable=True)
+    phone = db.Column(db.String(64), nullable=True, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
+    must_change_password = db.Column(db.Boolean, nullable=False, default=False)
+    failed_login_attempts = db.Column(db.Integer, nullable=False, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
+    last_login_at = db.Column(db.DateTime, nullable=True)
+    password_changed_at = db.Column(db.DateTime, nullable=True)
 
     # admin/manager/accountant usually belong to one factory
     factory_id = db.Column(db.Integer, db.ForeignKey("factories.id"), nullable=True)
-    factory = db.relationship("Factory", back_populates="users")
+    factory = db.relationship("Factory", back_populates="users", foreign_keys=[factory_id])
 
     # shop users belong to one shop
     shop_id = db.Column(db.Integer, db.ForeignKey("shops.id"), nullable=True, index=True)
@@ -226,9 +289,23 @@ class User(UserMixin, db.Model):
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
+        self.password_changed_at = datetime.utcnow()
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
+
+    def is_login_locked(self) -> bool:
+        return bool(self.locked_until and self.locked_until > datetime.utcnow())
+
+    def register_failed_login(self, *, threshold: int = 5, minutes: int = 10) -> None:
+        attempts = int(self.failed_login_attempts or 0) + 1
+        self.failed_login_attempts = attempts
+        if attempts >= threshold:
+            self.locked_until = datetime.utcnow() + timedelta(minutes=minutes)
+
+    def clear_login_lock(self) -> None:
+        self.failed_login_attempts = 0
+        self.locked_until = None
 
     @property
     def is_admin(self) -> bool:
@@ -252,7 +329,8 @@ class User(UserMixin, db.Model):
 
     @property
     def is_superadmin(self) -> bool:
-        return self.role == "admin" and self.factory_id is None
+        # Dedicated superadmin role OR legacy admin with no factory
+        return self.role == "superadmin" or (self.role == "admin" and self.factory_id is None)
 
     def __repr__(self) -> str:
         return f"<User id={self.id} username={self.username!r} role={self.role!r}>"
@@ -263,8 +341,26 @@ class User(UserMixin, db.Model):
 # ==========================
 
 
+def material_code_prefix(material_type: str | None = None) -> str:
+    material_type_key = str(material_type or "").strip().lower()
+    prefix_map = {
+        "fabric": "FAB",
+        "zipper": "ZIP",
+        "button": "BTN",
+        "label": "LBL",
+        "packaging": "PKG",
+        "accessory": "ACC",
+        "other": "MAT",
+    }
+    return prefix_map.get(material_type_key, "MAT")
+
+
+def generate_material_code(material_type: str | None = None) -> str:
+    return f"{material_code_prefix(material_type)}-" + uuid.uuid4().hex[:8].upper()
+
+
 def generate_fabric_code() -> str:
-    return "FAB-" + uuid.uuid4().hex[:8].upper()
+    return generate_material_code("fabric")
 
 
 class Fabric(db.Model):
@@ -290,14 +386,17 @@ class Fabric(db.Model):
 
     name = db.Column(db.String(128), nullable=False)
     color = db.Column(db.String(64))
+    material_type = db.Column(db.String(32), nullable=False, default="fabric")
     unit = db.Column(db.String(16), nullable=False, default="kg")
     quantity = db.Column(db.Float, nullable=False, default=0.0)
+    min_stock_quantity = db.Column(db.Float, nullable=False, default=5.0)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     price_currency = db.Column(db.String(3), default="UZS")
     price_per_unit = db.Column(db.Float)
     category = db.Column(db.String(64))
+    supplier_name = db.Column(db.String(128))
 
     cuts = db.relationship(
         "Cut",
@@ -314,6 +413,28 @@ class Fabric(db.Model):
         return f"<Fabric id={self.id} public_id={self.public_id!r} name={self.name!r}>"
 
 
+Material = Fabric
+
+
+@event.listens_for(Fabric, "before_insert")
+def assign_material_public_id(_mapper, _connection, target):
+    current_public_id = str(getattr(target, "public_id", "") or "").strip()
+    material_type = str(getattr(target, "material_type", None) or "").strip().lower()
+    expected_prefix = material_code_prefix(material_type)
+
+    needs_new_code = not current_public_id
+    if (
+        not needs_new_code
+        and material_type
+        and material_type != "fabric"
+        and current_public_id.startswith("FAB-")
+    ):
+        needs_new_code = True
+
+    if needs_new_code or not current_public_id.startswith(f"{expected_prefix}-"):
+        target.public_id = generate_material_code(material_type)
+
+
 class Cut(db.Model):
     __tablename__ = "cuts"
 
@@ -322,8 +443,12 @@ class Cut(db.Model):
     fabric_id = db.Column(db.Integer, db.ForeignKey("fabrics.id"), nullable=False)
     used_amount = db.Column(db.Float, nullable=False)
     cut_date = db.Column(db.Date, default=date.today, nullable=False)
+    remaining_quantity = db.Column(db.Float, nullable=True)
+    comment = db.Column(db.String(255), nullable=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
 
     fabric = db.relationship("Fabric", back_populates="cuts")
+    created_by = db.relationship("User")
 
     def __repr__(self) -> str:
         return f"<Cut id={self.id} fabric_id={self.fabric_id} used_amount={self.used_amount}>"
@@ -347,6 +472,7 @@ class Product(db.Model):
 
     cost_price_per_item = db.Column(db.Float, nullable=False, default=0.0)
     sell_price_per_item = db.Column(db.Float, nullable=False, default=0.0)
+    factory_transfer_price = db.Column(db.Float, nullable=True)  # Phase 1: distinct from retail price
     website_image = db.Column(db.String(255))
     fabric_used = db.Column(db.String(255))
     notes = db.Column(db.Text)
@@ -356,6 +482,10 @@ class Product(db.Model):
 
     is_published = db.Column(db.Boolean, default=False)
     public_description = db.Column(db.Text)
+    garment_analysis_json = db.Column(db.Text)
+    garment_annotation_image = db.Column(db.String(255))
+    garment_analysis_version = db.Column(db.String(64))
+    garment_analysis_updated_at = db.Column(db.DateTime)
 
     sales = db.relationship(
         "Sale",
@@ -583,12 +713,22 @@ class Production(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    production_plan_id = db.Column(db.Integer, db.ForeignKey("production_plans.id"), nullable=True, index=True)
     date = db.Column(db.Date, default=date.today, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+
+    # Phase 1: production accountability
+    qty_issued_to_workers = db.Column(db.Integer, nullable=True)
+    qty_finished_good = db.Column(db.Integer, nullable=True)
+    qty_defective = db.Column(db.Integer, nullable=True)
+    qty_unfinished = db.Column(db.Integer, nullable=True)
+    qty_payable = db.Column(db.Integer, nullable=True)
+    shortfall_reason = db.Column(db.String(255), nullable=True)
 
     note = db.Column(db.String(255))
 
     product = db.relationship("Product", back_populates="productions")
+    production_plan = db.relationship("ProductionPlan", backref=db.backref("executions", lazy=True))
     consumptions = db.relationship(
         "FabricConsumption",
         back_populates="production",
@@ -766,6 +906,13 @@ class StockMovement(db.Model):
     product = db.relationship("Product", backref="stock_movements")
 
     qty_change = db.Column(db.Integer, nullable=False)
+
+    # Phase 1: transfer valuation
+    unit_price = db.Column(db.Float, nullable=True)
+    total_value = db.Column(db.Float, nullable=True)
+    currency = db.Column(db.String(3), nullable=True)
+    locked_unit_price = db.Column(db.Float, nullable=True)
+    locked_total_value = db.Column(db.Float, nullable=True)
 
     source = db.Column(db.String(50))
     destination = db.Column(db.String(50))
@@ -1046,6 +1193,60 @@ class TelegramLinkCode(db.Model):
             f"<TelegramLinkCode id={self.id} code={self.code!r} "
             f"user_id={self.user_id} factory_id={self.factory_id}>"
         )
+
+
+class OnboardingTelegramVerification(db.Model):
+    __tablename__ = "onboarding_telegram_verifications"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    token = db.Column(
+        db.String(64),
+        unique=True,
+        nullable=False,
+        index=True,
+        default=lambda: secrets.token_urlsafe(24),
+    )
+
+    phone = db.Column(db.String(64), nullable=False, index=True)
+    full_name = db.Column(db.String(128), nullable=True)
+    telegram_chat_id = db.Column(db.BigInteger, nullable=True, index=True)
+
+    expires_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.utcnow() + timedelta(minutes=30),
+    )
+    verified_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+    @staticmethod
+    def generate(phone: str, full_name: str | None = None, minutes: int = 30) -> "OnboardingTelegramVerification":
+        return OnboardingTelegramVerification(
+            phone=phone,
+            full_name=(full_name or "").strip() or None,
+            expires_at=datetime.utcnow() + timedelta(minutes=minutes),
+        )
+
+    def is_expired(self) -> bool:
+        return datetime.utcnow() > self.expires_at
+
+    def is_verified(self) -> bool:
+        return self.verified_at is not None
+
+    def __repr__(self) -> str:
+        return (
+            f"<OnboardingTelegramVerification id={self.id} token={self.token!r} "
+            f"phone={self.phone!r} verified_at={self.verified_at}>"
+        )
+
+
 class RealizatsiyaSettlement(db.Model):
     __tablename__ = "realizatsiya_settlements"
 
@@ -1099,4 +1300,297 @@ class RealizatsiyaSettlement(db.Model):
         return (
             f"<RealizatsiyaSettlement id={self.id} shop_id={self.shop_id} "
             f"factory_id={self.factory_id} amount={self.amount}>"
+        )
+class ProductComposition(db.Model):
+    __tablename__ = "product_compositions"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    product_id = db.Column(
+        db.Integer,
+        db.ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    fabric_id = db.Column(
+        db.Integer,
+        db.ForeignKey("fabrics.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    quantity_required = db.Column(db.Float, nullable=False, default=0.0)
+    unit = db.Column(db.String(20), nullable=False, default="m")
+    note = db.Column(db.String(255), nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    product = db.relationship("Product", backref=db.backref("composition_items", lazy=True, cascade="all, delete-orphan"))
+    fabric = db.relationship("Fabric", backref=db.backref("used_in_products", lazy=True))
+
+    __table_args__ = (
+        db.UniqueConstraint("product_id", "fabric_id", name="uq_product_composition_product_fabric"),
+    )
+
+
+class ProductGarmentZoneAssignment(db.Model):
+    __tablename__ = "product_garment_zone_assignments"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    product_id = db.Column(
+        db.Integer,
+        db.ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    zone_key = db.Column(db.String(64), nullable=False)
+    zone_label = db.Column(db.String(128), nullable=False)
+
+    assignment_kind = db.Column(db.String(32), nullable=False, default="unassigned")
+    usage_label = db.Column(db.String(128), nullable=True)
+    note = db.Column(db.String(255), nullable=True)
+
+    product_composition_id = db.Column(
+        db.Integer,
+        db.ForeignKey("product_compositions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    fabric_id = db.Column(
+        db.Integer,
+        db.ForeignKey("fabrics.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+    product = db.relationship(
+        "Product",
+        backref=db.backref(
+            "garment_zone_assignments",
+            lazy=True,
+            cascade="all, delete-orphan",
+        ),
+    )
+    product_composition = db.relationship("ProductComposition")
+    fabric = db.relationship("Fabric")
+
+    __table_args__ = (
+        db.UniqueConstraint("product_id", "zone_key", name="uq_product_garment_zone_assignment"),
+    )
+
+
+class ProductionPlan(db.Model):
+    __tablename__ = "production_plans"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    product_id = db.Column(
+        db.Integer,
+        db.ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    order_item_id = db.Column(
+        db.Integer,
+        db.ForeignKey("shop_order_items.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    created_by_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    target_qty = db.Column(db.Integer, nullable=False, default=1)
+    max_producible_units = db.Column(db.Integer, nullable=False, default=0)
+    shortage_count = db.Column(db.Integer, nullable=False, default=0)
+    can_fulfill_plan = db.Column(db.Boolean, nullable=False, default=False)
+    note = db.Column(db.String(255), nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    factory = db.relationship("Factory")
+    product = db.relationship("Product")
+    order_item = db.relationship("ShopOrderItem")
+    created_by = db.relationship("User")
+
+    def __repr__(self) -> str:
+        return (
+            f"<ProductionPlan id={self.id} factory_id={self.factory_id} "
+            f"product_id={self.product_id} target_qty={self.target_qty}>"
+        )
+
+
+class SupplierReceipt(db.Model):
+    __tablename__ = "supplier_receipts"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    fabric_id = db.Column(
+        db.Integer,
+        db.ForeignKey("fabrics.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    created_by_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    supplier_name = db.Column(db.String(128), nullable=False, index=True)
+    material_name = db.Column(db.String(128), nullable=False)
+    quantity_received = db.Column(db.Float, nullable=False, default=0.0)
+    unit = db.Column(db.String(16), nullable=False, default="pcs")
+    unit_cost = db.Column(db.Float, nullable=True)
+    currency = db.Column(db.String(3), nullable=True, default="UZS")
+    invoice_number = db.Column(db.String(64), nullable=True)
+    payment_status = db.Column(db.String(16), nullable=False, default="unpaid", index=True)
+    note = db.Column(db.String(255), nullable=True)
+    received_at = db.Column(db.Date, default=date.today, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    factory = db.relationship("Factory")
+    fabric = db.relationship("Fabric")
+    created_by = db.relationship("User")
+
+    def __repr__(self) -> str:
+        return (
+            f"<SupplierReceipt id={self.id} supplier_name={self.supplier_name!r} "
+            f"material_name={self.material_name!r} qty={self.quantity_received}>"
+        )
+
+    @property
+    def line_total(self) -> float | None:
+        if self.unit_cost is None:
+            return None
+        return float(self.quantity_received or 0) * float(self.unit_cost)
+
+
+class SupplierProfile(db.Model):
+    __tablename__ = "supplier_profiles"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    supplier_name = db.Column(db.String(128), nullable=False)
+    contact_person = db.Column(db.String(128), nullable=True)
+    phone = db.Column(db.String(64), nullable=True)
+    telegram_handle = db.Column(db.String(64), nullable=True)
+    note = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    factory = db.relationship("Factory")
+
+    __table_args__ = (
+        db.UniqueConstraint("factory_id", "supplier_name", name="uq_supplier_profiles_factory_supplier"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<SupplierProfile id={self.id} supplier_name={self.supplier_name!r}>"
+
+
+class OperationalTask(db.Model):
+    __tablename__ = "operational_tasks"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    factory_id = db.Column(
+        db.Integer,
+        db.ForeignKey("factories.id"),
+        nullable=False,
+        index=True,
+    )
+
+    shop_id = db.Column(
+        db.Integer,
+        db.ForeignKey("shops.id"),
+        nullable=True,
+        index=True,
+    )
+
+    assigned_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
+
+    created_by_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
+
+    closed_by_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
+
+    task_type = db.Column(db.String(64), nullable=False, default="manual")
+    source_type = db.Column(db.String(64), nullable=True)
+    source_id = db.Column(db.Integer, nullable=True)
+    title = db.Column(db.String(160), nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+    action_url = db.Column(db.String(255), nullable=True)
+    target_role = db.Column(db.String(32), nullable=True)
+    priority = db.Column(db.String(16), nullable=False, default="medium")
+    status = db.Column(db.String(16), nullable=False, default="open")
+    due_date = db.Column(db.Date, nullable=True)
+    is_system_generated = db.Column(db.Boolean, nullable=False, default=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    closed_at = db.Column(db.DateTime, nullable=True)
+
+    factory = db.relationship("Factory", back_populates="operational_tasks")
+    shop = db.relationship("Shop", foreign_keys=[shop_id])
+    assigned_user = db.relationship("User", foreign_keys=[assigned_user_id])
+    created_by = db.relationship("User", foreign_keys=[created_by_id])
+    closed_by = db.relationship("User", foreign_keys=[closed_by_id])
+
+    def __repr__(self) -> str:
+        return (
+            f"<OperationalTask id={self.id} factory_id={self.factory_id} "
+            f"status={self.status!r} priority={self.priority!r}>"
         )

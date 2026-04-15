@@ -1,272 +1,249 @@
-{% extends "base.html" %}
+{% extends "products/base_products.html" %}
 {% block content %}
 
-<div class="container-fluid py-3 py-md-4 mm-page-factory-stock">
+<style>
+  .mm-fs-page { padding-bottom: 96px; }
+  .mm-fs-top { border-radius: 16px; }
 
-  {# ===== HEADER ===== #}
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
-    <div>
-      <h1 class="h4 mb-0">{{ t('factory_stock') }}</h1>
-      <small class="text-muted">
-        {{ t('factory_stock_subtitle') }}
-      </small>
-    </div>
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
-      ← {{ t('back_to_dashboard') }}
-    </a>
-  </div>
+  .mm-fs-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #f4f6f9;
+    border: 1px solid #e2e7ef;
+    object-fit: cover;
+    display: block;
+  }
 
-  {# ===== SUMMARY KPI ===== #}
-  {% set total_all = products | sum(attribute='qty_total') %}
-  {% set total_factory = products | sum(attribute='qty_factory') %}
-  {% set total_shop = products | sum(attribute='qty_shop') %}
+  .mm-fs-initial {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #f4f6f9;
+    border: 1px solid #e2e7ef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #96aabf;
+  }
 
-  <div class="row g-2 g-md-3 mb-3">
+  .mm-fs-qty {
+    font-family: 'DM Mono', monospace;
+    font-weight: 900;
+    color: #0b1c30;
+  }
 
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body py-3 text-center">
-          <div class="small text-uppercase text-muted mb-1">{{ t('factory_stock_total_items') }}</div>
-          <div class="display-6 fw-semibold mb-1" style="font-size: 1.9rem;">
-            {{ total_all }}
-          </div>
-          <div class="small text-muted">{{ t('factory_stock_factory_plus_shop') }}</div>
-        </div>
+  .mm-fs-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .mm-fs-action {
+    border-radius: 10px;
+    font-size: .72rem;
+    padding: .28rem .55rem;
+    font-weight: 700;
+  }
+
+  .mm-fs-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: .2rem .55rem;
+    font-weight: 800;
+    font-size: .7rem;
+  }
+
+  .mm-fs-status.is-fresh { background: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+  .mm-fs-status.is-return { background: rgba(255, 193, 7, 0.18); color: #8a6110; }
+
+  @media (max-width: 767.98px) {
+    .mm-fs-table-wrap { display: none; }
+  }
+
+  @media (min-width: 768px) {
+    .mm-fs-mobile-list { display: none; }
+  }
+
+  .mm-fs-mobile-card {
+    border: 1px solid #e2e7ef;
+    border-radius: 14px;
+    background: #fff;
+    padding: 10px;
+  }
+</style>
+
+<div class="container-fluid py-3 mm-fs-page">
+  <div class="card mm-fs-top mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <div class="small text-muted">{{ t('factory_stock') }}</div>
+        <div class="fw-bold">{{ products|length }} products · {{ total_units }} units</div>
       </div>
-    </div>
-
-    <div class="col-6 col-md-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body py-3 text-center">
-          <div class="small text-uppercase text-muted mb-1">{{ t('factory_stock_on_factory') }}</div>
-          <div class="fs-4 fw-semibold mb-1">{{ total_factory }}</div>
-          {% if total_all %}
-            {% set factory_pct = (total_factory * 100 // total_all) %}
-            <div class="progress" style="height: 6px;">
-              <div class="progress-bar" role="progressbar"
-                   style="width: {{ factory_pct }}%;"
-                   aria-valuenow="{{ factory_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-            </div>
-            <div class="small text-muted mt-1">{{ t('share_of_total').format(percent=factory_pct) }}</div>
-          {% else %}
-            <div class="small text-muted">{{ t('no_data') }}</div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="col-6 col-md-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body py-3 text-center">
-          <div class="small text-uppercase text-muted mb-1">{{ t('factory_stock_in_shop') }}</div>
-          <div class="fs-4 fw-semibold mb-1">{{ total_shop }}</div>
-          {% if total_all %}
-            {% set shop_pct = (total_shop * 100 // total_all) %}
-            <div class="progress" style="height: 6px;">
-              <div class="progress-bar bg-warning" role="progressbar"
-                   style="width: {{ shop_pct }}%;"
-                   aria-valuenow="{{ shop_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-            </div>
-            <div class="small text-muted mt-1">{{ t('share_of_total').format(percent=shop_pct) }}</div>
-          {% else %}
-            <div class="small text-muted">{{ t('no_data') }}</div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {# ===== CHARTS ROW ===== #}
-  <div class="row g-3 mb-3">
-    <div class="col-md-6">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h6 class="mb-3 text-center">{{ t('factory_stock_distribution_title') }}</h6>
-          {% if chart_labels and chart_labels|length > 0 %}
-            <canvas id="factoryPie" height="160"></canvas>
-            <div class="small text-muted mt-2 text-center">
-              {{ t('factory_stock_distribution_subtitle') }}
-            </div>
-          {% else %}
-            <p class="small text-muted mb-0 text-center">
-              {{ t('factory_stock_chart_no_data') }}
-            </p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h6 class="mb-3 text-center">{{ t('factory_stock_top_title') }}</h6>
-          {% if chart_labels and chart_labels|length > 0 %}
-            <canvas id="factoryBar" height="160"></canvas>
-            <div class="small text-muted mt-2 text-center">
-              {{ t('factory_stock_top_subtitle') }}
-            </div>
-          {% else %}
-            <p class="small text-muted mb-0 text-center">
-              {{ t('factory_stock_top_empty') }}
-            </p>
-          {% endif %}
-        </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('main.inventory') }}" class="btn btn-sm btn-outline-primary">Inventory</a>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ t('back_to_dashboard') }}</a>
       </div>
     </div>
   </div>
 
-  {# ===== TABLE ===== #}
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-body p-2 p-md-3">
-      <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
-        <div>
-          <h6 class="mb-0">{{ t('factory_stock_table_title') }}</h6>
-          <small class="text-muted">
-            {{ t('positions_label') }}: {{ products|length }}
-            {% if total_factory %} • {{ t('factory_stock_on_factory') }}: {{ total_factory }} {{ t('pieces_short') }}.{% endif %}
-          </small>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-light text-muted">
-            <span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#0d6efd;"></span> {{ t('factory_badge') }}
-          </span>
-          <span class="badge bg-light text-muted">
-            <span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#ffc107;"></span> {{ t('shop_badge') }}
-          </span>
-        </div>
-      </div>
-
+  {% if not products %}
+    <div class="alert alert-light border">{{ t('factory_stock_no_products') }}</div>
+  {% else %}
+    <div class="card mm-fs-table-wrap">
       <div class="table-responsive">
         <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
+          <thead>
             <tr>
-              <th>{{ t('product') }}</th>
-              <th class="text-end">{{ t('factory_stock_total_pcs') }}</th>
-              <th class="text-end">{{ t('factory_stock_on_factory') }}</th>
-              <th class="text-end">{{ t('factory_stock_in_shop') }}</th>
-              <th style="width: 180px;">{{ t('factory_stock_distribution_label') }}</th>
+              <th style="width: 56px;"></th>
+              <th>Product</th>
+              <th>Category</th>
+              <th class="text-center">Factory qty</th>
+              <th class="text-center">Shop qty</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {% for p in products %}
-              {% set total = p.qty_total or 0 %}
-              {% set f = p.qty_factory or 0 %}
-              {% set s = p.qty_shop or 0 %}
-              {% set fpct = (f * 100 // total) if total else 0 %}
-              {% set spct = (s * 100 // total) if total else 0 %}
+          {% for p in products %}
+            {% set edit_modal_id = 'factory-edit-' ~ p.id %}
+            {% set product_photo = product_image_url(p.image_path) %}
+            <tr>
+              <td>
+                {% if product_photo %}
+                  <img src="{{ product_photo }}" alt="{{ p.name }}" class="mm-fs-avatar">
+                {% else %}
+                  <div class="mm-fs-initial">{{ p.name[0]|upper if p.name else '?' }}</div>
+                {% endif %}
+              </td>
+              <td class="fw-semibold">{{ p.name }}</td>
+              <td>{{ p.category or t('products_no_category') }}</td>
+              <td class="text-center"><span class="mm-fs-qty">{{ p.qty_factory }}</span></td>
+              <td class="text-center">{{ p.qty_shop }}</td>
+              <td>
+                <span class="mm-fs-status {% if p.status_key == 'fresh' %}is-fresh{% else %}is-return{% endif %}">{{ p.status_label }}</span>
+              </td>
+              <td class="text-end">
+                <div class="mm-fs-actions justify-content-end">
+                  <a class="btn btn-outline-secondary btn-sm mm-fs-action" href="{{ url_for('products.product_details', product_id=p.id) }}">Info</a>
+                  <a class="btn btn-outline-secondary btn-sm mm-fs-action" href="{{ url_for('products.product_cost', product_id=p.id) }}">Cost</a>
+                  {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
+                    <button type="button" class="btn btn-primary btn-sm mm-fs-action" data-bs-toggle="modal" data-bs-target="#{{ edit_modal_id }}">Edit</button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
 
-              <tr class="{% if f == 0 and total > 0 %}table-warning{% endif %}">
-                <td class="fw-semibold">
-                  {{ p.name }}
-                  {% if f == 0 and total > 0 %}
-                    <span class="badge bg-warning text-dark ms-1">{{ t('factory_stock_only_in_shop') }}</span>
-                  {% elif f > 0 and s == 0 %}
-                    <span class="badge bg-primary ms-1">{{ t('factory_stock_only_in_factory') }}</span>
-                  {% endif %}
-                </td>
-                <td class="text-end fw-semibold">{{ total }}</td>
-                <td class="text-end">{{ f }}</td>
-                <td class="text-end text-muted">{{ s }}</td>
-                <td>
-                  {% if total %}
-                    <div class="progress" style="height: 6px;">
-                      <div class="progress-bar" role="progressbar"
-                           style="width: {{ fpct }}%;"
-                           aria-valuenow="{{ fpct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                      {% if spct > 0 %}
-                        <div class="progress-bar bg-warning" role="progressbar"
-                             style="width: {{ spct }}%;"
-                             aria-valuenow="{{ spct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                      {% endif %}
+            {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
+              <div class="modal fade" id="{{ edit_modal_id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Edit {{ p.name }}</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="small text-muted mt-1">
-                      {{ t('factory_stock_split_summary').format(factory=fpct, shop=spct) }}
-                    </div>
-                  {% else %}
-                    <span class="small text-muted">{{ t('factory_stock_no_stock_left') }}</span>
-                  {% endif %}
-                </td>
-              </tr>
-            {% else %}
-              <tr>
-                <td colspan="5" class="text-center text-muted py-3">
-                  {{ t('factory_stock_no_products') }}
-                </td>
-              </tr>
-            {% endfor %}
+                    <form method="post" action="{{ url_for('products.update_product_info', product_id=p.id) }}" enctype="multipart/form-data">
+                      <div class="modal-body">
+                        <input type="hidden" name="next" value="{{ url_for('products.factory_stock') }}">
+
+                        <label class="form-label small mb-1">Category</label>
+                        <input type="text" class="form-control form-control-sm mb-2" name="category" value="{{ p.category or '' }}">
+
+                        <label class="form-label small mb-1">Fabric used (text)</label>
+                        <input type="text" class="form-control form-control-sm mb-2" name="fabric_used" value="{{ p.fabric_used or '' }}">
+
+                        <label class="form-label small mb-1">Product photo</label>
+                        <input type="file" class="form-control form-control-sm mb-2" name="image" accept="image/*">
+
+                        <label class="form-label small mb-1">Website photo</label>
+                        <input type="file" class="form-control form-control-sm mb-2" name="website_image" accept="image/*">
+
+                        <label class="form-label small mb-1">Notes</label>
+                        <textarea class="form-control form-control-sm" rows="3" name="notes">{{ p.notes or '' }}</textarea>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
-  </div>
 
+    <div class="mm-fs-mobile-list d-grid gap-2">
+      {% for p in products %}
+        {% set edit_modal_id = 'factory-edit-mobile-' ~ p.id %}
+        {% set product_photo = product_image_url(p.image_path) %}
+        <div class="mm-fs-mobile-card">
+          <div class="d-flex gap-2 align-items-start">
+            {% if product_photo %}
+              <img src="{{ product_photo }}" alt="{{ p.name }}" class="mm-fs-avatar">
+            {% else %}
+              <div class="mm-fs-initial">{{ p.name[0]|upper if p.name else '?' }}</div>
+            {% endif %}
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ p.name }}</div>
+              <div class="small text-muted">{{ p.category or t('products_no_category') }}</div>
+              <div class="small mt-1">F: <span class="mm-fs-qty">{{ p.qty_factory }}</span> · S: {{ p.qty_shop }}</div>
+              <div class="mt-1"><span class="mm-fs-status {% if p.status_key == 'fresh' %}is-fresh{% else %}is-return{% endif %}">{{ p.status_label }}</span></div>
+            </div>
+          </div>
+          <div class="mm-fs-actions mt-2">
+            <a class="btn btn-outline-secondary btn-sm mm-fs-action" href="{{ url_for('products.product_details', product_id=p.id) }}">Info</a>
+            <a class="btn btn-outline-secondary btn-sm mm-fs-action" href="{{ url_for('products.product_cost', product_id=p.id) }}">Cost</a>
+            {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
+              <button type="button" class="btn btn-primary btn-sm mm-fs-action" data-bs-toggle="modal" data-bs-target="#{{ edit_modal_id }}">Edit</button>
+            {% endif %}
+          </div>
+        </div>
+
+      {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
+        <div class="modal fade" id="{{ edit_modal_id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit {{ p.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <form method="post" action="{{ url_for('products.update_product_info', product_id=p.id) }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                  <input type="hidden" name="next" value="{{ url_for('products.factory_stock') }}">
+
+                  <label class="form-label small mb-1">Category</label>
+                  <input type="text" class="form-control form-control-sm mb-2" name="category" value="{{ p.category or '' }}">
+
+                  <label class="form-label small mb-1">Fabric used (text)</label>
+                  <input type="text" class="form-control form-control-sm mb-2" name="fabric_used" value="{{ p.fabric_used or '' }}">
+
+                  <label class="form-label small mb-1">Product photo</label>
+                  <input type="file" class="form-control form-control-sm mb-2" name="image" accept="image/*">
+
+                  <label class="form-label small mb-1">Website photo</label>
+                  <input type="file" class="form-control form-control-sm mb-2" name="website_image" accept="image/*">
+
+                  <label class="form-label small mb-1">Notes</label>
+                  <textarea class="form-control form-control-sm" rows="3" name="notes">{{ p.notes or '' }}</textarea>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  (function () {
-    const labels = {{ chart_labels|tojson }};
-    const data = {{ chart_values|tojson }};
-
-    if (!labels || labels.length === 0) {
-      return; // no data: skip chart init
-    }
-
-    const pieCanvas = document.getElementById('factoryPie');
-    const barCanvas = document.getElementById('factoryBar');
-
-    if (pieCanvas) {
-      new Chart(pieCanvas, {
-        type: 'pie',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-          }]
-        },
-        options: {
-          plugins: {
-            legend: {
-              position: 'bottom',
-            }
-          }
-        }
-      });
-    }
-
-    if (barCanvas) {
-      // Take the first 8 items (or all of them if there are fewer), sorted by quantity
-      const combined = labels.map((name, i) => ({ name, value: data[i] || 0 }));
-      combined.sort((a, b) => b.value - a.value);
-      const top = combined.slice(0, 8);
-
-      const barLabels = top.map(x => x.name);
-      const barData = top.map(x => x.value);
-
-      new Chart(barCanvas, {
-        type: 'bar',
-        data: {
-          labels: barLabels,
-          datasets: [{
-            label: {{ t('factory_stock_chart_series')|tojson }},
-            data: barData,
-            borderWidth: 1,
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          scales: {
-            x: {
-              beginAtZero: true
-            }
-          },
-          plugins: {
-            legend: { display: false }
-          }
-        }
-      });
-    }
-  })();
-</script>
 
 {% endblock %}

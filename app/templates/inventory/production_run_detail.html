@@ -1,0 +1,185 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('production_run_detail') }}{% endblock %}
+{% block topbar_title %}{{ t('production_run_detail') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <section class="adras-hero-card">
+    <div class="adras-hero-left">
+      <h1 class="adras-hero-title">{{ run.product_name }}</h1>
+      <p class="dashboard-subtitle">
+        {{ t('production_run_subtitle') }}
+      </p>
+      <div class="adras-focus-box mt-3">
+        <div class="adras-focus-item">
+          <span class="adras-focus-dot"></span>
+          <span>{{ t('run_number_label') }}{{ run.id }} · {{ run.date.strftime('%d.%m.%Y') }} · {{ t('produced_label') }} {{ run.quantity }} {{ t('units_short') }}</span>
+        </div>
+        {% if run.note %}
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>{{ run.note }}</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="adras-kpi-grid">
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('produced_label') }}</div>
+        <div class="adras-kpi-number">{{ run.quantity }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('materials_used') }}</div>
+        <div class="adras-kpi-number">{{ run.total_material_rows }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('factory_stock_now') }}</div>
+        <div class="adras-kpi-number">{{ run.product_stock_now }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card adras-kpi-card-dark">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('source_label_short') }}</div>
+        <div class="adras-kpi-number">{% if run.production_plan_id %}{{ t('saved_plan_source') }} #{{ run.production_plan_id }}{% else %}{{ t('manual_source') }}{% endif %}</div>
+      </div>
+    </article>
+  </section>
+
+  <section class="adras-main-grid">
+    <div class="adras-main-left">
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('consumed_materials') }}</div>
+          <div class="d-flex gap-2 flex-wrap">
+            {% if run.production_plan_id %}
+              <a href="{{ url_for('main.production_plan_detail', plan_id=run.production_plan_id) }}" class="btn btn-outline-light btn-sm">{{ t('saved_plan_detail_link') }}</a>
+            {% endif %}
+            <a href="{{ run.movement_history_href }}" class="btn btn-outline-light btn-sm">{{ t('movement_history') }}</a>
+          </div>
+        </div>
+
+        {% if run.consumptions %}
+          <div class="adras-focus-box">
+            {% for item in run.consumptions %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">
+                  {{ (item.material_type or 'fabric')|replace('_', ' ')|title }} · {{ item.material_name }}
+                </div>
+                <div class="adras-action-card-sub">
+                  {{ t('used_label') }} {{ "%.2f"|format(item.used_amount or 0) }} {{ item.unit }}
+                  · {{ t('stock_now_label') }} {{ "%.2f"|format(item.material_stock_now or 0) }} {{ item.unit }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_material_consumption_rows') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <div class="adras-main-right">
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('run_navigation') }}</div>
+
+        <div class="adras-focus-box">
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span><a href="{{ run.movement_history_href }}" class="btn btn-outline-light btn-sm">{{ t('open_product_movement_history') }}</a></span>
+          </div>
+          {% if run.order_history_href %}
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span><a href="{{ run.order_history_href }}" class="btn btn-outline-light btn-sm">{{ t('open_order_movement_history') }}</a></span>
+            </div>
+          {% endif %}
+          {% if run.production_plan_id %}
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span><a href="{{ url_for('main.production_plan_detail', plan_id=run.production_plan_id) }}" class="btn btn-outline-light btn-sm">{{ t('saved_plan_detail_link') }}</a></span>
+            </div>
+          {% endif %}
+        </div>
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('correction_rollback') }}</div>
+          {% if run.can_rollback %}
+            <span class="badge bg-success">{{ t('rollback_available') }}</span>
+          {% else %}
+            <span class="badge bg-warning text-dark">{{ t('guarded_label') }}</span>
+          {% endif %}
+        </div>
+
+        {% if run.can_rollback %}
+          <div class="adras-focus-box mb-3">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('rollback_help_1').format(qty=run.quantity) }}</span>
+            </div>
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('rollback_help_2') }}</span>
+            </div>
+          </div>
+
+          <form method="post" action="{{ url_for('main.production_run_rollback', run_id=run.id) }}" class="d-grid" style="gap:10px;">
+            <div>
+              <label class="form-label">{{ t('rollback_reason') }}</label>
+              <input type="text" name="rollback_reason" class="form-control-auth" maxlength="255" placeholder="{{ t('rollback_reason_placeholder') }}" required>
+            </div>
+            <div>
+              <button type="submit" class="btn btn-outline-light btn-sm" onclick="return confirm('{{ t('rollback_confirm') }}');">
+                {{ t('rollback_run') }}
+              </button>
+            </div>
+          </form>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ run.rollback_block_reason }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel adras-snapshot-dark">
+        <div class="adras-panel-title adras-panel-title-light">{{ t('why_this_helps') }}</div>
+
+        <div class="adras-snapshot-dark-box">
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-yellow"></span>
+            <span>{{ t('run_help_1') }}</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-cyan"></span>
+            <span>{{ t('run_help_2') }}</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-blue"></span>
+            <span>{{ t('run_help_3') }}</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

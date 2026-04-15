@@ -1,0 +1,148 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('product_intelligence') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-summary-page">
+  <section class="adras-detail-hero adras-summary-hero">
+    <div class="adras-summary-hero-copy">
+      <div class="adras-detail-kicker">{{ t('product_drilldown') }}</div>
+      <h1 class="adras-detail-title">{{ t('product_intelligence') }}</h1>
+      <p class="adras-detail-subtitle">
+        {{ t('product_intelligence_subtitle') }}
+      </p>
+
+      <div class="adras-summary-pill-row">
+        <span class="ad-chip chip-info">{{ top_product_rows_all|length }} {{ t('products_ranked')|lower }}</span>
+        <span class="ad-chip chip-warn">{{ slow_mover_rows_all|length }} {{ t('slow_movers')|lower }}</span>
+      </div>
+    </div>
+
+    <div class="adras-summary-health-card tone-{{ health_tone }}">
+      <div class="adras-summary-health-label">{{ t('month_signals') }}</div>
+      <div class="adras-summary-health-score">{{ month_sales_display.primary.split(' ')[0] }}</div>
+      <div class="adras-summary-health-band">{{ t('revenue_this_month') }}</div>
+      <p class="adras-summary-health-copy">
+        {{ t('profit_this_month') }}: {{ month_profit_display.primary }}{% if month_profit_display.secondary %} · {{ month_profit_display.secondary }}{% endif %}
+      </p>
+    </div>
+  </section>
+
+  <section class="adras-summary-main-grid">
+    <div class="adras-summary-stack">
+      <article class="adras-panel">
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('all_best_sellers') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('all_best_sellers_copy') }}
+            </p>
+          </div>
+          <a href="{{ url_for('main.business_summary') }}" class="ad-btn ad-btn-secondary">{{ t('back_to_summary') }}</a>
+        </div>
+
+        {% if top_product_rows_all %}
+          <div class="adras-summary-card-list">
+            {% for product in top_product_rows_all %}
+              <article class="adras-summary-card">
+                <div class="adras-summary-card-top">
+                  <div>
+                    <div class="adras-summary-card-title">{{ product.name }}</div>
+                    <div class="adras-summary-card-copy">{{ product.category }}</div>
+                  </div>
+                  <span class="ad-chip {% if product.pace_label == 'Strong' %}chip-up{% elif product.pace_label == 'Moving' %}chip-info{% else %}chip-neutral{% endif %}">
+                    {{ product.pace_label }}
+                  </span>
+                </div>
+
+                <div class="adras-summary-metric-grid">
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('sold_in_30d') }}</span>
+                    <strong>{{ product.sold_qty_30 }}</strong>
+                    <small>{{ product.on_hand_qty }} {{ t('on_hand_suffix') }}</small>
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('revenue') }}</span>
+                    <strong>{{ product.revenue_display.primary }}</strong>
+                    {% if product.revenue_display.secondary %}
+                      <small>{{ product.revenue_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('profit') }}</span>
+                    <strong>{{ product.profit_display.primary }}</strong>
+                    {% if product.profit_display.secondary %}
+                      <small>{{ product.profit_display.secondary }}</small>
+                    {% endif %}
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('stock_split') }}</span>
+                    <strong>{{ product.factory_qty }} {{ t('factory_label_short') }}</strong>
+                    <small>{{ product.shop_qty }} {{ t('shop_label_short') }}</small>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-summary-empty">
+            {{ t('all_best_sellers_empty') }}
+          </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <div class="adras-summary-side-stack">
+      <article class="adras-panel">
+        <div class="adras-section-head">
+          <div>
+            <h2 class="adras-panel-title">{{ t('slow_movers') }}</h2>
+            <p class="adras-detail-panel-copy">
+              {{ t('slow_movers_side_copy') }}
+            </p>
+          </div>
+        </div>
+
+        {% if slow_mover_rows_all %}
+          <div class="adras-summary-card-list">
+            {% for product in slow_mover_rows_all %}
+              <article class="adras-summary-card">
+                <div class="adras-summary-card-top">
+                  <div>
+                    <div class="adras-summary-card-title">{{ product.name }}</div>
+                    <div class="adras-summary-card-copy">{{ product.dormant_label }}</div>
+                  </div>
+                  <span class="ad-chip chip-warn">{{ product.on_hand_qty }} {{ t('stuck_suffix') }}</span>
+                </div>
+
+                <div class="adras-summary-metric-grid">
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('sold_in_30d') }}</span>
+                    <strong>{{ product.sold_qty_30 }}</strong>
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('factory_stock') }}</span>
+                    <strong>{{ product.factory_qty }}</strong>
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('shop_stock') }}</span>
+                    <strong>{{ product.shop_qty }}</strong>
+                  </div>
+                  <div class="adras-summary-metric-cell">
+                    <span>{{ t('category') }}</span>
+                    <strong>{{ product.category }}</strong>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-summary-empty">
+            {{ t('slow_movers_side_empty') }}
+          </div>
+        {% endif %}
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

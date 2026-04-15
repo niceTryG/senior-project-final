@@ -1,6 +1,8 @@
-{% extends "base.html" %}
+{% extends "products/base_products.html" %}
 
 {% block title %}{{ t('products_page_title') }}{% endblock %}
+
+{% set quick_actions_mode = quick_actions_mode|default('limited') %}
 
 {% block extra_css %}
 <style>
@@ -9,18 +11,43 @@
   .mm-actions .btn { border-radius: 14px; font-weight: 700; }
   .mm-actions .btn-sm { padding: .60rem .75rem; }
 
-  .mm-chip {
-    display:inline-flex; align-items:center; justify-content:center;
-    border-radius: 999px;
-    padding: .45rem .75rem;
-    border: 1px solid rgba(0,0,0,.10);
+  .mm-toolbar-card { border-radius: 16px; }
+  .mm-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    border: 1px solid rgba(0,0,0,.12);
     background: #fff;
-    font-size: .85rem;
-    font-weight: 600;
-    color: #111;
+    color: #0b1c30;
     text-decoration: none;
-    width: 100%;
+    border-radius: 12px;
+    padding: .44rem .68rem;
+    font-size: .82rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: background .12s, border-color .12s, transform .12s;
   }
+  .mm-back-link:hover {
+    background: #f8fafc;
+    border-color: rgba(37,99,168,.35);
+    transform: translateY(-1px);
+    color: #0b1c30;
+  }
+  .mm-toolbar-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .5rem;
+  }
+  .mm-toolbar-title {
+    font-size: .78rem;
+    color: #6c757d;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+  }
+  .mm-add-btn { border-radius: 14px; font-weight: 700; }
 
   .mm-filter-btn {
     border-radius: 14px;
@@ -137,6 +164,276 @@
     white-space: pre-line;
     font-weight: 600;
   }
+
+  /* ── Product tile grid ───────────────────────────── */
+  .mm-pgrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .mm-pgrid-empty {
+    grid-column: 1 / -1;
+    padding: 28px;
+    text-align: center;
+    color: #6c757d;
+    font-size: .9rem;
+    background: #fff;
+    border: 1px dashed #dee2e6;
+    border-radius: 14px;
+  }
+
+  .mm-ptile {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e2e7ef;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 4px rgba(11,28,48,.06);
+    transition: box-shadow .15s, transform .13s;
+  }
+  .mm-ptile:hover { box-shadow: 0 4px 16px rgba(11,28,48,.10); transform: translateY(-2px); }
+
+  .mm-ptile-head {
+    display: flex;
+    flex-direction: column;
+    background: none;
+    border: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* Image / thumbnail */
+  .mm-ptile-thumb {
+    position: relative;
+    aspect-ratio: 1;
+    background: #f4f6f9;
+    overflow: hidden;
+  }
+  .mm-ptile-img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .mm-ptile-init {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 800; color: #96aabf;
+    font-family: 'DM Mono', monospace;
+  }
+  .mm-ptile-dot {
+    position: absolute; bottom: 7px; right: 7px;
+    width: 10px; height: 10px;
+    border-radius: 999px; border: 2px solid #fff;
+  }
+  .mm-ptile-dot--pub   { background: #1e6b44; }
+  .mm-ptile-dot--draft { background: #6c757d; }
+
+  /* Info area */
+  .mm-ptile-info { padding: 8px 10px 6px; }
+  .mm-ptile-name {
+    font-size: .8rem; font-weight: 700; color: #0b1c30;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25;
+  }
+  .mm-ptile-meta { font-size: .63rem; color: #96aabf; margin-bottom: 4px; }
+  .mm-ptile-stocks { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .mm-ptile-stk {
+    font-size: 1.5rem; font-weight: 800; color: #0b1c30;
+    font-family: 'DM Mono', monospace; line-height: 1;
+  }
+  .mm-ptile-bar {
+    height: 4px; border-radius: 999px;
+    background: #e2e7ef; overflow: hidden; display: flex; margin-top: 5px;
+  }
+  .mm-ptile-bar-f { background: #2563a8; height: 100%; }
+  .mm-ptile-bar-s { background: #e5aa64; height: 100%; }
+  .mm-ptile-fsplabel { font-size: .62rem; color: #96aabf; margin-top: 2px; }
+
+  /* Expanded panel */
+  .mm-ptile-panel {
+    border-top: 1px solid #e2e7ef;
+    padding: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+
+  /* Quick link buttons */
+  .mm-ptile-qlinks { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .mm-ptile-qbtn {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: .72rem; font-weight: 600;
+    padding: 4px 8px; border-radius: 8px;
+    border: 1px solid #dee2e6; background: #f8fafc;
+    color: #0b1c30; cursor: pointer; text-decoration: none;
+    transition: background .12s, border-color .12s;
+  }
+  .mm-ptile-qbtn:hover { background: #eef4ff; border-color: #3b82d4; color: #2563a8; }
+  .mm-ptile-qbtn--warn { border-color: #fecaca; background: #fff0f0; color: #c53030; }
+
+  /* Accordion section toggle */
+  .mm-ptile-sect-btn {
+    display: flex; align-items: center; width: 100%;
+    padding: 6px 8px; font-size: .77rem; font-weight: 600;
+    border: 1px solid #e2e7ef; border-radius: 9px;
+    background: #f8fafc; color: #0b1c30;
+    cursor: pointer; text-align: left; transition: background .12s;
+  }
+  .mm-ptile-sect-btn:hover { background: #eef4ff; }
+  .mm-ptile-form { padding: 8px 4px 2px; }
+
+  /* ── Mobile interaction polish ─────────────────── */
+  .mm-mobile-search-fab {
+    display: none;
+  }
+
+  @media (max-width: 767.98px) {
+    .mm-toolbar-card {
+      position: static;
+    }
+
+    .mm-filter-btn,
+    #mmFilters {
+      display: none !important;
+    }
+
+    .mm-toolbar-head {
+      justify-content: space-between;
+      margin-bottom: 0;
+    }
+
+    .mm-toolbar-title {
+      display: none !important;
+    }
+
+    .mm-add-btn,
+    .mm-ptile-sect-btn,
+    .mm-ptile-qbtn,
+    .btn.btn-sm {
+      min-height: 34px;
+    }
+
+    .mm-ptile-qbtn {
+      padding: 4px 6px;
+      font-size: .7rem;
+      width: 100%;
+      justify-content: center;
+      border-radius: 7px;
+    }
+
+    .mm-ptile-qlinks {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .mm-ptile-sect-btn {
+      padding: 6px 8px;
+      font-size: .74rem;
+    }
+
+    .mm-ptile-form {
+      padding: 10px 4px 4px;
+    }
+
+    .mm-pgrid {
+      gap: 12px;
+    }
+
+    .form-control.form-control-sm,
+    .form-select.form-select-sm,
+    .mm-mobile-search-input {
+      font-size: 16px;
+    }
+
+    .mm-mobile-search-fab {
+      position: static;
+      width: 42px;
+      height: 42px;
+      border: 1px solid #d5dce7;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(11,28,48,.08);
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      transition: width .2s ease, box-shadow .2s ease;
+    }
+
+    .mm-mobile-search-fab.is-open {
+      width: min(74vw, 280px);
+      border-radius: 14px;
+      padding-right: 6px;
+    }
+
+    .mm-mobile-search-fab.is-floating {
+      position: fixed;
+      top: 74px;
+      left: 10px;
+      z-index: 45;
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 14px rgba(11,28,48,.14);
+    }
+
+    .mm-mobile-search-toggle {
+      width: 42px;
+      height: 42px;
+      border: 0;
+      background: transparent;
+      color: #0b1c30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 42px;
+      cursor: pointer;
+    }
+
+    .mm-mobile-search-form {
+      display: flex;
+      align-items: center;
+      width: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: width .2s ease, opacity .15s ease;
+    }
+
+    .mm-mobile-search-fab.is-open .mm-mobile-search-form {
+      width: calc(100% - 42px);
+      opacity: 1;
+    }
+
+    .mm-mobile-search-input {
+      width: 100%;
+      height: 34px;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #0b1c30;
+      padding: 0 8px;
+      line-height: 1;
+    }
+
+    .mm-mobile-search-input::placeholder {
+      color: #8a9aae;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .mm-pgrid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .mm-ptile-name {
+      font-size: .62rem;
+    }
+
+    .mm-ptile-meta {
+      font-size: .56rem;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -144,53 +441,53 @@
 <div class="container-fluid mm-page-products">
 
   <div class="d-flex justify-content-between align-items-center mb-2">
-    <h1 class="h5 fw-semibold mb-0">{{ t('products_page_header') }}</h1>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('main.inventory') }}" class="mm-back-link" aria-label="Back to inventory">
+        <i class="bi bi-arrow-left"></i>
+        <span>Back</span>
+      </a>
+      <h1 class="h5 fw-semibold mb-0">{{ t('products_page_header') }}</h1>
+    </div>
   </div>
 
-  <div class="mm-actions mb-2">
-    <div class="row g-2">
-      <div class="col-6">
+  <div class="card shadow-sm border-0 mb-3 mm-toolbar-card">
+    <div class="card-body p-2 p-md-3">
+
+      <div class="mm-toolbar-head">
+        <div class="mm-toolbar-title d-none d-md-block">{{ t('products_search_filter') }}</div>
+
+        <div class="mm-mobile-search-fab d-md-none" id="mmMobileSearchFab">
+          <button type="button" class="mm-mobile-search-toggle" id="mmMobileSearchToggle" aria-label="Search">
+            <i class="bi bi-search"></i>
+          </button>
+          <form method="get" class="mm-mobile-search-form">
+            <input type="text"
+                   class="mm-mobile-search-input"
+                   id="mmMobileSearchInput"
+                   name="q"
+                   value="{{ q }}"
+                   placeholder="{{ t('products_filter_search_placeholder') }}">
+            {% if selected_category %}
+              <input type="hidden" name="category" value="{{ selected_category }}">
+            {% endif %}
+          </form>
+        </div>
+
         <button type="button"
-                class="btn btn-primary btn-sm w-100"
+                class="btn btn-primary btn-sm mm-add-btn"
                 data-bs-toggle="modal"
                 data-bs-target="#addProductModal">
           ➕ {{ t('products_button_add') }}
         </button>
       </div>
 
-      <div class="col-6">
-        <button type="button"
-                class="btn btn-outline-primary btn-sm w-100"
-                data-bs-toggle="modal"
-                data-bs-target="#importExcelModal">
-          📄 {{ t('products_button_import_excel') }}
-        </button>
-      </div>
-
-      <div class="col-12 d-md-none">
-        <a href="{{ url_for('sales.list_sales') }}" class="mm-chip">
-          🧾 {{ t('products_button_sales_history') }}
-        </a>
-      </div>
-
-      <div class="col-12 d-none d-md-block">
-        <a href="{{ url_for('sales.list_sales') }}" class="btn btn-outline-secondary btn-sm">
-          🧾 {{ t('products_button_sales_history') }}
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="card shadow-sm border-0 mb-3">
-    <div class="card-body p-2 p-md-3">
-
       <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mm-filter-btn"
               type="button" data-bs-toggle="collapse" data-bs-target="#mmFilters"
-              aria-expanded="false" aria-controls="mmFilters">
+              aria-expanded="true" aria-controls="mmFilters">
         <i class="bi bi-search me-1"></i>{{ t('products_search_filter') }}
       </button>
 
-      <div class="collapse d-md-block mt-2 mt-md-0" id="mmFilters">
+      <div class="collapse show d-md-block mt-2 mt-md-0" id="mmFilters">
         <form method="get" class="row g-2 align-items-end">
           <div class="col-12 col-md-7">
             <label class="form-label small mb-1">{{ t('products_filter_search_label') }}</label>
@@ -224,12 +521,10 @@
     </div>
   </div>
 
-  {# ================= MOBILE CARDS ================= #}
-  <div class="d-md-none mb-3">
+  {# ================= UNIFIED PRODUCT TILE GRID ================= #}
+  <div class="mm-pgrid">
     {% if not products %}
-      <div class="alert alert-light border small mb-0">
-        {{ t('products_empty_state') }}
-      </div>
+      <div class="mm-pgrid-empty">{{ t('products_empty_state') }}</div>
     {% endif %}
 
     {% for row in products %}
@@ -241,320 +536,140 @@
       {% set spct = (shop_qty * 100 // total_qty) if total_qty else 0 %}
       {% set low_total = total_qty > 0 and total_qty < 10 %}
 
-      {% set toshop_id = "m-toshop-" ~ p.id %}
-      {% set sell_id = "m-sell-" ~ p.id %}
-      {% set produce_id = "m-produce-" ~ p.id %}
-      {% set info_id = "m-info-" ~ p.id %}
+      {% set xid = "px" ~ p.id %}
+      {% set sell_id = xid ~ "-sell" %}
+      {% set ship_id = xid ~ "-ship" %}
+      {% set make_id = xid ~ "-make" %}
+      {% set product_photo = product_image_url(p.image_path) %}
 
-      <div class="card shadow-sm border-0 mb-2 mm-product-card">
-        <div class="card-body">
+      <div class="mm-ptile">
+        <button class="mm-ptile-head" type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#{{ xid }}"
+                aria-expanded="false"
+                aria-controls="{{ xid }}">
 
-          <div class="d-flex justify-content-between align-items-start gap-2">
-            <div class="flex-grow-1" style="min-width:0;">
-              <div class="small text-muted">MM-{{ "%05d"|format(p.id) }}</div>
-              <div class="fw-semibold mm-product-card-title text-truncate">{{ p.name }}</div>
-              <div class="text-muted small">
-                {{ p.category or t('products_no_category') }} · {{ p.currency }}
-              </div>
-
-              <div class="mt-2">
-                {% if p.is_published %}
-                  <span class="badge bg-success me-1"><i class="bi bi-globe-americas me-1"></i>{{ t('products_publish') }}</span>
-                {% else %}
-                  <span class="badge bg-secondary me-1"><i class="bi bi-eye-slash me-1"></i>{{ t('products_unpublish') }}</span>
-                {% endif %}
-
-                {% if total_qty == 0 %}
-                  <span class="badge bg-secondary me-1">{{ t('products_badge_no_stock') }}</span>
-                {% elif low_total %}
-                  <span class="badge bg-danger me-1">{{ t('products_badge_low_stock') }}</span>
-                {% endif %}
-
-                {% if factory_qty == 0 and shop_qty > 0 %}
-                  <span class="badge bg-warning text-dark me-1">{{ t('products_badge_only_shop') }}</span>
-                {% elif factory_qty > 0 and shop_qty == 0 %}
-                  <span class="badge bg-primary me-1">{{ t('products_badge_only_factory') }}</span>
-                {% endif %}
-              </div>
-            </div>
-
-            <div class="text-end">
-              <div class="small text-muted">{{ t('products_table_col_total') }}</div>
-              <div class="mm-total-pill text-bg-dark">{{ total_qty }}</div>
-            </div>
-          </div>
-
-          <div class="mt-3">
-            <div class="mm-kv">
-              <div class="mm-k">{{ t('products_table_col_factory') }}</div>
-              <div class="mm-v">{{ factory_qty }}</div>
-            </div>
-            <div class="mm-kv">
-              <div class="mm-k">{{ t('products_table_col_in_shop') }}</div>
-              <div class="mm-v">{{ shop_qty }}</div>
-            </div>
-            <div class="mm-kv">
-              <div class="mm-k">{{ t('products_table_col_cost_per_unit') }}</div>
-              <div class="mm-v">{{ format_money(p.cost_price_per_item, p.currency) }}</div>
-            </div>
-            <div class="mm-kv">
-              <div class="mm-k">{{ t('products_table_col_sell_per_unit') }}</div>
-              <div class="mm-v">{{ format_money(p.sell_price_per_item, p.currency) }}</div>
-            </div>
-          </div>
-
-          <div class="mt-3">
-            {% if total_qty %}
-              <div class="progress" style="height: 8px; border-radius: 999px;">
-                <div class="progress-bar" role="progressbar"
-                     style="width: {{ fpct }}%;"
-                     aria-valuenow="{{ fpct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                {% if spct > 0 %}
-                  <div class="progress-bar bg-warning" role="progressbar"
-                       style="width: {{ spct }}%;"
-                       aria-valuenow="{{ spct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                {% endif %}
-              </div>
-              <div class="small text-muted mt-1">
-                {{ t('products_split_factory_short') }}: {{ fpct }}% &middot; {{ t('products_split_shop_short') }}: {{ spct }}%
-              </div>
+          <div class="mm-ptile-thumb">
+            {% if product_photo %}
+              <img src="{{ product_photo }}" alt="{{ p.name }}" class="mm-ptile-img">
             {% else %}
-              <div class="small text-muted">{{ t('products_split_no_data') }}</div>
+              <div class="mm-ptile-init">{{ p.name[0]|upper if p.name else '?' }}</div>
+            {% endif %}
+            {% if p.is_published %}
+              <span class="mm-ptile-dot mm-ptile-dot--pub" title="{{ t('products_publish') }}"></span>
+            {% else %}
+              <span class="mm-ptile-dot mm-ptile-dot--draft" title="{{ t('products_unpublish') }}"></span>
             {% endif %}
           </div>
 
-          <div class="row g-2 mt-3">
-            <div class="col-6">
-              <button class="btn btn-outline-secondary w-100 mm-card-btn"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#{{ toshop_id }}"
-                      aria-expanded="false"
-                      aria-controls="{{ toshop_id }}">
-                <i class="bi bi-truck me-1"></i>{{ t('products_transfer_to_shop_short') }}
-              </button>
+          <div class="mm-ptile-info">
+            <div class="mm-ptile-name" title="{{ p.name }}">{{ p.name }}</div>
+            <div class="mm-ptile-meta">MM-{{ "%05d"|format(p.id) }} &middot; {{ p.category or t('products_no_category') }}</div>
+            <div class="mm-ptile-stocks">
+              <span class="mm-ptile-stk">{{ total_qty }}</span>
+              {% if total_qty == 0 %}
+                <span class="badge bg-secondary" style="font-size:.58rem;">{{ t('products_badge_no_stock') }}</span>
+              {% elif low_total %}
+                <span class="badge bg-danger" style="font-size:.58rem;">{{ t('products_badge_low_stock') }}</span>
+              {% endif %}
             </div>
-
-            <div class="col-6">
-              <button class="btn btn-outline-primary w-100 mm-card-btn"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#{{ sell_id }}"
-                      aria-expanded="false"
-                      aria-controls="{{ sell_id }}">
-                <i class="bi bi-cash-coin me-1"></i>{{ t('products_sell_short') }}
-              </button>
-            </div>
-
-            <div class="col-12">
-              <button class="btn btn-dark w-100 mm-card-btn"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#{{ produce_id }}"
-                      aria-expanded="false"
-                      aria-controls="{{ produce_id }}">
-                <i class="bi bi-building-gear me-1"></i>{{ t('products_produce_title') }}
-              </button>
-            </div>
-
-            <div class="col-12">
-              <button class="btn btn-outline-dark w-100 mm-info-btn"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#{{ info_id }}"
-                      aria-expanded="false"
-                      aria-controls="{{ info_id }}">
-                <i class="bi bi-info-circle me-1"></i>{{ t('products_info_short') }}
-              </button>
-            </div>
-
-            <div class="col-12">
-              <a href="{{ url_for('products.product_cost', product_id=p.id) }}"
-                 class="btn btn-outline-warning w-100 mm-card-btn">
-                <i class="bi bi-calculator me-1"></i>{{ t('products_cost_short') }}
-              </a>
-            </div>
-
-            <div class="col-12">
-              <form method="post" action="{{ url_for('products.toggle_publish', product_id=p.id) }}">
-                <button type="submit"
-                        class="btn w-100 mm-card-btn {% if p.is_published %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
-                  {% if p.is_published %}<i class="bi bi-eye-slash me-1"></i>{{ t('products_unpublish') }}{% else %}<i class="bi bi-globe-americas me-1"></i>{{ t('products_publish') }}{% endif %}
-                </button>
-              </form>
-            </div>
-
-            {% if current_user.is_admin %}
-            <div class="col-12">
-              <form method="post"
-                    action="{{ url_for('products.delete_product', product_id=p.id) }}"
-                    onsubmit="return confirm('Delete this product?');">
-                <button type="submit" class="btn btn-danger w-100 mm-card-btn">
-                  <i class="bi bi-trash me-1"></i>Delete
-                </button>
-              </form>
-            </div>
-            {% endif %}
-          </div>
-
-          <div class="mt-2">
-
-            <div class="collapse" id="{{ info_id }}">
-              <div class="border rounded-3 p-2 bg-white mt-2">
-                <div class="mm-media-grid mb-2">
-                  <div class="mm-media-card">
-                    <div class="mm-media-label">{{ t('products_photo_product') }}</div>
-                    {% set product_photo = product_image_url(p.image_path) %}
-                    {% if product_photo %}
-                      <img src="{{ product_photo }}"
-                           alt="{{ p.name }}"
-                           class="mm-media-image">
-                    {% else %}
-                      <div class="mm-media-placeholder">{{ t('products_no_photo_product') }}</div>
-                    {% endif %}
-                  </div>
-
-                  <div class="mm-media-card">
-                    <div class="mm-media-label">{{ t('products_photo_website') }}</div>
-                    {% set website_photo = product_image_url(p.website_image) %}
-                    {% if website_photo %}
-                      <img src="{{ website_photo }}"
-                           alt="{{ p.name }}"
-                           class="mm-media-image">
-                    {% else %}
-                      <div class="mm-media-placeholder">{{ t('products_no_photo_website') }}</div>
-                    {% endif %}
-                  </div>
-                </div>
-
-                <div class="d-flex flex-column gap-2">
-                  <div class="mm-info-box">
-                    <div class="mm-info-title">{{ t('products_fabric') }}</div>
-                    <div class="mm-info-value">{{ p.fabric_used or t('products_not_specified') }}</div>
-                  </div>
-
-                  <div class="mm-info-box">
-                    <div class="mm-info-title">{{ t('products_notes_description') }}</div>
-                    <div class="mm-info-value mm-notes-value">{{ p.notes or t('products_no_notes') }}</div>
-                  </div>
-
-                  <div class="mm-info-box">
-                    <div class="mm-info-title">{{ t('products_table_col_category') }}</div>
-                    <div class="mm-info-value">{{ p.category or t('products_not_specified') }}</div>
-                  </div>
-
-                  <div class="mm-info-box">
-                    <div class="mm-info-title">{{ t('products_article_code') }}</div>
-                    <div class="mm-info-value">MM-{{ "%05d"|format(p.id) }}</div>
-                  </div>
-                </div>
-
-                {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
-                  <div class="mt-2">
-                    <button type="button"
-                            class="btn btn-outline-primary w-100 mm-card-btn"
-                            data-bs-toggle="modal"
-                            data-bs-target="#editInfoModal{{ p.id }}">
-                      <i class="bi bi-pencil-square me-1"></i>{{ t('products_edit_info') }}
-                    </button>
-                  </div>
+            <div class="mm-ptile-split">
+              <div class="mm-ptile-bar">
+                {% if total_qty %}
+                  <div class="mm-ptile-bar-f" style="width:{{ fpct }}%"></div>
+                  <div class="mm-ptile-bar-s" style="width:{{ spct }}%"></div>
                 {% endif %}
               </div>
+              <span class="mm-ptile-fsplabel">F:{{ factory_qty }} &nbsp;S:{{ shop_qty }}</span>
+            </div>
+          </div>
+        </button>
+
+        <div class="collapse" id="{{ xid }}">
+          <div class="mm-ptile-panel">
+
+            <div class="mm-ptile-qlinks">
+              <a href="{{ url_for('products.product_details', product_id=p.id) }}" class="mm-ptile-qbtn">
+                <i class="bi bi-eye"></i> {{ t('products_info_short') }}
+              </a>
+              <a href="{{ url_for('products.product_cost', product_id=p.id) }}" class="mm-ptile-qbtn">
+                <i class="bi bi-calculator"></i> {{ t('products_cost_short') }}
+              </a>
+              {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
+                <button type="button" class="mm-ptile-qbtn"
+                        data-bs-toggle="modal" data-bs-target="#editInfoModal{{ p.id }}">
+                  <i class="bi bi-pencil-square"></i> {{ t('products_edit_info') }}
+                </button>
+              {% endif %}
             </div>
 
-            <div class="collapse" id="{{ toshop_id }}">
-              <div class="border rounded-3 p-2 bg-white mt-2">
-                <form method="post"
-                      action="{{ url_for('products.to_shop', product_id=p.id) }}"
-                      class="d-flex flex-column gap-2">
-                  <div>
-                    <label class="form-label small mb-1">{{ t('products_details_move_to_shop_qty_label') }}</label>
-                    <input type="number"
-                           name="quantity"
-                           class="form-control form-control-sm text-end"
-                           min="1"
-                           max="{{ factory_qty }}"
-                           required>
-                    <div class="form-text small">{{ t('products_table_col_factory') }}: {{ factory_qty }}</div>
-                  </div>
-                  <button type="submit" class="btn btn-secondary btn-sm w-100 mm-card-btn">
-                    ? {{ t('products_details_move_to_shop_button') }}
-                  </button>
-                </form>
-              </div>
-            </div>
-
+            {% if quick_actions_mode == 'full' %}
+            <button class="mm-ptile-sect-btn" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#{{ sell_id }}">
+              <i class="bi bi-cash-coin me-1"></i>{{ t('products_sell_short') }}
+              <i class="bi bi-chevron-down" style="margin-left:auto;"></i>
+            </button>
             <div class="collapse" id="{{ sell_id }}">
-              <div class="border rounded-3 p-2 bg-white mt-2">
-                <form method="post"
-                      action="{{ url_for('products.sell', product_id=p.id) }}"
-                      class="d-flex flex-column gap-2">
-
-                  <div class="row g-2">
-                    <div class="col-6">
-                      <label class="form-label small mb-1">{{ t('products_details_sell_qty_label') }}</label>
-                      <input type="number"
-                             name="quantity"
-                             class="form-control form-control-sm text-end"
-                             min="1"
-                             max="{{ factory_qty }}"
-                             required>
-                    </div>
-                    <div class="col-6">
-                      <label class="form-label small mb-1">{{ t('products_details_sell_price_per_unit_label') }}</label>
-                      <input type="number"
-                             step="0.01"
-                             name="sell_price_per_item"
-                             class="form-control form-control-sm">
-                    </div>
+              <form method="post" action="{{ url_for('products.sell', product_id=p.id) }}" class="mm-ptile-form">
+                <div class="row g-1">
+                  <div class="col-6">
+                    <input type="number" name="quantity" class="form-control form-control-sm"
+                           min="1" max="{{ factory_qty }}"
+                           placeholder="{{ t('products_details_sell_qty_label') }}" required>
                   </div>
-
-                  <input type="text"
-                         name="customer_name"
-                         class="form-control form-control-sm"
-                         placeholder="{{ t('products_details_customer_name_placeholder') }}">
-
-                  <input type="text"
-                         name="customer_phone"
-                         class="form-control form-control-sm"
-                         placeholder="{{ t('products_details_customer_phone_placeholder') }}">
-
-                  <button type="submit" class="btn btn-primary btn-sm w-100 mm-card-btn">
-                    ? {{ t('products_details_sell_button') }}
-                  </button>
-                </form>
-              </div>
+                  <div class="col-6">
+                    <input type="number" step="0.01" name="sell_price_per_item" class="form-control form-control-sm"
+                           placeholder="{{ t('products_details_sell_price_per_unit_label') }}">
+                  </div>
+                  <div class="col-12">
+                    <input type="text" name="customer_name" class="form-control form-control-sm"
+                           placeholder="{{ t('products_details_customer_name_placeholder') }}">
+                  </div>
+                  <div class="col-12">
+                    <input type="text" name="customer_phone" class="form-control form-control-sm"
+                           placeholder="{{ t('products_details_customer_phone_placeholder') }}">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-primary w-100 mt-1">
+                  {{ t('products_details_sell_button') }}
+                </button>
+              </form>
             </div>
 
-            <div class="collapse" id="{{ produce_id }}">
-              <div class="border rounded-3 p-2 bg-white mt-2">
-                <form method="post"
-                      action="{{ url_for('products.produce_with_fabric', product_id=p.id) }}"
-                      class="d-flex flex-column gap-2">
+            <button class="mm-ptile-sect-btn" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#{{ ship_id }}">
+              <i class="bi bi-truck me-1"></i>{{ t('products_transfer_to_shop_short') }}
+              <i class="bi bi-chevron-down" style="margin-left:auto;"></i>
+            </button>
+            <div class="collapse" id="{{ ship_id }}">
+              <form method="post" action="{{ url_for('products.to_shop', product_id=p.id) }}" class="mm-ptile-form">
+                <input type="number" name="quantity" class="form-control form-control-sm"
+                       min="1" max="{{ factory_qty }}"
+                       placeholder="{{ t('products_details_move_to_shop_qty_label') }}" required>
+                <div class="form-text small">{{ t('products_table_col_factory') }}: {{ factory_qty }}</div>
+                <button type="submit" class="btn btn-sm btn-outline-secondary w-100 mt-1">
+                  {{ t('products_details_move_to_shop_button') }}
+                </button>
+              </form>
+            </div>
 
-                  <div class="row g-2">
-                    <div class="col-6">
-                      <label class="form-label small mb-1">{{ t('products_produce_qty') }}</label>
-                      <input type="number"
-                      <label class="form-label small mb-1">{{ t('products_produce_qty') }}</label>
-                             class="form-control form-control-sm text-end"
-                             min="1"
-                             required>
-                    </div>
-
-                    <div class="col-6">
-                      <label class="form-label small mb-1">{{ t('products_produce_used') }}</label>
-                      <input type="number"
-                      <label class="form-label small mb-1">{{ t('products_produce_used') }}</label>
-                             name="used_amount"
-                             class="form-control form-control-sm text-end"
-                             min="0.01"
-                             required>
-                    </div>
+            <button class="mm-ptile-sect-btn" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#{{ make_id }}">
+              <i class="bi bi-building-gear me-1"></i>{{ t('products_produce_title') }}
+              <i class="bi bi-chevron-down" style="margin-left:auto;"></i>
+            </button>
+            <div class="collapse" id="{{ make_id }}">
+              <form method="post" action="{{ url_for('products.produce_with_fabric', product_id=p.id) }}" class="mm-ptile-form">
+                <div class="row g-1">
+                  <div class="col-6">
+                    <input type="number" name="quantity" class="form-control form-control-sm"
+                           min="1" placeholder="{{ t('products_produce_qty') }}" required>
                   </div>
-
-                  <div>
-                    <label class="form-label small mb-1">{{ t('products_produce_fabric') }}</label>
+                  <div class="col-6">
+                    <input type="number" step="0.01" name="used_amount" class="form-control form-control-sm"
+                           min="0.01" placeholder="{{ t('products_produce_used') }}" required>
+                  </div>
+                  <div class="col-12">
                     <select name="fabric_id" class="form-select form-select-sm" required>
                       <option value="" selected disabled>{{ t('products_produce_choose_fabric') }}</option>
                       {% for f in fabrics %}
@@ -565,460 +680,25 @@
                       {% endfor %}
                     </select>
                   </div>
-
-                  <input type="text"
-                         name="note"
-                         class="form-control form-control-sm"
-                         maxlength="255"
-                         placeholder="{{ t('products_produce_note_placeholder') }}">
-
-                  <button type="submit" class="btn btn-dark btn-sm w-100 mm-card-btn">
-                    ✅ {{ t('products_produce_save') }}
-                  </button>
-                </form>
-              </div>
+                  <div class="col-12">
+                    <input type="text" name="note" class="form-control form-control-sm" maxlength="255"
+                           placeholder="{{ t('products_produce_note_placeholder') }}">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-sm btn-dark w-100 mt-1">
+                  ✅ {{ t('products_produce_save') }}
+                </button>
+              </form>
             </div>
+            {% endif %}
 
           </div>
-
         </div>
       </div>
+
     {% endfor %}
   </div>
 
-  {# ================= DESKTOP TABLE ================= #}
-  <div class="card shadow-sm border-0 mb-3 d-none d-md-block">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle mb-0 table-sticky">
-          <thead class="table-light">
-            <tr>
-              <th class="text-nowrap">{{ t('products_table_col_code') }}</th>
-              <th class="text-nowrap">{{ t('products_table_col_model') }}</th>
-              <th class="text-nowrap d-none d-md-table-cell">{{ t('products_table_col_category') }}</th>
-              <th class="text-nowrap text-end">{{ t('products_table_col_total') }}</th>
-              <th class="text-nowrap text-end">{{ t('products_table_col_factory') }}</th>
-              <th class="text-nowrap text-end">{{ t('products_table_col_in_shop') }}</th>
-              <th class="text-nowrap" style="width: 180px;">{{ t('products_table_col_split') }}</th>
-              <th class="text-nowrap text-end">{{ t('products_table_col_cost_per_unit') }}</th>
-              <th class="text-nowrap text-end">{{ t('products_table_col_sell_per_unit') }}</th>
-              <th class="text-nowrap text-end"></th>
-            </tr>
-          </thead>
-          <tbody>
-          {% for row in products %}
-            {% set p = row.p %}
-            {% set factory_qty = row.qty_factory or 0 %}
-            {% set shop_qty = row.qty_shop or 0 %}
-            {% set total_qty = row.qty_total or 0 %}
-            {% set fpct = (factory_qty * 100 // total_qty) if total_qty else 0 %}
-            {% set spct = (shop_qty * 100 // total_qty) if total_qty else 0 %}
-            {% set low_total = total_qty > 0 and total_qty < 10 %}
-            {% set details_id = "prod-" ~ p.id ~ "-details" %}
-
-            <tr role="button"
-                class="cursor-pointer"
-                data-bs-toggle="collapse"
-                data-bs-target="#{{ details_id }}"
-                aria-expanded="false"
-                aria-controls="{{ details_id }}">
-              <td><span class="badge bg-secondary">MM-{{ "%05d"|format(p.id) }}</span></td>
-              <td>
-                <div class="d-flex flex-column">
-                  <div>
-                    <span class="fw-semibold small">{{ p.name }}</span>
-
-                    {% if p.is_published %}
-                      <span class="badge bg-success ms-1" title="{{ t('products_publish') }}">🌍</span>
-                    {% else %}
-                      <span class="badge bg-secondary ms-1" title="{{ t('products_unpublish') }}">🙈</span>
-                    {% endif %}
-
-                    {% if total_qty == 0 %}
-                      <span class="badge bg-secondary ms-1">{{ t('products_badge_no_stock') }}</span>
-                    {% elif low_total %}
-                      <span class="badge bg-danger ms-1">{{ t('products_badge_low_stock') }}</span>
-                    {% endif %}
-                    {% if factory_qty == 0 and shop_qty > 0 %}
-                      <span class="badge bg-warning text-dark ms-1">{{ t('products_badge_only_shop') }}</span>
-                    {% elif factory_qty > 0 and shop_qty == 0 %}
-                      <span class="badge bg-primary ms-1">{{ t('products_badge_only_factory') }}</span>
-                    {% endif %}
-                  </div>
-                  <span class="text-muted small d-md-none">
-                    {{ p.category or t('products_no_category') }} · {{ p.currency }}
-                  </span>
-                </div>
-              </td>
-              <td class="small d-none d-md-table-cell">{{ p.category or '' }}</td>
-              <td class="text-end small fw-semibold">{{ total_qty }}</td>
-              <td class="text-end small">{{ factory_qty }}</td>
-              <td class="text-end small">{{ shop_qty }}</td>
-              <td>
-                {% if total_qty %}
-                  <div class="progress" style="height: 6px;">
-                    <div class="progress-bar" role="progressbar"
-                         style="width: {{ fpct }}%;"
-                         aria-valuenow="{{ fpct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                    {% if spct > 0 %}
-                      <div class="progress-bar bg-warning" role="progressbar"
-                           style="width: {{ spct }}%;"
-                           aria-valuenow="{{ spct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                    {% endif %}
-                  </div>
-                  <div class="small text-muted mt-1">
-                    {{ t('products_split_factory_short') }}: {{ fpct }}% •
-                    {{ t('products_split_shop_short') }}: {{ spct }}%
-                  </div>
-                {% else %}
-                  <span class="small text-muted">{{ t('products_split_no_data') }}</span>
-                {% endif %}
-              </td>
-              <td class="text-end small">{{ format_money(p.cost_price_per_item, p.currency) }}</td>
-              <td class="text-end small">{{ format_money(p.sell_price_per_item, p.currency) }}</td>
-              <td class="text-end"><i class="bi bi-chevron-down small text-muted"></i></td>
-            </tr>
-
-            <tr class="collapse bg-light" id="{{ details_id }}">
-              <td colspan="10">
-                <div class="p-2 p-md-3">
-                  <div class="row g-2 g-md-3">
-
-                    <div class="col-12 col-md-3">
-                      <div class="border rounded-3 p-2 h-100 bg-white">
-                        <p class="small text-muted mb-2">{{ t('products_details_title_info') }}</p>
-
-                        <div class="mm-media-grid mb-3">
-                          <div class="mm-media-card">
-                            <div class="mm-media-label">{{ t('products_photo_product') }}</div>
-                            {% set product_photo = product_image_url(p.image_path) %}
-                            {% if product_photo %}
-                              <img src="{{ product_photo }}"
-                                   alt="{{ p.name }}"
-                                   class="mm-media-image">
-                            {% else %}
-                              <div class="mm-media-placeholder">{{ t('products_no_photo_product') }}</div>
-                            {% endif %}
-                          </div>
-
-                          <div class="mm-media-card">
-                            <div class="mm-media-label">{{ t('products_photo_website') }}</div>
-                            {% set website_photo = product_image_url(p.website_image) %}
-                            {% if website_photo %}
-                              <img src="{{ website_photo }}"
-                                   alt="{{ p.name }}"
-                                   class="mm-media-image">
-                            {% else %}
-                              <div class="mm-media-placeholder">{{ t('products_no_photo_website') }}</div>
-                            {% endif %}
-                          </div>
-                        </div>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_code') }}:</span>
-                          <span class="fw-semibold">MM-{{ "%05d"|format(p.id) }}</span>
-                        </p>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_model') }}:</span>
-                          <span class="fw-semibold">{{ p.name }}</span>
-                        </p>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_category') }}:</span>
-                          <span>{{ p.category or t('products_not_specified') }}</span>
-                        </p>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_fabric') }}:</span>
-                          <span class="fw-semibold">{{ p.fabric_used or t('products_not_specified') }}</span>
-                        </p>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_total_qty') }}:</span>
-                          <span class="fw-semibold">{{ total_qty }}</span>
-                        </p>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_factory_qty') }}:</span>
-                          <span class="fw-semibold">{{ factory_qty }}</span>
-                        </p>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_shop_qty') }}:</span>
-                          <span class="fw-semibold">{{ shop_qty }}</span>
-                        </p>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_currency') }}:</span>
-                          <span>{{ p.currency }}</span>
-                        </p>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_cost_per_unit') }}:</span>
-                          <span class="fw-semibold">
-                            {{ format_money(p.cost_price_per_item, p.currency) }}
-                          </span>
-                        </p>
-
-                        <p class="small mb-1">
-                          <span class="text-muted">{{ t('products_details_sell_per_unit') }}:</span>
-                          <span class="fw-semibold">
-                            {{ format_money(p.sell_price_per_item, p.currency) }}
-                          </span>
-                        </p>
-
-                        <p class="small mb-2">
-                          <span class="text-muted">{{ t('products_notes_description') }}:</span>
-                          <span class="fw-semibold mm-notes-value">{{ p.notes or t('products_no_notes') }}</span>
-                        </p>
-
-                        {% if current_user.role in ['admin', 'manager'] or current_user.is_superadmin %}
-                          <button type="button"
-                                  class="btn btn-sm btn-outline-primary w-100 mt-2"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#editInfoModal{{ p.id }}">
-                            <i class="bi bi-pencil-square me-1"></i>{{ t('products_edit_info') }}
-                          </button>
-                        {% endif %}
-
-                        <a href="{{ url_for('products.product_cost', product_id=p.id) }}"
-                           class="btn btn-sm btn-outline-warning w-100 mt-1">
-                          <i class="bi bi-calculator me-1"></i>{{ t('products_cost_short') }}
-                        </a>
-
-                        <form method="post" action="{{ url_for('products.toggle_publish', product_id=p.id) }}" class="mt-2">
-                          <button type="submit"
-                                  class="btn btn-sm w-100 {% if p.is_published %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
-                            {% if p.is_published %}<i class="bi bi-eye-slash me-1"></i>{{ t('products_unpublish_hide') }}{% else %}<i class="bi bi-globe-americas me-1"></i>{{ t('products_publish_show') }}{% endif %}
-                          </button>
-                        </form>
-
-                        {% if current_user.is_admin %}
-                        <form method="post"
-                              action="{{ url_for('products.delete_product', product_id=p.id) }}"
-                              class="mt-2"
-                              onsubmit="return confirm('Delete this product?');">
-                          <button type="submit" class="btn btn-sm btn-danger w-100">
-                            <i class="bi bi-trash me-1"></i>Delete
-                          </button>
-                        </form>
-                        {% endif %}
-                      </div>
-                    </div>
-
-                    <div class="col-12 col-md-3">
-                      <div class="border rounded-3 p-2 h-100 bg-white">
-                        <p class="small text-muted mb-2 mb-md-2">
-                          {{ t('products_details_move_to_shop_title') }}
-                        </p>
-
-                        <form method="post"
-                              action="{{ url_for('products.to_shop', product_id=p.id) }}"
-                              class="d-flex flex-column gap-2">
-                          <div>
-                            <label class="form-label small mb-1">
-                              {{ t('products_details_move_to_shop_qty_label') }}
-                            </label>
-                            <input type="number"
-                                   name="quantity"
-                                   class="form-control form-control-sm text-end"
-                                   min="1"
-                                   max="{{ factory_qty }}"
-                                   placeholder="{{ t('products_details_move_to_shop_qty_placeholder') }}"
-                                   required>
-                          </div>
-
-                          <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
-                            {{ t('products_details_move_to_shop_button') }}
-                          </button>
-                        </form>
-                      </div>
-                    </div>
-
-                    <div class="col-12 col-md-3">
-                      <div class="border rounded-3 p-2 h-100 bg-white">
-                        <p class="small text-muted mb-2">
-                          {{ t('products_details_sell_from_factory_title') }}
-                        </p>
-
-                        <form method="post"
-                              action="{{ url_for('products.sell', product_id=p.id) }}"
-                              class="d-flex flex-column gap-2">
-
-                          <div class="row g-2">
-                            <div class="col-6">
-                              <label class="form-label small mb-1">
-                                {{ t('products_details_sell_qty_label') }}
-                              </label>
-                              <input type="number"
-                                     name="quantity"
-                                     class="form-control form-control-sm text-end"
-                                     min="1"
-                                     max="{{ factory_qty }}"
-                                     placeholder="{{ t('products_details_sell_qty_placeholder') }}"
-                                     required>
-                            </div>
-
-                            <div class="col-6">
-                              <label class="form-label small mb-1">
-                                {{ t('products_details_sell_price_per_unit_label') }}
-                              </label>
-                              <input type="number"
-                                     step="0.01"
-                                     name="sell_price_per_item"
-                                     class="form-control form-control-sm"
-                                     placeholder="{{ t('products_details_sell_price_per_unit_placeholder') }}">
-                            </div>
-                          </div>
-
-                          <div class="row g-2">
-                            <div class="col-12">
-                              <label class="form-label small mb-1">
-                                {{ t('products_details_customer_name_label') }}
-                              </label>
-                              <input type="text"
-                                     name="customer_name"
-                                     class="form-control form-control-sm"
-                                     placeholder="{{ t('products_details_customer_name_placeholder') }}">
-                            </div>
-                            <div class="col-12">
-                              <label class="form-label small mb-1">
-                                {{ t('products_details_customer_phone_label') }}
-                              </label>
-                              <input type="text"
-                                     name="customer_phone"
-                                     class="form-control form-control-sm"
-                                     placeholder="{{ t('products_details_customer_phone_placeholder') }}">
-                            </div>
-                          </div>
-
-                          <button type="submit" class="btn btn-sm btn-outline-primary w-100 mt-1">
-                            {{ t('products_details_sell_button') }}
-                          </button>
-                        </form>
-                      </div>
-                    </div>
-
-                    <div class="col-12 col-md-3">
-                      <div class="border rounded-3 p-2 h-100 bg-white">
-                        <p class="small text-muted mb-2">
-                          <i class="bi bi-building-gear me-1"></i>{{ t('products_produce_title') }}
-                        </p>
-
-                        <form method="post"
-                              action="{{ url_for('products.produce_with_fabric', product_id=p.id) }}"
-                              class="d-flex flex-column gap-2">
-
-                          <div class="row g-2">
-                            <div class="col-6">
-                              <label class="form-label small mb-1">{{ t('products_produce_qty') }}</label>
-                              <input type="number"
-                                     name="quantity"
-                                     class="form-control form-control-sm text-end"
-                                     min="1"
-                                     required>
-                            </div>
-
-                            <div class="col-6">
-                              <label class="form-label small mb-1">{{ t('products_produce_used') }}</label>
-                              <input type="number"
-                                     step="0.01"
-                                     name="used_amount"
-                                     class="form-control form-control-sm text-end"
-                                     min="0.01"
-                                     required>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label class="form-label small mb-1">{{ t('products_produce_fabric') }}</label>
-                            <select name="fabric_id" class="form-select form-select-sm" required>
-                              <option value="" selected disabled>{{ t('products_produce_choose_fabric') }}</option>
-                              {% for f in fabrics %}
-                                <option value="{{ f.id }}">
-                                  {{ f.name }}{% if f.color %} / {{ f.color }}{% endif %}
-                                  — {{ "%.2f"|format(f.quantity or 0) }} {{ f.unit }}
-                                </option>
-                              {% endfor %}
-                            </select>
-                          </div>
-
-                          <input type="text"
-                                 name="note"
-                                 class="form-control form-control-sm"
-                                 maxlength="255"
-                                 placeholder="{{ t('products_produce_note_placeholder') }}">
-
-                          <button type="submit" class="btn btn-sm btn-dark w-100">
-                            ✅ {{ t('products_produce_save') }}
-                          </button>
-                        </form>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              </td>
-            </tr>
-
-          {% else %}
-            <tr>
-              <td colspan="10" class="text-center text-muted small py-3">
-                {{ t('products_empty_state') }}
-              </td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header py-2">
-        <h5 class="modal-title fs-6" id="importExcelLabel">{{ t('products_import_title') }}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
-      <form method="post"
-            action="{{ url_for('products.import_upload') }}"
-            enctype="multipart/form-data">
-
-        <div class="modal-body p-2 p-md-3">
-          <div class="mb-2">
-            <label class="form-label small mb-1">{{ t('products_import_title') }}</label>
-            <input type="file"
-                   name="file"
-                   accept=".xlsx,.xls"
-                   class="form-control form-control-sm"
-                   required>
-          </div>
-
-          <div class="small text-muted">
-            {{ t('products_import_hint') }}
-          </div>
-        </div>
-
-        <div class="modal-footer py-2">
-          <button type="button"
-                  class="btn btn-outline-secondary btn-sm"
-                  data-bs-dismiss="modal">
-            {{ t('products_modal_cancel_button') }}
-          </button>
-
-          <button type="submit" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-upload me-1"></i> {{ t('products_import_button') }}
-          </button>
-        </div>
-
-      </form>
-    </div>
-  </div>
 </div>
 
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductLabel" aria-hidden="true">
@@ -1203,5 +883,52 @@
   </div>
   {% endif %}
 {% endfor %}
+
+<script>
+  (function () {
+    const fab = document.getElementById('mmMobileSearchFab');
+    const toggle = document.getElementById('mmMobileSearchToggle');
+    const input = document.getElementById('mmMobileSearchInput');
+    if (!fab || !toggle || !input) return;
+
+    const mobileQuery = window.matchMedia('(max-width: 767.98px)');
+
+    function applyScrollState() {
+      if (!mobileQuery.matches) {
+        fab.classList.remove('is-floating');
+        return;
+      }
+      if (window.scrollY > 80) {
+        fab.classList.add('is-floating');
+      } else {
+        fab.classList.remove('is-floating');
+      }
+    }
+
+    applyScrollState();
+    window.addEventListener('scroll', applyScrollState, { passive: true });
+    mobileQuery.addEventListener('change', applyScrollState);
+
+    toggle.addEventListener('click', function () {
+      const open = fab.classList.toggle('is-open');
+      if (open) {
+        setTimeout(function () { input.focus(); }, 80);
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!fab.contains(e.target)) {
+        fab.classList.remove('is-open');
+      }
+    });
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        fab.classList.remove('is-open');
+        input.blur();
+      }
+    });
+  })();
+</script>
 
 {% endblock %}

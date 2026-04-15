@@ -1,0 +1,631 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('more_title') }}{% endblock %}
+{% block topbar_title %}{{ t('more_title') }}{% endblock %}
+
+{% block dashboard_body_class %}dashboard-more-page{% endblock %}
+
+{% block extra_css %}
+<style>
+  .adras-more-page {
+    display: grid;
+    gap: 18px;
+  }
+
+  .adras-more-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: 24px;
+    background:
+      radial-gradient(circle at top right, rgba(110, 168, 254, 0.18), transparent 30%),
+      radial-gradient(circle at bottom left, rgba(255, 193, 7, 0.12), transparent 28%),
+      linear-gradient(135deg, rgba(13, 17, 23, 0.96), rgba(20, 25, 34, 0.94));
+    color: #fff;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+  }
+
+  .adras-more-hero-label {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.68);
+    margin-bottom: 10px;
+  }
+
+  .adras-more-hero-title {
+    font-size: 32px;
+    line-height: 1.08;
+    font-weight: 800;
+    margin: 0 0 10px;
+  }
+
+  .adras-more-hero-sub {
+    max-width: 760px;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .adras-more-top-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .adras-mini-stat {
+    border-radius: 20px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .adras-mini-stat-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.66);
+    margin-bottom: 6px;
+  }
+
+  .adras-mini-stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .adras-more-grid {
+    display: grid;
+    grid-template-columns: 1.12fr .88fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .adras-more-stack {
+    display: grid;
+    gap: 18px;
+  }
+
+  .adras-more-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08);
+  }
+
+  .adras-more-card-dark {
+    background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(20,29,45,0.98));
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .adras-section-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(100, 116, 139, 0.95);
+    margin-bottom: 8px;
+  }
+
+  .adras-more-card-dark .adras-section-eyebrow {
+    color: rgba(255,255,255,0.56);
+  }
+
+  .adras-section-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 10px;
+    line-height: 1.15;
+  }
+
+  .adras-section-subtitle {
+    margin: 0 0 16px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .adras-link-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .adras-link-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 20px;
+    padding: 16px;
+    background: rgba(248, 250, 252, 1);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    min-height: 118px;
+  }
+
+  .adras-link-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.10);
+    border-color: rgba(59, 130, 246, 0.20);
+  }
+
+  .adras-link-card.is-muted {
+    background: rgba(241, 245, 249, 0.9);
+  }
+
+  .adras-link-card-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .adras-link-card-sub {
+    font-size: 13px;
+    line-height: 1.55;
+    color: #64748b;
+  }
+
+  .adras-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 22px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .adras-chip-live {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+  }
+
+  .adras-chip-active {
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+  }
+
+  .adras-chip-locked {
+    background: rgba(148, 163, 184, 0.16);
+    color: #475569;
+  }
+
+  .adras-kv {
+    display: grid;
+    gap: 10px;
+  }
+
+  .adras-kv-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  }
+
+  .adras-more-card-dark .adras-kv-row {
+    border-bottom-color: rgba(255,255,255,0.08);
+  }
+
+  .adras-kv-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .adras-kv-label {
+    color: #64748b;
+    font-size: 14px;
+  }
+
+  .adras-more-card-dark .adras-kv-label {
+    color: rgba(255,255,255,0.66);
+  }
+
+  .adras-kv-value {
+    font-weight: 700;
+    text-align: right;
+    color: #0f172a;
+  }
+
+  .adras-more-card-dark .adras-kv-value {
+    color: #fff;
+  }
+
+  .adras-quick-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .adras-quick-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .adras-quick-item:hover {
+    background: rgba(255,255,255,0.10);
+  }
+
+  .adras-quick-item-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .adras-quick-item-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.68);
+    margin-top: 4px;
+  }
+
+  .adras-arrow {
+    color: rgba(255,255,255,0.70);
+    font-weight: 800;
+    font-size: 18px;
+    flex: 0 0 auto;
+  }
+
+  @media (max-width: 1100px) {
+    .adras-more-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .adras-more-hero {
+      padding: 18px;
+      border-radius: 22px;
+    }
+
+    .adras-more-hero-title {
+      font-size: 26px;
+    }
+
+    .adras-more-top-stats {
+      grid-template-columns: 1fr;
+    }
+
+    .adras-link-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .adras-link-card {
+      min-height: unset;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .adras-more-page {
+      gap: 12px;
+    }
+
+    .adras-more-hero {
+      padding: 15px;
+      border-radius: 20px;
+    }
+
+    .adras-more-hero-label {
+      font-size: 10px;
+      margin-bottom: 8px;
+    }
+
+    .adras-more-hero-title {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .adras-more-hero-sub {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .adras-more-top-stats {
+      margin-top: 14px;
+      gap: 8px;
+    }
+
+    .adras-mini-stat {
+      border-radius: 16px;
+      padding: 12px 13px;
+    }
+
+    .adras-mini-stat-label {
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .adras-mini-stat-value {
+      font-size: 19px;
+    }
+
+    .adras-more-grid,
+    .adras-more-stack {
+      gap: 12px;
+    }
+
+    .adras-more-card {
+      padding: 15px;
+      border-radius: 18px;
+    }
+
+    .adras-section-eyebrow {
+      font-size: 10px;
+      margin-bottom: 6px;
+    }
+
+    .adras-section-title {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .adras-section-subtitle {
+      font-size: 13px;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .adras-link-grid {
+      gap: 8px;
+    }
+
+    .adras-link-card {
+      padding: 13px;
+      border-radius: 16px;
+    }
+
+    .adras-link-card-title {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .adras-link-card-sub {
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .adras-kv-row {
+      gap: 10px;
+      padding: 10px 0;
+    }
+
+    .adras-kv-label,
+    .adras-kv-value {
+      font-size: 13px;
+    }
+
+    .adras-quick-list {
+      gap: 8px;
+    }
+
+    .adras-quick-item {
+      padding: 12px 13px;
+      border-radius: 15px;
+      align-items: flex-start;
+    }
+
+    .adras-quick-item-title {
+      font-size: 14px;
+    }
+
+    .adras-quick-item-sub {
+      font-size: 11px;
+      line-height: 1.4;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .adras-more-top-stats,
+    .adras-link-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .adras-more-hero-title {
+      font-size: 22px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-more-page">
+  <section class="adras-more-hero">
+    <div class="adras-more-hero-label">{{ t('workspace_control') }}</div>
+    <h1 class="adras-more-hero-title">{{ t('more_title') }}</h1>
+    <p class="adras-more-hero-sub">
+      {{ t('more_subtitle') }}
+    </p>
+
+    <div class="adras-more-top-stats">
+      <div class="adras-mini-stat">
+        <div class="adras-mini-stat-label">{{ t('users') }}</div>
+        <div class="adras-mini-stat-value">{{ managed_users_count or 0 }}</div>
+      </div>
+      <div class="adras-mini-stat">
+        <div class="adras-mini-stat-label">{{ t('shops') }}</div>
+        <div class="adras-mini-stat-value">{{ managed_shops_count or 0 }}</div>
+      </div>
+      <div class="adras-mini-stat">
+        <div class="adras-mini-stat-label">{{ t('factories') }}</div>
+        <div class="adras-mini-stat-value">{{ managed_factories_count or 0 }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="adras-more-grid">
+    <div class="adras-more-stack">
+      <article class="adras-more-card">
+        <div class="adras-section-eyebrow">{{ t('core_tools') }}</div>
+        <h2 class="adras-section-title">{{ t('workspace_actions') }}</h2>
+        <p class="adras-section-subtitle">
+          {{ t('workspace_actions_sub') }}
+        </p>
+
+        <div class="adras-link-grid">
+          {% for card in primary_cards %}
+            {% if card.href and card.status != 'locked' %}
+              <a href="{{ card.href }}" class="adras-link-card">
+                <div class="adras-link-card-title">
+                  {{ card.title }}
+                  <span class="adras-chip {% if card.status == 'active' %}adras-chip-active{% else %}adras-chip-live{% endif %}">
+                    {{ card.status }}
+                  </span>
+                </div>
+                <div class="adras-link-card-sub">{{ card.subtitle }}</div>
+              </a>
+            {% else %}
+              <div class="adras-link-card is-muted">
+                <div class="adras-link-card-title">
+                  {{ card.title }}
+                  <span class="adras-chip adras-chip-locked">{{ card.status or 'locked' }}</span>
+                </div>
+                <div class="adras-link-card-sub">{{ card.subtitle }}</div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="adras-more-card">
+        <div class="adras-section-eyebrow">{{ t('admin') }}</div>
+        <h2 class="adras-section-title">{{ t('management_access') }}</h2>
+        <p class="adras-section-subtitle">
+          {{ t('management_access_sub') }}
+        </p>
+
+        <div class="adras-link-grid">
+          {% for card in admin_cards %}
+            {% if card.href and card.status != 'locked' %}
+              <a href="{{ card.href }}" class="adras-link-card">
+                <div class="adras-link-card-title">
+                  {{ card.title }}
+                  <span class="adras-chip adras-chip-live">{{ card.status }}</span>
+                </div>
+                <div class="adras-link-card-sub">{{ card.subtitle }}</div>
+              </a>
+            {% else %}
+              <div class="adras-link-card is-muted">
+                <div class="adras-link-card-title">
+                  {{ card.title }}
+                  <span class="adras-chip adras-chip-locked">{{ t('locked') }}</span>
+                </div>
+                <div class="adras-link-card-sub">{{ card.subtitle }}</div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="adras-more-card">
+        <div class="adras-section-eyebrow">{{ t('language') }}</div>
+        <h2 class="adras-section-title">{{ t('interface_language') }}</h2>
+        <p class="adras-section-subtitle">
+          {{ t('interface_language_sub') }}
+        </p>
+
+        <div class="adras-link-grid">
+          {% for card in language_cards %}
+            {% if card.href %}
+              <a href="{{ card.href }}" class="adras-link-card">
+                <div class="adras-link-card-title">
+                  {{ card.title }}
+                  <span class="adras-chip {% if card.status == 'active' %}adras-chip-active{% else %}adras-chip-live{% endif %}">
+                    {{ card.status }}
+                  </span>
+                </div>
+                <div class="adras-link-card-sub">{{ card.subtitle }}</div>
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </article>
+    </div>
+
+    <div class="adras-more-stack">
+      <article class="adras-more-card">
+        <div class="adras-section-eyebrow">{{ t('workspace') }}</div>
+        <h2 class="adras-section-title">{{ t('current_workspace') }}</h2>
+
+        <div class="adras-kv">
+          <div class="adras-kv-row">
+            <div class="adras-kv-label">{{ t('company') }}</div>
+            <div class="adras-kv-value">
+              {{ current_user.factory.name if current_user.factory else '-' }}
+            </div>
+          </div>
+          <div class="adras-kv-row">
+            <div class="adras-kv-label">{{ t('user') }}</div>
+            <div class="adras-kv-value">{{ current_user.username }}</div>
+          </div>
+          <div class="adras-kv-row">
+            <div class="adras-kv-label">{{ t('role_label') }}</div>
+            <div class="adras-kv-value">{{ current_user.role }}</div>
+          </div>
+          <div class="adras-kv-row">
+            <div class="adras-kv-label">{{ t('location') }}</div>
+            <div class="adras-kv-value">
+              {{ current_user.factory.location if current_user.factory and current_user.factory.location else '-' }}
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="adras-more-card adras-more-card-dark">
+        <div class="adras-section-eyebrow">{{ t('quick_access') }}</div>
+        <h2 class="adras-section-title">{{ t('fast_actions') }}</h2>
+
+        <div class="adras-quick-list">
+          <a href="{{ url_for('main.profile') }}" class="adras-quick-item">
+            <div>
+              <div class="adras-quick-item-title">{{ t('profile_settings') }}</div>
+              <div class="adras-quick-item-sub">{{ t('profile_settings_sub') }}</div>
+            </div>
+            <div class="adras-arrow">→</div>
+          </a>
+
+          <a href="{{ url_for('shop.list_shop_orders') }}" class="adras-quick-item">
+            <div>
+              <div class="adras-quick-item-title">{{ t('orders') }}</div>
+              <div class="adras-quick-item-sub">{{ t('orders_quick_sub') }}</div>
+            </div>
+            <div class="adras-arrow">→</div>
+          </a>
+
+          <a href="{{ url_for('shop.movement_history') }}" class="adras-quick-item">
+            <div>
+              <div class="adras-quick-item-title">{{ t('movement_history') }}</div>
+              <div class="adras-quick-item-sub">{{ t('movement_history_quick_sub') }}</div>
+            </div>
+            <div class="adras-arrow">→</div>
+          </a>
+
+          <a href="{{ url_for('auth.logout') }}" class="adras-quick-item">
+            <div>
+              <div class="adras-quick-item-title">{{ t('logout') }}</div>
+              <div class="adras-quick-item-sub">{{ t('logout_sub') }}</div>
+            </div>
+            <div class="adras-arrow">→</div>
+          </a>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}  

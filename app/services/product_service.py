@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from sqlalchemy import or_, func, text
 
 from ..extensions import db
-from ..models import Product, Sale, CashRecord, Production, ShopStock, Fabric
+from ..models import Product, Sale, CashRecord, Production, ShopStock, Fabric, StockMovement
 from ..shop_utils import get_or_create_default_shop
 
 
@@ -379,8 +379,8 @@ class ProductService:
             db.session.flush()
         return stock
 
-    def transfer_to_shop(self, factory_id: int, product_id: int, quantity: int):
-        """Move ready products from factory stock to shop stock."""
+    def transfer_to_shop(self, factory_id: int, product_id: int, quantity: int, user_id: int = None):
+        """Move ready products from factory stock to shop stock, lock transfer price/value."""
         product = Product.query.filter_by(id=product_id, factory_id=factory_id).first()
         if not product or quantity <= 0:
             return None
@@ -388,12 +388,61 @@ class ProductService:
         if quantity > product.quantity:
             return None
 
+        # Use factory_transfer_price if set, else fallback to cost_price_per_item
+        transfer_price = product.factory_transfer_price if product.factory_transfer_price is not None else product.cost_price_per_item
+        currency = product.currency or "UZS"
+        total_value = float(transfer_price or 0.0) * quantity
+
         product.quantity -= quantity
         shop_stock = self._get_or_create_shop_stock(product_id, factory_id)
         shop_stock.quantity += quantity
 
+        # Lock transfer value in StockMovement
+        movement = StockMovement(
+            factory_id=factory_id,
+            product_id=product_id,
+            qty_change=-quantity,
+            unit_price=transfer_price,
+            total_value=total_value,
+            currency=currency,
+            locked_unit_price=transfer_price,
+            locked_total_value=total_value,
+            movement_type="factory_to_shop",
+            source="factory",
+            destination="shop",
+            comment=f"Transfer to shop, locked at {transfer_price} {currency}",
+        )
+        db.session.add(movement)
         db.session.commit()
         return shop_stock
+
+    def create_production(
+        self,
+        product_id: int,
+        quantity: int,
+        qty_issued_to_workers: int = None,
+        qty_finished_good: int = None,
+        qty_defective: int = None,
+        qty_unfinished: int = None,
+        qty_payable: int = None,
+        shortfall_reason: str = None,
+        note: str = None,
+    ):
+        """Create a production record with full accountability fields."""
+        prod = Production(
+            product_id=product_id,
+            quantity=quantity,
+            qty_issued_to_workers=qty_issued_to_workers,
+            qty_finished_good=qty_finished_good,
+            qty_defective=qty_defective,
+            qty_unfinished=qty_unfinished,
+            qty_payable=qty_payable,
+            shortfall_reason=shortfall_reason,
+            note=note,
+        )
+        db.session.add(prod)
+        db.session.commit()
+        return prod
 
     def list_shop_stock(
         self,

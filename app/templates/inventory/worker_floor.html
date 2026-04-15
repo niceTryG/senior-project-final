@@ -1,0 +1,204 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('my_work') }}{% endblock %}
+{% block topbar_title %}{{ t('my_work') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <section class="adras-hero-card">
+    <div class="adras-hero-left">
+      <div class="adras-chip-row mb-3" style="display:flex; flex-wrap:wrap; gap:10px;">
+        <span class="badge text-bg-dark">{{ workspace_page_name }}</span>
+        <span class="badge text-bg-secondary">{{ workspace_role_label }}</span>
+      </div>
+      <h1 class="adras-hero-title">{{ t('my_work') }}</h1>
+      <p class="dashboard-subtitle">
+        {{ t('my_work_subtitle') }}
+      </p>
+    </div>
+  </section>
+
+  <section class="adras-kpi-grid">
+    <article class="adras-kpi-card adras-kpi-card-dark">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('available_tasks') }}</div>
+        <div class="adras-kpi-number">{{ worker_available_tasks|length }}</div>
+      </div>
+      <div class="text-muted small">{{ t('unclaimed_tasks_for_role') }}</div>
+    </article>
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('my_active') }}</div>
+        <div class="adras-kpi-number">{{ worker_my_tasks|length }}</div>
+      </div>
+      <div class="text-muted small">{{ t('claimed_or_assigned_to_you') }}</div>
+    </article>
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('done_recently') }}</div>
+        <div class="adras-kpi-number">{{ worker_recent_done|length }}</div>
+      </div>
+      <div class="text-muted small">{{ t('recently_closed_stages') }}</div>
+    </article>
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('board_label') }}</div>
+        <div class="adras-kpi-number">{{ t('floor_label') }}</div>
+      </div>
+      <div class="text-muted small">{{ t('built_for_quick_worker_actions') }}</div>
+    </article>
+  </section>
+
+  <section class="adras-main-grid">
+    <div class="adras-main-left">
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+          <div>
+            <div class="adras-panel-title mb-1">{{ t('available_to_accept') }}</div>
+            <div class="text-muted small">{{ t('tasks_for_role_unclaimed') }}</div>
+          </div>
+          <a href="{{ url_for('main.operations_board') }}" class="btn btn-sm btn-outline-light">{{ t('operations_board') }}</a>
+        </div>
+
+        {% if worker_available_tasks %}
+          <div class="d-grid" style="gap:14px;">
+            {% for task in worker_available_tasks %}
+              <div class="adras-action-card" style="padding:16px 18px; border:1px solid rgba(255,255,255,.08);">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                  <div>
+                    <div class="adras-action-card-title">{{ task.stage_label }} · {{ task.product_name }}</div>
+                    <div class="adras-action-card-sub">
+                      {{ t('customer_label') }}: {{ task.customer_name }} · {{ t('remaining_label') }}: {{ task.qty_remaining }}
+                    </div>
+                  </div>
+                  <span class="badge text-bg-warning">{{ t('unclaimed_label') }}</span>
+                </div>
+                <div class="d-flex gap-2 flex-wrap mt-3">
+                  <form method="post" action="{{ url_for('main.worker_floor_accept', task_id=task.task_id) }}">
+                    <button type="submit" class="btn btn-sm btn-primary">{{ t('accept_task') }}</button>
+                  </form>
+                  <a href="{{ task.plan_href }}" class="btn btn-sm btn-outline-light">{{ t('open_plan') }}</a>
+                  {% if task.order_href %}<a href="{{ task.order_href }}" class="btn btn-sm btn-outline-light">{{ t('order_log') }}</a>{% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_unclaimed_floor_tasks') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="adras-panel-title mb-3">{{ t('my_active_work') }}</div>
+        {% if worker_my_tasks %}
+          <div class="d-grid" style="gap:16px;">
+            {% for task in worker_my_tasks %}
+              <div class="adras-action-card" style="padding:16px 18px; border:1px solid rgba(255,255,255,.08);">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                  <div>
+                    <div class="adras-action-card-title">{{ task.stage_label }} · {{ task.product_name }}</div>
+                    <div class="adras-action-card-sub">
+                      {{ t('customer_label') }}: {{ task.customer_name }} · {{ t('remaining_qty_label') }}: {{ task.qty_remaining }} · {{ t('assignee_label') }}: {{ task.assignee_name }}
+                    </div>
+                  </div>
+                  <span class="badge {% if task.status == 'in_progress' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">
+                    {{ task.status|replace('_', ' ')|title }}
+                  </span>
+                </div>
+
+                <div class="small text-muted mt-2" style="white-space:pre-line;">{{ task.description }}</div>
+
+                <div class="row g-3 mt-1">
+                  <div class="col-lg-6">
+                    <form method="post" action="{{ url_for('main.worker_floor_partial', task_id=task.task_id) }}">
+                      <label class="form-label small mb-1">{{ t('partial_progress') }}</label>
+                      <textarea name="progress_note" rows="3" class="form-control" placeholder="{{ t('partial_progress_placeholder') }}"></textarea>
+                      <button type="submit" class="btn btn-sm btn-outline-light mt-2">{{ t('save_partial_update') }}</button>
+                    </form>
+                  </div>
+                  <div class="col-lg-6">
+                    <form method="post" action="{{ url_for('main.worker_floor_finish', task_id=task.task_id) }}">
+                      <label class="form-label small mb-1">{{ t('finish_note') }}</label>
+                      <textarea name="finish_note" rows="3" class="form-control" placeholder="{{ t('finish_note_placeholder') }}"></textarea>
+                      <div class="d-flex gap-2 flex-wrap mt-2">
+                        <button type="submit" class="btn btn-sm btn-primary">{{ t('finish_stage') }}</button>
+                        <a href="{{ task.plan_href }}" class="btn btn-sm btn-outline-light">{{ t('open_plan') }}</a>
+                        {% if task.order_href %}<a href="{{ task.order_href }}" class="btn btn-sm btn-outline-light">{{ t('order_log') }}</a>{% endif %}
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_active_floor_tasks') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <div class="adras-main-right">
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('how_workers_use_this') }}</div>
+        <div class="adras-focus-box">
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>{{ t('worker_help_1') }}</span>
+          </div>
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>{{ t('worker_help_2') }}</span>
+          </div>
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>{{ t('worker_help_3') }}</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('recently_finished_by_you') }}</div>
+        {% if worker_recent_done %}
+          <div class="d-grid" style="gap:12px;">
+            {% for task in worker_recent_done %}
+              <div class="adras-action-card" style="padding:14px 16px;">
+                <div class="adras-action-card-title">{{ task.stage_label }} · {{ task.product_name }}</div>
+                <div class="adras-action-card-sub">
+                  {{ task.customer_name }} · {{ t('remaining_qty_at_close') }}: {{ task.qty_remaining }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_recently_closed_floor_tasks') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel adras-snapshot-dark">
+        <div class="adras-panel-title adras-panel-title-light">{{ t('quick_links') }}</div>
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('main.operations_board') }}" class="btn btn-outline-light">{{ t('operations_board') }}</a>
+          <a href="{{ url_for('main.stage_history') }}" class="btn btn-outline-light">{{ t('stage_timeline') }}</a>
+          <a href="{{ url_for('main.command_center') }}" class="btn btn-outline-light">{{ t('command_center') }}</a>
+          <a href="{{ url_for('main.production_plan_history') }}" class="btn btn-outline-light">{{ t('saved_plans') }}</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -343,7 +343,7 @@ def manager_report_pdf():
         story.append(Paragraph("Нет данных по товарам для отображения в отчёте.", normal_style))
 
     story.append(Spacer(1, 10))
-    story.append(Paragraph("Mini Moda — manager report", small_style))
+    story.append(Paragraph("Adras — manager report", small_style))
 
     doc.build(story)
 

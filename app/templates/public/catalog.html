@@ -502,10 +502,11 @@
 
       {# ── In-stock products first ── #}
       {% for p in in_stock_products %}
+        {% set product_image = product_image_url(p.website_image or p.image_path) %}
         <div class="mm-card">
           <div class="mm-card-img">
-            {% if p.image_path %}
-              <img src="{{ url_for('static', filename=p.image_path) }}" alt="{{ p.name }}">
+            {% if product_image %}
+              <img src="{{ product_image }}" alt="{{ p.name }}">
             {% else %}
               <div class="mm-card-no-img">
                 <svg width="36" height="36" viewBox="0 0 36 36" fill="none" opacity="0.2">
@@ -553,10 +554,11 @@
         </div>
 
         {% for p in out_stock_products %}
+          {% set product_image = product_image_url(p.website_image or p.image_path) %}
           <div class="mm-card out-of-stock">
             <div class="mm-card-img">
-              {% if p.image_path %}
-                <img src="{{ url_for('static', filename=p.image_path) }}" alt="{{ p.name }}">
+              {% if product_image %}
+                <img src="{{ product_image }}" alt="{{ p.name }}">
               {% else %}
                 <div class="mm-card-no-img">
                   <svg width="36" height="36" viewBox="0 0 36 36" fill="none" opacity="0.2">

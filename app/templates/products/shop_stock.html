@@ -1,0 +1,218 @@
+{% extends "products/base_products.html" %}
+{% block content %}
+
+<style>
+  .mm-ss-page { padding-bottom: 96px; }
+  .mm-ss-top { border-radius: 16px; }
+
+  .mm-ss-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .mm-ss-empty {
+    grid-column: 1 / -1;
+    padding: 24px;
+    text-align: center;
+    border: 1px dashed rgba(0,0,0,.2);
+    border-radius: 14px;
+    color: #6c757d;
+    background: #fff;
+  }
+
+  .mm-ss-tile {
+    background: #fff;
+    border: 1px solid #e2e7ef;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(11,28,48,.06);
+    position: relative;
+  }
+
+  .mm-ss-head {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mm-ss-thumb {
+    position: relative;
+    aspect-ratio: 1;
+    background: #f4f6f9;
+    overflow: hidden;
+  }
+
+  .mm-ss-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .mm-ss-init {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #96aabf;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .mm-ss-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: 2px solid #fff;
+    background: #f5c542;
+  }
+
+  .mm-ss-body { padding: 8px 10px; }
+  .mm-ss-name {
+    font-size: .8rem;
+    font-weight: 700;
+    color: #0b1c30;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mm-ss-meta {
+    font-size: .63rem;
+    color: #96aabf;
+    margin-bottom: 4px;
+  }
+  .mm-ss-qty {
+    font-size: 1.45rem;
+    font-weight: 900;
+    font-family: 'DM Mono', monospace;
+    line-height: 1;
+    color: #0b1c30;
+  }
+
+  .mm-ss-bar {
+    height: 4px;
+    border-radius: 999px;
+    background: #e2e7ef;
+    overflow: hidden;
+    display: flex;
+    margin-top: 5px;
+  }
+
+  .mm-ss-bar-f { background: #2563a8; height: 100%; }
+  .mm-ss-bar-s { background: #e5aa64; height: 100%; }
+
+  .mm-ss-split {
+    font-size: .62rem;
+    color: #96aabf;
+    margin-top: 2px;
+  }
+
+  .mm-ss-panel {
+    border-top: 1px solid #e2e7ef;
+    padding: 9px 10px;
+    background: #fbfcff;
+    font-size: .76rem;
+  }
+
+  .mm-ss-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border-radius: 999px;
+    padding: .2rem .55rem;
+    font-weight: 800;
+    font-size: .7rem;
+    margin-bottom: 4px;
+    color: #8a6a13;
+    background: rgba(245, 197, 66, 0.2);
+  }
+
+  @media (max-width: 991.98px) {
+    .mm-ss-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 575.98px) {
+    .mm-ss-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .mm-ss-body { padding: 7px 8px; }
+    .mm-ss-name { font-size: .72rem; }
+    .mm-ss-qty { font-size: 1.18rem; }
+  }
+</style>
+
+<div class="container-fluid py-3 mm-ss-page">
+  <div class="card mm-ss-top mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <div class="small text-muted">Shop stock</div>
+        <div class="fw-bold">{{ products|length }} products · {{ total_shop_units }} units</div>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('main.inventory') }}" class="btn btn-sm btn-outline-primary">Inventory</a>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ t('back_to_dashboard') }}</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="mm-ss-grid">
+    {% if not products %}
+      <div class="mm-ss-empty">No products currently in shop stock.</div>
+    {% endif %}
+
+    {% for p in products %}
+      {% set panel_id = 'shop-stock-' ~ p.id %}
+      {% set product_photo = product_image_url(p.image_path) %}
+      {% set qty_total = (p.qty_shop or 0) + (p.qty_factory or 0) %}
+      {% set fpct = ((p.qty_factory or 0) * 100 // qty_total) if qty_total else 0 %}
+      {% set spct = ((p.qty_shop or 0) * 100 // qty_total) if qty_total else 0 %}
+      <article class="mm-ss-tile">
+        <button class="mm-ss-head" type="button" data-bs-toggle="collapse" data-bs-target="#{{ panel_id }}" aria-expanded="false" aria-controls="{{ panel_id }}">
+          <div class="mm-ss-thumb">
+            {% if product_photo %}
+              <img src="{{ product_photo }}" alt="{{ p.name }}" class="mm-ss-img">
+            {% else %}
+              <div class="mm-ss-init">{{ p.name[0]|upper if p.name else '?' }}</div>
+            {% endif %}
+            {% if p.wholesale_attention %}
+              <span class="mm-ss-dot" title="Wholesale requested"></span>
+            {% endif %}
+          </div>
+          <div class="mm-ss-body">
+            <div class="mm-ss-name" title="{{ p.name }}">{{ p.name }}</div>
+            <div class="mm-ss-meta">{{ p.category or t('products_no_category') }}</div>
+            <div class="mm-ss-qty">{{ qty_total }}</div>
+            <div class="mm-ss-bar">
+              {% if qty_total %}
+                <div class="mm-ss-bar-f" style="width:{{ fpct }}%"></div>
+                <div class="mm-ss-bar-s" style="width:{{ spct }}%"></div>
+              {% endif %}
+            </div>
+            <div class="mm-ss-split">F:{{ p.qty_factory }} &nbsp;S:{{ p.qty_shop }}</div>
+          </div>
+        </button>
+
+        <div class="collapse" id="{{ panel_id }}">
+          <div class="mm-ss-panel">
+            {% if p.wholesale_attention %}
+              <div class="mm-ss-pill">Wholesale requested: {{ p.wholesale_attention_qty }} pcs</div>
+            {% endif %}
+            <div class="text-muted">Factory balance: {{ p.qty_factory }}</div>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

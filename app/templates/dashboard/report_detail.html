@@ -1,0 +1,216 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ report_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .report-page { display: grid; gap: 14px; }
+  .report-head {
+    display: grid; gap: 10px; padding: 18px 20px; border-radius: 24px;
+    background: linear-gradient(145deg, rgba(11, 28, 48, 0.96), rgba(28, 52, 88, 0.94)); color: #fff;
+  }
+  .report-head-top, .report-actions, .report-filter-grid, .report-row-foot { display: flex; gap: 10px; flex-wrap: wrap; }
+  .report-head-top { align-items: center; justify-content: space-between; }
+  .report-icon {
+    width: 44px; height: 44px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.12); color: #fff; font-size: 12px; font-weight: 900; letter-spacing: 0.08em;
+  }
+  .report-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.64); font-weight: 800; }
+  .report-title { margin: 4px 0 0; font-size: clamp(1.55rem, 4vw, 2rem); line-height: 1.05; font-weight: 900; }
+  .report-subtitle { margin: 0; max-width: 760px; color: rgba(255,255,255,0.78); font-size: 13px; line-height: 1.55; }
+  .report-link, .report-export {
+    min-height: 36px; padding: 0 12px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+    text-decoration: none; font-size: 12px; font-weight: 800;
+  }
+  .report-link { background: rgba(255,255,255,0.12); color: #fff; }
+  .report-export { background: #fff; color: #0f172a; }
+  .report-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .report-summary-card {
+    padding: 14px; border-radius: 20px; border: 1px solid rgba(15, 23, 42, 0.07);
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
+  }
+  .report-summary-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; font-weight: 800; }
+  .report-summary-value { margin-top: 8px; font-size: 20px; line-height: 1.1; font-weight: 900; color: #0f172a; }
+  .report-summary-sub { margin-top: 4px; font-size: 12px; color: #64748b; line-height: 1.45; }
+  .report-filters, .report-list {
+    border-radius: 22px; border: 1px solid rgba(15, 23, 42, 0.07); background: #fff; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  }
+  .report-filters { padding: 14px; }
+  .report-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .report-filter-field { display: grid; gap: 6px; }
+  .report-filter-field label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; font-weight: 800; }
+  .report-filter-field input, .report-filter-field select {
+    width: 100%; min-height: 40px; border-radius: 14px; border: 1px solid #dbe3ef; background: #fff; padding: 0 12px; color: #0f172a;
+  }
+  .report-filter-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  .report-btn {
+    min-height: 38px; padding: 0 12px; border-radius: 999px; border: 1px solid #dbe3ef; background: #fff; color: #0f172a;
+    font-size: 12px; font-weight: 800; text-decoration: none;
+  }
+  .report-btn.is-primary { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .report-table { width: 100%; border-collapse: collapse; }
+  .report-table th, .report-table td { padding: 12px 14px; border-bottom: 1px solid #edf2f7; vertical-align: top; }
+  .report-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; font-weight: 800; background: #fbfcfe; }
+  .report-item { display: flex; gap: 12px; min-width: 0; }
+  .report-item-avatar, .report-item-placeholder {
+    width: 42px; height: 42px; border-radius: 14px; flex-shrink: 0; object-fit: cover; border: 1px solid #e2e8f0; background: #f8fafc;
+  }
+  .report-item-placeholder { display: inline-flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; font-weight: 900; }
+  .report-item-title { font-size: 14px; line-height: 1.25; font-weight: 800; color: #0f172a; }
+  .report-item-sub { margin-top: 3px; font-size: 12px; line-height: 1.45; color: #64748b; }
+  .report-badge {
+    display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 999px;
+    background: #f1f5f9; color: #334155; font-size: 11px; font-weight: 800;
+  }
+  .report-badge.tone-up { background: #edf9f1; color: #166534; }
+  .report-badge.tone-warn { background: #fff7e8; color: #b45309; }
+  .report-badge.tone-danger { background: #fef2f2; color: #b91c1c; }
+  .report-badge.tone-info { background: #eef4ff; color: #1d4ed8; }
+  .report-mobile-list { display: none; padding: 10px; gap: 10px; }
+  .report-mobile-row { border: 1px solid #edf2f7; border-radius: 18px; padding: 12px; display: grid; gap: 10px; }
+  .report-row-foot { align-items: center; justify-content: space-between; }
+  .report-empty { padding: 28px 18px; text-align: center; color: #64748b; }
+  .report-empty strong { display: block; color: #0f172a; font-size: 15px; margin-bottom: 4px; }
+  @media (max-width: 980px) { .report-summary, .report-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 760px) {
+    .report-summary, .report-filter-grid { grid-template-columns: 1fr; }
+    .report-table-wrap { display: none; }
+    .report-mobile-list { display: grid; }
+    .report-head { padding: 16px; }
+    .report-head-top { align-items: flex-start; flex-direction: column; }
+  }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="report-page">
+  <section class="report-head">
+    <div class="report-head-top">
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div class="report-icon">{{ report_icon }}</div>
+        <div>
+          <div class="report-kicker">{{ t('reports') }}</div>
+          <h1 class="report-title">{{ report_title }}</h1>
+          <p class="report-subtitle">{{ report_subtitle }}</p>
+        </div>
+      </div>
+      <a href="{{ report_home_href }}" class="report-link">{{ t('reports') }}</a>
+    </div>
+    <div class="report-actions">
+      <a href="{{ export_pdf_href }}" class="report-export">{{ t('export_pdf') }}</a>
+      <a href="{{ export_xlsx_href }}" class="report-export">{{ t('export_xlsx') }}</a>
+    </div>
+  </section>
+
+  <section class="report-summary">
+    {% for card in summary_cards %}
+      <article class="report-summary-card">
+        <div class="report-summary-label">{{ card.label }}</div>
+        <div class="report-summary-value">{{ card.value }}</div>
+        <div class="report-summary-sub">{{ card.sub }}</div>
+      </article>
+    {% endfor %}
+  </section>
+
+  {% if filter_fields %}
+    <section class="report-filters">
+      <form method="get" action="{{ filter_action }}">
+        <div class="report-filter-grid">
+          {% for field in filter_fields %}
+            <div class="report-filter-field">
+              <label for="report-{{ field.name }}">{{ field.label }}</label>
+              {% if field.type == 'select' %}
+                <select name="{{ field.name }}" id="report-{{ field.name }}">
+                  {% for option in field.options %}
+                    <option value="{{ option.value }}" {% if option.value == field.value %}selected{% endif %}>{{ option.label }}</option>
+                  {% endfor %}
+                </select>
+              {% else %}
+                <input type="{{ field.type }}" name="{{ field.name }}" id="report-{{ field.name }}" value="{{ field.value }}" placeholder="{{ field.placeholder or '' }}">
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="report-filter-actions">
+          <a href="{{ filter_action }}" class="report-btn">Reset</a>
+          <button type="submit" class="report-btn is-primary">Apply</button>
+        </div>
+      </form>
+    </section>
+  {% endif %}
+
+  <section class="report-list">
+    {% if rows %}
+      <div class="report-table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              {% for column in table_columns %}
+                <th>{{ column }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>
+                  <div class="report-item">
+                    {% if row.image_path and product_image_url(row.image_path) %}
+                      <img src="{{ product_image_url(row.image_path) }}" alt="{{ row.primary }}" class="report-item-avatar">
+                    {% else %}
+                      <div class="report-item-placeholder">{{ row.primary[:2]|upper }}</div>
+                    {% endif %}
+                    <div style="min-width:0;">
+                      <div class="report-item-title">{{ row.primary }}</div>
+                      {% for line in row.secondary_lines %}
+                        <div class="report-item-sub">{{ line }}</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </td>
+                {% for cell in row.cells %}
+                  <td>{{ cell }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="report-mobile-list">
+        {% for row in rows %}
+          <article class="report-mobile-row">
+            <div class="report-item">
+              {% if row.image_path and product_image_url(row.image_path) %}
+                <img src="{{ product_image_url(row.image_path) }}" alt="{{ row.primary }}" class="report-item-avatar">
+              {% else %}
+                <div class="report-item-placeholder">{{ row.primary[:2]|upper }}</div>
+              {% endif %}
+              <div style="min-width:0;">
+                <div class="report-item-title">{{ row.primary }}</div>
+                {% for line in row.secondary_lines %}
+                  <div class="report-item-sub">{{ line }}</div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="report-row-foot">
+              <div>
+                <div class="report-item-title">{{ row.mobile_value }}</div>
+                {% if row.mobile_subvalue %}<div class="report-item-sub">{{ row.mobile_subvalue }}</div>{% endif %}
+              </div>
+              <span class="report-badge tone-{{ row.badge_tone }}">{{ row.badge_label }}</span>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="report-empty">
+        <strong>{{ empty_title }}</strong>
+        <span>{{ empty_copy }}</span>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -7,8 +7,10 @@ from pathlib import Path
 from sqlalchemy import text
 
 from app import create_app
-from app.db_migrations import upgrade_database
+from app.db_migrations import MIGRATIONS, upgrade_database
 from app.extensions import db
+from app.models import Factory, Fabric, Product, ProductComposition
+from app.services.garment_analysis_service import GarmentImageAnalysisService
 
 
 class SmokeTestCase(unittest.TestCase):
@@ -20,6 +22,8 @@ class SmokeTestCase(unittest.TestCase):
         Path(raw_path).unlink(missing_ok=True)
         self.db_path = Path(raw_path).resolve()
         db_uri = f"sqlite:///{self.db_path}"
+        self.upload_dir = (base_tmp_dir / f"{self.db_path.stem}_uploads").resolve()
+        self.upload_dir.mkdir(parents=True, exist_ok=True)
 
         class TestConfig:
             DEBUG = True
@@ -28,7 +32,7 @@ class SmokeTestCase(unittest.TestCase):
             SQLALCHEMY_DATABASE_URI = db_uri
             SQLALCHEMY_TRACK_MODIFICATIONS = False
             SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
-            UPLOAD_FOLDER = "app/static/uploads/products"
+            UPLOAD_FOLDER = str(self.upload_dir)
             ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
             MAX_CONTENT_LENGTH = 5 * 1024 * 1024
             SESSION_COOKIE_HTTPONLY = True
@@ -48,6 +52,12 @@ class SmokeTestCase(unittest.TestCase):
             db.session.remove()
             db.engine.dispose()
         self.db_path.unlink(missing_ok=True)
+        if self.upload_dir.exists():
+            for path in sorted(self.upload_dir.rglob("*"), reverse=True):
+                if path.is_file():
+                    path.unlink()
+                elif path.is_dir():
+                    path.rmdir()
 
     def test_public_pages_render(self):
         self.assertEqual(self.client.get("/").status_code, 200)
@@ -64,7 +74,7 @@ class SmokeTestCase(unittest.TestCase):
                 text("SELECT version FROM schema_migrations ORDER BY version")
             ).fetchall()
         versions = [version for (version,) in rows]
-        self.assertEqual(versions, ["0001", "0002", "0003", "0004"])
+        self.assertEqual(versions, [migration.version for migration in MIGRATIONS])
 
     def test_migration_status_command(self):
         runner = self.app.test_cli_runner()
@@ -82,6 +92,93 @@ class SmokeTestCase(unittest.TestCase):
         ]
         for path in expected_paths:
             self.assertTrue(path.exists(), f"Missing migration scaffold: {path}")
+
+    def test_garment_analysis_generates_annotation_and_json(self):
+        from PIL import Image, ImageDraw
+
+        image_path = self.upload_dir / "test-shirt.png"
+        image = Image.new("RGB", (480, 640), "white")
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((150, 90, 330, 500), fill=(32, 94, 182))
+        draw.rectangle((90, 130, 150, 280), fill=(32, 94, 182))
+        draw.rectangle((330, 130, 390, 280), fill=(32, 94, 182))
+        draw.rectangle((200, 60, 280, 115), fill="white")
+        image.save(image_path)
+
+        with self.app.app_context():
+            factory = Factory(name="Test Factory")
+            db.session.add(factory)
+            db.session.flush()
+
+            product = Product(
+                factory_id=factory.id,
+                name="Sample Tee",
+                category="t_shirt",
+                quantity=3,
+                website_image="/uploads/test-shirt.png",
+            )
+            db.session.add(product)
+            db.session.commit()
+
+            service = GarmentImageAnalysisService()
+            result = service.analyze_and_store(product)
+
+            self.assertEqual(result["status"], "analyzed")
+            self.assertTrue(product.garment_analysis_json)
+            self.assertTrue(product.garment_annotation_image.startswith("/uploads/annotations/"))
+            annotation_path = self.upload_dir / "annotations" / Path(product.garment_annotation_image).name
+            self.assertTrue(annotation_path.exists())
+
+    def test_garment_zone_assignment_can_link_to_composition_item(self):
+        with self.app.app_context():
+            factory = Factory(name="Assignment Factory")
+            db.session.add(factory)
+            db.session.flush()
+
+            fabric = Fabric(
+                factory_id=factory.id,
+                name="Neck Label",
+                material_type="label",
+                unit="pcs",
+                quantity=200,
+                category="branding",
+            )
+            db.session.add(fabric)
+            db.session.flush()
+
+            product = Product(
+                factory_id=factory.id,
+                name="Mapped Tee",
+                category="t_shirt",
+                quantity=1,
+            )
+            db.session.add(product)
+            db.session.flush()
+
+            composition = ProductComposition(
+                product_id=product.id,
+                fabric_id=fabric.id,
+                quantity_required=1,
+                unit="pcs",
+                note="inside neck",
+            )
+            db.session.add(composition)
+            db.session.commit()
+
+            service = GarmentImageAnalysisService()
+            assignment = service.save_zone_assignment(
+                product=product,
+                zone_key="neck_label_area",
+                zone_label="Neck label area",
+                selection=f"comp:{composition.id}",
+                usage_label="Brand label",
+                note="auto test",
+            )
+
+            self.assertEqual(assignment.assignment_kind, "composition_item")
+            self.assertEqual(assignment.product_composition_id, composition.id)
+            self.assertEqual(assignment.fabric_id, fabric.id)
+            self.assertEqual(assignment.usage_label, "Brand label")
 
 
 class ProductionConfigGuardTestCase(unittest.TestCase):

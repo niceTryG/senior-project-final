@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="{{ current_lang or 'ru' }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADRAS | {% block title %}{% endblock %}</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/dashboard.css', v='adras-shell-4') }}"
+    />
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="dashboard-body {% block dashboard_body_class %}{% endblock %}">
+    {% set ep = request.endpoint or '' %}
+    {% set shop_href = url_for('shop.dashboard_shop') %}
+    {% set transfer_href = url_for('shop.transfer_to_shop') if current_user.is_authenticated and current_user.role in ('admin', 'manager') else shop_href %}
+    {% set shop_nav_active = ep in (
+      'shop.dashboard_shop',
+      'shop.list_shop_orders',
+      'shop.sell_product',
+      'shop.complete_order',
+      'shop.order_movements',
+      'shop.movement_history'
+    ) %}
+    {% set transfer_nav_active = ep in (
+      'shop.list_shop',
+      'shop.transfer_to_shop',
+      'shop.list_shop_staff',
+      'shop.export_shop',
+      'shop.factory_pending_orders'
+    ) %}
+    {% set workspace_display_name = workspace_name(current_user) if current_user.is_authenticated else t('workspace') %}
+    {% set user_chip_name = user_display_name(current_user) if current_user.is_authenticated else t('user') %}
+    {% set user_chip_initials = user_initials(current_user) if current_user.is_authenticated else 'U' %}
+    {% set inbox_badge_count = (command_center_open_count | default(0) | int) + (setup_remaining | default(0) | int) %}
+    {% set support_href = url_for('main.more') %}
+
+    <div class="mm-dashboard-backdrop" aria-hidden="true">
+      <span class="mm-dashboard-aurora mm-dashboard-aurora-one"></span>
+      <span class="mm-dashboard-aurora mm-dashboard-aurora-two"></span>
+      <span class="mm-dashboard-grid"></span>
+    </div>
+    <div class="mm-page-veil" aria-hidden="true"></div>
+    <div class="mm-scroll-progress" aria-hidden="true"></div>
+
+    <header class="mm-app-header">
+      <div class="mm-app-header-inner">
+        <a
+          href="{{ url_for('main.command_center') }}"
+          class="mm-header-link-chip mm-header-link-chip-inbox {% if ep == 'main.command_center' %}is-active{% endif %}"
+          aria-label="{{ t('inbox') }}"
+        >
+          <span class="mm-header-inbox-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="mm-header-icon-svg">
+              <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="m6 8 6 4.5L18 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          {% if inbox_badge_count > 0 %}
+            <span class="mm-header-inbox-badge">{{ inbox_badge_count }}</span>
+          {% endif %}
+        </a>
+
+        <div class="mm-header-center">
+          <div class="mm-header-welcome">Welcome {{ user_chip_name }}</div>
+        </div>
+
+        <div class="mm-header-actions">
+          <a
+            href="{{ support_href }}"
+            class="mm-header-help-link {% if ep == 'main.more' %}is-active{% endif %}"
+            aria-label="Support"
+          >
+            <span>?</span>
+          </a>
+
+          <a
+            href="{{ url_for('main.profile_overview') }}"
+            class="mm-header-link-chip mm-header-link-chip-user {% if ep in ('main.profile_overview', 'main.profile') %}is-active{% endif %}"
+            aria-label="{{ t('open_profile_for') }} {{ user_chip_name }}"
+          >
+            <span class="mm-header-avatar" aria-hidden="true">{{ user_chip_initials }}</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <div class="dashboard-page-shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block dashboard_content %}{% endblock %}
+      </div>
+    </main>
+
+    <nav class="mm-mobile-bottom-nav">
+      <a
+        href="{{ url_for('main.dashboard') }}"
+        class="{% if ep == 'main.dashboard' %}active{% endif %}"
+      >
+        <span class="mm-mobile-nav-label">{{ t('home') }}</span>
+      </a>
+
+      <a
+        href="{{ url_for('main.inventory') }}"
+        class="{% if ep == 'main.inventory' %}active{% endif %}"
+      >
+        <span class="mm-mobile-nav-label">{{ t('inventory') }}</span>
+      </a>
+
+      <a
+        href="{{ shop_href }}"
+        class="{% if shop_nav_active %}active{% endif %}"
+      >
+        <span class="mm-mobile-nav-label">{{ t('shop') }}</span>
+      </a>
+
+      <a
+        href="{{ url_for('main.business_summary') }}"
+        class="{% if ep in ('main.business_summary', 'main.more') or ep.startswith('reports.') %}active{% endif %}"
+      >
+        <span class="mm-mobile-nav-label">{{ t('reports') }}</span>
+      </a>
+    </nav>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

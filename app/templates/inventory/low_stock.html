@@ -1,0 +1,476 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('low_stock_title') }}{% endblock %}
+{% block topbar_title %}{{ t('low_stock_title') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <style>
+    .mm-low-shell {
+      display: grid;
+      gap: 14px;
+    }
+
+    .mm-low-back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,.12);
+      background: #fff;
+      color: #0b1c30;
+      text-decoration: none;
+      box-shadow: var(--adras-shadow-xs);
+      transition: background .12s ease, border-color .12s ease, transform .12s ease;
+    }
+
+    .mm-low-back:hover {
+      background: #f8fafc;
+      border-color: rgba(37,99,168,.35);
+      transform: translateY(-1px);
+      color: #0b1c30;
+    }
+
+    .mm-low-toggle-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .mm-low-toggle {
+      width: 100%;
+      text-align: left;
+      border-radius: 14px;
+      padding: 12px;
+      border: 1px solid var(--adras-border);
+      background: var(--adras-card);
+      color: var(--adras-text);
+      box-shadow: var(--adras-shadow-xs);
+      transition: transform .14s ease, border-color .14s ease, background .14s ease;
+    }
+
+    .mm-low-toggle:hover,
+    .mm-low-toggle.is-active {
+      transform: translateY(-1px);
+      border-color: rgba(220, 53, 69, 0.34);
+      background: rgba(220, 53, 69, 0.06);
+    }
+
+    .mm-low-toggle-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-size: .92rem;
+      font-weight: 800;
+    }
+
+    .mm-low-toggle-count {
+      min-width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(220, 53, 69, 0.12);
+      color: #b42334;
+      border: 1px solid rgba(220, 53, 69, 0.26);
+      font-size: .88rem;
+      font-weight: 900;
+    }
+
+    .mm-low-toggle-sub {
+      margin-top: 7px;
+      color: var(--adras-text-muted);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .mm-low-panel {
+      display: none;
+      border-radius: 16px;
+      padding: 12px;
+      border: 1px solid var(--adras-border);
+      background: var(--adras-card);
+      box-shadow: var(--adras-shadow-xs);
+      transform: translateY(8px);
+      opacity: 0;
+      transition: transform .18s ease, opacity .18s ease;
+    }
+
+    .mm-low-panel.is-open {
+      display: block;
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .mm-low-panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 10px;
+    }
+
+    .mm-low-panel-title {
+      margin: 0;
+      font-size: .96rem;
+      font-weight: 800;
+    }
+
+    .mm-low-panel-sub {
+      margin: 4px 0 0;
+      color: var(--adras-text-muted);
+      font-size: 0.78rem;
+    }
+
+    .mm-low-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .mm-low-card {
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid rgba(220, 53, 69, 0.18);
+      border-left: 4px solid rgba(220, 53, 69, 0.62);
+      background: #fff;
+    }
+
+    .mm-low-card-shop {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .mm-low-card-shop-head {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .mm-low-shop-media {
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      border: 2px solid #1d2128;
+      background: #f6f7fa;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mm-low-shop-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .mm-low-shop-media .bi {
+      color: #96a0ad;
+      font-size: 1.1rem;
+    }
+
+    .mm-low-shop-bars {
+      display: grid;
+      gap: 6px;
+      margin-top: 0;
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+    }
+
+    .mm-low-shop-bar {
+      border: 2px solid #1d2128;
+      border-radius: 2px;
+      background: #fff;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      gap: 8px;
+    }
+
+    .mm-low-shop-bar-k {
+      color: #516074;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.64rem;
+      font-weight: 800;
+    }
+
+    .mm-low-shop-bar-v {
+      color: #0b1c30;
+      font-size: 0.82rem;
+      font-weight: 900;
+      text-align: right;
+    }
+
+    .mm-low-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .mm-low-card-title {
+      margin: 0;
+      font-size: .9rem;
+      font-weight: 800;
+    }
+
+    .mm-low-card-sub {
+      margin-top: 4px;
+      color: var(--adras-text-muted);
+      font-size: 0.78rem;
+    }
+
+    .mm-low-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.28rem 0.56rem;
+      background: rgba(220,53,69,0.1);
+      border: 1px solid rgba(220,53,69,0.2);
+      color: #b42334;
+      font-size: 0.68rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .mm-low-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .mm-low-metric {
+      border-radius: 10px;
+      padding: 8px;
+      background: #f8f9fb;
+      border: 1px solid #e9ecf1;
+    }
+
+    .mm-low-metric-k {
+      font-size: 0.66rem;
+      color: #7b8795;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .mm-low-metric-v {
+      margin-top: 4px;
+      font-size: .9rem;
+      font-weight: 900;
+      color: #0b1c30;
+    }
+
+    .mm-low-empty {
+      border-radius: 12px;
+      padding: 14px;
+      border: 1px dashed #d8dee8;
+      color: #7b8795;
+      background: #fff;
+      text-align: center;
+    }
+
+    @media (max-width: 767.98px) {
+      .mm-low-toggle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+      .mm-low-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .mm-low-card-shop {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .mm-low-toggle {
+        padding: 10px;
+      }
+
+      .mm-low-toggle-sub {
+        display: none;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .mm-low-toggle-label {
+        font-size: .84rem;
+      }
+
+      .mm-low-toggle-count {
+        min-width: 30px;
+        height: 30px;
+        font-size: .8rem;
+      }
+    }
+  </style>
+
+  <section class="mm-low-shell">
+    <a href="{{ url_for('main.inventory') }}" class="mm-low-back" aria-label="{{ t('low_stock_back_to_inventory') }}">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+
+    <div class="mm-low-toggle-grid">
+      <button type="button" class="mm-low-toggle" data-target="materials-panel">
+        <span class="mm-low-toggle-label">
+          <span><i class="bi bi-exclamation-diamond-fill text-danger me-1"></i>{{ t('low_materials_title') }}</span>
+          <span class="mm-low-toggle-count">{{ low_materials|length }}</span>
+        </span>
+        <span class="mm-low-toggle-sub">{{ t('low_stock_materials_button_subtitle') }}</span>
+      </button>
+
+      <button type="button" class="mm-low-toggle" data-target="shop-panel">
+        <span class="mm-low-toggle-label">
+          <span><i class="bi bi-exclamation-diamond-fill text-danger me-1"></i>{{ t('low_shop_stock_title') }}</span>
+          <span class="mm-low-toggle-count">{{ low_shop_items|length }}</span>
+        </span>
+        <span class="mm-low-toggle-sub">{{ t('low_stock_shop_button_subtitle') }}</span>
+      </button>
+    </div>
+
+    <section id="materials-panel" class="mm-low-panel" aria-hidden="true">
+      <div class="mm-low-panel-head">
+        <div>
+          <h2 class="mm-low-panel-title">{{ t('low_materials_title') }}</h2>
+          <p class="mm-low-panel-sub">{{ t('low_stock_materials_subtitle') }}</p>
+        </div>
+      </div>
+
+      {% if low_materials %}
+        <div class="mm-low-list">
+          {% for item in low_materials %}
+            {% set threshold = item.min_stock_quantity or 5 %}
+            {% set shortage = (threshold - (item.quantity or 0)) if (threshold - (item.quantity or 0)) > 0 else 0 %}
+            <article class="mm-low-card">
+              <div class="mm-low-card-head">
+                <div>
+                  <h3 class="mm-low-card-title">{{ item.name }}</h3>
+                  <div class="mm-low-card-sub">
+                    {% if item.material_type %}{{ item.material_type|replace('_', ' ')|title }}{% else %}{{ t('generic_material_label') }}{% endif %}
+                    {% if item.category %} · {{ item.category }}{% endif %}
+                    {% if item.supplier_name %} · {{ item.supplier_name }}{% endif %}
+                  </div>
+                </div>
+                <span class="mm-low-chip">{{ t('low_stock_needs_refill') }}</span>
+              </div>
+
+              <div class="mm-low-metrics">
+                <div class="mm-low-metric">
+                  <div class="mm-low-metric-k">{{ t('metric_available_label') }}</div>
+                  <div class="mm-low-metric-v">{{ "%.2f"|format(item.quantity or 0) }} {{ item.unit or '' }}</div>
+                </div>
+                <div class="mm-low-metric">
+                  <div class="mm-low-metric-k">{{ t('metric_minimum_label') }}</div>
+                  <div class="mm-low-metric-v">{{ "%.2f"|format(threshold or 0) }} {{ item.unit or '' }}</div>
+                </div>
+                <div class="mm-low-metric">
+                  <div class="mm-low-metric-k">{{ t('metric_gap_label') }}</div>
+                  <div class="mm-low-metric-v">{{ "%.2f"|format(shortage or 0) }} {{ item.unit or '' }}</div>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="mm-low-empty">{{ t('no_low_materials_now') }}</div>
+      {% endif %}
+    </section>
+
+    <section id="shop-panel" class="mm-low-panel" aria-hidden="true">
+      <div class="mm-low-panel-head">
+        <div>
+          <h2 class="mm-low-panel-title">{{ t('low_shop_stock_title') }}</h2>
+          <p class="mm-low-panel-sub">{{ t('low_stock_shop_subtitle') }}</p>
+        </div>
+      </div>
+
+      {% if low_shop_items %}
+        <div class="mm-low-list">
+          {% for item in low_shop_items %}
+            {% set product_photo = product_image_url(item.image_path) %}
+            <article class="mm-low-card mm-low-card-shop">
+              <div class="mm-low-card-shop-head">
+                <div>
+                  <h3 class="mm-low-card-title">{{ item.name }}</h3>
+                  <div class="mm-low-card-sub">
+                    {% if item.source_factory_name %}{{ t('low_stock_source_factory') }} {{ item.source_factory_name }}{% else %}{{ t('low_stock_needs_replenishment') }}{% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <div class="mm-low-shop-bars">
+                <div class="mm-low-shop-bar">
+                  <span class="mm-low-shop-bar-k">{{ t('shop_bar_in_shop_label') }}</span>
+                  <span class="mm-low-shop-bar-v">{{ item.qty or 0 }}</span>
+                </div>
+                <div class="mm-low-shop-bar">
+                  <span class="mm-low-shop-bar-k">{{ t('shop_bar_status_label') }}</span>
+                  <span class="mm-low-shop-bar-v">{{ t('shop_bar_status_low') }}</span>
+                </div>
+                <div class="mm-low-shop-bar">
+                  <span class="mm-low-shop-bar-k">{{ t('shop_bar_attention_label') }}</span>
+                  <span class="mm-low-shop-bar-v">{{ t('shop_bar_transfer_soon') }}</span>
+                </div>
+              </div>
+
+              <div class="mm-low-shop-media" aria-hidden="true">
+                {% if product_photo %}
+                  <img src="{{ product_photo }}" alt="{{ item.name }}">
+                {% else %}
+                  <i class="bi bi-box-seam"></i>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="mm-low-empty">{{ t('no_low_shop_stock_now') }}</div>
+      {% endif %}
+    </section>
+  </section>
+</div>
+
+<script>
+  (function () {
+    const buttons = Array.from(document.querySelectorAll('.mm-low-toggle'));
+    const panels = Array.from(document.querySelectorAll('.mm-low-panel'));
+
+    function closeAll() {
+      buttons.forEach((button) => button.classList.remove('is-active'));
+      panels.forEach((panel) => {
+        panel.classList.remove('is-open');
+        panel.setAttribute('aria-hidden', 'true');
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', function () {
+        const targetId = button.getAttribute('data-target');
+        const panel = document.getElementById(targetId);
+        const isActive = button.classList.contains('is-active');
+
+        closeAll();
+        if (isActive || !panel) {
+          return;
+        }
+
+        button.classList.add('is-active');
+        panel.classList.add('is-open');
+        panel.setAttribute('aria-hidden', 'false');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  })();
+</script>
+{% endblock %}

@@ -34,6 +34,7 @@ from app.models import (
     CashRecord,
     Production,
     Movement,
+    OnboardingTelegramVerification,
 )
 from app.services.shop_service import ShopService
 
@@ -445,10 +446,44 @@ def chat_id_cmd(update: Update, context: CallbackContext) -> None:
     update.message.reply_html(text)
 
 
+def _handle_signup_verification_start(update: Update, chat_id: int, token: str) -> bool:
+    clean_token = str(token or "").strip()
+    if not clean_token:
+        return False
+
+    verification = OnboardingTelegramVerification.query.filter_by(token=clean_token).first()
+    if not verification:
+        update.message.reply_text("Signup verification link was not found. Open the signup page and generate a fresh Telegram step.")
+        return True
+
+    if verification.is_expired() and not verification.is_verified():
+        update.message.reply_text("This signup verification link expired. Return to Adras and open the Telegram step again.")
+        return True
+
+    verification.telegram_chat_id = chat_id
+    verification.verified_at = verification.verified_at or datetime.utcnow()
+    verification.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    update.message.reply_text(
+        "Adras signup confirmed.\n\nReturn to the browser and continue to the workspace step."
+    )
+    return True
+
+
 @with_flask_context
 def start(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     logger.info("Received /start from chat_id=%s", chat_id)
+
+    payload = ""
+    if getattr(context, "args", None):
+        payload = (context.args[0] or "").strip()
+
+    if payload.startswith("signup_"):
+        token = payload[len("signup_"):].strip()
+        if _handle_signup_verification_start(update, chat_id, token):
+            return
 
     if is_manager(chat_id) and is_shop_user(chat_id):
         update.message.reply_text(

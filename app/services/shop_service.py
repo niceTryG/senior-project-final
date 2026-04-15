@@ -32,6 +32,10 @@ class ShopService:
     # Internal helpers
     # =========================
 
+    def _get_or_create_default_shop(self, factory_id: int) -> Shop:
+        """Compatibility wrapper for older route/service call sites."""
+        return get_or_create_default_shop(factory_id)
+
     def _get_product_or_raise(
         self,
         product_id: int,

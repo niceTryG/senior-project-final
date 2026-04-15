@@ -1,0 +1,208 @@
+{% extends "superadmin/base.html" %}
+{% block title %}{{ factory.name }}{% endblock %}
+{% block page_title %}{{ factory.name }}{% endblock %}
+{% block page_crumb %}Tenant detail &rsaquo; {{ factory.name }}{% endblock %}
+
+{% block content %}
+<div class="sa-page-header">
+  <div>
+    <div class="sa-page-header-title">{{ factory.name }}</div>
+    <div class="sa-page-header-sub">ID #{{ factory.id }} &middot; Registered {{ factory.created_at.strftime('%d %b %Y') }}</div>
+  </div>
+  <a href="{{ url_for('superadmin.tenants') }}" class="sa-btn sa-btn-ghost">← Back to Tenants</a>
+</div>
+
+<!-- KV Info -->
+<div class="sa-kv-grid" style="margin-bottom:24px;">
+  <div class="sa-kv">
+    <div class="sa-kv-key">Business Name</div>
+    <div class="sa-kv-val">{{ factory.name }}</div>
+  </div>
+  <div class="sa-kv">
+    <div class="sa-kv-key">Owner</div>
+    <div class="sa-kv-val">{{ factory.owner_name or '—' }}</div>
+  </div>
+  <div class="sa-kv">
+    <div class="sa-kv-key">Phone</div>
+    <div class="sa-kv-val">{{ factory.phone or '—' }}</div>
+  </div>
+  <div class="sa-kv">
+    <div class="sa-kv-key">Location</div>
+    <div class="sa-kv-val">{{ factory.location or '—' }}</div>
+  </div>
+  <div class="sa-kv">
+    <div class="sa-kv-key">Total Users</div>
+    <div class="sa-kv-val" style="color:var(--sa-purple);">{{ users|length }}</div>
+  </div>
+  <div class="sa-kv">
+    <div class="sa-kv-key">Total Shops</div>
+    <div class="sa-kv-val" style="color:var(--sa-gold);">{{ shops|length }}</div>
+  </div>
+  <div class="sa-kv">
+    <div class="sa-kv-key">Total Products</div>
+    <div class="sa-kv-val" style="color:var(--sa-success);">{{ total_products }}</div>
+  </div>
+  <div class="sa-kv">
+    <div class="sa-kv-key">Total Sales</div>
+    <div class="sa-kv-val">{{ total_sales }}</div>
+  </div>
+  <div class="sa-kv">
+    <div class="sa-kv-key">Raw Materials</div>
+    <div class="sa-kv-val">{{ materials }}</div>
+  </div>
+  {% if factory.note %}
+  <div class="sa-kv" style="grid-column: 1 / -1;">
+    <div class="sa-kv-key">Note</div>
+    <div class="sa-kv-val" style="font-size:.86rem;font-weight:400;">{{ factory.note }}</div>
+  </div>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;" class="sa-two-col">
+
+  <!-- Users -->
+  <div class="sa-panel">
+    <div class="sa-panel-head">
+      <div>
+        <div class="sa-panel-title">Users</div>
+        <div class="sa-panel-sub">{{ users|length }} account{{ 's' if users|length != 1 else '' }}</div>
+      </div>
+    </div>
+    <table class="sa-table">
+      <thead>
+        <tr><th>User</th><th>Role</th><th>Last Login</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        {% set initials = (u.full_name[:1] if u.full_name else u.username[:1])|upper %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="sa-avatar sa-avatar-purple" style="width:28px;height:28px;font-size:.72rem;">{{ initials }}</div>
+              <div>
+                <div style="font-weight:700;font-size:.86rem;">{{ u.full_name or u.username }}</div>
+                {% if u.full_name %}<div style="font-size:.72rem;color:var(--sa-muted);">{{ u.username }}</div>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td>
+            {% if u.role == 'admin' %}<span class="sa-badge sa-badge-gold">Admin</span>
+            {% elif u.role == 'manager' %}<span class="sa-badge sa-badge-purple">Manager</span>
+            {% elif u.role == 'shop' %}<span class="sa-badge sa-badge-green">Shop</span>
+            {% elif u.role == 'accountant' %}<span class="sa-badge sa-badge-gray">Accountant</span>
+            {% else %}<span class="sa-badge sa-badge-gray">{{ u.role }}</span>{% endif %}
+          </td>
+          <td style="font-size:.78rem;color:var(--sa-muted);">
+            {{ u.last_login_at.strftime('%d %b %y') if u.last_login_at else 'Never' }}
+          </td>
+          <td>
+            <a href="{{ url_for('superadmin.user_detail', user_id=u.id) }}" class="sa-btn sa-btn-ghost" style="padding:4px 8px;font-size:.74rem;">→</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="color:var(--sa-muted);padding:20px;text-align:center;">No users.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Shops -->
+  <div class="sa-panel">
+    <div class="sa-panel-head">
+      <div>
+        <div class="sa-panel-title">Shops</div>
+        <div class="sa-panel-sub">{{ shops|length }} shop{{ 's' if shops|length != 1 else '' }}</div>
+      </div>
+    </div>
+    <table class="sa-table">
+      <thead>
+        <tr><th>Shop</th><th>Location</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for s in shops %}
+        <tr>
+          <td style="font-weight:700;font-size:.86rem;">{{ s.name }}</td>
+          <td style="font-size:.8rem;color:var(--sa-muted);">{{ s.location or '—' }}</td>
+          <td>
+            {% if s.is_active %}<span class="sa-badge sa-badge-green">Active</span>
+            {% else %}<span class="sa-badge sa-badge-red">Inactive</span>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="color:var(--sa-muted);padding:20px;text-align:center;">No shops.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent Sales -->
+<div class="sa-panel" style="margin-bottom:24px;">
+  <div class="sa-panel-head">
+    <div>
+      <div class="sa-panel-title">Recent Sales</div>
+      <div class="sa-panel-sub">Last {{ recent_sales|length }} of {{ total_sales }} total</div>
+    </div>
+  </div>
+  <table class="sa-table">
+    <thead>
+      <tr><th>ID</th><th>Date</th><th>Amount</th><th>Currency</th><th>Created By</th></tr>
+    </thead>
+    <tbody>
+      {% for sale in recent_sales %}
+      <tr>
+        <td style="color:var(--sa-muted);font-size:.78rem;">#{{ sale.id }}</td>
+        <td style="font-size:.82rem;">{{ sale.created_at.strftime('%d %b %Y') if sale.created_at else '—' }}</td>
+        <td style="font-weight:700;">{{ '{:,.0f}'.format(sale.total_sell or 0) }}</td>
+        <td style="font-size:.8rem;color:var(--sa-muted);">{{ sale.currency or 'UZS' }}</td>
+        <td style="font-size:.82rem;color:var(--sa-muted);">
+          {{ sale.created_by.username if sale.created_by else '—' }}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" style="color:var(--sa-muted);text-align:center;padding:24px;">No sales recorded.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Recent Products -->
+<div class="sa-panel">
+  <div class="sa-panel-head">
+    <div>
+      <div class="sa-panel-title">Products (latest {{ products|length }} of {{ total_products }})</div>
+    </div>
+  </div>
+  <table class="sa-table">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Category</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td style="color:var(--sa-muted);font-size:.78rem;">#{{ p.id }}</td>
+        <td style="font-weight:600;font-size:.86rem;">{{ p.name }}</td>
+        <td style="font-size:.8rem;color:var(--sa-muted);">{{ p.category or '—' }}</td>
+        <td>
+          {% if p.is_published is defined and p.is_published %}
+            <span class="sa-badge sa-badge-green">Published</span>
+          {% else %}
+            <span class="sa-badge sa-badge-gray">Draft</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" style="color:var(--sa-muted);text-align:center;padding:24px;">No products.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  @media (max-width: 768px) { .sa-two-col { grid-template-columns: 1fr !important; } }
+</style>
+{% endblock %}

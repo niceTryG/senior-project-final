@@ -1,0 +1,232 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('saved_production_plans') }}{% endblock %}
+{% block topbar_title %}{{ t('saved_production_plans') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <section class="adras-hero-card">
+    <div class="adras-hero-left">
+      <h1 class="adras-hero-title">{{ t('saved_production_plans') }}</h1>
+      <p class="dashboard-subtitle">
+        {{ t('saved_plans_subtitle') }}
+      </p>
+    </div>
+  </section>
+
+  <section class="adras-main-grid">
+    <div class="adras-main-left">
+      <section class="adras-kpi-grid mb-3">
+        <article class="adras-kpi-card">
+          <div class="adras-kpi-top">
+            <div class="adras-kpi-title">{{ t('plans_label') }}</div>
+            <div class="adras-kpi-number">{{ history_stats.total if history_stats is defined else 0 }}</div>
+          </div>
+        </article>
+
+        <article class="adras-kpi-card">
+          <div class="adras-kpi-top">
+            <div class="adras-kpi-title">{{ t('ready_label') }}</div>
+            <div class="adras-kpi-number">{{ history_stats.ready if history_stats is defined else 0 }}</div>
+          </div>
+        </article>
+
+        <article class="adras-kpi-card">
+          <div class="adras-kpi-top">
+            <div class="adras-kpi-title">{{ t('blocked_label') }}</div>
+            <div class="adras-kpi-number">{{ history_stats.blocked if history_stats is defined else 0 }}</div>
+          </div>
+        </article>
+
+        <article class="adras-kpi-card adras-kpi-card-dark">
+          <div class="adras-kpi-top">
+            <div class="adras-kpi-title">{{ t('order_linked_label') }}</div>
+            <div class="adras-kpi-number">{{ history_stats.with_orders if history_stats is defined else 0 }}</div>
+          </div>
+        </article>
+
+        <article class="adras-kpi-card">
+          <div class="adras-kpi-top">
+            <div class="adras-kpi-title">{{ t('plans_with_tasks') }}</div>
+            <div class="adras-kpi-number">{{ history_stats.with_tasks if history_stats is defined else 0 }}</div>
+          </div>
+        </article>
+
+        <article class="adras-kpi-card">
+          <div class="adras-kpi-top">
+            <div class="adras-kpi-title">{{ t('open_tasks') }}</div>
+            <div class="adras-kpi-number">{{ history_stats.open_tasks if history_stats is defined else 0 }}</div>
+          </div>
+        </article>
+      </section>
+
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('filters_title') }}</div>
+
+        <form method="get" class="d-grid" style="gap:12px;">
+          <div>
+            <label class="form-label">{{ t('search_label') }}</label>
+            <input type="text" name="q" value="{{ search_query or '' }}" class="form-control-auth" placeholder="{{ t('product_name_or_note') }}">
+          </div>
+
+          <div>
+            <label class="form-label">{{ t('products') }}</label>
+            <select name="product_id" class="form-control-auth">
+              <option value="">{{ t('all_products') }}</option>
+              {% for product in products %}
+                <option value="{{ product.id }}" {% if selected_product_id == product.id %}selected{% endif %}>{{ product.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label">{{ t('status') }}</label>
+            <select name="status" class="form-control-auth">
+              <option value="" {% if not selected_status %}selected{% endif %}>{{ t('all_statuses') }}</option>
+              <option value="ready" {% if selected_status == 'ready' %}selected{% endif %}>{{ t('ready_label') }}</option>
+              <option value="blocked" {% if selected_status == 'blocked' %}selected{% endif %}>{{ t('blocked_label') }}</option>
+              <option value="not_started" {% if selected_status == 'not_started' %}selected{% endif %}>{{ t('not_started') }}</option>
+              <option value="in_progress" {% if selected_status == 'in_progress' %}selected{% endif %}>{{ t('in_progress') if t('in_progress') != 'in_progress' else 'In progress' }}</option>
+              <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>{{ t('completed') }}</option>
+            </select>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="auth-btn">{{ t('apply_filters') }}</button>
+            <a href="{{ url_for('main.production_plan_history') }}" class="btn btn-outline-light">{{ t('clear') }}</a>
+          </div>
+        </form>
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('recent_history') }}</div>
+          <a href="{{ url_for('main.production_plan') }}" class="btn btn-outline-light btn-sm">{{ t('open_planner') }}</a>
+        </div>
+
+        {% if saved_plans %}
+          <div class="adras-focus-box">
+            {% for row in saved_plans %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">
+                  {{ row.product_name }}
+                  {% if row.can_fulfill_plan %}
+                    <span class="ad-chip chip-up ms-2">{{ t('ready_label') }}</span>
+                  {% else %}
+                    <span class="ad-chip chip-warn ms-2">{{ t('blocked_label') }}</span>
+                  {% endif %}
+                  {% if row.progress %}
+                    <span class="ad-chip ms-2 {% if row.progress.status == 'completed' %}chip-up{% elif row.progress.status == 'in_progress' %}chip-warn{% else %}chip-muted{% endif %}">
+                      {{ row.progress.label }}
+                    </span>
+                  {% endif %}
+                </div>
+
+                <div class="adras-action-card-sub">
+                  {{ t('target_qty_label') }} {{ row.target_qty }} · {{ t('max_buildable') }} {{ row.max_producible_units }} · {{ t('shortages_label') }} {{ row.shortage_count }}
+                </div>
+
+                <div class="adras-action-card-sub">
+                  {% if row.order_id %}
+                    {{ t('order_number_label') }}{{ row.order_id }}{% if row.customer_name %} · {{ row.customer_name }}{% endif %}
+                  {% else %}
+                    {{ t('manual_plan') }}
+                  {% endif %}
+                  {% if row.created_at %} · {{ row.created_at.strftime('%d.%m.%Y %H:%M') }}{% endif %}
+                </div>
+
+                {% if row.task_summary and row.task_summary.has_tasks %}
+                  <div class="adras-action-card-sub">
+                    {{ t('tasks_summary').format(total=row.task_summary.total, open=row.task_summary.open, done=row.task_summary.done) }}
+                  </div>
+                {% endif %}
+
+                {% if row.run_summary and row.run_summary.count %}
+                  <div class="adras-action-card-sub">
+                    {{ t('runs_summary').format(count=row.run_summary.count, total=row.run_summary.total_qty) }}
+                    {% if row.progress %}
+                      · {{ t('remaining_short').format(qty=row.progress.remaining_qty) }} · {{ row.progress.completion_pct }}%
+                    {% endif %}
+                    {% if row.run_summary.last_run and row.run_summary.last_run.date %}
+                      · {{ t('last_run_label') }} {{ row.run_summary.last_run.date.strftime('%d.%m.%Y') }}
+                    {% endif %}
+                  </div>
+                {% endif %}
+
+                {% if row.note %}
+                  <div class="adras-action-card-sub">{{ row.note }}</div>
+                {% endif %}
+
+                {% if row.shortage_preview %}
+                  <div class="adras-action-card-sub">
+                    {{ t('missing_now') }}:
+                    {% for item in row.shortage_preview %}
+                      {{ (item.material_type or 'fabric')|replace('_', ' ')|title }} {{ item.material_name }} {{ "%.2f"|format(item.shortage_qty or 0) }} {{ item.unit }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+
+                <form method="post" action="{{ url_for('main.production_plan_update_note', plan_id=row.id) }}" class="mt-2 d-grid" style="gap:8px;">
+                  <input type="text" name="note" value="{{ row.note or '' }}" class="form-control-auth" maxlength="255" placeholder="{{ t('update_note') }}">
+                  <div>
+                    <button type="submit" class="btn btn-outline-light btn-sm">{{ t('save_note') if t('save_note') != 'save_note' else 'Save note' }}</button>
+                  </div>
+                </form>
+
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                  <a href="{{ url_for('main.production_plan_detail', plan_id=row.id) }}" class="btn btn-outline-light btn-sm">{{ t('view_detail') }}</a>
+                  <a href="{{ url_for('main.production_plan', product_id=row.product_id, target_qty=row.target_qty, order_item_id=row.order_item_id) }}" class="btn btn-outline-light btn-sm">{{ t('reopen_label') }}</a>
+                  <a href="{{ url_for('main.production_plan_xlsx', product_id=row.product_id, target_qty=row.target_qty, order_item_id=row.order_item_id) }}" class="btn btn-outline-light btn-sm">{{ t('export_xlsx') }}</a>
+                  <a href="{{ row.movement_history_href }}" class="btn btn-outline-light btn-sm">{{ t('movement_log') }}</a>
+
+                  {% if row.order_history_href %}
+                    <a href="{{ row.order_history_href }}" class="btn btn-outline-light btn-sm">{{ t('order_log') }}</a>
+                  {% endif %}
+
+                  {% if not row.can_fulfill_plan %}
+                    <form method="post" action="{{ url_for('main.production_plan_create_task', plan_id=row.id) }}">
+                      <button type="submit" class="btn btn-outline-light btn-sm">{{ t('create_task') }}</button>
+                    </form>
+                  {% endif %}
+
+                  <form method="post" action="{{ url_for('main.production_plan_delete', plan_id=row.id) }}" onsubmit="return confirm('{{ t('delete_saved_plan_confirm') }}');">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">{{ t('delete_label') }}</button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_saved_plans_yet') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <div class="adras-main-right">
+      <article class="adras-panel adras-snapshot-dark">
+        <div class="adras-panel-title adras-panel-title-light">{{ t('how_to_use_this') }}</div>
+
+        <div class="adras-snapshot-dark-box">
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-yellow"></span>
+            <span>{{ t('saved_plans_why_1') }}</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-cyan"></span>
+            <span>{{ t('saved_plans_why_2') }}</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-blue"></span>
+            <span>{{ t('saved_plans_why_3') }}</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "sales/base_sales.html" %}
+
+{% block title %}{{ t('sales_history_title') }}{% endblock %}
+
+{% block content %}
+<style>
+  .mm-sales-history-page {
+    color: #f8fafc;
+    display: grid;
+    gap: 18px;
+  }
+
+  .mm-history-hero,
+  .mm-history-panel {
+    border-radius: 28px;
+    background: linear-gradient(135deg, rgba(7,17,31,0.96), rgba(12,27,48,0.96));
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.24);
+  }
+
+  .mm-history-hero {
+    padding: 24px;
+  }
+
+  .mm-history-panel {
+    padding: 18px;
+  }
+
+  .mm-history-title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 800;
+  }
+
+  .mm-history-sub {
+    margin: 10px 0 0;
+    color: rgba(248,250,252,0.72);
+  }
+
+  .mm-history-toolbar {
+    display: grid;
+    grid-template-columns: 1.4fr .8fr .8fr auto;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .mm-field,
+  .mm-btn {
+    min-height: 48px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    padding: 0 14px;
+  }
+
+  .mm-field::placeholder {
+    color: rgba(248,250,252,0.52);
+  }
+
+  .mm-btn {
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .mm-history-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .mm-stat {
+    border-radius: 18px;
+    padding: 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .mm-stat-label {
+    font-size: 12px;
+    color: rgba(248,250,252,0.58);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+  }
+
+  .mm-stat-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .mm-sales-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mm-sale-row {
+    border-radius: 18px;
+    padding: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    display: grid;
+    gap: 8px;
+  }
+
+  .mm-sale-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .mm-sale-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .mm-sale-meta {
+    font-size: 13px;
+    color: rgba(248,250,252,0.68);
+    line-height: 1.55;
+  }
+
+  .mm-sale-amount {
+    font-size: 20px;
+    font-weight: 800;
+    color: #86efac;
+    white-space: nowrap;
+  }
+
+  .mm-empty-box {
+    border-radius: 18px;
+    padding: 22px;
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed rgba(255,255,255,0.10);
+    color: rgba(248,250,252,0.66);
+  }
+
+  @media (max-width: 760px) {
+    .mm-history-toolbar {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-history-stats {
+      grid-template-columns: 1fr;
+    }
+
+    .mm-sale-top {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<div class="mm-sales-history-page">
+  <section class="mm-history-hero">
+    <h1 class="mm-history-title">{{ t('sales_history_title') }}</h1>
+    <p class="mm-history-sub">{{ t('sales_history_subtitle') }}</p>
+
+    <form method="GET" class="mm-history-toolbar">
+      <input
+        type="text"
+        name="q"
+        value="{{ q or '' }}"
+        class="mm-field"
+        placeholder="{{ t('sales_history_search_placeholder') }}"
+      />
+      <input type="date" name="from" value="{{ date_from or '' }}" class="mm-field" />
+      <input type="date" name="to" value="{{ date_to or '' }}" class="mm-field" />
+      <button type="submit" class="mm-btn">{{ t('filter') }}</button>
+    </form>
+  </section>
+
+  <section class="mm-history-stats">
+    <div class="mm-stat">
+      <div class="mm-stat-label">{{ t('total_quantity') }}</div>
+      <div class="mm-stat-value">{{ total_qty }}</div>
+    </div>
+    <div class="mm-stat">
+      <div class="mm-stat-label">{{ t('total_amount') }}</div>
+      <div class="mm-stat-value">{{ format_money(total_amount, 'UZS') }}</div>
+    </div>
+  </section>
+
+  <section class="mm-history-panel">
+    {% if sales_rows %}
+      <div class="mm-sales-list">
+        {% for row in sales_rows %}
+          <article class="mm-sale-row">
+            <div class="mm-sale-top">
+              <div>
+                <div class="mm-sale-name">{{ row.product.name }}</div>
+                <div class="mm-sale-meta">
+                  {{ t('qty') }}: {{ row.qty }} · {{ t('price') }}: {{ format_money(row.price, row.sale.currency or 'UZS') }}<br>
+                  {{ t('customer') }}: {{ row.sale.customer_name or '-' }} · {{ t('phone') }}: {{ row.sale.customer_phone or '-' }}<br>
+                  {{ t('date') }}: {{ row.sale.date.strftime('%Y-%m-%d') if row.sale.date else '-' }}
+                </div>
+              </div>
+              <div class="mm-sale-amount">
+                {{ format_money(row.amount, row.sale.currency or 'UZS') }}
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="mm-empty-box">{{ t('no_sales_found_for_filters') }}</div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+{
+  "dataset_root": "C:/Users/Ibrohim/Desktop/uni courses/2024/fall 2024/Games technology/Kivy project/fabric_inventory/training/garment_dataset",
+  "splits": {
+    "train": {
+      "images": 22,
+      "written": 5,
+      "skipped_existing": 0,
+      "unmatched": 17,
+      "unsupported": 0,
+      "empty": 0,
+      "files": [
+        {
+          "image": "7adfba26edf240a3a7cf6cf891e1d9d4.png",
+          "status": "written",
+          "product_id": 50,
+          "category": "t_shirt",
+          "rows": 4
+        },
+        {
+          "image": "a6620fbddd7340ab9aea6a51b756200c.png",
+          "status": "written",
+          "product_id": 49,
+          "category": "t_shirt",
+          "rows": 4
+        },
+        {
+          "image": "e412db57e59c4ecab7bd355bca8f6b06.png",
+          "status": "written",
+          "product_id": 50,
+          "category": "t_shirt",
+          "rows": 4
+        },
+        {
+          "image": "e68ba40fbc8c44d5896aeecb693f0343.jpg",
+          "status": "written",
+          "product_id": 53,
+          "category": "t_shirt",
+          "rows": 4
+        },
+        {
+          "image": "e9e5bf74f1b44c88ab0f6e7b9b731693.png",
+          "status": "written",
+          "product_id": 51,
+          "category": "t_shirt",
+          "rows": 4
+        },
+        {
+          "image": "icon-512.png",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "image.jpg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "IMG_0632.jpeg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "IMG_1004.jpeg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "IMG_1130.jpeg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "IMG_1131.jpeg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "IMG_1132.jpeg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "IMG_1133.jpeg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "IMG_9534.jpeg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "photo_2023-07-09_00-17-09.jpg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "photo_2026-02-28_02-50-57.jpg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "product_49_garment_map.png",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "product_50_garment_map.png",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "product_51_garment_map.png",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "Screenshot_2025-12-20_040158.png",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "Screenshot_2025-12-20_044748.png",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "shuttle.png",
+          "status": "unmatched_product"
+        }
+      ]
+    },
+    "val": {
+      "images": 6,
+      "written": 2,
+      "skipped_existing": 0,
+      "unmatched": 4,
+      "unsupported": 0,
+      "empty": 0,
+      "files": [
+        {
+          "image": "0217c49a136944a29d55233dcf5e31c6.jpg",
+          "status": "written",
+          "product_id": 52,
+          "category": "t_shirt",
+          "rows": 4
+        },
+        {
+          "image": "a9ebe01de9b745f0a07d16bd62431097.png",
+          "status": "written",
+          "product_id": 49,
+          "category": "t_shirt",
+          "rows": 4
+        },
+        {
+          "image": "IMG_1134.jpeg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "photo_2023-07-09_00-17-16.jpg",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "product_52_garment_map.png",
+          "status": "unmatched_product"
+        },
+        {
+          "image": "product_53_garment_map.png",
+          "status": "unmatched_product"
+        }
+      ]
+    }
+  },
+  "supported_classes": [
+    "button",
+    "button_placket",
+    "chest_graphic",
+    "collar",
+    "cuff",
+    "drawcord",
+    "embroidery_patch",
+    "eyelet",
+    "hem_band",
+    "hood",
+    "kangaroo_pocket",
+    "neck_label",
+    "pocket",
+    "waistband",
+    "zipper"
+  ]
+}

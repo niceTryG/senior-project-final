@@ -1,0 +1,351 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Cutting Orders{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+    <section class="adras-hero-card">
+        <div class="adras-hero-left">
+            <div class="adras-chip-row mb-3" style="display:flex; flex-wrap:wrap; gap:10px;">
+                <span class="badge text-bg-dark">Cutting room</span>
+                <span class="badge text-bg-secondary">Factory intelligence</span>
+            </div>
+            <h1 class="adras-hero-title">Cutting Operations</h1>
+            <p class="dashboard-subtitle mb-2">
+                Record what was cut, how many meters were used, and understand real yield and cost per piece.
+            </p>
+            <div class="d-flex gap-2 flex-wrap mt-3">
+                <a href="{{ url_for('cutting.cutting_order_create') }}" class="btn btn-primary">New Cutting Order</a>
+                <a href="{{ url_for('factory.produce_today') }}" class="btn btn-outline-light">Open Production</a>
+                <a href="{{ url_for('main.inventory') }}" class="btn btn-outline-light">Inventory</a>
+            </div>
+            <form method="get" class="d-flex gap-2 flex-wrap align-items-center mt-3">
+                <label for="targetPieces" class="small text-muted">Target pieces</label>
+                <input id="targetPieces" type="number" min="1" name="target_pieces" value="{{ target_pieces or '' }}" class="form-control form-control-sm" style="max-width:140px;">
+                <label for="benchmarkPpm" class="small text-muted">Expected pieces/m</label>
+                <input id="benchmarkPpm" type="number" min="0.01" step="0.01" name="benchmark_ppm" value="{{ benchmark_ppm or '' }}" class="form-control form-control-sm" style="max-width:140px;">
+                <button type="submit" class="btn btn-sm btn-outline-light">Apply</button>
+                {% if target_pieces %}
+                    <a href="{{ url_for('cutting.cutting_order_list') }}" class="btn btn-sm btn-outline-light">Clear</a>
+                {% elif benchmark_ppm %}
+                    <a href="{{ url_for('cutting.cutting_order_list') }}" class="btn btn-sm btn-outline-light">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </section>
+
+    <div class="d-flex justify-content-end mb-2">
+        <a href="{{ url_for('cutting.cutting_order_create') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Record Daily Cutting
+        </a>
+    </div>
+
+    <section class="adras-kpi-grid">
+        <article class="adras-kpi-card adras-kpi-card-dark">
+            <div class="adras-kpi-top">
+                <div class="adras-kpi-title">Pieces cut</div>
+                <div class="adras-kpi-number">{{ total_sets }}</div>
+            </div>
+            <div class="text-muted small">Recorded from all cutting orders</div>
+        </article>
+        <article class="adras-kpi-card">
+            <div class="adras-kpi-top">
+                <div class="adras-kpi-title">Meters used</div>
+                <div class="adras-kpi-number">{{ '%.2f'|format(total_used_meters) }}</div>
+            </div>
+            <div class="text-muted small">Total fabric consumed in records</div>
+        </article>
+        <article class="adras-kpi-card">
+            <div class="adras-kpi-top">
+                <div class="adras-kpi-title">Yield (pieces/m)</div>
+                <div class="adras-kpi-number">{{ '%.2f'|format(avg_pieces_per_meter) }}</div>
+            </div>
+            <div class="text-muted small">How many pieces come from 1 meter</div>
+        </article>
+        <article class="adras-kpi-card">
+            <div class="adras-kpi-top">
+                <div class="adras-kpi-title">Fabric cost/piece</div>
+                <div class="adras-kpi-number">{{ '{:,.0f}'.format(avg_cost_per_piece) }}</div>
+            </div>
+            <div class="text-muted small">Average material cost per cut piece</div>
+        </article>
+    </section>
+
+    <section class="row g-3 mb-3">
+        <div class="col-md-4">
+            <article class="adras-panel h-100">
+                <div class="adras-panel-title mb-2">Target tracker</div>
+                {% if target_pieces %}
+                    <div class="small text-muted mb-2">Current target: {{ target_pieces }} pieces</div>
+                    <div class="d-flex justify-content-between small mb-1"><span>Done</span><span class="fw-semibold">{{ total_sets }}</span></div>
+                    <div class="d-flex justify-content-between small mb-1"><span>Remaining</span><span class="fw-semibold">{{ remaining_pieces }}</span></div>
+                    <div class="progress" role="progressbar" aria-valuenow="{{ target_progress_pct|int }}" aria-valuemin="0" aria-valuemax="100" style="height:8px;">
+                        <div class="progress-bar" style="width: {{ '%.1f'|format(target_progress_pct or 0) }}%;"></div>
+                    </div>
+                {% else %}
+                    <div class="small text-muted">Set a target pieces number above (for example 100) to monitor progress.</div>
+                {% endif %}
+            </article>
+        </div>
+        <div class="col-md-4">
+            <article class="adras-panel h-100">
+                <div class="adras-panel-title mb-2">Cutting flow status</div>
+                <div class="d-grid gap-2 small">
+                    <div class="d-flex justify-content-between"><span class="text-muted">Open</span><span class="fw-semibold">{{ status_counts.open }}</span></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">In progress</span><span class="fw-semibold">{{ status_counts.in_progress }}</span></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">Closed</span><span class="fw-semibold">{{ status_counts.closed }}</span></div>
+                </div>
+            </article>
+        </div>
+        <div class="col-md-4">
+            <article class="adras-panel h-100">
+                <div class="adras-panel-title mb-2">Recent pace & backlog</div>
+                <div class="d-grid gap-2 small">
+                    <div class="d-flex justify-content-between"><span class="text-muted">7d pieces</span><span class="fw-semibold">{{ sets_last_7 }}</span></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">30d pieces</span><span class="fw-semibold">{{ sets_last_30 }}</span></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">Backlog pieces</span><span class="fw-semibold">{{ backlog_sets }}</span></div>
+                    {% if benchmark_ppm %}
+                        <div class="d-flex justify-content-between"><span class="text-muted">Yield vs target</span><span class="fw-semibold">{% if avg_ppm_gap >= 0 %}+{% endif %}{{ '%.2f'|format(avg_ppm_gap) }}</span></div>
+                    {% endif %}
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="adras-main-grid">
+        <div class="adras-main-left">
+            <article class="adras-panel">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+                    <div>
+                        <div class="adras-panel-title mb-1">Cutting ledger</div>
+                        <div class="text-muted small">Newest first, with meters used, yield and per-piece cost</div>
+                    </div>
+                </div>
+
+                {% if orders %}
+                    <div class="d-grid" style="gap:12px;">
+                        {% for row in enriched_orders %}
+                            {% set order = row.order %}
+                            <article class="adras-action-card" style="padding:16px; border:1px solid rgba(255,255,255,.08);">
+                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                    <div>
+                                        <div class="adras-action-card-title">{{ order.product.name if order.product else 'Unknown product' }}</div>
+                                        <div class="adras-action-card-sub">Order #{{ order.id }} · {{ order.cut_date.strftime('%d.%m.%Y') if order.cut_date else '—' }}</div>
+                                    </div>
+                                    <span class="badge {% if order.status == 'closed' %}text-bg-success{% elif order.status == 'in_progress' %}text-bg-warning text-dark{% else %}text-bg-secondary{% endif %}">
+                                        {{ order.status|replace('_', ' ')|title }}
+                                    </span>
+                                </div>
+
+                                <div class="row g-2 mt-2 small">
+                                    <div class="col-4">
+                                        <div class="text-muted">Pieces cut</div>
+                                        <div class="fw-semibold">{{ order.sets_cut }}</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-muted">Meters used</div>
+                                        <div class="fw-semibold">{{ '%.2f'|format(row.used_meters) }}</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-muted">Cost / piece</div>
+                                        <div class="fw-semibold">{{ '{:,.0f}'.format(row.cost_per_piece) }}</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-muted">Pieces / meter</div>
+                                        <div class="fw-semibold">{{ '%.2f'|format(row.pieces_per_meter) }}</div>
+                                        {% if benchmark_ppm %}
+                                            <div class="small {% if row.yield_state == 'good' %}text-success{% elif row.yield_state == 'low' %}text-danger{% else %}text-muted{% endif %}">
+                                                {% if row.ppm_gap >= 0 %}+{% endif %}{{ '%.2f'|format(row.ppm_gap) }} vs target
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-muted">Material lines</div>
+                                        <div class="fw-semibold">{{ order.materials|length }}</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-muted">Fabric cost</div>
+                                        <div class="fw-semibold">{{ '{:,.0f}'.format(row.row_cost) }}</div>
+                                    </div>
+                                </div>
+
+                                {% if row.component_rows %}
+                                    <div class="mt-2 border rounded p-2 small">
+                                        <div class="text-muted mb-1">Component split</div>
+                                        {% for component in row.component_rows %}
+                                            <div class="d-flex justify-content-between gap-2">
+                                                <span>{{ component.component_name }}</span>
+                                                <span class="text-muted">{{ component.pieces }} pcs · {{ '%.2f'|format(component.used_meters) }} m</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                {% if row.clean_note %}
+                                    <div class="small text-muted mt-2" style="white-space:pre-line;">{{ row.clean_note }}</div>
+                                {% endif %}
+
+                                <div class="d-flex gap-2 flex-wrap mt-3">
+                                    <a href="{{ url_for('cutting.cutting_order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-light">Open details</a>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="adras-focus-box">
+                        <div class="adras-focus-item">
+                            <span class="adras-focus-dot"></span>
+                            <span>{{ t('orders_for_factory_empty') }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+            </article>
+        </div>
+
+        <div class="adras-main-right">
+            <article class="adras-panel mb-3">
+                <div class="adras-panel-title mb-2">Log sewn output</div>
+                <form method="post" action="{{ url_for('cutting.cutting_sewing_output_log') }}" class="d-grid gap-2 small">
+                    {% if csrf_token is defined %}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {% endif %}
+                    <div>
+                        <label class="form-label mb-1">Product</label>
+                        <select name="product_id" class="form-select form-select-sm" required>
+                            <option value="">Select product</option>
+                            {% for p in factory_products %}
+                                <option value="{{ p.id }}">{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label mb-1">Component name</label>
+                        <input type="text" name="component_name" class="form-control form-control-sm" placeholder="T-shirt / Short / Sleeve" required>
+                    </div>
+                    <div>
+                        <label class="form-label mb-1">Pieces finished by sewers</label>
+                        <input type="number" min="1" name="sewn_pieces" class="form-control form-control-sm" required>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-light">Save sewn output</button>
+                </form>
+            </article>
+
+            <article class="adras-panel mb-3">
+                <div class="adras-panel-title mb-2">Sewer hand balance</div>
+                {% if sewer_balance_rows %}
+                    <div class="d-grid gap-2">
+                        {% for row in sewer_balance_rows %}
+                            <div class="border rounded p-2 small">
+                                <div class="fw-semibold">{{ row.product_name }} · {{ row.component_name }}</div>
+                                <div class="d-flex justify-content-between text-muted mt-1"><span>Cut</span><span>{{ row.cut_pieces }}</span></div>
+                                <div class="d-flex justify-content-between text-muted"><span>Sewn</span><span>{{ row.sewn_pieces }}</span></div>
+                                <div class="d-flex justify-content-between {% if row.in_hand < 0 %}text-danger{% else %}text-muted{% endif %}"><span>In hand now</span><span class="fw-semibold">{{ row.in_hand }}</span></div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="small text-muted">No component balance yet. Start from daily cut records.</div>
+                {% endif %}
+            </article>
+
+            <article class="adras-panel mb-3">
+                <div class="adras-panel-title mb-2">Mismatch alerts</div>
+                {% if sewer_anomalies %}
+                    <div class="d-grid gap-2">
+                        {% for row in sewer_anomalies %}
+                            <div class="border border-danger rounded p-2 small">
+                                <div class="fw-semibold text-danger">{{ row.product_name }} · {{ row.component_name }}</div>
+                                <div class="text-muted">Sewn exceeds cut by {{ (row.in_hand * -1) }} pieces.</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="small text-muted">No mismatch detected.</div>
+                {% endif %}
+            </article>
+
+            <article class="adras-panel mb-3">
+                <div class="adras-panel-title mb-2">Product target tracker</div>
+                {% if product_progress_rows %}
+                    <form method="get" class="d-grid gap-2">
+                        {% if target_pieces %}
+                            <input type="hidden" name="target_pieces" value="{{ target_pieces }}">
+                        {% endif %}
+                        {% if benchmark_ppm %}
+                            <input type="hidden" name="benchmark_ppm" value="{{ benchmark_ppm }}">
+                        {% endif %}
+                        {% for row in product_progress_rows %}
+                            <div class="border rounded p-2 small">
+                                <div class="d-flex justify-content-between align-items-center gap-2">
+                                    <div class="fw-semibold text-truncate">{{ row.name }}</div>
+                                    <div class="text-muted">{{ row.sets }} pcs</div>
+                                </div>
+                                <div class="row g-2 mt-1">
+                                    <div class="col-6">
+                                        <label class="form-label mb-1 text-muted">Target</label>
+                                        <input type="number" min="1" name="target_product_{{ row.product_id }}" value="{{ row.target or '' }}" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-muted mb-1">Yield / Cost</div>
+                                        <div class="fw-semibold">{{ '%.2f'|format(row.pieces_per_meter) }} / {{ '{:,.0f}'.format(row.cost_per_piece) }}</div>
+                                    </div>
+                                </div>
+                                {% if row.target %}
+                                    <div class="d-flex justify-content-between text-muted mt-2">
+                                        <span>Remaining {{ row.remaining }}</span>
+                                        <span>{{ '%.0f'|format(row.progress_pct) }}%</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height:6px;">
+                                        <div class="progress-bar" style="width: {{ '%.1f'|format(row.progress_pct) }}%;"></div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-sm btn-outline-light">Update product targets</button>
+                    </form>
+                {% else %}
+                    <div class="small text-muted">No product records yet.</div>
+                {% endif %}
+            </article>
+
+            <article class="adras-panel mb-3">
+                <div class="adras-panel-title mb-2">Top models by pieces</div>
+                {% if top_products %}
+                    <div class="d-grid gap-2">
+                        {% for row in top_products %}
+                            <div class="d-flex justify-content-between align-items-center small">
+                                <div class="text-truncate pe-2">{{ row.name }}</div>
+                                <div class="text-end">
+                                    <div class="fw-semibold">{{ row.sets }} pieces</div>
+                                    <div class="text-muted">{{ row.orders }} orders</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="small text-muted">No product trend yet.</div>
+                {% endif %}
+            </article>
+
+            <article class="adras-panel">
+                <div class="adras-panel-title mb-2">Material burn hotspots</div>
+                {% if top_materials %}
+                    <div class="d-grid gap-2">
+                        {% for row in top_materials %}
+                            <div class="d-flex justify-content-between align-items-center small">
+                                <div class="text-truncate pe-2">{{ row.name }}</div>
+                                <div class="text-end">
+                                    <div class="fw-semibold">{{ '{:,.0f}'.format(row.cost) }}</div>
+                                    <div class="text-muted">{{ '%.2f'|format(row.used) }} used</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="small text-muted">No material usage data yet.</div>
+                {% endif %}
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

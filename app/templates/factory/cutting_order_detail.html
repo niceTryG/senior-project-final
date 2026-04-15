@@ -1,0 +1,147 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Cutting Order #{{ order.id }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+    <section class="adras-hero-card">
+        <div class="adras-hero-left">
+            <div class="adras-chip-row mb-3" style="display:flex; flex-wrap:wrap; gap:10px;">
+                <span class="badge text-bg-dark">Order #{{ order.id }}</span>
+                <span class="badge {% if order.status == 'closed' %}text-bg-success{% elif order.status == 'in_progress' %}text-bg-warning text-dark{% else %}text-bg-secondary{% endif %}">
+                    {{ order.status|replace('_', ' ')|title }}
+                </span>
+            </div>
+            <h1 class="adras-hero-title">{{ order.product.name if order.product else 'Unknown product' }}</h1>
+            <p class="dashboard-subtitle">
+                One cutting batch for one model, with frozen material costs and a clear expected output in sets.
+            </p>
+            <div class="adras-focus-box mt-3">
+                <div class="adras-focus-item">
+                    <span class="adras-focus-dot"></span>
+                    <span>Cut date: {{ order.cut_date.strftime('%d.%m.%Y') if order.cut_date else '—' }}</span>
+                </div>
+                <div class="adras-focus-item">
+                    <span class="adras-focus-dot"></span>
+                    <span>Sets cut: {{ order.sets_cut }}</span>
+                </div>
+                {% if order.notes %}
+                    <div class="adras-focus-item">
+                        <span class="adras-focus-dot"></span>
+                        <span>{{ order.notes }}</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="adras-kpi-grid">
+        <article class="adras-kpi-card adras-kpi-card-dark">
+            <div class="adras-kpi-top">
+                <div class="adras-kpi-title">Sets</div>
+                <div class="adras-kpi-number">{{ order.sets_cut }}</div>
+            </div>
+        </article>
+        <article class="adras-kpi-card">
+            <div class="adras-kpi-top">
+                <div class="adras-kpi-title">Materials</div>
+                <div class="adras-kpi-number">{{ order.materials|length }}</div>
+            </div>
+        </article>
+        <article class="adras-kpi-card">
+            <div class="adras-kpi-top">
+                <div class="adras-kpi-title">Total Snapshot Cost</div>
+                <div class="adras-kpi-number">{{ '{:,.0f}'.format(order.materials|sum(attribute='total_cost_snapshot')) }}</div>
+            </div>
+        </article>
+        <article class="adras-kpi-card">
+            <div class="adras-kpi-top">
+                <div class="adras-kpi-title">Created By</div>
+                <div class="adras-kpi-number" style="font-size:1.1rem;">{{ order.created_by.full_name if order.created_by and order.created_by.full_name else (order.created_by.username if order.created_by else '—') }}</div>
+            </div>
+        </article>
+    </section>
+
+    <section class="adras-main-grid">
+        <div class="adras-main-left">
+            <article class="adras-panel">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+                    <div>
+                        <div class="adras-panel-title mb-1">Material Snapshot</div>
+                        <div class="text-muted small">These numbers stay frozen for this cutting batch.</div>
+                    </div>
+                </div>
+
+                {% if order.materials %}
+                    <div class="d-grid" style="gap:14px;">
+                        {% for m in order.materials %}
+                            <div class="adras-action-card" style="padding:18px; border:1px solid rgba(255,255,255,.08);">
+                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                    <div>
+                                        <div class="adras-action-card-title">{{ m.material.name if m.material else 'Unknown material' }}</div>
+                                        <div class="adras-action-card-sub">
+                                            {{ m.material.material_type|replace('_', ' ')|title if m.material and m.material.material_type else 'Material' }}
+                                        </div>
+                                    </div>
+                                    <span class="badge text-bg-secondary">{{ m.material.unit if m.material and m.material.unit else 'unit' }}</span>
+                                </div>
+
+                                <div class="row g-3 mt-1">
+                                    <div class="col-sm-4">
+                                        <div class="text-muted small">Used amount</div>
+                                        <div class="fw-semibold fs-5">{{ '%.2f'|format(m.used_amount or 0) }}</div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <div class="text-muted small">Unit snapshot cost</div>
+                                        <div class="fw-semibold fs-5">{{ '{:,.2f}'.format(m.unit_cost_snapshot or 0) }}</div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <div class="text-muted small">Total snapshot cost</div>
+                                        <div class="fw-semibold fs-5">{{ '{:,.2f}'.format(m.total_cost_snapshot or 0) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="adras-focus-box">
+                        <div class="adras-focus-item">
+                            <span class="adras-focus-dot"></span>
+                            <span>No material lines were stored for this cutting order.</span>
+                        </div>
+                    </div>
+                {% endif %}
+            </article>
+        </div>
+
+        <div class="adras-main-right">
+            <article class="adras-panel">
+                <div class="adras-panel-title">Batch Notes</div>
+                <div class="adras-focus-box">
+                    <div class="adras-focus-item">
+                        <span class="adras-focus-dot"></span>
+                        <span>Expected production basis comes from {{ order.sets_cut }} cut sets.</span>
+                    </div>
+                    <div class="adras-focus-item">
+                        <span class="adras-focus-dot"></span>
+                        <span>Material costs here are snapshots, so later price changes do not rewrite history.</span>
+                    </div>
+                    <div class="adras-focus-item">
+                        <span class="adras-focus-dot"></span>
+                        <span>This order is scoped to the current factory only.</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="adras-panel adras-snapshot-dark">
+                <div class="adras-panel-title adras-panel-title-light">Quick Actions</div>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('cutting.cutting_order_list') }}" class="btn btn-outline-light">Back to Orders</a>
+                    <a href="{{ url_for('cutting.cutting_order_create') }}" class="btn btn-outline-light">Create Another</a>
+                    <a href="{{ url_for('factory.produce_today') }}" class="btn btn-outline-light">Open Production</a>
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

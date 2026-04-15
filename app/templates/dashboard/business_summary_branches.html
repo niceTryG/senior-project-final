@@ -1,0 +1,102 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('branch_performance_title') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-summary-page">
+  <section class="adras-detail-hero adras-summary-hero">
+    <div class="adras-summary-hero-copy">
+      <div class="adras-detail-kicker">{{ t('branch_drilldown') }}</div>
+      <h1 class="adras-detail-title">{{ t('branch_performance_title') }}</h1>
+      <p class="adras-detail-subtitle">
+        {{ t('branch_performance_subtitle') }}
+      </p>
+
+      <div class="adras-summary-pill-row">
+        <span class="ad-chip chip-info">{{ branch_rows_all|length }} {{ t('branches_tracked')|lower }}</span>
+        <span class="ad-chip chip-neutral">{{ t('workspace') }}: {{ workspace_page_name }}</span>
+      </div>
+    </div>
+
+    <div class="adras-summary-health-card tone-{{ health_tone }}">
+      <div class="adras-summary-health-label">{{ t('health_context') }}</div>
+      <div class="adras-summary-health-score">{{ health_score }}</div>
+      <div class="adras-summary-health-band">{{ health_label }}</div>
+      <p class="adras-summary-health-copy">{{ health_copy }}</p>
+    </div>
+  </section>
+
+  <section class="adras-panel">
+    <div class="adras-section-head">
+      <div>
+        <h2 class="adras-panel-title">{{ t('all_branches') }}</h2>
+        <p class="adras-detail-panel-copy">
+          {{ t('all_branches_copy') }}
+        </p>
+      </div>
+      <a href="{{ url_for('main.business_summary') }}" class="ad-btn ad-btn-secondary">{{ t('back_to_summary') }}</a>
+    </div>
+
+    {% if branch_rows_all %}
+      <div class="adras-summary-card-list">
+        {% for branch in branch_rows_all %}
+          <article class="adras-summary-card">
+            <div class="adras-summary-card-top">
+              <div>
+                <div class="adras-summary-card-title">{{ branch.name }}</div>
+                <div class="adras-summary-card-copy">{{ branch.note }}</div>
+              </div>
+              <span class="ad-chip {% if branch.low_stock_count %}chip-warn{% elif branch.sold_units_30 %}chip-up{% else %}chip-neutral{% endif %}">
+                {{ branch.stock_units }} {{ t('units_suffix') }}
+              </span>
+            </div>
+
+            <div class="adras-summary-metric-grid">
+              <div class="adras-summary-metric-cell">
+                <span>{{ t('today_sales') }}</span>
+                <strong>{{ branch.today_sales_display.primary }}</strong>
+                {% if branch.today_sales_display.secondary %}
+                  <small>{{ branch.today_sales_display.secondary }}</small>
+                {% endif %}
+              </div>
+              <div class="adras-summary-metric-cell">
+                <span>{{ t('month_sales') }}</span>
+                <strong>{{ branch.month_sales_display.primary }}</strong>
+                {% if branch.month_sales_display.secondary %}
+                  <small>{{ branch.month_sales_display.secondary }}</small>
+                {% endif %}
+              </div>
+              <div class="adras-summary-metric-cell">
+                <span>{{ t('month_profit') }}</span>
+                <strong>{{ branch.month_profit_display.primary }}</strong>
+                {% if branch.month_profit_display.secondary %}
+                  <small>{{ branch.month_profit_display.secondary }}</small>
+                {% endif %}
+              </div>
+              <div class="adras-summary-metric-cell">
+                <span>{{ t('stock_value') }}</span>
+                <strong>{{ branch.stock_value_display.primary }}</strong>
+                {% if branch.stock_value_display.secondary %}
+                  <small>{{ branch.stock_value_display.secondary }}</small>
+                {% endif %}
+              </div>
+              <div class="adras-summary-metric-cell">
+                <span>{{ t('units_sold_in_30d') }}</span>
+                <strong>{{ branch.sold_units_30 }}</strong>
+              </div>
+              <div class="adras-summary-metric-cell">
+                <span>{{ t('low_stock_pressure') }}</span>
+                <strong>{{ branch.low_stock_count }}</strong>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="adras-summary-empty">
+        {{ t('all_branches_empty') }}
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

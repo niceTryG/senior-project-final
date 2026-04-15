@@ -1,7 +1,7 @@
 from datetime import datetime, date, timedelta
 
 import pandas as pd
-from flask import Blueprint, render_template, request, flash, url_for, redirect
+from flask import Blueprint, render_template, request, flash, session, url_for, redirect
 from flask_login import login_required, current_user
 
 from app.telegram_notify import send_telegram_message
@@ -16,7 +16,7 @@ from ..models import (
     WholesaleSaleItem,
     Movement,
     ShopFactoryLink,
-    RealizatsiyaSettlement,
+    RealizatsiyaSettlement,Product, ShopStock, Factory,
 )
 from ..services.shop_service import ShopService
 from ..translations import t
@@ -1897,4 +1897,242 @@ def shop_realizatsiya():
         factory_groups=factory_groups,
         realizatsiya=realizatsiya,
         settlement_rows=settlement_rows,
+    )
+@sales_bp.route("/create-modern", methods=["GET", "POST"])
+@login_required
+def create_sale_modern():
+    if request.method == "POST":
+        payload_raw = (request.form.get("payload") or "").strip()
+
+        if not payload_raw:
+            flash("Cart payload is missing.", "danger")
+            return redirect(url_for("sales.create_sale_modern"))
+
+        try:
+            payload = json.loads(payload_raw)
+        except Exception:
+            flash("Invalid cart payload.", "danger")
+            return redirect(url_for("sales.create_sale_modern"))
+
+        items = payload.get("items") or []
+        customer_name = (payload.get("customer_name") or "").strip() or None
+        customer_phone = (payload.get("customer_phone") or "").strip() or None
+        note = (payload.get("note") or "").strip() or None
+
+        if not items:
+            flash("Cart is empty.", "warning")
+            return redirect(url_for("sales.create_sale_modern"))
+
+        total_created = 0
+
+        try:
+            for raw_item in items:
+                stock_id = int(raw_item.get("stock_id") or 0)
+                qty = int(raw_item.get("qty") or 0)
+                price = float(raw_item.get("price") or 0)
+
+                if stock_id <= 0 or qty <= 0:
+                    raise ValueError("Invalid sale item data.")
+
+                stock_row = (
+                    ShopStock.query
+                    .join(Product, Product.id == ShopStock.product_id)
+                    .filter(ShopStock.id == stock_id)
+                    .first()
+                )
+
+                if not stock_row:
+                    raise ValueError(f"Stock row #{stock_id} not found.")
+
+                # shop user -> only own shop stock
+                if getattr(current_user, "role", None) == "shop" and getattr(current_user, "shop_id", None):
+                    if stock_row.shop_id != current_user.shop_id:
+                        raise ValueError("You do not have access to one of the selected stock rows.")
+
+                # manager/admin -> restricted by current factory if present
+                elif getattr(current_user, "factory_id", None):
+                    if stock_row.source_factory_id != current_user.factory_id:
+                        raise ValueError("One of the selected stock rows belongs to another factory.")
+
+                available_qty = int(stock_row.quantity or 0)
+                if qty > available_qty:
+                    raise ValueError(
+                        f"Not enough stock for {stock_row.product.name}. Available: {available_qty}."
+                    )
+
+                product = stock_row.product
+                sale_currency = getattr(product, "currency", None) or "UZS"
+                cost_price = float(getattr(product, "cost_price_per_item", 0) or 0)
+
+                sale = Sale(
+                    product_id=product.id,
+                    customer_name=customer_name,
+                    customer_phone=customer_phone,
+                    quantity=qty,
+                    sell_price_per_item=price,
+                    cost_price_per_item=cost_price,
+                    currency=sale_currency,
+                )
+
+                if hasattr(sale, "note"):
+                    sale.note = note
+
+                if hasattr(sale, "factory_id"):
+                    sale.factory_id = stock_row.source_factory_id
+
+                if hasattr(sale, "shop_id"):
+                    sale.shop_id = stock_row.shop_id
+
+                if hasattr(sale, "created_by_id"):
+                    sale.created_by_id = current_user.id
+
+                stock_row.quantity = available_qty - qty
+
+                db.session.add(sale)
+                total_created += 1
+    
+            db.session.commit()
+
+            session["modern_sale_success"] = {
+                "items_sold": total_created,
+                "customer_name": customer_name or "",
+                "customer_phone": customer_phone or "",
+            }
+
+            flash(f"Sale saved successfully. Items sold: {total_created}.", "success")
+            return redirect(url_for("sales.create_sale_modern"))
+
+        except ValueError as e:
+            db.session.rollback()
+            flash(str(e), "danger")
+            return redirect(url_for("sales.create_sale_modern"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Failed to save sale: {str(e)}", "danger")
+            return redirect(url_for("sales.create_sale_modern"))
+
+    q = (request.args.get("q") or "").strip()
+    factory_filter = request.args.get("factory_id", type=int)
+
+    stock_query = (
+        db.session.query(ShopStock)
+        .join(Product, Product.id == ShopStock.product_id)
+        .outerjoin(Factory, Factory.id == ShopStock.source_factory_id)
+    )
+
+    # shop user -> only their shop
+    if getattr(current_user, "role", None) == "shop" and getattr(current_user, "shop_id", None):
+        stock_query = stock_query.filter(ShopStock.shop_id == current_user.shop_id)
+
+    # manager/admin -> limit by current factory if present
+    elif getattr(current_user, "factory_id", None):
+        stock_query = stock_query.filter(ShopStock.source_factory_id == current_user.factory_id)
+
+    if factory_filter:
+        stock_query = stock_query.filter(ShopStock.source_factory_id == factory_filter)
+
+    if q:
+        like = f"%{q}%"
+        stock_query = stock_query.filter(
+            or_(
+                Product.name.ilike(like),
+                Product.category.ilike(like),
+                Product.sku.ilike(like),
+                Factory.name.ilike(like),
+            )
+        )
+
+    stock_rows = stock_query.order_by(Product.name.asc()).all()
+
+    try:
+        visible_factories = sorted(
+            {
+                row.source_factory
+                for row in stock_rows
+                if getattr(row, "source_factory", None) is not None
+            },
+            key=lambda f: (f.name or "").lower(),
+        )
+    except Exception:
+        visible_factories = []
+    sale_success = session.pop("modern_sale_success", None)
+    return render_template(
+        "sales/create_modern.html",
+        stock_rows=stock_rows,
+        q=q,
+        factory_filter=factory_filter,
+        visible_factories=visible_factories,
+    )
+@sales_bp.route("/history-modern", methods=["GET"])
+@login_required
+def history_modern():
+    q = (request.args.get("q") or "").strip()
+    date_from = (request.args.get("from") or "").strip()
+    date_to = (request.args.get("to") or "").strip()
+
+    query = db.session.query(Sale, Product).join(Product, Product.id == Sale.product_id)
+
+    if getattr(current_user, "role", None) == "shop" and getattr(current_user, "shop_id", None):
+        if hasattr(Sale, "shop_id"):
+            query = query.filter(Sale.shop_id == current_user.shop_id)
+    elif getattr(current_user, "factory_id", None):
+        if hasattr(Sale, "factory_id"):
+            query = query.filter(Sale.factory_id == current_user.factory_id)
+        else:
+            query = query.filter(Product.factory_id == current_user.factory_id)
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            or_(
+                Product.name.ilike(like),
+                Sale.customer_name.ilike(like),
+                Sale.customer_phone.ilike(like),
+            )
+        )
+
+    if date_from:
+        try:
+            dt_from = datetime.strptime(date_from, "%Y-%m-%d").date()
+            query = query.filter(Sale.date >= dt_from)
+        except ValueError:
+            pass
+
+    if date_to:
+        try:
+            dt_to = datetime.strptime(date_to, "%Y-%m-%d").date()
+            query = query.filter(Sale.date <= dt_to)
+        except ValueError:
+            pass
+
+    rows = query.order_by(Sale.date.desc(), Sale.id.desc()).all()
+
+    total_qty = 0
+    total_amount = 0.0
+    sales_rows = []
+
+    for sale, product in rows:
+        qty = int(getattr(sale, "quantity", 0) or 0)
+        price = float(getattr(sale, "sell_price_per_item", 0) or 0)
+        amount = qty * price
+
+        total_qty += qty
+        total_amount += amount
+
+        sales_rows.append({
+            "sale": sale,
+            "product": product,
+            "qty": qty,
+            "price": price,
+            "amount": amount,
+        })
+
+    return render_template(
+        "sales/history_modern.html",
+        sales_rows=sales_rows,
+        total_qty=total_qty,
+        total_amount=total_amount,
+        q=q,
+        date_from=date_from,
+        date_to=date_to,
     )

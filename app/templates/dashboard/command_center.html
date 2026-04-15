@@ -1,0 +1,585 @@
+﻿{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('inbox') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.adras-inbox-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adras-inbox-shell {
+  display: block;
+}
+
+.adras-inbox-sidebar,
+.adras-inbox-main {
+  border: 1px solid var(--adras-line, #d9e0ea);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.adras-inbox-sidebar {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.adras-inbox-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--adras-text-muted, #64748b);
+}
+
+.adras-inbox-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--adras-text-strong, #0f172a);
+  margin: 2px 0 0;
+}
+
+.adras-inbox-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--adras-text-muted, #64748b);
+}
+
+.adras-inbox-folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adras-inbox-folder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+}
+
+.adras-inbox-folder.is-active {
+  border-color: #cfe0ff;
+  background: #eff6ff;
+}
+
+.adras-inbox-folder-copy {
+  min-width: 0;
+}
+
+.adras-inbox-folder-copy strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--adras-text-strong, #0f172a);
+}
+
+.adras-inbox-folder-copy span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--adras-text-muted, #64748b);
+}
+
+.adras-inbox-folder-count {
+  min-width: 34px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--adras-text-strong, #0f172a);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.adras-inbox-note {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--adras-text-muted, #64748b);
+}
+
+.adras-inbox-main {
+  overflow: hidden;
+}
+
+.adras-inbox-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--adras-line, #d9e0ea);
+}
+
+.adras-inbox-toolbar-copy {
+  min-width: 0;
+}
+
+.adras-inbox-toolbar-copy h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--adras-text-strong, #0f172a);
+}
+
+.adras-inbox-toolbar-copy p {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--adras-text-muted, #64748b);
+}
+
+.adras-inbox-section {
+  border-bottom: 1px solid var(--adras-line, #d9e0ea);
+}
+
+.adras-inbox-section:last-child {
+  border-bottom: none;
+}
+
+.adras-inbox-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fbfcfe;
+  border-bottom: 1px solid var(--adras-line, #d9e0ea);
+}
+
+.adras-inbox-section-head h3 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--adras-text-muted, #64748b);
+}
+
+.adras-inbox-section-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--adras-text-muted, #64748b);
+}
+
+.adras-inbox-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.adras-inbox-row {
+  display: grid;
+  grid-template-columns: 8px 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--adras-line, #d9e0ea);
+  background: #fff;
+}
+
+.adras-inbox-row.is-unread {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.adras-inbox-row:last-child {
+  border-bottom: none;
+}
+
+.adras-inbox-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  margin-top: 7px;
+  background: #94a3b8;
+}
+
+.adras-inbox-dot.urgent { background: #dc2626; }
+.adras-inbox-dot.high { background: #ea580c; }
+.adras-inbox-dot.medium { background: #2563eb; }
+.adras-inbox-dot.low { background: #94a3b8; }
+.adras-inbox-dot.warn { background: #d97706; }
+.adras-inbox-dot.ready { background: #16a34a; }
+
+.adras-inbox-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2ff;
+  color: #334155;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.adras-inbox-body {
+  min-width: 0;
+}
+
+.adras-inbox-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.adras-inbox-sender {
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adras-inbox-meta {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--adras-text-muted, #64748b);
+}
+
+.adras-inbox-subject {
+  margin-top: 1px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--adras-text-strong, #0f172a);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.adras-inbox-preview {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.38;
+  color: var(--adras-text-muted, #64748b);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.adras-inbox-tags {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.adras-inbox-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.adras-inbox-chip.muted {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.adras-inbox-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-left: 8px;
+  align-items: center;
+}
+
+.adras-inbox-actions .adras-inline-form {
+  margin: 0;
+}
+
+.adras-inbox-actions .ad-btn {
+  min-height: 26px;
+  padding: 3px 8px;
+  font-size: 10px;
+  border-radius: 999px;
+}
+
+.adras-inbox-empty {
+  padding: 28px 18px;
+  text-align: center;
+}
+
+.adras-inbox-empty strong {
+  display: block;
+  font-size: 15px;
+  color: var(--adras-text-strong, #0f172a);
+}
+
+.adras-inbox-empty span {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--adras-text-muted, #64748b);
+}
+
+.adras-inline-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adras-inline-links a {
+  text-decoration: none;
+}
+
+@media (max-width: 720px) {
+  .adras-inbox-toolbar,
+  .adras-inbox-section-head,
+  .adras-inbox-row {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .adras-inbox-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .adras-inbox-row {
+    grid-template-columns: 8px minmax(0, 1fr) auto;
+    gap: 7px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    align-items: start;
+  }
+
+  .adras-inbox-avatar {
+    display: none;
+  }
+
+  .adras-inbox-actions {
+    grid-column: 3;
+    justify-content: flex-end;
+    margin-left: 0;
+    margin-top: 0;
+    flex-wrap: nowrap;
+  }
+
+  .adras-inbox-topline {
+    gap: 5px;
+  }
+
+  .adras-inbox-preview {
+    -webkit-line-clamp: 1;
+  }
+
+  .adras-inbox-tags .adras-inbox-chip:nth-child(n+3) {
+    display: none;
+  }
+
+  .adras-inbox-tags {
+    margin-top: 4px;
+  }
+
+  .adras-inbox-actions .ad-btn {
+    min-height: 24px;
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+}
+</style>
+{% endblock %}
+
+{% macro inbox_row(item, allow_start=true, allow_done=true, allow_dismiss=true) %}
+  <div class="adras-inbox-row {% if item.status in ['open', 'in_progress'] %}is-unread{% endif %}">
+    <div class="adras-inbox-dot {% if item.is_overdue %}urgent{% else %}{{ item.priority | default('medium') }}{% endif %}"></div>
+    <div class="adras-inbox-avatar">{{ (item.origin_label or item.group or 'IN')[:2] }}</div>
+    <div class="adras-inbox-body">
+      <div class="adras-inbox-topline">
+        <div class="adras-inbox-sender">{{ item.group or item.origin_label or item.assignee_name }}</div>
+        <div class="adras-inbox-meta">{{ item.due_label }}</div>
+      </div>
+      <div class="adras-inbox-subject">{{ item.title }}</div>
+      <div class="adras-inbox-preview">{{ item.description if item.description else item.summary_line }}</div>
+      <div class="adras-inbox-tags">
+        <span class="adras-inbox-chip">{{ item.priority_label }}</span>
+        <span class="adras-inbox-chip muted">{{ item.status_label }}</span>
+      </div>
+    </div>
+    <div class="adras-inbox-actions">
+      {% if item.href %}
+        <a href="{{ item.href }}" class="ad-btn ad-btn-secondary">{{ item.action_label }}</a>
+      {% endif %}
+      {% if allow_start and item.status == 'open' %}
+        <form method="post" class="adras-inline-form">
+          <input type="hidden" name="command_action" value="update_task_status">
+          <input type="hidden" name="task_id" value="{{ item.id }}">
+          <input type="hidden" name="next_status" value="in_progress">
+          <button type="submit" class="ad-btn ad-btn-secondary">{{ t('start_label') }}</button>
+        </form>
+      {% endif %}
+      {% if allow_done and item.status != 'done' %}
+        <form method="post" class="adras-inline-form">
+          <input type="hidden" name="command_action" value="update_task_status">
+          <input type="hidden" name="task_id" value="{{ item.id }}">
+          <input type="hidden" name="next_status" value="done">
+          <button type="submit" class="ad-btn ad-btn-primary">{{ t('done_label') }}</button>
+        </form>
+      {% endif %}
+      {% if allow_dismiss and item.status != 'dismissed' %}
+        <form method="post" class="adras-inline-form">
+          <input type="hidden" name="command_action" value="update_task_status">
+          <input type="hidden" name="task_id" value="{{ item.id }}">
+          <input type="hidden" name="next_status" value="dismissed">
+          <button type="submit" class="ad-btn ad-btn-danger">{{ t('dismiss') }}</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
+{% block dashboard_content %}
+<div class="adras-inbox-page">
+  <div class="adras-inbox-shell">
+    <section class="adras-inbox-main">
+      <div class="adras-inbox-toolbar">
+        <div class="adras-inbox-toolbar-copy">
+          <h2>{{ t('inbox') }}</h2>
+          <p>{{ command_center_open_count }} {{ t('open_label') }} &middot; {{ command_center_manual_count }} {{ t('manual_tasks')|lower }} &middot; {{ command_center_live_count }} {{ t('system_queue')|lower }}</p>
+        </div>
+
+        {% if command_center_can_manage %}
+          <details class="adras-disclosure">
+            <summary class="adras-disclosure-trigger">
+              <span class="adras-disclosure-copy">
+                <strong>{{ t('create_tracked_followup') }}</strong>
+                <span>{{ t('create_tracked_followup_copy') }}</span>
+              </span>
+              <span class="adras-disclosure-chip">{{ t('create') }}</span>
+            </summary>
+
+            <div class="adras-disclosure-body">
+              <form method="post" class="adras-settings-form">
+                {{ task_form.hidden_tag() }}
+
+                <div class="adras-form-grid">
+                  <div class="adras-form-field adras-form-field-full">
+                    <label class="adras-form-label" for="{{ task_form.title.id }}">{{ t('task_title') }}</label>
+                    {{ task_form.title(class="adras-form-input") }}
+                    {% for error in task_form.title.errors %}
+                      <div class="adras-form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="adras-form-field adras-form-field-full">
+                    <label class="adras-form-label" for="{{ task_form.description.id }}">{{ t('description') }}</label>
+                    {{ task_form.description(class="adras-form-input adras-form-textarea", rows="4") }}
+                    {% for error in task_form.description.errors %}
+                      <div class="adras-form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="adras-form-field">
+                    <label class="adras-form-label" for="{{ task_form.priority.id }}">{{ t('priority') }}</label>
+                    {{ task_form.priority(class="adras-form-input") }}
+                  </div>
+
+                  <div class="adras-form-field">
+                    <label class="adras-form-label" for="{{ task_form.assigned_user_id.id }}">{{ t('assign_to_user') }}</label>
+                    {{ task_form.assigned_user_id(class="adras-form-input") }}
+                  </div>
+
+                  <div class="adras-form-field">
+                    <label class="adras-form-label" for="{{ task_form.target_role.id }}">{{ t('or_target_role') }}</label>
+                    {{ task_form.target_role(class="adras-form-input") }}
+                    <div class="adras-form-help">{{ t('target_role_help') }}</div>
+                  </div>
+
+                  <div class="adras-form-field">
+                    <label class="adras-form-label" for="{{ task_form.due_date.id }}">{{ t('due_date') }}</label>
+                    {{ task_form.due_date(class="adras-form-input", type="date") }}
+                  </div>
+
+                  <div class="adras-form-field adras-form-field-full">
+                    <label class="adras-form-label" for="{{ task_form.action_url.id }}">{{ t('action_link') }}</label>
+                    {{ task_form.action_url(class="adras-form-input", placeholder="/workspace or /products") }}
+                    <div class="adras-form-help">{{ t('action_link_help') }}</div>
+                    {% for error in task_form.action_url.errors %}
+                      <div class="adras-form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <div class="adras-form-actions">
+                  {{ task_form.submit_task(class="ad-btn ad-btn-primary") }}
+                </div>
+              </form>
+            </div>
+          </details>
+        {% endif %}
+      </div>
+
+      <section class="adras-inbox-section">
+        <div class="adras-inbox-section-head">
+          <h3>{{ t('manual_task_inbox') }}</h3>
+          <span class="adras-inbox-section-count">{{ command_center_manual_items|length }}</span>
+        </div>
+        <div class="adras-inbox-list">
+          {% if command_center_manual_items %}
+            {% for item in command_center_manual_items %}
+              {{ inbox_row(item) }}
+            {% endfor %}
+          {% else %}
+            <div class="adras-inbox-empty">
+              <strong>{{ t('no_manual_tasks_yet') }}</strong>
+              <span>{{ t('no_manual_tasks_yet_copy') }}</span>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="adras-inbox-section">
+        <div class="adras-inbox-section-head">
+          <h3>{{ t('system_generated_queue') }}</h3>
+          <span class="adras-inbox-section-count">{{ command_center_live_items|length }}</span>
+        </div>
+        <div class="adras-inbox-list">
+          {% if command_center_live_items %}
+            {% for item in command_center_live_items %}
+              {{ inbox_row(item) }}
+            {% endfor %}
+          {% else %}
+            <div class="adras-inbox-empty">
+              <strong>{{ t('system_queue_calm') }}</strong>
+              <span>{{ t('system_queue_calm_copy') }}</span>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="adras-inbox-section">
+        <div class="adras-inbox-toolbar" style="border-top: 1px solid var(--adras-line, #d9e0ea); border-bottom: none;">
+          <a href="{{ url_for('main.dashboard') }}" class="ad-btn ad-btn-secondary">{{ t('back_to_dashboard') }}</a>
+          <a href="{{ url_for('main.workspace_activity') }}" class="ad-btn ad-btn-secondary">{{ t('open_activity_center') }}</a>
+        </div>
+      </section>
+    </section>
+  </div>
+</div>
+{% endblock %}

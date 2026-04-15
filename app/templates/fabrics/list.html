@@ -1,15 +1,19 @@
-{% extends "base.html" %}
+{% extends "fabrics/base_fabrics.html" %}
 
 {% block extra_css %}
+{{ super() }}
 <style>
-  /* Mobile-first page padding (avoid bottom nav overlap if you have it) */
-  .mm-page-fabrics { padding-bottom: 96px; }
+  .mm-page-fabrics {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding-bottom: 96px;
+  }
 
-  /* Neo buttons */
   .mm-btn {
     border-radius: 14px !important;
     font-weight: 800;
   }
+
   .mm-chip {
     display: inline-flex;
     align-items: center;
@@ -25,90 +29,350 @@
     text-decoration: none;
     white-space: nowrap;
   }
-  .mm-chip:hover { background: rgba(0,0,0,.03); }
-  .mm-chip-active {
-    background:#111;
-    color:#fff !important;
-    border-color:#111;
-  }
-  .mm-chip-row{
-    display:flex;
-    gap:.5rem;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    padding-bottom:.25rem;
-  }
-  .mm-chip-row::-webkit-scrollbar{ height:0; }
 
-  /* Cards */
-  .mm-card { border-radius: 18px; }
-  .mm-soft { background: rgba(0,0,0,.03); }
+  .mm-chip:hover {
+    background: rgba(0,0,0,.03);
+  }
+
+  .mm-chip-active {
+    background: #111;
+    color: #fff !important;
+    border-color: #111;
+  }
+
+  .mm-chip-row {
+    display: flex;
+    gap: .5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: .25rem;
+  }
+
+  .mm-chip-row::-webkit-scrollbar {
+    height: 0;
+  }
+
+  .mm-card {
+    border-radius: 18px;
+  }
+
+  .mm-soft {
+    background: rgba(0,0,0,.03);
+  }
+
   .mm-kv {
-    display:flex;
-    justify-content:space-between;
-    gap:.75rem;
-    padding:.25rem 0;
+    display: flex;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .25rem 0;
     border-bottom: 1px dashed rgba(0,0,0,.10);
   }
-  .mm-kv:last-child{ border-bottom:0; }
-  .mm-k { color:#6c757d; font-size:.82rem; }
-  .mm-v { font-weight:800; text-align:right; }
 
-  /* Inputs */
-  .form-control, .form-select { border-radius: 12px; }
-  .input-group-text { border-radius: 12px 0 0 12px; }
-
-  /* Small helper */
-  .mm-muted { color:#6c757d; }
-
-  /* Charts */
-  .mm-chart-wrap{
-    position:relative;
-    height:260px;
+  .mm-kv:last-child {
+    border-bottom: 0;
   }
-  .mm-chart-title{
+
+  .mm-k {
+    color: #6c757d;
+    font-size: .82rem;
+  }
+
+  .mm-v {
+    font-weight: 800;
+    text-align: right;
+  }
+
+  .form-control,
+  .form-select {
+    border-radius: 12px;
+  }
+
+  .input-group-text {
+    border-radius: 12px 0 0 12px;
+  }
+
+  .mm-muted {
+    color: #6c757d;
+  }
+
+  .mm-chart-wrap {
+    position: relative;
+    height: 260px;
+  }
+
+  .mm-chart-title {
     font-weight: 800;
     font-size: .98rem;
   }
-  .mm-chart-sub{
+
+  .mm-chart-sub {
     font-size: .83rem;
-    color:#6c757d;
+    color: #6c757d;
     margin-top: 2px;
   }
 
-  @media (min-width: 768px){
-    .mm-chart-wrap{
-      height:300px;
+  .mm-page-fabrics .mm-top-panel,
+  .mm-page-fabrics .mm-chart-panel,
+  .mm-page-fabrics .mm-summary-tile {
+    border: 1px solid rgba(19, 34, 56, 0.10);
+    box-shadow: 0 18px 40px rgba(12, 30, 54, 0.10);
+  }
+
+  .mm-page-fabrics .mm-summary-tile .card-body {
+    padding: 14px 16px;
+  }
+
+  .mm-page-fabrics .mm-summary-label {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6b7b90;
+  }
+
+  .mm-page-fabrics .mm-summary-value {
+    margin-top: 8px;
+    font-size: 28px;
+    line-height: 1.02;
+    font-weight: 900;
+    color: #132238;
+  }
+
+  .mm-page-fabrics .mm-summary-tile-btn {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mm-page-fabrics .mm-add-tile {
+    background: linear-gradient(160deg, #2563eb 0%, #1d4ed8 100%) !important;
+    border-color: rgba(29, 78, 216, 0.55) !important;
+    box-shadow: 0 16px 34px rgba(29, 78, 216, 0.28);
+    color: #fff !important;
+  }
+
+  .mm-page-fabrics .mm-add-tile .card-body {
+    background: transparent !important;
+  }
+
+  .mm-page-fabrics .mm-add-tile-btn {
+    width: 100%;
+    min-height: 100%;
+    border: 0;
+    background: transparent;
+    color: #fff !important;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: 18px 10px;
+    font-size: 1rem;
+    line-height: 1.1;
+  }
+
+  .mm-page-fabrics .mm-add-tile-btn:hover {
+    color: #fff;
+    opacity: .96;
+  }
+
+  .mm-page-fabrics .mm-section-title {
+    font-size: 22px;
+    font-weight: 900;
+    color: #132238;
+    letter-spacing: -0.02em;
+  }
+
+  .mm-page-fabrics .mm-actions-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .mm-page-fabrics .mm-material-table thead th {
+    font-size: .72rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #5e6e85;
+    border-bottom: 1px solid rgba(19, 34, 56, 0.12);
+  }
+
+  .mm-page-fabrics .mm-material-table tbody tr {
+    transition: background-color .18s ease;
+  }
+
+  .mm-page-fabrics .mm-material-table tbody tr:hover {
+    background: rgba(37, 99, 235, 0.04);
+  }
+
+  .mm-page-fabrics .mm-type-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 800;
+    background: rgba(19, 34, 56, 0.07);
+    color: #24344d;
+  }
+
+  .mm-page-fabrics .mm-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+    min-width: 84px;
+  }
+
+  .mm-page-fabrics .mm-status-low {
+    background: rgba(220, 53, 69, 0.14);
+    color: #9f1239;
+  }
+
+  .mm-page-fabrics .mm-status-mid {
+    background: rgba(245, 158, 11, 0.2);
+    color: #92400e;
+  }
+
+  .mm-page-fabrics .mm-status-ok {
+    background: rgba(22, 163, 74, 0.16);
+    color: #166534;
+  }
+
+  .mm-page-fabrics .mm-qty-track {
+    margin-top: 6px;
+    height: 6px;
+    width: 96px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.09);
+    overflow: hidden;
+  }
+
+  .mm-page-fabrics .mm-qty-fill {
+    height: 100%;
+    border-radius: 999px;
+  }
+
+  .mm-page-fabrics .mm-qty-fill-low {
+    background: #dc3545;
+  }
+
+  .mm-page-fabrics .mm-qty-fill-mid {
+    background: #f59e0b;
+  }
+
+  .mm-page-fabrics .mm-qty-fill-ok {
+    background: #16a34a;
+  }
+
+  .mm-page-fabrics .mm-mobile-card {
+    border: 1px solid rgba(19, 34, 56, 0.12);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+    box-shadow: 0 12px 26px rgba(12, 30, 54, 0.09);
+  }
+
+  .mm-page-fabrics .mm-mobile-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .75rem;
+    align-items: start;
+  }
+
+  .mm-page-fabrics .mm-mobile-name {
+    font-weight: 800;
+    color: #132238;
+    line-height: 1.2;
+  }
+
+  .mm-page-fabrics .mm-mobile-meta {
+    margin-top: 3px;
+    font-size: .75rem;
+    color: #6b7280;
+    line-height: 1.25;
+  }
+
+  .mm-page-fabrics .mm-mobile-qty {
+    text-align: right;
+  }
+
+  .mm-page-fabrics .mm-mobile-qty-value {
+    margin-top: 2px;
+    font-size: 1rem;
+    font-weight: 900;
+    color: #132238;
+    white-space: nowrap;
+  }
+
+  .mm-page-fabrics .mm-mobile-qty-track {
+    margin-top: 8px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.09);
+    overflow: hidden;
+  }
+
+  .mm-page-fabrics .mm-mobile-actions .btn {
+    border-radius: 12px !important;
+  }
+
+  .mm-page-fabrics .mm-list-swap-out {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .18s ease, transform .18s ease;
+  }
+
+  .mm-page-fabrics .mm-list-swap-in {
+    animation: mmListSwapIn .24s ease;
+  }
+
+  @keyframes mmListSwapIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .mm-chart-wrap {
+      height: 300px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .mm-chart-wrap {
+      height: 210px;
+    }
+
+    .mm-chart-title {
+      font-size: .9rem;
+    }
+
+    .mm-chart-sub {
+      font-size: .76rem;
     }
   }
 </style>
 {% endblock %}
 
-{% block content %}
+{% block fabrics_content %}
 
-{% set chart_labels = fabric_chart_labels|default([]) %}
-{% set chart_quantities = fabric_chart_quantities|default([]) %}
-{% set cut_chart_labels = fabric_cut_chart_labels|default([]) %}
-{% set cut_chart_values = fabric_cut_chart_values|default([]) %}
+{% set page_items_label = t('fabrics_title') if selected_material_type == 'fabric' else (t('materials_title') if t('materials_title') != 'materials_title' else 'Materials') %}
 
 <div class="mm-page-fabrics container-fluid py-2 py-md-3">
-
-  <!-- HEADER -->
-  <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
-    <div>
-      <h1 class="mb-0 h4">{{ t('fabrics_title') }}</h1>
-      <div class="small text-muted">{{ t('fabrics_manage_subtitle') }}</div>
-    </div>
-
-    <div class="text-end">
-      {% if usd_uzs_rate %}
-        <div class="text-muted small">
-          <div>{{ t('central_bank_rate_label') }}</div>
-          <div class="fw-semibold">1 USD = {{ usd_uzs_rate | round(2) }} UZS</div>
-        </div>
-      {% endif %}
-    </div>
-  </div>
 
   {% if any_low_stock %}
     <div class="alert alert-warning py-2 mb-2">
@@ -116,8 +380,7 @@
     </div>
   {% endif %}
 
-  <!-- TOP ACTION BAR (mobile-first) -->
-  <div class="card shadow-sm border-0 mb-3 mm-card">
+  <div class="card shadow-sm border-0 mb-3 mm-card mm-top-panel">
     <div class="card-body p-2 p-md-3">
 
       <div class="d-flex gap-2 align-items-center">
@@ -132,14 +395,16 @@
                 placeholder="{{ t('search_placeholder') }}"
                 value="{{ q }}"
               >
-          <button class="btn btn-outline-secondary mm-btn" type="submit">{{ t('shop_order_big_submit') }}</button>
+              <button class="btn btn-outline-secondary mm-btn" type="submit">
+                {{ t('shop_order_big_submit') }}
+              </button>
             </div>
 
             <input type="hidden" name="sort" value="{{ sort }}">
             <input type="hidden" name="category" value="{{ selected_category }}">
-            {% if not is_latest_view %}
-              <input type="hidden" name="all" value="1">
-            {% endif %}
+            <input type="hidden" name="material_type" value="{{ selected_material_type }}">
+            <input type="hidden" name="stock_state" value="{{ selected_stock_state }}">
+            <input type="hidden" name="supplier_name" value="{{ selected_supplier_name }}">
           </form>
         </div>
 
@@ -153,20 +418,8 @@
           ⚙️
         </button>
 
-        <a href="{{ url_for('fabrics.export') }}" class="btn btn-outline-success btn-sm mm-btn">
-          {{ t('btn_export_csv') }}
-        </a>
-
-        <button
-          class="btn btn-primary btn-sm mm-btn"
-          type="button"
-          data-bs-toggle="modal"
-          data-bs-target="#addFabricModal">
-          ➕
-        </button>
       </div>
 
-      <!-- Advanced filters -->
       <div class="collapse mt-2" id="advancedFilters">
         <form method="get" class="row g-2 align-items-end">
           <div class="col-6 col-md-3">
@@ -189,33 +442,73 @@
           </div>
 
           <div class="col-6 col-md-3">
-            <label class="form-label small mb-1">{{ t('view_mode') }}</label>
-            <select class="form-select form-select-sm" name="all">
-              <option value="" {% if is_latest_view %}selected{% endif %}>{{ t('latest_five') }}</option>
-              <option value="1" {% if not is_latest_view %}selected{% endif %}>{{ t('all_fabrics') }}</option>
+            <label class="form-label small mb-1">{{ t('type') }}</label>
+            <select class="form-select form-select-sm" name="material_type">
+              <option value="">{{ t('all_option') }}</option>
+              {% for material_type in material_types %}
+                <option value="{{ material_type }}" {% if selected_material_type == material_type %}selected{% endif %}>
+                  {{ material_type|replace('_', ' ')|title }}
+                </option>
+              {% endfor %}
             </select>
           </div>
 
           <div class="col-6 col-md-3">
+            <label class="form-label small mb-1">{{ t('stock_label') }}</label>
+            <select class="form-select form-select-sm" name="stock_state">
+              <option value="" {% if not selected_stock_state %}selected{% endif %}>{{ t('all_option') }}</option>
+              <option value="healthy" {% if selected_stock_state == 'healthy' %}selected{% endif %}>{{ t('stock_healthy') }}</option>
+              <option value="low" {% if selected_stock_state == 'low' %}selected{% endif %}>{{ t('stock_low') }}</option>
+              <option value="out" {% if selected_stock_state == 'out' %}selected{% endif %}>{{ t('stock_out') }}</option>
+            </select>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1">{{ t('supplier_label') }}</label>
+            <select class="form-select form-select-sm" name="supplier_name">
+              <option value="">{{ t('all_option') }}</option>
+              {% for supplier in suppliers %}
+                <option value="{{ supplier }}" {% if selected_supplier_name == supplier %}selected{% endif %}>{{ supplier }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-6 col-md-12">
             <button type="submit" class="btn btn-secondary btn-sm w-100 mm-btn">
               {{ t('apply') }}
             </button>
           </div>
         </form>
 
-        {% if q or selected_category or sort != 'name' %}
+        {% if q or selected_category or selected_material_type or selected_stock_state or selected_supplier_name or sort != 'name' %}
           <div class="mt-2 small text-muted d-flex flex-wrap gap-1">
             <span class="me-1">{{ t('active_filters') }}:</span>
+
             {% if q %}
               <span class="badge bg-light text-dark border">{{ t('filter_search') }}: “{{ q }}”</span>
             {% endif %}
             {% if selected_category %}
               <span class="badge bg-light text-dark border">{{ t('filter_category') }}: {{ selected_category }}</span>
             {% endif %}
+            {% if selected_material_type %}
+              <span class="badge bg-light text-dark border">{{ t('type') }}: {{ selected_material_type|replace('_', ' ')|title }}</span>
+            {% endif %}
+            {% if selected_stock_state %}
+              <span class="badge bg-light text-dark border">{{ t('stock_label') }}: {{ selected_stock_state|replace('_', ' ')|title }}</span>
+            {% endif %}
+            {% if selected_supplier_name %}
+              <span class="badge bg-light text-dark border">{{ t('supplier_label') }}: {{ selected_supplier_name }}</span>
+            {% endif %}
             {% if sort != 'name' %}
               <span class="badge bg-light text-dark border">
                 {{ t('fabrics_sorting') }}:
-                {% if sort == 'qty' %}{{ t('sort_quantity') }}{% elif sort == 'price' %}{{ t('sort_price') }}{% else %}{{ t('sort_name') }}{% endif %}
+                {% if sort == 'qty' %}
+                  {{ t('sort_quantity') }}
+                {% elif sort == 'price' %}
+                  {{ t('sort_price') }}
+                {% else %}
+                  {{ t('sort_name') }}
+                {% endif %}
               </span>
             {% endif %}
           </div>
@@ -225,238 +518,197 @@
     </div>
   </div>
 
-  <!-- VIEW MODE TOGGLE (chips) -->
-  <div class="mm-chip-row mb-2">
-    <a href="{{ url_for('fabrics.list') }}"
-       class="mm-chip {% if is_latest_view %}mm-chip-active{% endif %}">
-      🕒 {{ t('latest_five') }}
-    </a>
-    <a href="{{ url_for('fabrics.list', all=1) }}"
-       class="mm-chip {% if not is_latest_view %}mm-chip-active{% endif %}">
-      📦 {{ t('all_fabrics') }}
-    </a>
-    <a href="#add-fabric" class="mm-chip" onclick="document.getElementById('addFabricModalBtn')?.click()">
-      ➕ {{ t('add_fabric') }}
-    </a>
-  </div>
+  <div class="row row-cols-4 g-2 mb-3">
+    <div class="col">
+      <div class="card border-0 shadow-sm mm-card mm-soft h-100 mm-summary-tile">
+        <button id="lowStockQuickFilterBtn" type="button" class="mm-summary-tile-btn" aria-label="{{ t('stock_low') }}">
+          <div class="card-body py-2">
+            <div class="mm-summary-label">{{ t('stock_low') }}</div>
+            <div class="mm-summary-value">{{ material_mix.low_count if material_mix is defined else 0 }}</div>
+          </div>
+        </button>
+      </div>
+    </div>
 
-  <!-- SUMMARY (3 mini cards) -->
-  <div class="row row-cols-3 g-2 mb-3">
     <div class="col">
-      <div class="card border-0 shadow-sm mm-card mm-soft h-100">
-        <div class="card-body py-2">
-          <div class="small text-muted">{{ t('positions_label') }}</div>
-          <div class="fw-bold">{{ view_stats.count }}</div>
+      <div class="card border-0 shadow-sm mm-card mm-soft h-100 mm-summary-tile">
+        <button id="outStockQuickFilterBtn" type="button" class="mm-summary-tile-btn" aria-label="{{ t('stock_out') }}">
+          <div class="card-body py-2">
+            <div class="mm-summary-label">{{ t('stock_out') }}</div>
+            <div class="mm-summary-value">{{ material_mix.out_count if material_mix is defined else 0 }}</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card border-0 shadow-sm mm-card h-100 mm-summary-tile mm-add-tile">
+        <div class="card-body p-0 d-flex align-items-stretch">
+          <button
+            class="mm-add-tile-btn"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#addFabricModal">
+            {{ t('add_material') if t('add_material') != 'add_material' else 'Add material' }}
+          </button>
         </div>
       </div>
     </div>
+
     <div class="col">
-      <div class="card border-0 shadow-sm mm-card mm-soft h-100">
-        <div class="card-body py-2">
-          <div class="small text-muted">{{ t('total_volume_label') }}</div>
-          <div class="fw-bold">{{ "%.2f"|format(view_stats.qty) }}</div>
-                <div class="small text-muted">{{ t('quantity') }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card border-0 shadow-sm mm-card mm-soft h-100">
-        <div class="card-body py-2">
-          <div class="small text-muted">{{ t('value_label') }}</div>
-          <div class="fw-bold">
-            {% if view_stats.value_usd %}
-              {{ "%.2f"|format(view_stats.value_usd) }} USD
-            {% else %}
-              —
-            {% endif %}
-          </div>
-          <div class="small text-muted">
-            {% if view_stats.value_uzs %}
-              {{ "%.0f"|format(view_stats.value_uzs) }} UZS
-            {% else %}
-              &nbsp;
-            {% endif %}
-          </div>
+      <div class="card border-0 shadow-sm mm-card h-100 mm-summary-tile mm-add-tile">
+        <div class="card-body p-0 d-flex align-items-stretch">
+          <button
+            id="scrollRecentWriteoffsBtn"
+            class="mm-add-tile-btn"
+            type="button">
+            {{ t('materials_recent_writeoffs_title') if t('materials_recent_writeoffs_title') != 'materials_recent_writeoffs_title' else 'Posledniye spisaniya' }}
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- CHARTS -->
+  <div class="mm-chip-row mb-3">
+    <a
+      href="{{ url_for('fabrics.list', q=q, sort=sort, category=selected_category, stock_state=selected_stock_state, supplier_name=selected_supplier_name) }}"
+      class="mm-chip {% if not selected_material_type %}mm-chip-active{% endif %}">
+      {{ t('all_types') }}
+    </a>
+
+    {% for material_type in material_types %}
+      <a
+          href="{{ url_for('fabrics.list', q=q, sort=sort, category=selected_category, material_type=material_type, stock_state=selected_stock_state, supplier_name=selected_supplier_name) }}"
+        class="mm-chip {% if selected_material_type == material_type %}mm-chip-active{% endif %}">
+        {{ material_type|replace('_', ' ')|title }}
+        {% if material_mix is defined and material_mix.counts_by_type.get(material_type) %}
+          <span>{{ material_mix.counts_by_type.get(material_type) }}</span>
+        {% endif %}
+      </a>
+    {% endfor %}
+  </div>
+
   <div class="row g-3 mb-3">
-    <div class="col-12 col-lg-6">
-      <div class="card shadow-sm border-0 mm-card h-100">
+    <div class="col-12">
+      <div class="card shadow-sm border-0 mm-card h-100 mm-chart-panel">
         <div class="card-body p-3">
-          <div class="mm-chart-title">{{ t('fabric_volume_chart_title') }}</div>
-          <div class="mm-chart-sub">{{ t('fabric_volume_chart_subtitle') }}</div>
+          <div class="mm-chart-title">{{ chart_title }}</div>
+          <div class="mm-chart-sub">{{ chart_subtitle }}</div>
           <div class="mm-chart-wrap mt-3">
             <canvas id="fabricQtyChart"></canvas>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="col-12 col-lg-6">
-      <div class="card shadow-sm border-0 mm-card h-100">
-        <div class="card-body p-3">
-          <div class="mm-chart-title">{{ t('fabric_recent_cuts_title') }}</div>
-          <div class="mm-chart-sub">{{ t('fabric_recent_cuts_subtitle') }}</div>
-          <div class="mm-chart-wrap mt-3">
-            <canvas id="fabricCutsChart"></canvas>
-          </div>
-        </div>
-      </div>
+  <div id="materials-list-shell">
+
+  <div id="materials-list-anchor" class="d-flex justify-content-between align-items-center mt-1 mb-1">
+    <h3 class="mb-0 mm-section-title">
+      {{ t('current_fabrics') if selected_material_type == 'fabric' else (t('current_materials') if t('current_materials') != 'current_materials' else 'Current materials') }}
+    </h3>
+
+    <div id="add-fabric"></div>
+
+    <div class="d-flex align-items-center gap-2">
+      {% if selected_stock_state == 'low' or selected_stock_state == 'out' %}
+        <button
+          id="clearStockFilterBtn"
+          class="btn btn-sm btn-outline-secondary mm-btn"
+          type="button">
+          × {% if selected_stock_state == 'low' %}{{ t('stock_low') }}{% else %}{{ t('stock_out') }}{% endif %}
+        </button>
+      {% endif %}
+
+      <button
+        id="addFabricModalBtn"
+        class="btn btn-sm btn-primary mm-btn d-flex align-items-center gap-1"
+        type="button"
+        data-bs-toggle="modal"
+        data-bs-target="#addFabricModal">
+        <i class="bi bi-plus-circle"></i>
+        <span>{{ t('add_material') if t('add_material') != 'add_material' else 'Add material' }}</span>
+      </button>
     </div>
   </div>
 
-  <!-- TITLE + ADD BUTTON -->
-  <div class="d-flex justify-content-between align-items-center mt-1 mb-1">
-    <h3 class="mb-0 h5">{{ t('current_fabrics') }}</h3>
-    <div id="add-fabric"></div>
-
-    <button id="addFabricModalBtn"
-      class="btn btn-sm btn-primary mm-btn d-flex align-items-center gap-1"
-      type="button"
-      data-bs-toggle="modal"
-      data-bs-target="#addFabricModal">
-      <i class="bi bi-plus-circle"></i>
-      <span>{{ t('add_fabric') }}</span>
-    </button>
-  </div>
-
-  {# ================= MOBILE CARDS ================= #}
   <div class="d-md-none mb-3">
     {% for fab in fabrics %}
+      {% set row_is_fabric = (fab.material_type or 'fabric') == 'fabric' %}
       {% set qty = fab.quantity or 0 %}
-      {% set low = qty < LOW_STOCK_THRESHOLD %}
-      {% set mid = (not low) and (qty <= LOW_STOCK_THRESHOLD * 2) %}
-      {% set details_id = "fab-details-" ~ fab.id %}
-      {% set cut_id = "fab-cut-" ~ fab.id %}
+      {% set low_threshold = fab.min_stock_quantity or LOW_STOCK_THRESHOLD %}
+      {% set low = qty < low_threshold %}
+      {% set mid = (not low) and (qty <= low_threshold * 2) %}
+      {% if low_threshold > 0 %}
+        {% set bar_pct = (qty * 100 / low_threshold) %}
+      {% else %}
+        {% set bar_pct = 100 %}
+      {% endif %}
 
-      <div class="card shadow-sm border-0 mb-2 mm-card">
-        <div class="card-body p-2">
+      <div class="card border-0 mb-2 mm-card mm-mobile-card">
+        <div class="card-body p-2 p-sm-3">
 
-          <div class="d-flex justify-content-between align-items-start gap-2">
+          <div class="mm-mobile-top">
             <div style="min-width:0;">
-              <div class="small text-muted">{{ fab.public_id or ("ID-" ~ fab.id) }}</div>
-              <div class="fw-semibold text-truncate">{{ fab.name }}</div>
-              <div class="small text-muted">
+              <div class="d-flex align-items-center gap-1 flex-wrap">
+                <div class="small text-muted">{{ fab.public_id or ("ID-" ~ fab.id) }}</div>
+                <span class="mm-type-pill">{{ (fab.material_type or 'fabric')|replace('_', ' ')|title }}</span>
+              </div>
+
+              <div class="mm-mobile-name text-truncate">{{ fab.name }}</div>
+
+              <div class="mm-mobile-meta">
                 {% if fab.color %}{{ fab.color }}{% endif %}
                 {% if fab.category %} · {{ fab.category }}{% endif %}
-              </div>
-
-              <div class="mt-1">
-                {% if low %}
-                  <span class="badge bg-danger">{{ t('stock_low') }}</span>
-                {% elif mid %}
-                  <span class="badge bg-warning text-dark">{{ t('stock_medium') }}</span>
-                {% endif %}
-                {% if not fab.price_per_unit %}
-                  <span class="badge bg-warning text-dark">{{ t('no_price') }}</span>
+                {% if fab.supplier_name %}
+                  · <a class="text-decoration-none" href="{{ url_for('fabrics.supplier_detail', supplier_name=fab.supplier_name) }}">{{ fab.supplier_name }}</a>
                 {% endif %}
               </div>
             </div>
 
-            <div class="text-end">
-              <div class="small text-muted">{{ t('table_quantity') }}</div>
-              <div class="fw-bold">
-                {{ "%.2f"|format(qty) }} {{ fab.unit }}
-              </div>
+            <div class="mm-mobile-qty">
+              {% if low %}
+                <span class="mm-status-pill mm-status-low">{{ t('stock_low') }}</span>
+              {% elif mid %}
+                <span class="mm-status-pill mm-status-mid">{{ t('stock_medium') }}</span>
+              {% else %}
+                <span class="mm-status-pill mm-status-ok">{{ t('stock_healthy') }}</span>
+              {% endif %}
+              <div class="mm-mobile-qty-value">{{ "%.2f"|format(qty) }} {{ fab.unit }}</div>
             </div>
           </div>
 
-          <div class="mt-2">
-            <div class="mm-kv">
-              <div class="mm-k">{{ t('price_per_unit_label') }}</div>
-              <div class="mm-v">
-                {% if fab.price_per_unit %}
-                  {{ format_money(fab.price_per_unit, fab.price_currency or 'USD') }}
-                {% else %}
-                  —
-                {% endif %}
-              </div>
-            </div>
-            <div class="mm-kv">
-              <div class="mm-k">{{ t('table_currency') }}</div>
-              <div class="mm-v">
-                {% if fab.price_per_unit %}
-                  <span class="badge bg-light text-dark border">{{ fab.price_currency }}</span>
-                {% else %}
-                  <span class="badge bg-light text-dark border">—</span>
-                {% endif %}
-              </div>
-            </div>
+          <div class="mm-mobile-qty-track">
+            <div
+              class="mm-qty-fill {% if low %}mm-qty-fill-low{% elif mid %}mm-qty-fill-mid{% else %}mm-qty-fill-ok{% endif %}"
+              style="width:{% if bar_pct < 0 %}0{% elif bar_pct > 100 %}100{% else %}{{ '%.0f'|format(bar_pct) }}{% endif %}%"></div>
           </div>
 
-          <div class="row g-2 mt-2">
-            <div class="col-6">
-              <button class="btn btn-outline-primary btn-sm w-100 mm-btn"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#{{ cut_id }}"
-                      aria-expanded="false"
-                      aria-controls="{{ cut_id }}">
-                ✂️ {{ t('write_off') }}
-              </button>
-            </div>
-            <div class="col-6">
-              <button class="btn btn-outline-secondary btn-sm w-100 mm-btn"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#{{ details_id }}"
-                      aria-expanded="false"
-                      aria-controls="{{ details_id }}">
-                ℹ️ {{ t('details') }}
-              </button>
-            </div>
+          <div class="d-flex align-items-center justify-content-between mt-2 small">
+            <span class="text-muted">{{ t('min_stock_label') }}</span>
+            <span class="fw-semibold">{{ "%.2f"|format(low_threshold) }} {{ fab.unit }}</span>
           </div>
 
-          <div class="collapse mt-2" id="{{ cut_id }}">
-            <div class="border rounded-3 p-2">
-              <form method="post"
-                    action="{{ url_for('fabrics.cut', fabric_id=fab.id) }}"
-                    class="d-flex flex-column gap-2">
-                <div>
-                  <label class="form-label small mb-1">
-                    {{ t('last_cuts_used_amount') }}
-                  </label>
-                  <div class="d-flex gap-2">
-                    <input type="number"
-                           name="used_amount"
-                           step="0.01"
-                           min="0"
-                           class="form-control form-control-sm text-end"
-                           placeholder="{{ t('cut_placeholder') }}"
-                           required>
-                    <button type="submit" class="btn btn-primary btn-sm mm-btn">
-                      ✅ {{ t('cut_button') }}
-                    </button>
-                  </div>
-                </div>
-                <div class="small text-muted">
-                  {{ t('remaining_label') }}: <span class="fw-semibold">{{ "%.2f"|format(qty) }} {{ fab.unit }}</span>
-                </div>
-              </form>
-            </div>
+          <div class="d-flex align-items-center justify-content-between mt-1 small">
+            <span class="text-muted">{{ t('added_label') if t('added_label') != 'added_label' else 'Last purchase date' }}</span>
+            <span class="fw-semibold">
+              {% if fab.created_at %}
+                {{ fab.created_at.strftime("%d.%m.%Y") }}
+              {% else %}
+                —
+              {% endif %}
+            </span>
           </div>
 
-          <div class="collapse mt-2" id="{{ details_id }}">
-            <div class="border rounded-3 p-2 small">
-              <div class="mm-kv">
-                <div class="mm-k">{{ t('filter_category') }}</div>
-                <div class="mm-v">{{ fab.category or '—' }}</div>
-              </div>
-              <div class="mm-kv">
-                <div class="mm-k">{{ t('added_label') }}</div>
-                <div class="mm-v">
-                  {% if fab.created_at %}{{ fab.created_at.strftime("%d.%m %H:%M") }}{% else %}—{% endif %}
-                </div>
-              </div>
-              <div class="mm-kv">
-                <div class="mm-k">{{ t('table_id') }}</div>
-                <div class="mm-v">#{{ fab.id }}</div>
-              </div>
-            </div>
+          <div class="d-flex align-items-center gap-1 flex-wrap mt-2">
+            {% if fab.price_per_unit %}
+              <span class="badge bg-light text-dark border">
+                {{ format_money(fab.price_per_unit, fab.price_currency or 'USD') }}
+              </span>
+            {% else %}
+              <span class="badge bg-warning text-dark">{{ t('no_price') }}</span>
+            {% endif %}
           </div>
 
         </div>
@@ -464,11 +716,10 @@
     {% endfor %}
   </div>
 
-  {# ================= DESKTOP TABLE ================= #}
   <div class="card shadow-sm border-0 mb-3 d-none d-md-block">
     <div class="card-body p-0">
       <div class="table-responsive mb-0">
-        <table class="table table-sm table-hover align-middle table-sticky mb-0">
+        <table class="table table-sm table-hover align-middle table-sticky mb-0 mm-material-table">
           <thead class="table-light">
             <tr>
               <th class="text-nowrap">{{ t('code_label') }}</th>
@@ -476,95 +727,192 @@
               <th class="text-nowrap d-none d-lg-table-cell">{{ t('added_label') }}</th>
               <th class="d-none d-sm-table-cell">{{ t('table_color') }}</th>
               <th class="text-nowrap">{{ t('table_quantity') }}</th>
+              <th class="text-nowrap">{{ t('stock_label') }}</th>
               <th class="text-nowrap d-none d-md-table-cell">{{ t('table_price_per_unit') }}</th>
               <th class="text-nowrap d-none d-sm-table-cell">{{ t('table_currency') }}</th>
+              <th class="d-none d-lg-table-cell">{{ t('supplier_label') }}</th>
               <th class="d-none d-md-table-cell">{{ t('table_category') }}</th>
               <th class="text-center d-none d-md-table-cell">{{ t('qr') }}</th>
               <th class="text-nowrap text-center">{{ t('table_actions') }}</th>
             </tr>
           </thead>
           <tbody>
-          {% for fab in fabrics %}
-            {% set qty = fab.quantity or 0 %}
-            <tr class="{% if qty < LOW_STOCK_THRESHOLD %}table-warning{% endif %}">
-              <td class="text-muted small">
-                <div class="fw-semibold">{{ fab.public_id or ("ID-" ~ fab.id) }}</div>
-                <div class="small text-muted">#{{ fab.id }}</div>
-              </td>
-              <td>
-                <div class="fw-semibold">
-                  {{ fab.name }}
-                  {% if qty < LOW_STOCK_THRESHOLD %}
-                    <span class="badge bg-danger ms-1">{{ t('low_stock_badge') }}</span>
+            {% for fab in fabrics %}
+              {% set row_is_fabric = (fab.material_type or 'fabric') == 'fabric' %}
+              {% set qty = fab.quantity or 0 %}
+              {% set low_threshold = fab.min_stock_quantity or LOW_STOCK_THRESHOLD %}
+              {% if low_threshold > 0 %}
+                {% set bar_pct = (qty * 100 / low_threshold) %}
+              {% else %}
+                {% set bar_pct = 100 %}
+              {% endif %}
+
+              <tr class="{% if qty < low_threshold %}table-warning{% endif %}">
+                <td class="text-muted small">
+                  <div class="fw-semibold">{{ fab.public_id or ("ID-" ~ fab.id) }}</div>
+                  <div class="small text-muted">#{{ fab.id }}</div>
+                </td>
+
+                <td>
+                  <div class="fw-semibold">
+                    {{ fab.name }}
+                    <span class="mm-type-pill ms-1">{{ (fab.material_type or 'fabric')|replace('_', ' ')|title }}</span>
+                  </div>
+                  <div class="small text-muted d-sm-none">
+                    {{ fab.color or "" }}
+                    {% if fab.category %} · {{ fab.category }}{% endif %}
+                  </div>
+                </td>
+
+                <td class="small text-muted d-none d-lg-table-cell">
+                  {% if fab.created_at %}{{ fab.created_at.strftime("%Y-%m-%d %H:%M") }}{% endif %}
+                </td>
+
+                <td class="d-none d-sm-table-cell">{{ fab.color or "" }}</td>
+
+                <td class="text-nowrap">
+                  {{ "%.2f"|format(qty) }} {{ fab.unit }}
+                  <div class="mm-qty-track">
+                    <div
+                      class="mm-qty-fill {% if qty < low_threshold %}mm-qty-fill-low{% elif qty <= low_threshold * 2 %}mm-qty-fill-mid{% else %}mm-qty-fill-ok{% endif %}"
+                      style="width:{% if bar_pct < 0 %}0{% elif bar_pct > 100 %}100{% else %}{{ "%.0f"|format(bar_pct) }}{% endif %}%"></div>
+                  </div>
+                </td>
+
+                <td>
+                  {% if qty < low_threshold %}
+                    <span class="mm-status-pill mm-status-low">{{ t('stock_low') }}</span>
+                  {% elif qty <= low_threshold * 2 %}
+                    <span class="mm-status-pill mm-status-mid">{{ t('stock_medium') }}</span>
+                  {% else %}
+                    <span class="mm-status-pill mm-status-ok">{{ t('stock_healthy') }}</span>
                   {% endif %}
-                </div>
-                <div class="small text-muted d-sm-none">
-                  {{ fab.color or "" }}
-                  {% if fab.category %} · {{ fab.category }}{% endif %}
-                </div>
-              </td>
-              <td class="small text-muted d-none d-lg-table-cell">
-                {% if fab.created_at %}{{ fab.created_at.strftime("%Y-%m-%d %H:%M") }}{% endif %}
-              </td>
-              <td class="d-none d-sm-table-cell">{{ fab.color or "" }}</td>
-              <td class="text-nowrap">
-                {{ "%.2f"|format(qty) }} {{ fab.unit }}
-                {% if qty < LOW_STOCK_THRESHOLD %}
-                  <span class="badge bg-danger ms-1">{{ t('stock_low') }}</span>
-                {% elif qty <= LOW_STOCK_THRESHOLD * 2 %}
-                  <span class="badge bg-warning ms-1">{{ t('stock_medium') }}</span>
-                {% endif %}
-              </td>
-              <td class="d-none d-md-table-cell text-nowrap">
-                {% if fab.price_per_unit %}{{ format_money(fab.price_per_unit, fab.price_currency or 'USD') }}{% else %}—{% endif %}
-              </td>
-              <td class="d-none d-sm-table-cell">
-                {% if fab.price_per_unit %}
-                  <span class="badge bg-light text-dark border">{{ fab.price_currency }}</span>
-                {% else %}
-                  <span class="badge bg-warning text-dark">{{ t('no_price') }}</span>
-                {% endif %}
-              </td>
-              <td class="d-none d-md-table-cell">
-                {% if fab.category %}
-                  <span class="badge bg-light text-dark border rounded-pill">{{ fab.category }}</span>
-                {% endif %}
-              </td>
-              <td class="text-center d-none d-md-table-cell">
-                <img src="{{ url_for('fabrics.qrcode_image', fabric_id=fab.id) }}"
-                     alt="QR"
-                     style="width:40px; height:auto;">
-              </td>
-              <td class="text-center">
-                <form method="post"
+                </td>
+
+                <td class="d-none d-md-table-cell text-nowrap">
+                  {% if fab.price_per_unit %}
+                    {{ format_money(fab.price_per_unit, fab.price_currency or 'USD') }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
+                <td class="d-none d-sm-table-cell">
+                  {% if fab.price_per_unit %}
+                    <span class="badge bg-light text-dark border">{{ fab.price_currency }}</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">{{ t('no_price') }}</span>
+                  {% endif %}
+                </td>
+
+                <td class="d-none d-lg-table-cell">
+                  {% if fab.supplier_name %}
+                    <a class="text-decoration-none fw-semibold" href="{{ url_for('fabrics.supplier_detail', supplier_name=fab.supplier_name) }}">{{ fab.supplier_name }}</a>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="d-none d-md-table-cell">
+                  {% if fab.category %}
+                    <span class="badge bg-light text-dark border rounded-pill">
+                      {{ (fab.material_type or 'fabric')|replace('_', ' ')|title }} · {{ fab.category }}
+                    </span>
+                  {% else %}
+                    <span class="badge bg-light text-dark border rounded-pill">
+                      {{ (fab.material_type or 'fabric')|replace('_', ' ')|title }}
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td class="text-center d-none d-md-table-cell">
+                  <img
+                    src="{{ url_for('fabrics.qrcode_image', fabric_id=fab.id) }}"
+                    alt="QR"
+                    style="width:40px; height:auto;">
+                </td>
+
+                <td class="text-center">
+                  <div class="mm-actions-stack">
+                    {% if fab.supplier_name %}
+                      <a
+                        class="btn btn-sm btn-outline-secondary mm-btn"
+                        href="{{ url_for('fabrics.supplier_detail', supplier_name=fab.supplier_name) }}">
+                        {{ t('open_supplier') }}
+                      </a>
+                    {% endif %}
+
+                    <form
+                      method="post"
                       action="{{ url_for('fabrics.cut', fabric_id=fab.id) }}"
                       class="d-flex flex-column flex-sm-row gap-1 justify-content-center">
-                  <input type="number" name="used_amount" step="0.01" min="0"
-                         class="form-control form-control-sm"
-                         placeholder="{{ t('cut_placeholder') }}" required
-                         style="max-width: 110px;">
-                  <button type="submit" class="btn btn-sm btn-outline-primary mm-btn">
-                    {{ t('cut_button') }}
-                  </button>
-                </form>
-              </td>
-            </tr>
-          {% endfor %}
+                      <input
+                        type="number"
+                        name="used_amount"
+                        step="0.01"
+                        min="0"
+                        class="form-control form-control-sm"
+                        placeholder="{{ t('cut_placeholder') }}"
+                        required
+                        style="max-width: 110px;">
+
+                      <button type="submit" class="btn btn-sm btn-outline-primary mm-btn">
+                        {{ t('use_fabric') if row_is_fabric else t('use_material') }}
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- LAST CUTS -->
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+  {% if pagination %}
+    <nav aria-label="{{ t('fabric_pagination') }}" class="mt-2 mb-3">
+      <ul class="pagination pagination-sm justify-content-center">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+          <a
+            class="page-link"
+            href="{% if pagination.has_prev %}{{ url_for('fabrics.list', page=pagination.prev_num, q=q, sort=sort, category=selected_category, material_type=selected_material_type, stock_state=selected_stock_state, supplier_name=selected_supplier_name) }}{% else %}#{% endif %}">
+            ‹
+          </a>
+        </li>
+
+        {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+          {% if p %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+              <a
+                class="page-link"
+                href="{{ url_for('fabrics.list', page=p, q=q, sort=sort, category=selected_category, material_type=selected_material_type, stock_state=selected_stock_state, supplier_name=selected_supplier_name) }}">
+                {{ p }}
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+          <a
+            class="page-link"
+            href="{% if pagination.has_next %}{{ url_for('fabrics.list', page=pagination.next_num, q=q, sort=sort, category=selected_category, material_type=selected_material_type, stock_state=selected_stock_state, supplier_name=selected_supplier_name) }}{% else %}#{% endif %}">
+            ›
+          </a>
+        </li>
+      </ul>
+    </nav>
+  {% endif %}
+
+  </div>
+
+  <div id="recent-writeoffs-section" class="d-flex justify-content-between align-items-center mt-3 mb-2">
     <h3 class="mb-0 h5">{{ t('last_cuts') }}</h3>
     <div class="d-flex gap-2">
       <a href="{{ url_for('fabrics.cuts_history') }}" class="btn btn-outline-secondary btn-sm mm-btn">
         {{ t('fabric_history') }}
-      </a>
-      <a href="{{ url_for('fabrics.usage_summary') }}" class="btn btn-outline-secondary btn-sm mm-btn">
-        {{ t('fabric_report') }}
       </a>
     </div>
   </div>
@@ -579,104 +927,118 @@
         </tr>
       </thead>
       <tbody>
-      {% for c in cuts %}
-        <tr>
-          <td>{{ c.cut_date }}</td>
-          <td>{{ c.fabric.name }}</td>
-          <td class="text-end">{{ "%.2f"|format(c.used_amount) }} {{ c.fabric.unit }}</td>
-        </tr>
-      {% endfor %}
+        {% for c in cuts %}
+          <tr>
+            <td>{{ c.cut_date }}</td>
+            <td>{{ c.fabric.name }}</td>
+            <td class="text-end">{{ "%.2f"|format(c.used_amount) }} {{ c.fabric.unit }}</td>
+          </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
 
-  <!-- PAGINATION -->
-  {% if pagination %}
-  <nav aria-label="{{ t('fabric_pagination') }}" class="mt-2">
-    <ul class="pagination pagination-sm justify-content-center">
-      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-        <a class="page-link"
-           href="{% if pagination.has_prev %}{{ url_for('fabrics.list', page=pagination.prev_num, q=q, sort=sort, category=selected_category, all=1) }}{% else %}#{% endif %}">
-          ‹
-        </a>
-      </li>
-
-      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
-        {% if p %}
-          <li class="page-item {% if p == pagination.page %}active{% endif %}">
-            <a class="page-link"
-               href="{{ url_for('fabrics.list', page=p, q=q, sort=sort, category=selected_category, all=1) }}">
-              {{ p }}
-            </a>
-          </li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">…</span></li>
-        {% endif %}
-      {% endfor %}
-
-      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-        <a class="page-link"
-           href="{% if pagination.has_next %}{{ url_for('fabrics.list', page=pagination.next_num, q=q, sort=sort, category=selected_category, all=1) }}{% else %}#{% endif %}">
-          ›
-        </a>
-      </li>
-    </ul>
-  </nav>
-  {% endif %}
-
 </div>
 
-<!-- ADD FABRIC MODAL -->
 <div class="modal fade" id="addFabricModal" tabindex="-1" aria-labelledby="addFabricLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header py-2">
         <h5 class="modal-title fs-6" id="addFabricLabel">
-          {{ t('add_fabric') }}
+          {{ t('add_material') if t('add_material') != 'add_material' else 'Add material' }}
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('aria_close') }}"></button>
       </div>
 
-      <form method="post" action="{{ url_for('fabrics.add') }}">
+      <form method="post" action="{{ url_for('fabrics.add') }}" id="addMaterialForm">
         <div class="modal-body p-2 p-md-3">
           <div class="row g-2 g-md-3">
+
             <div class="col-12 col-md-4">
               <label class="form-label small mb-1">{{ t('add_name') }}</label>
-              <input type="text" name="name"
-                     class="form-control form-control-sm"
-                     required
-                     placeholder="{{ t('add_fabric_name_placeholder') }}">
+              <input
+                type="text"
+                name="name"
+                class="form-control form-control-sm"
+                required
+                placeholder="{{ t('material_name_placeholder') }}">
             </div>
 
             <div class="col-6 col-md-3">
               <label class="form-label small mb-1">{{ t('add_color') }}</label>
-              <input type="text" name="color"
-                     class="form-control form-control-sm"
-                     placeholder="{{ t('add_fabric_color_placeholder') }}">
+              <input
+                type="text"
+                name="color"
+                class="form-control form-control-sm"
+                placeholder="{{ t('add_fabric_color_placeholder') }}">
             </div>
 
             <div class="col-6 col-md-2">
-              <label class="form-label small mb-1">{{ t('add_unit') }}</label>
-              <select name="unit" class="form-select form-select-sm" required>
-                <option value="kg" selected>{{ t('unit_kg') }}</option>
-                <option value="m">{{ t('unit_m') }}</option>
+              <label class="form-label small mb-1">{{ t('type') }}</label>
+              <select name="material_type" id="materialTypeSelect" class="form-select form-select-sm" required>
+                <option value="" selected disabled>{{ t('select_type') }}</option>
+                <option value="fabric">{{ t('fabric_label') }}</option>
+                <option value="zipper">{{ t('material_type_zipper') }}</option>
+                <option value="button">{{ t('material_type_button') }}</option>
+                <option value="label">{{ t('material_type_label') }}</option>
+                <option value="packaging">{{ t('material_type_packaging') }}</option>
+                <option value="accessory">{{ t('material_type_accessory') }}</option>
+                <option value="other">{{ t('material_type_other') }}</option>
               </select>
             </div>
 
-            <div class="col-6 col-md-3">
-              <label class="form-label small mb-1">{{ t('add_quantity') }}</label>
-              <input type="number" name="quantity"
-                     step="0.01" min="0"
-                     class="form-control form-control-sm"
-                     required>
+            <div class="col-6 col-md-2">
+              <label class="form-label small mb-1">{{ t('unit_label') }}</label>
+              <select name="unit" id="materialUnitSelect" class="form-select form-select-sm" required>
+                <option value="m">{{ t('unit_m') }}</option>
+                <option value="kg">{{ t('unit_kg') }}</option>
+                <option value="pcs">{{ t('unit_pcs') }}</option>
+                <option value="set">{{ t('unit_set') }}</option>
+                <option value="roll">{{ t('unit_roll') }}</option>
+                <option value="box">{{ t('unit_box') }}</option>
+              </select>
             </div>
 
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-2">
+              <label class="form-label small mb-1">{{ t('add_quantity') }}</label>
+              <input
+                type="number"
+                name="quantity"
+                step="0.01"
+                min="0"
+                class="form-control form-control-sm"
+                required>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1">{{ t('supplier_label') }}</label>
+              <input
+                type="text"
+                name="supplier_name"
+                class="form-control form-control-sm"
+                placeholder="{{ t('supplier_contact_placeholder') }}">
+            </div>
+
+            <div class="col-6 col-md-2">
+              <label class="form-label small mb-1">{{ t('min_stock_label') }}</label>
+              <input
+                type="number"
+                name="min_stock_quantity"
+                step="0.01"
+                min="0"
+                value="5"
+                class="form-control form-control-sm">
+            </div>
+
+            <div class="col-6 col-md-2">
               <label class="form-label small mb-1">{{ t('add_price_per_unit') }}</label>
               <div class="input-group input-group-sm">
-                <input type="number" name="price_per_unit"
-                       step="0.01" min="0"
-                       class="form-control">
+                <input
+                  type="number"
+                  name="price_per_unit"
+                  step="0.01"
+                  min="0"
+                  class="form-control">
               </div>
             </div>
 
@@ -688,23 +1050,28 @@
               </select>
             </div>
 
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <label class="form-label small mb-1">{{ t('add_category') }}</label>
-              <input type="text" name="category"
-                     class="form-control form-control-sm"
-                     placeholder="{{ t('add_fabric_category_placeholder') }}">
+              <input
+                type="text"
+                name="category"
+                class="form-control form-control-sm"
+                placeholder="{{ t('material_category_placeholder') }}">
             </div>
+
           </div>
         </div>
 
         <div class="modal-footer py-2">
-          <button type="button"
-                  class="btn btn-outline-secondary btn-sm mm-btn"
-                  data-bs-dismiss="modal">
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm mm-btn"
+            data-bs-dismiss="modal">
             {{ t('btn_cancel') }}
           </button>
+
           <button type="submit" class="btn btn-success btn-sm mm-btn">
-            {{ t('add_button') }}
+            {{ t('save_material') if t('save_material') != 'save_material' else 'Save material' }}
           </button>
         </div>
       </form>
@@ -715,30 +1082,61 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  const listAnchor = document.getElementById('materials-list-anchor');
+  if (window.location.hash === '#materials-list-anchor' && listAnchor) {
+    listAnchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   if (window.location.hash === '#add-fabric') {
-    var modalEl = document.getElementById('addFabricModal');
+    const modalEl = document.getElementById('addFabricModal');
     if (modalEl && window.bootstrap) {
-      var modal = new bootstrap.Modal(modalEl);
+      const modal = new bootstrap.Modal(modalEl);
       modal.show();
     }
   }
 
-  const qtyLabels = {{ chart_labels|tojson }};
-  const qtyValues = {{ chart_quantities|tojson }};
-  const cutLabels = {{ cut_chart_labels|tojson }};
-  const cutValues = {{ cut_chart_values|tojson }};
+  const materialTypeSelect = document.getElementById('materialTypeSelect');
+  const materialUnitSelect = document.getElementById('materialUnitSelect');
+
+  const unitByType = {
+    fabric: 'm',
+    zipper: 'pcs',
+    button: 'pcs',
+    label: 'pcs',
+    packaging: 'set',
+    accessory: 'pcs',
+    other: 'pcs'
+  };
+
+  if (materialTypeSelect && materialUnitSelect) {
+    materialTypeSelect.addEventListener('change', function () {
+      const nextUnit = unitByType[materialTypeSelect.value];
+      if (nextUnit) {
+        materialUnitSelect.value = nextUnit;
+      }
+    });
+  }
+
+  const chartMode = {{ chart_mode|tojson }};
+  const qtyLabels = {{ fabric_chart_labels|tojson }};
+  const qtyValues = {{ fabric_chart_quantities|tojson }};
+  const qtyColors = {{ fabric_chart_colors|tojson }};
 
   const qtyCanvas = document.getElementById('fabricQtyChart');
   if (qtyCanvas) {
+    const isTypeMix = chartMode === 'type_mix';
+
     new Chart(qtyCanvas, {
-      type: 'bar',
+      type: isTypeMix ? 'doughnut' : 'bar',
       data: {
         labels: qtyLabels,
         datasets: [{
-          label: {{ t('quantity_chart_label')|tojson }},
+          label: isTypeMix
+            ? {{ t('material_type_count')|tojson }}
+            : {{ t('quantity_chart_label')|tojson }},
           data: qtyValues,
-          backgroundColor: 'rgba(37, 99, 235, 0.75)',
-          borderColor: 'rgba(37, 99, 235, 1)',
+          backgroundColor: isTypeMix ? qtyColors : qtyColors.map((color) => `${color}CC`),
+          borderColor: qtyColors,
           borderWidth: 1,
           borderRadius: 8,
           maxBarThickness: 34
@@ -747,23 +1145,49 @@ document.addEventListener('DOMContentLoaded', function () {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        indexAxis: isTypeMix ? 'x' : 'y',
         plugins: {
-          legend: { display: false }
+          legend: {
+            display: isTypeMix,
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              boxWidth: 10,
+              color: '#667085',
+              font: { weight: '700' }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.raw ?? 0;
+                if (isTypeMix) {
+                  return `${context.label}: ${value}`;
+                }
+                return `${context.label}: ${value}`;
+              }
+            }
+          }
         },
-        scales: {
+        scales: isTypeMix ? {} : {
           x: {
-            grid: { display: false },
+            beginAtZero: true,
+            grid: { color: 'rgba(16,24,40,0.08)' },
             ticks: {
               color: '#667085',
               font: { weight: '700' }
             }
           },
           y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(16,24,40,0.08)' },
+            grid: { display: false },
             ticks: {
               color: '#667085',
-              font: { weight: '700' }
+              font: { weight: '700' },
+              callback: function(value) {
+                const label = qtyLabels[value];
+                if (!label) return '';
+                return label.length > 28 ? `${label.slice(0, 28)}...` : label;
+              }
             }
           }
         }
@@ -771,50 +1195,122 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  const cutCanvas = document.getElementById('fabricCutsChart');
-  if (cutCanvas) {
-    new Chart(cutCanvas, {
-      type: 'line',
-      data: {
-        labels: cutLabels,
-        datasets: [{
-          label: {{ t('written_off_chart_label')|tojson }},
-          data: cutValues,
-          borderColor: 'rgba(217, 119, 6, 1)',
-          backgroundColor: 'rgba(217, 119, 6, 0.12)',
-          tension: 0.35,
-          fill: true,
-          borderWidth: 3,
-          pointRadius: 3,
-          pointHoverRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: {
-              color: '#667085',
-              font: { weight: '700' }
-            }
-          },
-          y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(16,24,40,0.08)' },
-            ticks: {
-              color: '#667085',
-              font: { weight: '700' }
-            }
-          }
-        }
-      }
+  const writeoffScrollBtn = document.getElementById('scrollRecentWriteoffsBtn');
+  const writeoffSection = document.getElementById('recent-writeoffs-section');
+
+  if (writeoffScrollBtn && writeoffSection) {
+    writeoffScrollBtn.addEventListener('click', function () {
+      writeoffSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
+
+  function buildStockFilterUrl(stockState) {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set('stock_state', stockState);
+    nextUrl.searchParams.set('page', '1');
+    nextUrl.hash = 'materials-list-anchor';
+    return nextUrl.toString();
+  }
+
+  function buildClearStockFilterUrl() {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete('stock_state');
+    nextUrl.searchParams.set('page', '1');
+    nextUrl.hash = 'materials-list-anchor';
+    return nextUrl.toString();
+  }
+
+  const lowStockQuickFilterBtn = document.getElementById('lowStockQuickFilterBtn');
+  const outStockQuickFilterBtn = document.getElementById('outStockQuickFilterBtn');
+
+  if (lowStockQuickFilterBtn) {
+    lowStockQuickFilterBtn.addEventListener('click', function () {
+      window.location.href = buildStockFilterUrl('low');
+    });
+  }
+
+  if (outStockQuickFilterBtn) {
+    outStockQuickFilterBtn.addEventListener('click', function () {
+      window.location.href = buildStockFilterUrl('out');
+    });
+  }
+
+  let isListLoading = false;
+
+  async function loadMaterialsPage(url, { pushHistory = true } = {}) {
+    const listShell = document.getElementById('materials-list-shell');
+    if (!listShell || isListLoading) {
+      return;
+    }
+
+    isListLoading = true;
+    listShell.classList.add('mm-list-swap-out');
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const nextShell = doc.getElementById('materials-list-shell');
+
+      if (!nextShell) {
+        throw new Error('Missing materials-list-shell in response');
+      }
+
+      listShell.innerHTML = nextShell.innerHTML;
+      listShell.classList.remove('mm-list-swap-out');
+      listShell.classList.remove('mm-list-swap-in');
+      void listShell.offsetWidth;
+      listShell.classList.add('mm-list-swap-in');
+
+      if (pushHistory) {
+        window.history.pushState({ materialsAjax: true }, '', url);
+      }
+    } catch (err) {
+      window.location.href = url;
+    } finally {
+      isListLoading = false;
+    }
+  }
+
+  document.addEventListener('click', function (event) {
+    const clearStockFilterBtn = event.target.closest('#clearStockFilterBtn');
+    if (clearStockFilterBtn) {
+      event.preventDefault();
+      loadMaterialsPage(buildClearStockFilterUrl(), { pushHistory: true });
+      return;
+    }
+
+    const link = event.target.closest('#materials-list-shell .pagination a.page-link');
+    if (!link) {
+      return;
+    }
+
+    const href = link.getAttribute('href');
+    if (!href || href === '#') {
+      event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+    loadMaterialsPage(href, { pushHistory: true });
+  });
+
+  window.addEventListener('popstate', function () {
+    if (!document.getElementById('materials-list-shell')) {
+      return;
+    }
+    loadMaterialsPage(window.location.href, { pushHistory: false });
+  });
 });
 </script>
 

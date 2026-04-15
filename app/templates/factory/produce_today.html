@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "factory/base_factory.html" %}
 {% block title %}{{ t('factory_produce_today_title') }}{% endblock %}
 
 {% block content %}
@@ -348,17 +348,7 @@
         {% set is_preselected = (preselect_product_id and p.id == preselect_product_id) %}
 
         {% set raw_image = p.image or p.photo or p.image_path or p.photo_path %}
-        {% if raw_image %}
-          {% if raw_image.startswith('http://') or raw_image.startswith('https://') %}
-            {% set product_image = raw_image %}
-          {% elif raw_image.startswith('uploads/') %}
-            {% set product_image = url_for('static', filename=raw_image) %}
-          {% else %}
-            {% set product_image = url_for('static', filename='uploads/products/' ~ raw_image) %}
-          {% endif %}
-        {% else %}
-          {% set product_image = None %}
-        {% endif %}
+        {% set product_image = product_image_url(raw_image) %}
 
         <div class="mm-product-card {% if is_preselected %}mm-preselect-row{% endif %}">
           <div class="mm-product-main">

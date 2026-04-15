@@ -1,1182 +1,838 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set primary_cta_href = url_for('main.dashboard') if current_user.is_authenticated else url_for('public.start_workspace') %}
+{% set primary_cta_label = t('dashboard') if current_user.is_authenticated else t('start_workspace_label') %}
+{% set secondary_cta_href = url_for('main.dashboard') if current_user.is_authenticated else url_for('auth.login') %}
+{% set secondary_cta_label = t('open_workspace') if current_user.is_authenticated else t('sign_in_label') %}
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
 
   :root {
-    --mm-cream: #f6f1ea;
-    --mm-paper: #fffdfa;
-    --mm-paper-soft: #fbf7f1;
-    --mm-surface: #ffffff;
-    --mm-ink: #171311;
-    --mm-ink-soft: #29231f;
-    --mm-muted: #746b64;
-    --mm-muted-soft: #978c83;
-    --mm-line: rgba(23, 19, 17, 0.08);
-    --mm-line-strong: rgba(23, 19, 17, 0.14);
-    --mm-warm: #b65a24;
-    --mm-warm-deep: #99471a;
-    --mm-warm-soft: rgba(182, 90, 36, 0.08);
-    --mm-green: #35654a;
-    --mm-green-soft: rgba(53, 101, 74, 0.10);
-    --mm-shadow-xs: 0 6px 18px rgba(23, 19, 17, 0.04);
-    --mm-shadow-sm: 0 14px 34px rgba(23, 19, 17, 0.06);
-    --mm-shadow-md: 0 22px 58px rgba(23, 19, 17, 0.08);
-    --mm-shadow-lg: 0 34px 90px rgba(23, 19, 17, 0.10);
-    --mm-radius-sm: 18px;
-    --mm-radius-md: 28px;
-    --mm-radius-lg: 38px;
-    --mm-max: 1220px;
-  }
-
-  html {
-    scroll-behavior: smooth;
+    --ad-home-bg: #f3f6fb;
+    --ad-home-surface: #ffffff;
+    --ad-home-surface-soft: #f8fbff;
+    --ad-home-text: #10233e;
+    --ad-home-muted: #63748a;
+    --ad-home-line: rgba(16, 35, 62, 0.10);
+    --ad-home-line-strong: rgba(16, 35, 62, 0.16);
+    --ad-home-navy: #122540;
+    --ad-home-blue: #2d68b2;
+    --ad-home-blue-soft: rgba(45, 104, 178, 0.10);
+    --ad-home-gold: #c8883a;
+    --ad-home-gold-soft: rgba(200, 136, 58, 0.12);
+    --ad-home-green: #24704c;
+    --ad-home-green-soft: rgba(36, 112, 76, 0.12);
+    --ad-home-shadow-sm: 0 16px 40px rgba(18, 37, 64, 0.06);
+    --ad-home-shadow-md: 0 24px 68px rgba(18, 37, 64, 0.10);
+    --ad-home-radius-lg: 34px;
+    --ad-home-radius-md: 24px;
+    --ad-home-radius-sm: 18px;
+    --ad-home-max: 1200px;
   }
 
   body {
     background:
-      radial-gradient(circle at top left, rgba(182, 90, 36, 0.05), transparent 30%),
-      linear-gradient(180deg, #f8f4ee 0%, #f3eee7 100%) !important;
+      radial-gradient(circle at top left, rgba(45, 104, 178, 0.10), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(200, 136, 58, 0.08), transparent 24%),
+      linear-gradient(180deg, #f8fbff 0%, #eef3f8 100%) !important;
   }
 
-  .mm-root {
+  .ad-home-root {
     width: calc(100% + 24px);
     margin-left: -12px;
     margin-right: -12px;
     min-height: 100vh;
-    background: transparent;
-    color: var(--mm-ink);
-    font-family: 'Inter', sans-serif;
+    color: var(--ad-home-text);
+    font-family: 'DM Sans', sans-serif;
     overflow-x: clip;
-    position: relative;
-    padding-top: 20px;
   }
 
-  .mm-root::before,
-  .mm-root::after {
+  .ad-home-shell {
+    max-width: var(--ad-home-max);
+    margin: 0 auto;
+    padding: 28px 26px 96px;
+  }
+
+  .ad-home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .ad-home-card {
+    border-radius: var(--ad-home-radius-lg);
+    border: 1px solid var(--ad-home-line);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.98));
+    box-shadow: var(--ad-home-shadow-md);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ad-home-hero-main {
+    padding: 38px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ad-home-hero-main::before {
     content: "";
     position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    filter: blur(10px);
-  }
-
-  .mm-root::before {
-    top: -120px;
-    left: -120px;
-    width: 420px;
-    height: 420px;
-    background: radial-gradient(circle, rgba(182, 90, 36, 0.09), transparent 68%);
-  }
-
-  .mm-root::after {
-    top: 520px;
-    right: -160px;
-    width: 380px;
-    height: 380px;
-    background: radial-gradient(circle, rgba(23, 19, 17, 0.04), transparent 72%);
-  }
-
-  .mm-page-wrap > .container-lg {
-    max-width: 100% !important;
-    width: 100% !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  .mm-container {
-    max-width: var(--mm-max);
-    margin: 0 auto;
-    padding-left: 26px;
-    padding-right: 26px;
-    position: relative;
-    z-index: 1;
-  }
-
-  a,
-  button {
-    transition:
-      transform 0.22s ease,
-      background-color 0.22s ease,
-      border-color 0.22s ease,
-      color 0.22s ease,
-      box-shadow 0.22s ease,
-      opacity 0.22s ease;
-  }
-
-  a:focus-visible,
-  button:focus-visible {
-    outline: 2px solid var(--mm-warm);
-    outline-offset: 3px;
-  }
-
-  .mm-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 36px;
-    padding: 0 14px;
+    inset: auto auto -90px -60px;
+    width: 240px;
+    height: 240px;
     border-radius: 999px;
-    border: 1px solid rgba(182, 90, 36, 0.16);
-    background: rgba(255, 255, 255, 0.72);
-    color: var(--mm-warm);
-    box-shadow: var(--mm-shadow-xs);
-    backdrop-filter: blur(8px);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
-  .mm-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: currentColor;
-    opacity: 0.92;
-  }
-
-  .mm-section {
-    padding: 40px 0 96px;
-  }
-
-  .mm-section-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 24px;
-    margin-bottom: 34px;
-  }
-
-  .mm-section-head-copy {
-    max-width: 760px;
-  }
-
-  .mm-section-eyebrow {
-    margin-bottom: 12px;
-    font-size: 11px;
-    color: var(--mm-warm);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    font-weight: 700;
-  }
-
-  .mm-section-title {
-    margin: 0;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(38px, 5vw, 56px);
-    line-height: 0.95;
-    letter-spacing: -0.04em;
-    font-weight: 600;
-    color: var(--mm-ink);
-  }
-
-  .mm-section-text {
-    margin: 12px 0 0;
-    max-width: 640px;
-    font-size: 15px;
-    line-height: 1.85;
-    color: var(--mm-muted);
-  }
-
-  .mm-section-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    color: var(--mm-ink);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    padding-bottom: 2px;
-    border-bottom: 1px solid rgba(23, 19, 17, 0.14);
-  }
-
-  .mm-section-link:hover {
-    color: var(--mm-warm);
-    border-color: var(--mm-warm);
-    transform: translateY(-1px);
-  }
-
-  .mm-btn-sm,
-  .mm-location-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    white-space: nowrap;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .mm-btn-sm {
-    min-height: 44px;
-    padding: 0 14px;
-    border-radius: 15px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.10em;
-    text-transform: uppercase;
-  }
-
-  .mm-btn-sm.primary,
-  .mm-location-btn.primary {
-    background: var(--mm-ink);
-    color: #fff;
-    box-shadow: 0 14px 30px rgba(23, 19, 17, 0.14);
-  }
-
-  .mm-btn-sm.primary:hover,
-  .mm-location-btn.primary:hover {
-    background: var(--mm-warm);
-    color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 18px 34px rgba(182, 90, 36, 0.20);
-  }
-
-  .mm-btn-sm.telegram {
-    background: var(--mm-green-soft);
-    color: var(--mm-green);
-    border: 1px solid rgba(53, 101, 74, 0.16);
-  }
-
-  .mm-btn-sm.telegram:hover {
-    background: var(--mm-green);
-    color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 14px 28px rgba(53, 101, 74, 0.16);
-  }
-
-  .mm-btn-sm.disabled {
-    background: rgba(23, 19, 17, 0.05);
-    border: 1px solid rgba(23, 19, 17, 0.08);
-    color: var(--mm-muted);
-    cursor: not-allowed;
+    background: radial-gradient(circle, rgba(45, 104, 178, 0.14), transparent 70%);
     pointer-events: none;
   }
 
-  .mm-products-shell,
-  .mm-about-shell,
-  .mm-location-card {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 253, 250, 0.98));
-    border: 1px solid rgba(23, 19, 17, 0.08);
-    box-shadow: var(--mm-shadow-md);
-  }
-
-  .mm-products-shell {
-    padding: 32px;
-    border-radius: 34px;
-  }
-
-  .mm-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
-    gap: 20px;
-  }
-
-  .mm-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 100%;
-    background: linear-gradient(180deg, #ffffff 0%, #fdf9f4 100%);
-    border: 1px solid rgba(23, 19, 17, 0.08);
-    border-radius: 26px;
-    overflow: hidden;
-    box-shadow: var(--mm-shadow-sm);
-  }
-
-  .mm-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--mm-shadow-lg);
-    border-color: rgba(23, 19, 17, 0.12);
-  }
-
-  .mm-card-img {
-    position: relative;
-    aspect-ratio: 3 / 4;
-    overflow: hidden;
-    background:
-      radial-gradient(circle at top, rgba(255, 255, 255, 0.55), transparent 40%),
-      linear-gradient(180deg, #eee3d6 0%, #e3d4c2 100%);
-  }
-
-  .mm-card-img::after {
+  .ad-home-hero-main::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(23, 19, 17, 0.04));
+    background:
+      radial-gradient(circle at 78% 22%, rgba(200, 136, 58, 0.14), transparent 18%),
+      radial-gradient(circle at 18% 82%, rgba(45, 104, 178, 0.12), transparent 22%);
     pointer-events: none;
   }
 
-  .mm-card-img img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
-    transition: transform 0.5s ease;
-  }
-
-  .mm-card:hover .mm-card-img img {
-    transform: scale(1.05);
-  }
-
-  .mm-card-no-img {
-    width: 100%;
-    height: 100%;
-    display: grid;
-    place-items: center;
-    color: rgba(23, 19, 17, 0.22);
-  }
-
-  .mm-badge {
+  .ad-home-orbit {
     position: absolute;
-    top: 14px;
-    right: 14px;
-    z-index: 2;
-    padding: 8px 11px;
     border-radius: 999px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 10px 20px rgba(23, 19, 17, 0.10);
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0.9;
   }
 
-  .mm-badge-in {
-    background: rgba(53, 101, 74, 0.95);
-    color: #fff;
+  .ad-home-orbit-one {
+    top: 22px;
+    right: 24px;
+    width: 132px;
+    height: 132px;
+    border: 1px solid rgba(45, 104, 178, 0.18);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+    animation: ad-home-float 14s ease-in-out infinite;
   }
 
-  .mm-badge-out {
-    background: rgba(23, 19, 17, 0.74);
-    color: #fff;
+  .ad-home-orbit-two {
+    right: 76px;
+    top: 76px;
+    width: 72px;
+    height: 72px;
+    background: radial-gradient(circle, rgba(200, 136, 58, 0.22), transparent 68%);
+    filter: blur(2px);
+    animation: ad-home-float 10s ease-in-out infinite reverse;
   }
 
-  .mm-card-body {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    padding: 18px;
-  }
-
-  .mm-card-topline {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .mm-card-cat {
-    min-width: 0;
-    font-size: 10px;
-    font-weight: 800;
-    color: var(--mm-warm);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+  .ad-home-weave-lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
-  .mm-card-code {
-    flex-shrink: 0;
-    padding: 5px 8px;
-    border-radius: 999px;
-    background: rgba(23, 19, 17, 0.04);
-    color: var(--mm-muted);
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    font-weight: 700;
-  }
-
-  .mm-card-name {
-    margin: 0 0 14px;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 28px;
-    line-height: 0.98;
-    letter-spacing: -0.03em;
-    color: var(--mm-ink);
-    font-weight: 600;
-  }
-
-  .mm-card-meta {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 12px;
-    align-items: end;
-    margin-bottom: 16px;
-    padding: 14px 0 0;
-    border-top: 1px solid rgba(23, 19, 17, 0.07);
-  }
-
-  .mm-card-price {
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--mm-ink);
-    letter-spacing: -0.02em;
-  }
-
-  .mm-card-price-label,
-  .mm-card-stock-label {
+  .ad-home-weave-line {
+    position: absolute;
     display: block;
-    margin-bottom: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--mm-muted);
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(45, 104, 178, 0.95), rgba(200, 136, 58, 0.95), transparent);
+    box-shadow: 0 0 18px rgba(45, 104, 178, 0.22);
+    animation: ad-home-weave-drift 12s ease-in-out infinite;
+  }
+
+  .ad-home-weave-line.line-one {
+    top: 44px;
+    right: -40px;
+    width: 220px;
+  }
+
+  .ad-home-weave-line.line-two {
+    top: 92px;
+    right: 22px;
+    width: 160px;
+    animation-duration: 9s;
+    animation-direction: reverse;
+  }
+
+  .ad-home-weave-line.line-three {
+    bottom: 48px;
+    left: -18px;
+    width: 200px;
+    animation-duration: 11s;
+  }
+
+  .ad-home-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--ad-home-blue-soft);
+    color: var(--ad-home-blue);
+    font-size: 11px;
+    font-weight: 800;
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 
-  .mm-card-stock {
-    text-align: right;
-    font-size: 12px;
-    line-height: 1.55;
-    color: var(--mm-muted);
-  }
-
-  .mm-card-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-top: auto;
-  }
-
-  .mm-about {
-    padding: 96px 0;
-  }
-
-  .mm-about-shell {
-    padding: 38px;
-    border-radius: 36px;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .mm-about-shell::before {
+  .ad-home-eyebrow::before {
     content: "";
-    position: absolute;
-    top: -120px;
-    right: -80px;
-    width: 320px;
-    height: 320px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(182, 90, 36, 0.08), transparent 68%);
-    pointer-events: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
   }
 
-  .mm-about-grid {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
-    gap: 34px;
-    align-items: start;
-  }
-
-  .mm-about-copy {
+  .ad-home-title {
+    margin: 18px 0 0;
+    font-family: 'Fraunces', serif;
+    font-size: clamp(42px, 6vw, 72px);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
     max-width: 720px;
   }
 
-  .mm-about-title {
-    margin: 18px 0 18px;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(44px, 5vw, 64px);
-    line-height: 0.95;
-    letter-spacing: -0.04em;
-    color: var(--mm-ink);
-    font-weight: 600;
+  .ad-home-title span {
+    color: var(--ad-home-blue);
   }
 
-  .mm-about-title em {
-    color: var(--mm-warm);
-    font-style: italic;
+  .ad-home-title .ad-home-title-shimmer {
+    display: inline-block;
+    background: linear-gradient(120deg, var(--ad-home-blue) 0%, #79aef2 45%, var(--ad-home-gold) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-size: 180% 180%;
+    animation: ad-home-shimmer 7s ease-in-out infinite;
   }
 
-  .mm-about-body {
-    max-width: 680px;
-    margin: 0 0 26px;
-    font-size: 15px;
-    line-height: 1.92;
-    color: var(--mm-muted);
+  .ad-home-subtitle {
+    margin: 18px 0 0;
+    max-width: 620px;
+    color: var(--ad-home-muted);
+    font-size: 17px;
+    line-height: 1.8;
   }
 
-  .mm-about-body strong {
-    color: var(--mm-ink);
-    font-weight: 700;
-  }
-
-  .mm-about-tags {
+  .ad-home-cta-row {
+    margin-top: 26px;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
-  .mm-tag {
+  .ad-home-btn {
     display: inline-flex;
     align-items: center;
-    min-height: 38px;
-    padding: 0 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(23, 19, 17, 0.09);
-    background: rgba(255, 255, 255, 0.88);
-    color: var(--mm-ink-soft);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    box-shadow: var(--mm-shadow-xs);
-  }
-
-  .mm-info-panel {
-    display: grid;
-    gap: 12px;
-  }
-
-  .mm-info-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 18px;
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 245, 239, 0.94));
-    border: 1px solid rgba(23, 19, 17, 0.08);
-    box-shadow: var(--mm-shadow-sm);
-  }
-
-  .mm-info-icon {
-    width: 42px;
-    height: 42px;
-    flex-shrink: 0;
-    display: grid;
-    place-items: center;
-    border-radius: 14px;
-    background: rgba(23, 19, 17, 0.05);
-    font-size: 18px;
-  }
-
-  .mm-info-label {
-    margin-bottom: 5px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--mm-muted);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .mm-info-value {
-    font-size: 14px;
-    line-height: 1.72;
-    color: var(--mm-ink);
-  }
-
-  .mm-info-value a {
-    color: var(--mm-ink);
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 18px;
+    border-radius: 16px;
     text-decoration: none;
-    border-bottom: 1px solid rgba(23, 19, 17, 0.16);
-  }
-
-  .mm-info-value a:hover {
-    color: var(--mm-warm);
-    border-color: var(--mm-warm);
-  }
-
-  .mm-hours {
-    display: grid;
-    gap: 6px;
     font-size: 13px;
-    line-height: 1.6;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
   }
 
-  .mm-hours-row {
+  .ad-home-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .ad-home-btn.primary {
+    background: var(--ad-home-navy);
+    color: #ffffff;
+    box-shadow: 0 18px 36px rgba(18, 37, 64, 0.18);
+  }
+
+  .ad-home-btn.primary:hover {
+    background: var(--ad-home-blue);
+  }
+
+  .ad-home-btn.secondary {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--ad-home-text);
+    border: 1px solid var(--ad-home-line-strong);
+  }
+
+  .ad-home-btn.secondary:hover {
+    border-color: rgba(45, 104, 178, 0.24);
+    background: #ffffff;
+  }
+
+  .ad-home-proof-row {
+    margin-top: 24px;
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
     gap: 12px;
   }
 
-  .mm-hours-day {
-    color: var(--mm-ink);
-    font-weight: 600;
-  }
-
-  .mm-hours-time {
-    color: var(--mm-muted);
-    text-align: right;
-  }
-
-  .mm-hours-row.special .mm-hours-day {
-    color: var(--mm-warm);
-  }
-
-  .mm-location-section {
-    padding: 96px 0;
-  }
-
-  .mm-location-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1.06fr) minmax(330px, 0.94fr);
-    gap: 24px;
-    padding: 20px;
-    border-radius: 34px;
-    overflow: hidden;
-  }
-
-  .mm-map-wrap {
-    position: relative;
-    min-height: 460px;
-    border-radius: 26px;
-    overflow: hidden;
-    background: #e6ded2;
-    border: 1px solid rgba(23, 19, 17, 0.08);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  }
-
-  .mm-map-wrap::after {
-    content: "";
-    position: absolute;
-    inset: auto 0 0 0;
-    height: 88px;
-    background: linear-gradient(180deg, rgba(23, 19, 17, 0), rgba(23, 19, 17, 0.10));
-    pointer-events: none;
-  }
-
-  .mm-map-frame {
-    width: 100%;
-    height: 100%;
-    min-height: 460px;
-    border: 0;
-    display: block;
-    filter: saturate(0.92) contrast(1.02);
-  }
-
-  .mm-map-badge {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    z-index: 2;
+  .ad-home-proof-pill {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    min-height: 38px;
+    min-height: 40px;
     padding: 0 14px;
     border-radius: 999px;
-    background: rgba(23, 19, 17, 0.86);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    backdrop-filter: blur(8px);
-  }
-
-  .mm-location-panel {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 8px 6px 8px 2px;
-  }
-
-  .mm-location-title {
-    margin: 16px 0 14px;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(40px, 5vw, 58px);
-    line-height: 0.94;
-    letter-spacing: -0.04em;
-    color: var(--mm-ink);
-    font-weight: 600;
-  }
-
-  .mm-location-title em {
-    color: var(--mm-warm);
-    font-style: italic;
-  }
-
-  .mm-location-text {
-    margin: 0 0 22px;
-    max-width: 520px;
-    font-size: 15px;
-    line-height: 1.88;
-    color: var(--mm-muted);
-  }
-
-  .mm-location-list {
-    display: grid;
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-
-  .mm-location-item {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    padding: 16px;
-    border-radius: 20px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 245, 239, 0.94));
-    border: 1px solid rgba(23, 19, 17, 0.08);
-  }
-
-  .mm-location-icon {
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-    display: grid;
-    place-items: center;
-    border-radius: 13px;
-    background: rgba(23, 19, 17, 0.05);
-    font-size: 17px;
-  }
-
-  .mm-location-label {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--mm-muted);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-
-  .mm-location-value {
-    font-size: 14px;
-    line-height: 1.72;
-    color: var(--mm-ink);
-  }
-
-  .mm-location-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .mm-location-btn {
-    min-height: 48px;
-    padding: 0 18px;
-    border-radius: 999px;
+    border: 1px solid var(--ad-home-line);
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--ad-home-muted);
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.09em;
+  }
+
+  .ad-home-proof-pill strong {
+    color: var(--ad-home-text);
+    font-size: 0.96rem;
+  }
+
+  .ad-home-proof-pill {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ad-home-hero-side {
+    padding: 26px;
+    display: grid;
+    gap: 16px;
+    background:
+      linear-gradient(180deg, rgba(18, 37, 64, 0.98), rgba(24, 50, 83, 0.98)),
+      var(--ad-home-navy);
+    color: #ffffff;
+  }
+
+  .ad-home-side-kicker {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(233, 240, 250, 0.62);
+  }
+
+  .ad-home-side-title {
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  .ad-home-flow-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .ad-home-flow-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: transform 0.22s ease, background-color 0.22s ease, border-color 0.22s ease;
+  }
+
+  .ad-home-flow-item:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .ad-home-flow-index {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(200, 136, 58, 0.16);
+    color: #ffd8a4;
+    font-size: 0.86rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .ad-home-flow-copy strong {
+    display: block;
+    font-size: 0.96rem;
+    font-weight: 700;
+  }
+
+  .ad-home-flow-copy span {
+    display: block;
+    margin-top: 5px;
+    color: rgba(233, 240, 250, 0.76);
+    font-size: 0.86rem;
+    line-height: 1.6;
+  }
+
+  .ad-home-side-note {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(36, 112, 76, 0.12);
+    border: 1px solid rgba(83, 184, 125, 0.16);
+    color: rgba(233, 240, 250, 0.86);
+    font-size: 0.88rem;
+    line-height: 1.7;
+  }
+
+  .ad-home-section {
+    margin-top: 26px;
+    padding: 34px;
+  }
+
+  .ad-home-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .ad-home-section-kicker {
+    color: var(--ad-home-blue);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
   }
 
-  @media (max-width: 1100px) {
-    .mm-about-grid,
-    .mm-location-card {
-      grid-template-columns: 1fr;
+  .ad-home-section-title {
+    margin: 8px 0 0;
+    font-family: 'Fraunces', serif;
+    font-size: clamp(28px, 4vw, 42px);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+  }
+
+  .ad-home-section-text {
+    margin: 10px 0 0;
+    max-width: 660px;
+    color: var(--ad-home-muted);
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  .ad-home-feature-grid,
+  .ad-home-role-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .ad-home-feature-card,
+  .ad-home-role-card {
+    padding: 20px;
+    border-radius: 24px;
+    border: 1px solid var(--ad-home-line);
+    background: linear-gradient(180deg, #ffffff, #f8fbff);
+    box-shadow: var(--ad-home-shadow-sm);
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  }
+
+  .ad-home-feature-card:hover,
+  .ad-home-role-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 28px 52px rgba(18, 37, 64, 0.12);
+    border-color: rgba(45, 104, 178, 0.18);
+  }
+
+  .ad-home-feature-card strong,
+  .ad-home-role-card strong {
+    display: block;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .ad-home-feature-card p,
+  .ad-home-role-card p {
+    margin: 10px 0 0;
+    color: var(--ad-home-muted);
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+
+  .ad-home-launch-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.85fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .ad-home-step-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .ad-home-step-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px 18px;
+    border-radius: 22px;
+    border: 1px solid var(--ad-home-line);
+    background: #ffffff;
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  }
+
+  .ad-home-step-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--ad-home-shadow-sm);
+    border-color: rgba(45, 104, 178, 0.16);
+  }
+
+  .ad-home-step-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ad-home-blue-soft);
+    color: var(--ad-home-blue);
+    font-size: 0.86rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .ad-home-step-item strong {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .ad-home-step-item span {
+    display: block;
+    margin-top: 5px;
+    color: var(--ad-home-muted);
+    font-size: 0.88rem;
+    line-height: 1.65;
+  }
+
+  .ad-home-launch-card {
+    padding: 24px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(18, 37, 64, 0.98), rgba(24, 50, 83, 0.98));
+    color: #ffffff;
+    box-shadow: var(--ad-home-shadow-md);
+  }
+
+  @keyframes ad-home-float {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(0, 10px, 0) scale(1.04);
     }
   }
 
-  @media (max-width: 991.98px) {
-    .mm-section,
-    .mm-about,
-    .mm-location-section {
-      padding: 78px 0;
+  @keyframes ad-home-weave-drift {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) scaleX(1);
+      opacity: 0.72;
     }
-
-    .mm-products-shell,
-    .mm-about-shell {
-      padding: 26px;
-    }
-
-    .mm-map-wrap,
-    .mm-map-frame {
-      min-height: 360px;
+    50% {
+      transform: translate3d(-14px, 2px, 0) scaleX(1.08);
+      opacity: 1;
     }
   }
 
-  @media (max-width: 767.98px) {
-    .mm-container {
-      padding-left: 18px;
-      padding-right: 18px;
+  @keyframes ad-home-shimmer {
+    0%, 100% {
+      background-position: 0% 50%;
     }
-
-    .mm-root {
-      width: calc(100% + 16px);
-      margin-left: -8px;
-      margin-right: -8px;
-      padding-top: 10px;
-    }
-
-    .mm-section,
-    .mm-about,
-    .mm-location-section {
-      padding: 48px 0 62px;
-    }
-
-    .mm-products-shell,
-    .mm-about-shell,
-    .mm-location-card {
-      border-radius: 24px;
-    }
-
-    .mm-products-shell,
-    .mm-about-shell {
-      padding: 18px;
-    }
-
-    .mm-location-card {
-      padding: 12px;
-      gap: 14px;
-    }
-
-    .mm-section-head,
-    .mm-card-meta {
-      grid-template-columns: 1fr;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .mm-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .mm-map-wrap,
-    .mm-map-frame {
-      min-height: 300px;
-      border-radius: 18px;
-    }
-
-    .mm-location-actions {
-      flex-direction: column;
-    }
-
-    .mm-location-btn {
-      width: 100%;
-    }
-  }
-
-  @media (max-width: 479.98px) {
-    .mm-container {
-      padding-left: 14px;
-      padding-right: 14px;
-    }
-
-    .mm-card-topline {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .mm-card-stock {
-      text-align: left;
+    50% {
+      background-position: 100% 50%;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation: none !important;
-      transition: none !important;
-      scroll-behavior: auto !important;
+    .ad-home-orbit {
+      animation: none;
+    }
+
+    .ad-home-weave-line,
+    .ad-home-title .ad-home-title-shimmer {
+      animation: none;
+    }
+  }
+
+  .ad-home-launch-card strong {
+    display: block;
+    font-size: 1.14rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .ad-home-launch-card p {
+    margin: 12px 0 0;
+    color: rgba(233, 240, 250, 0.80);
+    line-height: 1.75;
+    font-size: 0.92rem;
+  }
+
+  .ad-home-launch-tags {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .ad-home-launch-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .ad-home-final {
+    margin-top: 26px;
+    padding: 32px 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .ad-home-final-title {
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    font-family: 'Fraunces', serif;
+  }
+
+  .ad-home-final-copy {
+    margin-top: 10px;
+    max-width: 640px;
+    color: var(--ad-home-muted);
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  @media (max-width: 980px) {
+    .ad-home-hero,
+    .ad-home-launch-grid,
+    .ad-home-feature-grid,
+    .ad-home-role-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .ad-home-final,
+    .ad-home-section-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .ad-home-shell {
+      padding: 18px 14px 84px;
+    }
+
+    .ad-home-hero-main,
+    .ad-home-hero-side,
+    .ad-home-section,
+    .ad-home-final {
+      padding: 22px;
+      border-radius: 24px;
+    }
+
+    .ad-home-title {
+      font-size: 42px;
     }
   }
 </style>
 
-<div class="mm-root">
+<div class="ad-home-root">
+  <div class="ad-home-shell">
+    <section class="ad-home-hero">
+      <article class="ad-home-card ad-home-hero-main" data-animate="slide-left" data-tilt data-glow data-spotlight>
+        <span class="ad-home-orbit ad-home-orbit-one"></span>
+        <span class="ad-home-orbit ad-home-orbit-two"></span>
+        <span class="ad-home-weave-lines" aria-hidden="true">
+          <span class="ad-home-weave-line line-one" data-parallax data-parallax-speed="0.12"></span>
+          <span class="ad-home-weave-line line-two" data-parallax data-parallax-speed="0.18"></span>
+          <span class="ad-home-weave-line line-three" data-parallax data-parallax-speed="0.1"></span>
+        </span>
+        <div class="ad-home-eyebrow">{{ t('home_workspace_platform') }}</div>
+        <h1 class="ad-home-title">
+          {{ t('home_hero_title_prefix') }} <span class="ad-home-title-shimmer">{{ t('home_hero_title_highlight') }}</span>, {{ t('home_hero_title_suffix') }}
+        </h1>
+        <p class="ad-home-subtitle">
+          {{ t('home_hero_subtitle') }}
+        </p>
 
-  {% if products %}
-    <section class="mm-section">
-      <div class="mm-container">
-        <div class="mm-products-shell">
-          <div class="mm-section-head">
-            <div class="mm-section-head-copy">
-              <div class="mm-section-eyebrow">{{ t('public_catalog') if t else 'Catalog' }}</div>
-              <h2 class="mm-section-title">
-                {{ t('public_latest_products') if t else 'Latest arrivals' }}
-              </h2>
-              <p class="mm-section-text">
-                {{ t('public_home_catalog_subtitle') if t else 'A refined selection view designed to surface the wholesale details buyers need most at a glance.' }}
-              </p>
+        <div class="ad-home-cta-row">
+          <a href="{{ primary_cta_href }}" class="ad-home-btn primary" data-magnetic data-ripple>{{ primary_cta_label }}</a>
+          <a href="{{ secondary_cta_href }}" class="ad-home-btn secondary" data-magnetic data-ripple>{{ secondary_cta_label }}</a>
+        </div>
+
+        <div class="ad-home-proof-row">
+          <div class="ad-home-proof-pill" data-ripple><strong data-countup>{{ home_stats.workspace_count }}</strong> {{ t('home_workspaces_label') }}</div>
+          <div class="ad-home-proof-pill" data-ripple><strong data-countup>{{ home_stats.team_count }}</strong> {{ t('home_user_accounts_label') }}</div>
+          <div class="ad-home-proof-pill" data-ripple><strong data-countup>{{ home_stats.shop_count }}</strong> {{ t('home_linked_shops_label') }}</div>
+        </div>
+      </article>
+
+      <aside class="ad-home-card ad-home-hero-side" data-animate="slide-right" data-tilt data-glow data-spotlight data-ripple>
+        <div class="ad-home-side-kicker">{{ t('home_launch_feels_kicker') }}</div>
+        <div class="ad-home-side-title">{{ t('home_launch_feels_title') }}</div>
+
+        <div class="ad-home-flow-list">
+          <div class="ad-home-flow-item">
+            <div class="ad-home-flow-index">1</div>
+            <div class="ad-home-flow-copy">
+              <strong>{{ t('home_flow_1_title') }}</strong>
+              <span>{{ t('home_flow_1_text') }}</span>
             </div>
-
-            <a href="{{ url_for('public.catalog') }}" class="mm-section-link">
-              {{ t('public_all') if t else 'All' }}
-            </a>
           </div>
 
-          <div class="mm-grid">
-            {% for p in products %}
-              {% set in_stock = (p.quantity or 0) > 0 %}
-              <article class="mm-card">
-                <div class="mm-card-img">
-                  {% if p.image_path %}
-                    <img
-                      src="{{ url_for('static', filename=p.image_path) }}"
-                      alt="{{ p.name }}"
-                      loading="lazy"
-                      decoding="async"
-                    >
-                  {% else %}
-                    <div class="mm-card-no-img" aria-hidden="true">
-                      <svg width="44" height="44" viewBox="0 0 36 36" fill="none">
-                        <rect x="2" y="6" width="32" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/>
-                        <circle cx="12" cy="15" r="3" stroke="currentColor" stroke-width="1.5"/>
-                        <path d="M2 26l8-7 6 5 5-4 9 6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-                      </svg>
-                    </div>
-                  {% endif %}
+          <div class="ad-home-flow-item">
+            <div class="ad-home-flow-index">2</div>
+            <div class="ad-home-flow-copy">
+              <strong>{{ t('home_flow_2_title') }}</strong>
+              <span>{{ t('home_flow_2_text') }}</span>
+            </div>
+          </div>
 
-                  <span class="mm-badge {% if in_stock %}mm-badge-in{% else %}mm-badge-out{% endif %}">
-                    {% if in_stock %}
-                      {{ t('public_in_stock') if t else 'In stock' }}
+          <div class="ad-home-flow-item">
+            <div class="ad-home-flow-index">3</div>
+            <div class="ad-home-flow-copy">
+              <strong>{{ t('home_flow_3_title') }}</strong>
+              <span>{{ t('home_flow_3_text') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ad-home-side-note">
+          {{ t('home_side_note') }}
+        </div>
+      </aside>
+    </section>
+
+    <section class="ad-home-card ad-home-section" id="features" data-animate="rise">
+      <div class="ad-home-section-head">
+        <div>
+          <div class="ad-home-section-kicker">{{ t('home_core_modules_kicker') }}</div>
+          <h2 class="ad-home-section-title">{{ t('home_business_sees_first_title') }}</h2>
+          <p class="ad-home-section-text">
+            {{ t('home_business_sees_first_text') }}
+          </p>
+        </div>
+      </div>
+
+      <div class="ad-home-feature-grid">
+        {% for card in feature_cards %}
+          <article class="ad-home-feature-card" data-animate="zoom" data-tilt data-glow data-ripple>
+            <strong>{{ card.title }}</strong>
+            <p>{{ card.body }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="ad-home-card ad-home-section" id="roles" data-animate="rise">
+      <div class="ad-home-section-head">
+        <div>
+          <div class="ad-home-section-kicker">{{ t('home_role_views_kicker') }}</div>
+          <h2 class="ad-home-section-title">{{ t('home_roles_title') }}</h2>
+          <p class="ad-home-section-text">
+            {{ t('home_roles_text') }}
+          </p>
+        </div>
+      </div>
+
+      <div class="ad-home-role-grid">
+        {% for card in role_cards %}
+          <article class="ad-home-role-card" data-animate="zoom" data-tilt data-glow data-ripple>
+            <strong>{{ card.title }}</strong>
+            <p>{{ card.body }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="ad-home-card ad-home-section" id="launch" data-animate="rise">
+      <div class="ad-home-launch-grid">
+        <div>
+          <div class="ad-home-section-kicker">{{ t('home_first_run_flow_kicker') }}</div>
+          <h2 class="ad-home-section-title">{{ t('home_first_visit_title') }}</h2>
+          <p class="ad-home-section-text">
+            {{ t('home_first_visit_text') }}
+          </p>
+
+          <div class="ad-home-step-list">
+            {% for step in launch_steps %}
+              <div class="ad-home-step-item" data-animate="slide-left" data-glow data-ripple>
+                <div class="ad-home-step-badge">{{ loop.index }}</div>
+                <div>
+                  <strong>{{ step }}</strong>
+                  <span>
+                    {% if loop.index == 1 %}
+                      {{ t('home_launch_step_1_note') }}
+                    {% elif loop.index == 2 %}
+                      {{ t('home_launch_step_2_note') }}
+                    {% elif loop.index == 3 %}
+                      {{ t('home_launch_step_3_note') }}
+                    {% elif loop.index == 4 %}
+                      {{ t('home_launch_step_4_note') }}
                     {% else %}
-                      {{ t('public_out_stock') if t else 'Out of stock' }}
+                      {{ t('home_launch_step_5_note') }}
                     {% endif %}
                   </span>
                 </div>
-
-                <div class="mm-card-body">
-                  <div class="mm-card-topline">
-                    <div class="mm-card-cat">
-                      {{ p.category or (t('products_no_category') if t else 'Uncategorised') }}
-                    </div>
-                    <div class="mm-card-code">MM-{{ "%05d"|format(p.id) }}</div>
-                  </div>
-
-                  <h3 class="mm-card-name">{{ p.name }}</h3>
-
-                  <div class="mm-card-meta">
-                    <div>
-                      <span class="mm-card-price-label">{{ t('public_home_wholesale_price') if t else 'Wholesale price' }}</span>
-                      <div class="mm-card-price">
-                        {{ format_money(p.sell_price_per_item, p.currency) }}
-                      </div>
-                    </div>
-
-                    <div class="mm-card-stock">
-                      <span class="mm-card-stock-label">{{ t('public_home_availability') if t else 'Availability' }}</span>
-                      {% if in_stock %}
-                        {{ t('public_home_qty') if t else 'Qty' }}: {{ p.quantity or 0 }}
-                      {% else %}
-                        {{ t('public_home_currently_unavailable') if t else 'Currently unavailable' }}
-                      {% endif %}
-                    </div>
-                  </div>
-
-                  <div class="mm-card-actions">
-                    <a href="{{ url_for('public.product_detail', product_id=p.id) }}" class="mm-btn-sm primary">
-                      {{ t('public_view') if t else 'View details' }}
-                    </a>
-
-                    {% if in_stock %}
-                      <a href="{{ tg_order_link(p) }}" target="_blank" rel="noopener" class="mm-btn-sm telegram">
-                        {{ t('public_order_tg') if t else 'Order via Telegram' }}
-                      </a>
-                    {% else %}
-                      <button class="mm-btn-sm disabled" disabled>
-                        {{ t('public_out_stock') if t else 'Out of stock' }}
-                      </button>
-                    {% endif %}
-                  </div>
-                </div>
-              </article>
+              </div>
             {% endfor %}
           </div>
         </div>
-      </div>
-    </section>
-  {% endif %}
 
-  <section class="mm-about" id="about">
-    <div class="mm-container">
-      <div class="mm-about-shell">
-        <div class="mm-about-grid">
-
-          <div class="mm-about-copy">
-            <div class="mm-kicker">
-              <span class="mm-dot"></span>
-              {{ t('public_home_about_kicker') if t else 'About Mini Moda' }}
-            </div>
-
-            <h2 class="mm-about-title">
-              {{ (t('public_home_about_title') if t else 'Reliable supply with a more <em>refined</em><br>wholesale experience') | safe }}
-            </h2>
-
-            <p class="mm-about-body">
-              {{ (t('public_home_about_body_1') if t else 'Founded in <strong>2013</strong> at <strong>Abu Saxiy Bazar</strong> in Tashkent, Mini Moda supplies kids clothing to retailers across Uzbekistan and neighbouring CIS markets.') | safe }}
-              <br><br>
-              {{ t('public_home_about_body_2') if t else 'Our focus is simple: reliable stock, clear product codes, competitive wholesale pricing, and direct ordering.' }}
-            </p>
-
-            <div class="mm-about-tags">
-              <span class="mm-tag">{{ t('public_home_tag_wholesale') if t else 'Wholesale' }}</span>
-              <span class="mm-tag">{{ t('public_home_tag_kids_clothing') if t else 'Kids clothing' }}</span>
-              <span class="mm-tag">{{ t('public_home_tag_export') if t else 'Export' }}</span>
-              <span class="mm-tag">{{ t('public_home_tag_since_2013') if t else 'Since 2013' }}</span>
-              <span class="mm-tag">{{ t('public_home_tag_tashkent') if t else 'Tashkent' }}</span>
-            </div>
-          </div>
-
-          <div class="mm-info-panel">
-            <div class="mm-info-row">
-              <div class="mm-info-icon">📍</div>
-              <div>
-                <div class="mm-info-label">{{ t('public_home_location_label') if t else 'Location' }}</div>
-                <div class="mm-info-value">{{ t('public_home_location_value') if t else 'Abu Saxiy Bazar, Tashkent, Uzbekistan' }}</div>
-              </div>
-            </div>
-
-            <div class="mm-info-row">
-              <div class="mm-info-icon">🕐</div>
-              <div>
-                <div class="mm-info-label">{{ t('public_home_working_hours') if t else 'Working hours' }}</div>
-                <div class="mm-hours">
-                  <div class="mm-hours-row">
-                    <span class="mm-hours-day">{{ t('public_home_day_mon') if t else 'Mon' }}</span>
-                    <span class="mm-hours-time">{{ t('public_home_closed') if t else 'Closed' }}</span>
-                  </div>
-                  <div class="mm-hours-row special">
-                    <span class="mm-hours-day">{{ t('public_home_day_tue') if t else 'Tue' }}</span>
-                    <span class="mm-hours-time">04:00 – 10:00</span>
-                  </div>
-                  <div class="mm-hours-row">
-                    <span class="mm-hours-day">{{ t('public_home_day_wed') if t else 'Wed' }}</span>
-                    <span class="mm-hours-time">05:00 – 10:00</span>
-                  </div>
-                  <div class="mm-hours-row">
-                    <span class="mm-hours-day">{{ t('public_home_day_thu') if t else 'Thu' }}</span>
-                    <span class="mm-hours-time">05:00 – 10:00</span>
-                  </div>
-                  <div class="mm-hours-row special">
-                    <span class="mm-hours-day">{{ t('public_home_day_fri') if t else 'Fri' }}</span>
-                    <span class="mm-hours-time">04:00 – 10:00</span>
-                  </div>
-                  <div class="mm-hours-row">
-                    <span class="mm-hours-day">{{ t('public_home_day_sat') if t else 'Sat' }}</span>
-                    <span class="mm-hours-time">05:00 – 10:00</span>
-                  </div>
-                  <div class="mm-hours-row">
-                    <span class="mm-hours-day">{{ t('public_home_day_sun') if t else 'Sun' }}</span>
-                    <span class="mm-hours-time">05:00 – 10:00</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mm-info-row">
-              <div class="mm-info-icon">📞</div>
-              <div>
-                <div class="mm-info-label">{{ t('public_home_phone_label') if t else 'Phone' }}</div>
-                <div class="mm-info-value">
-                  <a href="tel:+9989900000000">+998 99 000 00 00</a>
-                </div>
-              </div>
-            </div>
-
-            <div class="mm-info-row">
-              <div class="mm-info-icon">💬</div>
-              <div>
-                <div class="mm-info-label">{{ t('public_home_order_via') if t else 'Order via' }}</div>
-                <div class="mm-info-value">
-                  {% if public_telegram_url %}
-                    <a href="{{ public_telegram_url }}" target="_blank" rel="noopener">{{ t('public_telegram') if t else 'Telegram' }}</a>
-                  {% else %}
-                    {{ t('public_home_direct_contact') if t else 'Direct contact' }}
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="mm-location-section" id="location">
-    <div class="mm-container">
-      <div class="mm-location-card">
-
-        <div class="mm-map-wrap">
-          <div class="mm-map-badge">
-            <span>📍</span>
-            {{ t('public_home_store_location') if t else 'Store location' }}
-          </div>
-
-          <iframe
-            class="mm-map-frame"
-            loading="lazy"
-            allowfullscreen
-            referrerpolicy="no-referrer-when-downgrade"
-            src="https://maps.google.com/maps?q=41.24625,69.167761&z=16&output=embed">
-          </iframe>
-        </div>
-
-        <div class="mm-location-panel">
-          <div class="mm-kicker">
-            <span class="mm-dot"></span>
-            {{ t('public_home_visit_kicker') if t else 'Visit Mini Moda' }}
-          </div>
-
-          <h2 class="mm-location-title">
-            {{ (t('public_home_location_title') if t else 'Find our <em>location</em>') | safe }}
-          </h2>
-
-          <p class="mm-location-text">
-            {{ t('public_home_location_text') if t else 'Visit Mini Moda at Abu Saxiy Bazar, Tashkent.' }}
+        <aside class="ad-home-launch-card" data-animate="slide-right" data-tilt data-glow data-ripple>
+          <strong>{{ t('home_good_launch_title') }}</strong>
+          <p>
+            {{ t('home_good_launch_text') }}
           </p>
 
-          <div class="mm-location-list">
-            <div class="mm-location-item">
-              <div class="mm-location-icon">📍</div>
-              <div>
-                <div class="mm-location-label">{{ t('public_home_address') if t else 'Address' }}</div>
-                <div class="mm-location-value">
-                  {{ t('public_home_location_value') if t else 'Abu Saxiy Bazar, Tashkent, Uzbekistan' }}
-                </div>
-              </div>
-            </div>
-
-            <div class="mm-location-item">
-              <div class="mm-location-icon">🧭</div>
-              <div>
-                <div class="mm-location-label">{{ t('public_home_coordinates') if t else 'Coordinates' }}</div>
-                <div class="mm-location-value">
-                  41.24625, 69.167761
-                </div>
-              </div>
-            </div>
-
-            <div class="mm-location-item">
-              <div class="mm-location-icon">🕐</div>
-              <div>
-                <div class="mm-location-label">{{ t('public_home_best_time') if t else 'Best time to visit' }}</div>
-                <div class="mm-location-value">
-                  {{ t('public_home_best_time_value') if t else 'Early morning market hours - especially Tuesday and Friday.' }}
-                </div>
-              </div>
-            </div>
+          <div class="ad-home-launch-tags">
+            <span class="ad-home-launch-tag">{{ t('home_tag_owner_account') }}</span>
+            <span class="ad-home-launch-tag">{{ t('home_tag_workspace_identity') }}</span>
+            <span class="ad-home-launch-tag">{{ t('home_tag_first_shop') }}</span>
+            <span class="ad-home-launch-tag">{{ t('home_tag_first_team_member') }}</span>
+            <span class="ad-home-launch-tag">{{ t('home_tag_setup_checklist') }}</span>
           </div>
-
-          <div class="mm-location-actions">
-            <a
-              href="https://www.google.com/maps?q=41.24625,69.167761"
-              target="_blank"
-              rel="noopener"
-              class="mm-location-btn primary">
-              {{ t('public_home_open_maps') if t else 'Open in Google Maps' }}
-            </a>
-
-            <a
-              href="https://www.google.com/maps/dir/?api=1&destination=41.24625,69.167761"
-              target="_blank"
-              rel="noopener"
-              class="mm-location-btn secondary">
-              {{ t('public_home_get_directions') if t else 'Get directions' }}
-            </a>
-          </div>
-        </div>
-
+        </aside>
       </div>
-    </div>
-  </section>
+    </section>
 
+    <section class="ad-home-card ad-home-final" id="contact" data-animate="zoom" data-tilt data-glow data-spotlight>
+      <div>
+        <div class="ad-home-section-kicker">{{ t('home_get_started_kicker') }}</div>
+        <div class="ad-home-final-title">{{ t('home_final_title') }}</div>
+        <div class="ad-home-final-copy">
+          {{ t('home_final_copy') }}
+        </div>
+      </div>
+
+      <div class="ad-home-cta-row">
+        <a href="{{ primary_cta_href }}" class="ad-home-btn primary" data-magnetic data-ripple>{{ primary_cta_label }}</a>
+        <a href="{{ secondary_cta_href }}" class="ad-home-btn secondary" data-magnetic data-ripple>{{ secondary_cta_label }}</a>
+        {% if public_telegram_url %}
+          <a href="{{ public_telegram_url }}" target="_blank" rel="noopener" class="ad-home-btn secondary" data-magnetic data-ripple>{{ t('telegram') }}</a>
+        {% endif %}
+        <a href="tel:{{ public_phone_href }}" class="ad-home-btn secondary" data-magnetic data-ripple>{{ public_phone }}</a>
+      </div>
+    </section>
+  </div>
 </div>
-
 {% endblock %}

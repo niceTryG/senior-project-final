@@ -1,0 +1,481 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('saved_plan_detail') }}{% endblock %}
+{% block topbar_title %}{{ t('saved_plan_detail') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <section class="adras-hero-card">
+    <div class="adras-hero-left">
+      <h1 class="adras-hero-title">
+        {{ selected_product.name if selected_product else 'Saved production plan' }}
+      </h1>
+      <p class="dashboard-subtitle">
+        {{ t('saved_plan_detail_subtitle') }}
+      </p>
+      {% if saved_plan.created_at %}
+        <div class="adras-focus-box mt-3">
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>
+              {{ t('saved_on') }} {{ saved_plan.created_at.strftime('%d.%m.%Y %H:%M') }}
+              {% if source_order_item %} · {{ t('based_on_order') }} #{{ source_order_item.order_id }}{% endif %}
+            </span>
+          </div>
+          {% if saved_plan.note %}
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ saved_plan.note }}</span>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="adras-kpi-grid">
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('target_qty_label') }}</div>
+        <div class="adras-kpi-number">{{ target_qty or 0 }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('executed_label') }}</div>
+        <div class="adras-kpi-number">{{ execution_progress.executed_qty if execution_progress else 0 }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('remaining_label') }}</div>
+        <div class="adras-kpi-number">{{ execution_progress.remaining_qty if execution_progress else (target_qty or 0) }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card adras-kpi-card-dark">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('execution_label') }}</div>
+        <div class="adras-kpi-number">{{ execution_progress.label if execution_progress else t('not_started') }}</div>
+      </div>
+    </article>
+  </section>
+
+  <section class="adras-main-grid">
+    <div class="adras-main-left">
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('material_requirement_breakdown') }}</div>
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('main.production_plan_history') }}" class="btn btn-outline-light btn-sm">{{ t('back_to_history') }}</a>
+            <a href="{{ url_for('main.production_plan', product_id=selected_product_id, target_qty=target_qty, order_item_id=order_item_id) }}" class="btn btn-outline-light btn-sm">{{ t('open_planner') }}</a>
+          </div>
+        </div>
+
+        {% if plan_rows %}
+          <div class="adras-focus-box">
+            {% for item in plan_rows %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">
+                  {{ (item.material_type or 'fabric')|replace('_', ' ')|title }} · {{ item.material_name }}
+                </div>
+                <div class="adras-action-card-sub">
+                  Per unit: {{ "%.2f"|format(item.required_per_unit or 0) }} {{ item.unit }}
+                  · Total needed: {{ "%.2f"|format(item.total_required or 0) }} {{ item.unit }}
+                </div>
+                <div class="adras-action-card-sub">
+                  Available now: {{ "%.2f"|format(item.available or 0) }} {{ item.unit }}
+                  · Supports {{ item.supported_units or 0 }} units
+                  {% if item.shortage_qty > 0 %}
+                    · Short by {{ "%.2f"|format(item.shortage_qty or 0) }} {{ item.unit }}
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>No composition rows are available for this saved plan.</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <div class="adras-main-right">
+      <article class="adras-panel">
+        <div class="adras-panel-title">Blocking materials</div>
+
+        {% if blocking_rows %}
+          <div class="adras-focus-box">
+            {% for item in blocking_rows %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">
+                  {{ (item.material_type or 'fabric')|replace('_', ' ')|title }} · {{ item.material_name }}
+                </div>
+                <div class="adras-action-card-sub">
+                  {% if item.status == 'blocked' %}No stock available{% else %}Insufficient stock{% endif %}
+                  · Need {{ "%.2f"|format(item.total_required or 0) }} {{ item.unit }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>No blocking materials are showing right now.</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('linked_tasks') }}</div>
+          <a href="{{ url_for('main.command_center') }}" class="btn btn-outline-light btn-sm">{{ t('open_command_center') }}</a>
+        </div>
+
+        {% if linked_task_summary and linked_task_summary.has_tasks %}
+          <div class="adras-focus-box mb-3">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>
+                {{ linked_task_summary.total }} linked task(s)
+                · {{ linked_task_summary.open }} open
+                · {{ linked_task_summary.done }} done
+              </span>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if linked_tasks %}
+          <div class="adras-focus-box">
+            {% for task in linked_tasks %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">{{ task.title }}</div>
+                <div class="adras-action-card-sub">{{ task.priority_label }} · {{ task.status_label }} · {{ task.summary_line }}</div>
+                <div class="adras-action-card-sub">{{ task.description }}</div>
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                  <a href="{{ task.href }}" class="btn btn-outline-light btn-sm">{{ task.action_label }}</a>
+                  {% if task.status == 'open' %}
+                    <form method="post" action="{{ url_for('main.production_plan_update_task_status', plan_id=saved_plan.id, task_id=task.id) }}">
+                      <input type="hidden" name="next_status" value="in_progress">
+                      <button type="submit" class="btn btn-outline-light btn-sm">Start</button>
+                    </form>
+                  {% endif %}
+                  {% if task.status in ['open', 'in_progress'] %}
+                    <form method="post" action="{{ url_for('main.production_plan_update_task_status', plan_id=saved_plan.id, task_id=task.id) }}">
+                      <input type="hidden" name="next_status" value="done">
+                      <button type="submit" class="btn btn-outline-light btn-sm">Mark done</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_linked_follow_up_tasks') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('execute_production') }}</div>
+          {% if execution_progress and execution_progress.is_complete %}
+            <span class="badge bg-success">{{ t('completed_badge') }}</span>
+          {% elif can_fulfill_plan %}
+            <span class="badge bg-success">{{ t('ready_to_run') }}</span>
+          {% else %}
+            <span class="badge bg-warning text-dark">{{ t('waiting_on_stock') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="adras-focus-box mb-3">
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>
+              Executed {{ execution_progress.executed_qty if execution_progress else 0 }} of {{ target_qty or 0 }} planned units
+              {% if execution_progress %} · {{ execution_progress.completion_pct }}% complete{% endif %}
+            </span>
+          </div>
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>Remaining to execute: {{ execution_progress.remaining_qty if execution_progress else (target_qty or 0) }}</span>
+          </div>
+          {% if source_order_item %}
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>Linked order remaining: {{ source_order_item.qty_remaining or 0 }} unit(s).</span>
+            </div>
+          {% endif %}
+        </div>
+
+        {% if plan_rows %}
+          <form method="post" action="{{ url_for('main.production_plan_execute', plan_id=saved_plan.id) }}" class="d-grid" style="gap:10px;">
+            <div>
+              <label class="form-label">{{ t('execution_quantity') }}</label>
+              <input
+                type="number"
+                min="1"
+                name="execute_qty"
+                value="{{ execution_progress.remaining_qty if execution_progress and execution_progress.remaining_qty > 0 else 1 }}"
+                class="form-control-auth"
+                {% if not can_fulfill_plan %}max="{{ max_producible_units or 0 }}"{% endif %}
+                required
+              >
+            </div>
+            <div class="adras-action-card-sub">
+              {{ t('current_stock_supports_up_to').format(count=max_producible_units or 0) }}
+            </div>
+            <div>
+              <button
+                type="submit"
+                class="btn btn-outline-light btn-sm"
+                {% if not can_fulfill_plan or (execution_progress and execution_progress.remaining_qty <= 0) %}disabled{% endif %}
+              >
+                {{ t('execute_production_run') }}
+              </button>
+            </div>
+          </form>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('add_composition_before_run') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('execution_history') }}</div>
+          {% if execution_summary and execution_summary.count %}
+            <span class="badge bg-light text-dark">Runs {{ execution_summary.count }} · Produced {{ execution_summary.total_qty }}</span>
+          {% endif %}
+        </div>
+
+        {% if execution_runs %}
+          <div class="adras-focus-box">
+            {% for run in execution_runs %}
+              <div class="adras-action-card">
+                <div class="adras-action-card-title">Run #{{ run.id }} · {{ run.quantity }} unit(s)</div>
+                <div class="adras-action-card-sub">
+                  {{ run.date.strftime('%d.%m.%Y') }}
+                  {% if run.note %} · {{ run.note }}{% endif %}
+                </div>
+                {% if run.consumptions %}
+                  <div class="adras-action-card-sub">
+                    {{ t('consumed_materials') }}:
+                    {% for item in run.consumptions %}
+                      {{ (item.material_type or 'fabric')|replace('_', ' ')|title }} {{ item.material_name }} {{ "%.2f"|format(item.used_amount or 0) }} {{ item.unit }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                  <a href="{{ url_for('main.production_run_detail', run_id=run.id) }}" class="btn btn-outline-light btn-sm">{{ t('view_run') }}</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_runs_from_saved_plan') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="adras-panel">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <div class="adras-panel-title mb-0">{{ t('transfer_to_shop') }}</div>
+          <span class="badge bg-light text-dark">{{ t('factory_stock_label') }} {{ selected_product.quantity if selected_product else 0 }}</span>
+        </div>
+
+        <div class="adras-focus-box mb-3">
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>{{ t('send_finished_goods_to_shop') }}</span>
+          </div>
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>
+              <a href="{{ shop_handoff_links.transfer_href }}" class="btn btn-outline-light btn-sm">{{ t('open_full_transfer_page') }}</a>
+              <a href="{{ shop_handoff_links.pending_orders_href }}" class="btn btn-outline-light btn-sm">{{ t('factory_pending_orders') }}</a>
+              <a href="{{ shop_handoff_links.movement_history_href }}" class="btn btn-outline-light btn-sm">{{ t('movement_history') }}</a>
+            </span>
+          </div>
+        </div>
+
+        {% if shop_links %}
+          <form method="post" action="{{ url_for('main.production_plan_transfer_to_shop', plan_id=saved_plan.id) }}" class="d-grid" style="gap:10px;">
+            <div>
+              <label class="form-label">{{ t('shop_label') if t('shop_label') != 'shop_label' else 'Shop' }}</label>
+              <select name="shop_id" class="form-control-auth" required>
+                <option value="">{{ t('select_shop') if t('select_shop') != 'select_shop' else 'Select shop' }}</option>
+                {% for shop in shop_links %}
+                  <option value="{{ shop.id }}">{{ shop.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="form-label">{{ t('transfer_quantity') }}</label>
+              <input
+                type="number"
+                min="1"
+                max="{{ selected_product.quantity if selected_product else 0 }}"
+                name="transfer_qty"
+                value="{{ execution_progress.executed_qty if execution_progress and execution_progress.executed_qty > 0 else 1 }}"
+                class="form-control-auth"
+                required
+              >
+            </div>
+            <div>
+              <button
+                type="submit"
+                class="btn btn-outline-light btn-sm"
+                {% if not selected_product or (selected_product.quantity or 0) <= 0 %}disabled{% endif %}
+              >
+                {{ t('transfer_to_shop') }}
+              </button>
+            </div>
+          </form>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+                <span>{{ t('no_linked_shops_available') }}</span>
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="mt-3">
+          <div class="adras-action-card-sub mb-2">{{ t('current_shop_stock_for_product') }}</div>
+          {% if shop_stock_rows %}
+            <div class="adras-focus-box">
+              {% for row in shop_stock_rows %}
+                <div class="adras-action-card">
+                  <div class="adras-action-card-title">{{ row.shop_name }}</div>
+                  <div class="adras-action-card-sub">
+                    {{ row.quantity }} unit(s)
+                    {% if source_order_item and shop_handoff_links.default_order_shop_id == row.shop_id %}
+                      · {{ t('receives_order_shipments') }}
+                    {% endif %}
+                  </div>
+                  <div class="mt-2 d-flex gap-2 flex-wrap">
+                    <a href="{{ row.transfer_href }}" class="btn btn-outline-light btn-sm">{{ t('transfer_more') }}</a>
+                    <a href="{{ row.orders_href }}" class="btn btn-outline-light btn-sm">{{ t('open_orders') }}</a>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="adras-focus-box">
+              <div class="adras-focus-item">
+                <span class="adras-focus-dot"></span>
+                <span>{{ t('not_transferred_to_shop_yet') }}</span>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </article>
+
+      {% if source_order_item %}
+        <article class="adras-panel">
+          <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+            <div class="adras-panel-title mb-0">{{ t('order_handoff') }}</div>
+            <span class="badge bg-light text-dark">Order #{{ source_order_item.order_id }}</span>
+          </div>
+
+          <div class="adras-focus-box mb-3">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>
+                Requested {{ source_order_item.qty_requested or 0 }} · Already shipped {{ source_order_item.qty_from_shop_now or 0 }} · Remaining {{ source_order_item.qty_remaining or 0 }}
+              </span>
+            </div>
+            {% if source_order_item.customer_name %}
+              <div class="adras-focus-item">
+                <span class="adras-focus-dot"></span>
+                <span>Customer: {{ source_order_item.customer_name }}</span>
+              </div>
+            {% endif %}
+            {% if source_order_item.target_shop_name %}
+              <div class="adras-focus-item">
+                <span class="adras-focus-dot"></span>
+                <span>{{ t('ships_into_shop') }}: {{ source_order_item.target_shop_name }}</span>
+              </div>
+            {% endif %}
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>
+                <a href="{{ shop_handoff_links.pending_orders_href }}" class="btn btn-outline-light btn-sm">{{ t('open_factory_queue') }}</a>
+                <a href="{{ shop_handoff_links.ready_orders_href }}" class="btn btn-outline-light btn-sm">{{ t('ready_to_ship') }}</a>
+                <a href="{{ shop_handoff_links.all_orders_href }}" class="btn btn-outline-light btn-sm">{{ t('open_all_shop_orders') }}</a>
+                {% if shop_handoff_links.order_history_href %}
+                  <a href="{{ shop_handoff_links.order_history_href }}" class="btn btn-outline-light btn-sm">{{ t('order_log') }}</a>
+                {% endif %}
+              </span>
+            </div>
+          </div>
+
+          <form method="post" action="{{ url_for('main.production_plan_ship_order', plan_id=saved_plan.id) }}" class="d-grid" style="gap:10px;">
+            <div>
+              <label class="form-label">{{ t('ship_quantity_for_order') }}</label>
+              <input
+                type="number"
+                min="1"
+                max="{{ [selected_product.quantity if selected_product else 0, source_order_item.qty_remaining or 0]|min }}"
+                name="ship_qty"
+                value="{{ [selected_product.quantity if selected_product else 0, source_order_item.qty_remaining or 0]|min }}"
+                class="form-control-auth"
+                required
+              >
+            </div>
+            <div>
+              <button
+                type="submit"
+                class="btn btn-outline-light btn-sm"
+                {% if not selected_product or (selected_product.quantity or 0) <= 0 or (source_order_item.qty_remaining or 0) <= 0 %}disabled{% endif %}
+              >
+                {{ t('ship_for_this_order') }}
+              </button>
+            </div>
+          </form>
+        </article>
+      {% endif %}
+
+      <article class="adras-panel adras-snapshot-dark">
+        <div class="adras-panel-title adras-panel-title-light">{{ t('next_actions') }}</div>
+
+        <div class="adras-snapshot-dark-box">
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-yellow"></span>
+            <span>{{ t('next_action_1') }}</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-cyan"></span>
+            <span>{{ t('next_action_2') }}</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-blue"></span>
+            <span>{{ t('next_action_3') }}</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

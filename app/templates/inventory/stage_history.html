@@ -1,0 +1,120 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('stage_history_title') }}{% endblock %}
+{% block topbar_title %}{{ t('stage_history_title') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <section class="adras-hero-card">
+    <div class="adras-hero-left">
+      <div class="adras-chip-row mb-3" style="display:flex; flex-wrap:wrap; gap:10px;">
+        <span class="badge text-bg-dark">{{ workspace_page_name }}</span>
+        <span class="badge text-bg-secondary">{{ workspace_role_label }}</span>
+      </div>
+      <h1 class="adras-hero-title">{{ t('stage_history_title') }}</h1>
+      <p class="dashboard-subtitle">
+        {{ t('stage_history_subtitle') }}
+      </p>
+    </div>
+  </section>
+
+  <section class="adras-kpi-grid">
+    <article class="adras-kpi-card adras-kpi-card-dark">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('tracked_lines') }}</div>
+        <div class="adras-kpi-number">{{ stage_history_rows|length }}</div>
+      </div>
+      <div class="text-muted small">{{ t('order_lines_with_stage_activity') }}</div>
+    </article>
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('active_now') }}</div>
+        <div class="adras-kpi-number">{{ stage_history_rows | selectattr('active_entry') | list | length }}</div>
+      </div>
+      <div class="text-muted small">{{ t('still_moving_on_floor') }}</div>
+    </article>
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('fully_done') }}</div>
+        <div class="adras-kpi-number">{{ stage_history_rows | rejectattr('active_entry') | list | length }}</div>
+      </div>
+      <div class="text-muted small">{{ t('no_active_stage_left') }}</div>
+    </article>
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('inventory_mode') }}</div>
+        <div class="adras-kpi-number">{{ t('audit_mode') }}</div>
+      </div>
+      <div class="text-muted small">{{ t('worker_handoff_trail') }}</div>
+    </article>
+  </section>
+
+  <section class="adras-panel">
+    <div class="d-flex justify-content-between align-items-center gap-2 mb-3 flex-wrap">
+      <div>
+        <div class="adras-panel-title mb-1">{{ t('worker_stage_timeline') }}</div>
+        <div class="text-muted small">{{ t('newest_tracked_lines_first') }}</div>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('main.operations_board') }}" class="btn btn-sm btn-outline-light">{{ t('operations_board') }}</a>
+        <a href="{{ url_for('main.worker_floor') }}" class="btn btn-sm btn-outline-light">{{ t('my_work') }}</a>
+      </div>
+    </div>
+
+    {% if stage_history_rows %}
+      <div class="d-grid" style="gap:16px;">
+        {% for row in stage_history_rows %}
+          <div class="adras-action-card" style="padding:16px 18px; border:1px solid rgba(255,255,255,.08);">
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+              <div>
+                <div class="adras-action-card-title">{{ row.product_name }}</div>
+                <div class="adras-action-card-sub">
+                  {{ t('customer_label') }}: {{ row.customer_name }} · {{ t('requested_label') }}: {{ row.qty_requested }} · {{ t('remaining_label') }}: {{ row.qty_remaining }}
+                </div>
+              </div>
+              <span class="badge {% if row.active_entry %}text-bg-primary{% else %}text-bg-success{% endif %}">
+                {% if row.active_entry %}{{ row.active_entry.stage_label }} {{ t('active_badge_suffix') }}{% else %}{{ t('finished_flow') }}{% endif %}
+              </span>
+            </div>
+
+            <div class="d-grid mt-3" style="gap:10px;">
+              {% for entry in row.entries %}
+                <div class="p-3 rounded-4" style="background:rgba(255,255,255,.04);">
+                  <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                    <div>
+                      <div class="fw-semibold">{{ entry.stage_label }}</div>
+                      <div class="small text-muted">
+                        {{ entry.assignee_name }}
+                        {% if entry.created_at %} · {{ t('started_label') }} {{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+                        {% if entry.closed_at %} · {{ t('closed_label') }} {{ entry.closed_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+                      </div>
+                    </div>
+                    <span class="badge {% if entry.status == 'done' %}text-bg-success{% elif entry.status == 'in_progress' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">
+                      {{ entry.status|replace('_', ' ')|title }}
+                    </span>
+                  </div>
+                  {% if entry.description %}
+                    <div class="small text-muted mt-2" style="white-space:pre-line;">{{ entry.description }}</div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap mt-3">
+              <a href="{{ row.order_href }}" class="btn btn-sm btn-outline-light">{{ t('order_log') }}</a>
+              <a href="{{ row.plan_href }}" class="btn btn-sm btn-outline-light">{{ t('open_plan') }}</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="adras-focus-box">
+        <div class="adras-focus-item">
+          <span class="adras-focus-dot"></span>
+          <span>{{ t('no_stage_history_records') }}</span>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

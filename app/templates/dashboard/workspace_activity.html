@@ -1,0 +1,166 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('workspace_activity_title') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard-page">
+  <section class="adras-detail-hero" data-animate="slide-left" data-tilt data-glow data-spotlight>
+    <div>
+      <div class="adras-detail-kicker">{{ t('workspace_activity_title') }}</div>
+      <h1 class="adras-detail-title">{{ workspace_page_name }}</h1>
+      <p class="adras-detail-subtitle">
+        {{ t('workspace_activity_subtitle') }}
+      </p>
+    </div>
+
+    <div class="adras-detail-hero-stack">
+      <div class="adras-detail-hero-chip" data-magnetic>
+        <span>{{ t('your_role') }}</span>
+        <strong>{{ workspace_role_label }}</strong>
+      </div>
+      <div class="adras-detail-hero-chip" data-magnetic>
+        <span>{{ t('visible_events') }}</span>
+        <strong data-countup>{{ activity_counts.all }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="adras-detail-stat-grid">
+    <article class="adras-detail-stat-card" data-animate="zoom" data-tilt data-glow data-spotlight>
+      <div class="adras-detail-stat-label">{{ t('all_activity') }}</div>
+      <div class="adras-detail-stat-value" data-countup>{{ activity_counts.all }}</div>
+      <div class="adras-detail-stat-sub">{{ t('workspace_activity_all_sub') }}</div>
+    </article>
+
+    <article class="adras-detail-stat-card" data-animate="zoom" data-tilt data-glow data-spotlight>
+      <div class="adras-detail-stat-label">{{ t('workspace') }}</div>
+      <div class="adras-detail-stat-value" data-countup>{{ activity_counts.workspace }}</div>
+      <div class="adras-detail-stat-sub">{{ t('workspace_activity_workspace_sub') }}</div>
+    </article>
+
+    <article class="adras-detail-stat-card" data-animate="zoom" data-tilt data-glow data-spotlight>
+      <div class="adras-detail-stat-label">{{ t('team') }}</div>
+      <div class="adras-detail-stat-value" data-countup>{{ activity_counts.team }}</div>
+      <div class="adras-detail-stat-sub">{{ t('workspace_activity_team_sub') }}</div>
+    </article>
+
+    <article class="adras-detail-stat-card" data-animate="zoom" data-tilt data-glow data-spotlight>
+      <div class="adras-detail-stat-label">{{ t('security') }}</div>
+      <div class="adras-detail-stat-value" data-countup>{{ activity_counts.security }}</div>
+      <div class="adras-detail-stat-sub">{{ t('workspace_activity_security_sub') }}</div>
+    </article>
+  </section>
+
+  <section class="adras-detail-grid">
+    <article class="adras-panel" data-animate="slide-left" data-glow data-spotlight>
+      <div class="adras-section-head">
+        <div>
+          <h2 class="adras-panel-title">{{ t('activity_timeline') }}</h2>
+          <p class="adras-detail-panel-copy">
+            {{ t('activity_timeline_copy') }}
+          </p>
+        </div>
+        <div class="adras-form-actions">
+          <a href="{{ url_for('main.workspace_details') }}" class="ad-btn ad-btn-secondary">{{ t('back_to_workspace') }}</a>
+        </div>
+      </div>
+
+      <div class="adras-filter-row">
+        {% for option in activity_group_options %}
+          <a
+            href="{{ option.href }}"
+            class="adras-filter-chip {% if activity_selected_group == option.key %}is-active{% endif %}"
+          >
+            <span>{{ option.label }}</span>
+            <strong>{{ option.count }}</strong>
+          </a>
+        {% endfor %}
+      </div>
+
+      <form method="get" class="adras-search-form">
+        <input type="hidden" name="group" value="{{ activity_selected_group }}">
+        <input type="hidden" name="limit" value="{{ activity_limit }}">
+        <input
+          type="text"
+          name="q"
+          value="{{ activity_search_query }}"
+          class="adras-form-input"
+          placeholder="{{ t('workspace_activity_search_placeholder') }}"
+        >
+        <button type="submit" class="ad-btn ad-btn-primary">{{ t('search') }}</button>
+        {% if activity_search_query %}
+          <a href="{{ url_for('main.workspace_activity', group=activity_selected_group, limit=activity_limit) }}" class="ad-btn ad-btn-secondary">{{ t('clear') }}</a>
+        {% endif %}
+      </form>
+
+      {% if activity_items %}
+        <div class="adras-activity-list">
+          {% for item in activity_items %}
+            <div class="adras-activity-row">
+              <div class="adras-team-avatar adras-team-avatar-small">{{ item.actor_initials }}</div>
+              <div class="adras-activity-body">
+                <div class="adras-activity-top">
+                  <strong>{{ item.title }}</strong>
+                  <span>{{ item.timestamp }}</span>
+                </div>
+                <div class="adras-activity-meta">{{ item.group_label }} - {{ item.entity }}</div>
+                <div class="adras-activity-copy">{{ item.comment }}</div>
+                <div class="adras-inline-meta">{{ t('actor_label') }}: {{ item.actor_name }} - {{ t('login_label') }}: {{ item.actor_login }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="adras-readonly-state">
+          <div class="adras-readonly-state-title">{{ t('no_matching_activity') }}</div>
+          <div class="adras-readonly-state-copy">
+            {{ t('no_matching_activity_copy') }}
+          </div>
+        </div>
+      {% endif %}
+    </article>
+
+    <aside class="adras-panel adras-detail-sidebar" data-animate="slide-right" data-glow data-spotlight>
+      <div class="adras-detail-side-section">
+        <div class="adras-detail-side-label">{{ t('what_this_page_is_for') }}</div>
+
+        <div class="adras-checklist">
+          <div class="adras-checklist-row">
+            <span class="adras-checklist-dot ready"></span>
+            <span>{{ t('workspace_activity_help_1') }}</span>
+          </div>
+          <div class="adras-checklist-row">
+            <span class="adras-checklist-dot ready"></span>
+            <span>{{ t('workspace_activity_help_2') }}</span>
+          </div>
+          <div class="adras-checklist-row">
+            <span class="adras-checklist-dot ready"></span>
+            <span>{{ t('workspace_activity_help_3') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="adras-detail-side-section">
+        <div class="adras-detail-side-label">{{ t('quick_actions') }}</div>
+
+        <div class="adras-mini-action-grid adras-mini-action-grid-single">
+          <a href="{{ url_for('main.workspace_details', panel='owner') }}" class="adras-mini-action-card">
+            <div class="adras-mini-action-title">{{ t('owner_controls') }}</div>
+            <div class="adras-mini-action-sub">{{ t('workspace_activity_owner_controls_sub') }}</div>
+          </a>
+
+          <a href="{{ url_for('main.workspace_details', panel='team') }}" class="adras-mini-action-card">
+            <div class="adras-mini-action-title">{{ t('add_teammate') }}</div>
+            <div class="adras-mini-action-sub">{{ t('workspace_activity_add_teammate_sub') }}</div>
+          </a>
+
+          <a href="{{ url_for('main.dashboard') }}" class="adras-mini-action-card">
+            <div class="adras-mini-action-title">{{ t('back_to_dashboard') }}</div>
+            <div class="adras-mini-action-sub">{{ t('workspace_activity_back_dashboard_sub') }}</div>
+          </a>
+        </div>
+      </div>
+    </aside>
+  </section>
+</div>
+{% endblock %}

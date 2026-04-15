@@ -10,8 +10,8 @@ with app.app_context():
     existing = User.query.filter_by(username=USERNAME).first()
 
     if existing:
-        existing.role = "admin"
-        existing.factory_id = None   # None = superadmin in your system
+        existing.role = "superadmin"
+        existing.factory_id = None
         existing.shop_id = None
         existing.set_password(PASSWORD)
         db.session.commit()
@@ -19,7 +19,7 @@ with app.app_context():
     else:
         user = User(
             username=USERNAME,
-            role="admin",
+            role="superadmin",
             factory_id=None,
             shop_id=None,
         )

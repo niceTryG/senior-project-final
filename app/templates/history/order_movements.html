@@ -1,90 +1,729 @@
-{% extends "base.html" %}
+{% extends "history/base_history.html" %}
 
-{% block title %}{{ t('order_movement_page_title') }} #{{ order.id }} - Mini Moda{% endblock %}
+{% block title %}{{ t('order_movement_page_title') }} #{{ order.id }} - Adras{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3 py-md-4 mm-page-order-history">
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
-    <div>
-      <h1 class="h5 mb-1">{{ t('order_movement_page_title') }} #{{ order.id }}</h1>
-      <p class="small text-muted mb-0">
-        {{ t('order_movement_subtitle') }}
-      </p>
-    </div>
+{% set ns = namespace(
+  total_records=movements|length,
+  total_in=0,
+  total_out=0,
+  order_shipments=0,
+  sales=0,
+  adjustments=0
+) %}
 
-    <div class="d-flex flex-wrap gap-2">
-      <a href="{{ url_for('shop.list_shop_orders') }}" class="btn btn-sm btn-outline-secondary">
-        {{ t('back_to_orders') }}
-      </a>
-      <a href="{{ url_for('shop.movement_history') }}" class="btn btn-sm btn-outline-info">
-        {{ t('movement_history') }}
-      </a>
+{% for m in movements %}
+  {% if m.qty_change > 0 %}
+    {% set ns.total_in = ns.total_in + m.qty_change %}
+  {% elif m.qty_change < 0 %}
+    {% set ns.total_out = ns.total_out + (m.qty_change * -1) %}
+  {% endif %}
+
+  {% if m.movement_type == 'factory_to_shop_for_order' %}
+    {% set ns.order_shipments = ns.order_shipments + 1 %}
+  {% elif m.movement_type == 'shop_sale' %}
+    {% set ns.sales = ns.sales + 1 %}
+  {% elif m.movement_type == 'adjustment' %}
+    {% set ns.adjustments = ns.adjustments + 1 %}
+  {% endif %}
+{% endfor %}
+
+<div class="mm-order-history-page">
+  <style>
+    .mm-order-history-page {
+      --surface: rgba(255, 255, 255, 0.92);
+      --surface-soft: #f8fbff;
+      --surface-strong: #ffffff;
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-soft: rgba(37, 99, 235, 0.10);
+      --success: #059669;
+      --success-soft: rgba(5, 150, 105, 0.10);
+      --warning: #d97706;
+      --warning-soft: rgba(217, 119, 6, 0.10);
+      --slate-soft: rgba(71, 85, 105, 0.10);
+      --shadow-sm: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 18px 40px rgba(15, 23, 42, 0.10);
+      --shadow-lg: 0 24px 64px rgba(15, 23, 42, 0.18);
+      color: var(--text);
+    }
+
+    .mm-oh-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mm-oh-hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 30px;
+      padding: 28px;
+      background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.26), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.16), transparent 24%),
+        linear-gradient(135deg, #07111f 0%, #0f1a34 50%, #15325f 100%);
+      box-shadow: var(--shadow-lg);
+      color: #fff;
+    }
+
+    .mm-oh-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.06), transparent 38%);
+      pointer-events: none;
+    }
+
+    .mm-oh-hero-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .mm-oh-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .mm-oh-title {
+      font-size: clamp(28px, 4vw, 40px);
+      line-height: 1.04;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+
+    .mm-oh-subtitle {
+      max-width: 760px;
+      color: rgba(255,255,255,0.78);
+      font-size: 15px;
+      line-height: 1.65;
+      margin-bottom: 18px;
+    }
+
+    .mm-oh-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .mm-oh-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 14px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      transition: 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .mm-oh-btn-primary {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border-color: rgba(255,255,255,0.14);
+    }
+
+    .mm-oh-btn-primary:hover {
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+    }
+
+    .mm-oh-btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.92);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .mm-oh-btn-secondary:hover {
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+    }
+
+    .mm-oh-side {
+      display: grid;
+      gap: 14px;
+    }
+
+    .mm-oh-glass-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 22px;
+      padding: 18px;
+      backdrop-filter: blur(12px);
+    }
+
+    .mm-oh-glass-label {
+      display: block;
+      color: rgba(255,255,255,0.72);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .mm-oh-glass-value {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 6px;
+    }
+
+    .mm-oh-glass-meta {
+      color: rgba(255,255,255,0.74);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .mm-oh-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .mm-oh-card,
+    .mm-oh-table-card,
+    .mm-oh-empty {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mm-oh-card {
+      padding: 20px;
+    }
+
+    .mm-oh-metric-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .mm-oh-metric-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .mm-oh-metric-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .icon-primary { background: var(--primary-soft); color: var(--primary); }
+    .icon-success { background: var(--success-soft); color: var(--success); }
+    .icon-warning { background: var(--warning-soft); color: var(--warning); }
+    .icon-slate { background: var(--slate-soft); color: #475569; }
+
+    .mm-oh-metric-value {
+      font-size: 28px;
+      line-height: 1.05;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .mm-oh-metric-meta {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .mm-oh-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.85fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .mm-oh-section-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--text);
+      margin: 0 0 6px;
+    }
+
+    .mm-oh-section-subtitle {
+      margin: 0 0 16px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .mm-oh-highlight-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mm-oh-highlight {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,255,0.98) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .mm-oh-highlight-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .mm-oh-highlight-text {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .mm-oh-table-wrap {
+      padding: 0 16px 16px;
+    }
+
+    .mm-oh-table {
+      margin-bottom: 0;
+      vertical-align: middle;
+    }
+
+    .mm-oh-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--surface-soft);
+      color: #475569;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 15px 14px;
+      white-space: nowrap;
+    }
+
+    .mm-oh-table tbody td {
+      padding: 16px 14px;
+      border-top: 1px solid rgba(148, 163, 184, 0.10);
+    }
+
+    .mm-oh-table tbody tr:hover {
+      background: rgba(37, 99, 235, 0.03);
+    }
+
+    .mm-oh-time {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mm-oh-time-main {
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .mm-oh-time-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .mm-oh-product {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mm-oh-product-name {
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .mm-oh-product-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .mm-oh-qty-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 84px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .qty-plus {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .qty-minus {
+      background: rgba(220, 38, 38, 0.10);
+      color: #dc2626;
+    }
+
+    .qty-zero {
+      background: #eef2f7;
+      color: #475569;
+    }
+
+    .mm-oh-type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge-order {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .badge-sale {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .badge-factory {
+      background: rgba(8, 145, 178, 0.10);
+      color: #0891b2;
+    }
+
+    .badge-adjustment {
+      background: #eef2f7;
+      color: #475569;
+    }
+
+    .badge-fallback {
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .mm-oh-comment {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 320px;
+      word-break: break-word;
+    }
+
+    .mm-oh-empty {
+      padding: 44px 24px;
+      text-align: center;
+    }
+
+    .mm-oh-empty-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .mm-oh-empty-text {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    @media (max-width: 1200px) {
+      .mm-oh-hero-inner,
+      .mm-oh-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mm-oh-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mm-oh-hero {
+        padding: 22px;
+        border-radius: 24px;
+      }
+
+      .mm-oh-title {
+        font-size: 28px;
+      }
+
+      .mm-oh-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .mm-oh-card,
+      .mm-oh-table-card,
+      .mm-oh-empty {
+        border-radius: 20px;
+      }
+    }
+  </style>
+
+  <div class="container-fluid py-3 py-md-4">
+    <div class="mm-oh-shell">
+      <section class="mm-oh-hero">
+        <div class="mm-oh-hero-inner">
+          <div>
+            <div class="mm-oh-kicker">{{ t('order_movement_kicker') }}</div>
+            <h1 class="mm-oh-title">{{ t('order_movement_page_title') }} #{{ order.id }}</h1>
+            <p class="mm-oh-subtitle">
+              {{ t('order_movement_page_subtitle') }}
+            </p>
+
+            <div class="mm-oh-actions">
+              <a href="{{ url_for('shop.list_shop_orders') }}" class="mm-oh-btn mm-oh-btn-primary">{{ t('back_to_orders') }}</a>
+              <a href="{{ url_for('shop.movement_history', order_id=order.id) }}" class="mm-oh-btn mm-oh-btn-secondary">{{ t('movement_history') }}</a>
+            </div>
+          </div>
+
+          <div class="mm-oh-side">
+            <div class="mm-oh-glass-card">
+              <span class="mm-oh-glass-label">{{ t('customer') }}</span>
+              <div class="mm-oh-glass-value">{{ order.customer_name or t('no_customer_name') }}</div>
+              <div class="mm-oh-glass-meta">
+                {% if order.customer_phone %}{{ t('phone_label') }}: {{ order.customer_phone }}<br>{% endif %}
+                {{ t('status') }}: {{ order.status or "pending" }}
+              </div>
+            </div>
+
+            <div class="mm-oh-glass-card">
+              <span class="mm-oh-glass-label">{{ t('order_timing') }}</span>
+              <div class="mm-oh-glass-value">{{ order.created_at.strftime("%d.%m.%Y") if order.created_at else "-" }}</div>
+              <div class="mm-oh-glass-meta">
+                {% if order.ready_at %}{{ t('ready_at_label') }} {{ order.ready_at.strftime("%d.%m.%Y %H:%M") }}<br>{% endif %}
+                {% if order.completed_at %}{{ t('completed_at_label') }} {{ order.completed_at.strftime("%d.%m.%Y %H:%M") }}{% else %}{{ t('still_active_in_flow') }}{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mm-oh-metrics">
+        <article class="mm-oh-card">
+          <div class="mm-oh-metric-top">
+            <span class="mm-oh-metric-label">{{ t('records_label') }}</span>
+            <span class="mm-oh-metric-icon icon-primary">#</span>
+          </div>
+          <div class="mm-oh-metric-value">{{ ns.total_records }}</div>
+          <div class="mm-oh-metric-meta">{{ t('order_movement_records_meta') }}</div>
+        </article>
+
+        <article class="mm-oh-card">
+          <div class="mm-oh-metric-top">
+            <span class="mm-oh-metric-label">{{ t('incoming_label') }}</span>
+            <span class="mm-oh-metric-icon icon-success">+</span>
+          </div>
+          <div class="mm-oh-metric-value">{{ ns.total_in }}</div>
+          <div class="mm-oh-metric-meta">{{ t('order_movement_incoming_meta') }}</div>
+        </article>
+
+        <article class="mm-oh-card">
+          <div class="mm-oh-metric-top">
+            <span class="mm-oh-metric-label">{{ t('outgoing_label') }}</span>
+            <span class="mm-oh-metric-icon icon-warning">-</span>
+          </div>
+          <div class="mm-oh-metric-value">{{ ns.total_out }}</div>
+          <div class="mm-oh-metric-meta">{{ t('order_movement_outgoing_meta') }}</div>
+        </article>
+
+        <article class="mm-oh-card">
+          <div class="mm-oh-metric-top">
+            <span class="mm-oh-metric-label">{{ t('order_shipments_label') }}</span>
+            <span class="mm-oh-metric-icon icon-slate">→</span>
+          </div>
+          <div class="mm-oh-metric-value">{{ ns.order_shipments }}</div>
+          <div class="mm-oh-metric-meta">{{ t('order_movement_shipments_meta') }}</div>
+        </article>
+      </section>
+
+      <section class="mm-oh-grid">
+        <article class="mm-oh-card">
+          <h3 class="mm-oh-section-title">{{ t('what_this_order_shows') }}</h3>
+          <p class="mm-oh-section-subtitle">
+            {{ t('order_movement_quick_audit_note') }}
+          </p>
+
+          <div class="mm-oh-highlight-list">
+            <div class="mm-oh-highlight">
+              <div class="mm-oh-highlight-title">{{ t('shipment_pressure_title') }}</div>
+              <p class="mm-oh-highlight-text">
+                {{ t('order_movement_shipment_pressure_text', order_shipments=ns.order_shipments, sales=ns.sales, adjustments=ns.adjustments) if false else
+                ns.order_shipments ~ ' ' ~ t('shipment_events_count_suffix') ~ ', ' ~ ns.sales ~ ' ' ~ t('sale_events_count_suffix') ~ ', ' ~ ns.adjustments ~ ' ' ~ t('adjustment_events_count_suffix') ~ ' ' ~ t('currently_tied_to_order') }}
+              </p>
+            </div>
+
+            <div class="mm-oh-highlight">
+              <div class="mm-oh-highlight-title">{{ t('audit_trail_title') }}</div>
+              <p class="mm-oh-highlight-text">
+                {{ t('order_movement_audit_trail_text') }}
+              </p>
+            </div>
+
+            <div class="mm-oh-highlight">
+              <div class="mm-oh-highlight-title">{{ t('next_check_title') }}</div>
+              <p class="mm-oh-highlight-text">
+                {{ t('order_movement_next_check_text') }}
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <article class="mm-oh-card">
+          <h3 class="mm-oh-section-title">{{ t('quick_links') }}</h3>
+          <p class="mm-oh-section-subtitle">
+            {{ t('order_movement_quick_links_subtitle') }}
+          </p>
+
+          <div class="mm-oh-highlight-list">
+            <div class="mm-oh-highlight">
+              <div class="mm-oh-highlight-title">{{ t('orders_list_title') }}</div>
+              <p class="mm-oh-highlight-text">
+                {{ t('orders_list_compare_text') }}
+              </p>
+              <div class="mt-2">
+                <a href="{{ url_for('shop.list_shop_orders') }}" class="btn btn-outline-secondary btn-sm">{{ t('back_to_orders') }}</a>
+              </div>
+            </div>
+
+            <div class="mm-oh-highlight">
+              <div class="mm-oh-highlight-title">{{ t('filtered_movement_feed_title') }}</div>
+              <p class="mm-oh-highlight-text">
+                {{ t('filtered_movement_feed_text') }}
+              </p>
+              <div class="mt-2">
+                <a href="{{ url_for('shop.movement_history', order_id=order.id) }}" class="btn btn-outline-secondary btn-sm">{{ t('movement_history') }}</a>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      {% if movements %}
+        <section class="mm-oh-table-card">
+          <div class="p-3 p-md-4 pb-2">
+            <h3 class="mm-oh-section-title mb-0">{{ t('order_movement_feed_title') }}</h3>
+            <p class="mm-oh-section-subtitle mb-0">
+              {{ t('order_movement_feed_subtitle') }}
+            </p>
+          </div>
+
+          <div class="mm-oh-table-wrap">
+            <div class="table-responsive">
+              <table class="table mm-oh-table">
+                <thead>
+                  <tr>
+                    <th>{{ t('time') }}</th>
+                    <th>{{ t('product') }}</th>
+                    <th>{{ t('movement_source') }}</th>
+                    <th>{{ t('movement_destination') }}</th>
+                    <th class="text-end">{{ t('qty_short') }}</th>
+                    <th>{{ t('movement_type_full') }}</th>
+                    <th>{{ t('comment') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for m in movements %}
+                    <tr>
+                      <td>
+                        <div class="mm-oh-time">
+                          <span class="mm-oh-time-main">{{ m.timestamp.strftime("%Y-%m-%d %H:%M") if m.timestamp else "-" }}</span>
+                          <span class="mm-oh-time-sub">{{ t('recorded_event') }}</span>
+                        </div>
+                      </td>
+
+                      <td>
+                        <div class="mm-oh-product">
+                          <span class="mm-oh-product-name">{{ m.product.name if m.product else "-" }}</span>
+                          <span class="mm-oh-product-meta">
+                            {% if m.movement_type == 'factory_to_shop_for_order' %}
+                              {{ t('movement_meta_sent_specifically_for_order') }}
+                            {% elif m.movement_type == 'shop_sale' %}
+                              {{ t('movement_meta_sale_linked_to_fulfillment') }}
+                            {% elif m.movement_type == 'factory_to_shop' %}
+                              {{ t('movement_meta_general_restock_event') }}
+                            {% elif m.movement_type == 'adjustment' %}
+                              {{ t('movement_meta_manual_stock_correction') }}
+                            {% else %}
+                              {{ t('movement_meta_order_linked_movement') }}
+                            {% endif %}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td class="small text-muted">{{ m.source or "-" }}</td>
+                      <td class="small text-muted">{{ m.destination or "-" }}</td>
+
+                      <td class="text-end">
+                        {% if m.qty_change > 0 %}
+                          <span class="mm-oh-qty-pill qty-plus">+{{ m.qty_change }}</span>
+                        {% elif m.qty_change < 0 %}
+                          <span class="mm-oh-qty-pill qty-minus">{{ m.qty_change }}</span>
+                        {% else %}
+                          <span class="mm-oh-qty-pill qty-zero">{{ m.qty_change }}</span>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        {% if m.movement_type == 'shop_sale' %}
+                          <span class="mm-oh-type-badge badge-sale">{{ t('movement_type_shop_sale_badge') }}</span>
+                        {% elif m.movement_type == 'factory_to_shop_for_order' %}
+                          <span class="mm-oh-type-badge badge-order">{{ t('movement_type_factory_to_shop_for_order_badge') }}</span>
+                        {% elif m.movement_type == 'factory_to_shop' %}
+                          <span class="mm-oh-type-badge badge-factory">{{ t('movement_type_factory_to_shop_badge') }}</span>
+                        {% elif m.movement_type == 'adjustment' %}
+                          <span class="mm-oh-type-badge badge-adjustment">{{ t('movement_type_adjustment_badge') }}</span>
+                        {% else %}
+                          <span class="mm-oh-type-badge badge-fallback">{{ m.movement_type or "-" }}</span>
+                        {% endif %}
+                      </td>
+
+                      <td>
+                        <div class="mm-oh-comment">{{ m.comment or "" }}</div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      {% else %}
+        <section class="mm-oh-empty">
+          <div class="mm-oh-empty-title">{{ t('order_movement_no_data') }}</div>
+          <p class="mm-oh-empty-text">
+            {{ t('order_movement_no_data_text') }}
+          </p>
+        </section>
+      {% endif %}
     </div>
   </div>
-
-  {% if movements %}
-    <div class="card shadow-sm border-0 rounded-3">
-      <div class="card-body py-2 px-3">
-        <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="small text-muted text-uppercase">{{ t('time') }}</th>
-                <th class="small text-muted text-uppercase">{{ t('product') }}</th>
-                <th class="small text-muted text-uppercase">{{ t('movement_source') }}</th>
-                <th class="small text-muted text-uppercase">{{ t('movement_destination') }}</th>
-                <th class="small text-muted text-uppercase text-end">{{ t('qty_short') }}</th>
-                <th class="small text-muted text-uppercase">{{ t('movement_type_full') }}</th>
-                <th class="small text-muted text-uppercase">{{ t('comment') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for m in movements %}
-                <tr>
-                  <td class="small text-nowrap">
-                    {{ m.timestamp.strftime("%Y-%m-%d %H:%M") if m.timestamp }}
-                  </td>
-                  <td class="small fw-semibold">
-                    {{ m.product.name if m.product else "-" }}
-                  </td>
-                  <td class="small text-muted">
-                    {{ m.source or "-" }}
-                  </td>
-                  <td class="small text-muted">
-                    {{ m.destination or "-" }}
-                  </td>
-                  <td class="text-end small fw-bold {% if m.qty_change < 0 %}text-danger{% else %}text-success{% endif %}">
-                    {{ "+" if m.qty_change > 0 }}{{ m.qty_change }}
-                  </td>
-                  <td class="small">
-                    {% if m.movement_type == 'shop_sale' %}
-                      <span class="badge bg-success">{{ t('movement_type_shop_sale_badge') }}</span>
-                    {% elif m.movement_type == 'factory_to_shop_for_order' %}
-                      <span class="badge bg-primary">{{ t('movement_type_factory_to_shop_for_order_badge') }}</span>
-                    {% elif m.movement_type == 'factory_to_shop' %}
-                      <span class="badge bg-info text-dark">{{ t('movement_type_factory_to_shop_badge') }}</span>
-                    {% elif m.movement_type == 'adjustment' %}
-                      <span class="badge bg-secondary">{{ t('movement_type_adjustment_badge') }}</span>
-                    {% else %}
-                      <span class="badge bg-light text-dark">
-                        {{ m.movement_type or "-" }}
-                      </span>
-                    {% endif %}
-                  </td>
-                  <td class="small">
-                    {{ m.comment or "" }}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  {% else %}
-    <div class="alert alert-light border small mb-0">
-      {{ t('order_movement_no_data') }}
-    </div>
-  {% endif %}
 </div>
 {% endblock %}

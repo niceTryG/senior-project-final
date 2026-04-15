@@ -57,7 +57,7 @@ body {
   color: #6b7280;
 }
 
-/* Buttons themed for Mini Moda */
+/* Buttons themed for Adras */
 .btn-primary {
   background-color: var(--mini-blue);
   border-color: var(--mini-blue);
@@ -783,4 +783,163 @@ html[data-theme="dark"] .mm-topbar-neo .navbar-brand .brand-text{
 }
 html[data-theme="dark"] .mm-top-banner-greet{
   color: rgba(229,231,235,0.85);
+}
+
+/* =========================
+   VISUAL MOTION LAYER
+========================= */
+.js-enhanced [data-animate] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0) scale(0.985);
+  transition:
+    opacity 0.75s cubic-bezier(.22, 1, .36, 1),
+    transform 0.75s cubic-bezier(.22, 1, .36, 1),
+    box-shadow 0.3s ease;
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: transform, opacity;
+}
+
+.js-enhanced [data-animate="slide-left"] {
+  transform: translate3d(-34px, 18px, 0) scale(0.985);
+}
+
+.js-enhanced [data-animate="slide-right"] {
+  transform: translate3d(34px, 18px, 0) scale(0.985);
+}
+
+.js-enhanced [data-animate="zoom"] {
+  transform: translate3d(0, 20px, 0) scale(0.94);
+}
+
+.js-enhanced [data-animate].is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+[data-tilt] {
+  transform-style: preserve-3d;
+  transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+[data-tilt]:hover {
+  transform: perspective(1200px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) translateY(-4px);
+}
+
+[data-glow] {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+[data-glow]::after {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(circle at var(--glow-x, 50%) var(--glow-y, 50%), rgba(255, 255, 255, 0.24), transparent 34%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-glow]:hover::after {
+  opacity: 1;
+}
+
+[data-glow] > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-spotlight] {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-spotlight]::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(255, 255, 255, 0.22), transparent 30%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-spotlight]:hover::before {
+  opacity: 1;
+}
+
+[data-magnetic] {
+  transform: translate3d(var(--magnetic-x, 0px), var(--magnetic-y, 0px), 0);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+
+[data-parallax] {
+  transform: translate3d(0, var(--parallax-y, 0px), 0) rotate(var(--parallax-rotate, 0deg));
+  will-change: transform;
+  transition: transform 0.18s linear;
+}
+
+[data-ripple] {
+  position: relative;
+  overflow: hidden;
+}
+
+.mm-ripple {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(0);
+  animation: mm-ripple-bloom 0.75s ease-out forwards;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes mm-ripple-bloom {
+  0% {
+    opacity: 0.55;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js-enhanced [data-animate] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  [data-tilt],
+  [data-tilt]:hover {
+    transform: none;
+    transition: none;
+  }
+
+  [data-glow]::after {
+    display: none;
+  }
+
+  [data-spotlight]::before {
+    display: none;
+  }
+
+  [data-magnetic] {
+    transform: none;
+    transition: none;
+  }
+
+  [data-parallax] {
+    transform: none;
+    transition: none;
+  }
 }

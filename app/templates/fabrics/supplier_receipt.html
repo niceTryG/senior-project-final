@@ -1,0 +1,549 @@
+{% extends "fabrics/base_fabrics.html" %}
+
+{% block title %}{{ t('supplier_receipt_page_title').format(id=receipt.id) }}{% endblock %}
+
+{% block fabrics_content %}
+<div class="mm-supplier-receipt-page">
+  <style>
+    .mm-supplier-receipt-page {
+      --paper: #fffdf8;
+      --ink: #14213d;
+      --muted: #6b7280;
+      --line: rgba(20, 33, 61, 0.14);
+      --accent: #0f766e;
+      --accent-soft: rgba(15, 118, 110, 0.10);
+      --gold: #b08968;
+      --shadow: 0 24px 64px rgba(15, 23, 42, 0.12);
+      color: var(--ink);
+    }
+
+    .mm-sr-shell {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 16px 40px;
+    }
+
+    .mm-sr-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .mm-sr-toolbar-note {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .mm-sr-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mm-sr-paper {
+      background:
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(20, 33, 61, 0.08), transparent 24%),
+        linear-gradient(180deg, rgba(176, 137, 104, 0.05) 0%, rgba(255,255,255,0) 120px),
+        var(--paper);
+      border: 1px solid rgba(176, 137, 104, 0.18);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .mm-sr-header {
+      padding: 32px 34px 22px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .mm-sr-brand-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .mm-sr-brand-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .mm-sr-brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f766e 0%, #14213d 100%);
+      color: #fffdf8;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      box-shadow: 0 14px 28px rgba(20, 33, 61, 0.16);
+    }
+
+    .mm-sr-brand-name {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .mm-sr-brand-name strong {
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: 0.06em;
+    }
+
+    .mm-sr-brand-name span {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+    }
+
+    .mm-sr-title {
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.02;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .mm-sr-subtitle {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+      max-width: 620px;
+      margin: 0;
+    }
+
+    .mm-sr-docbox {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .mm-sr-docrow + .mm-sr-docrow {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(20, 33, 61, 0.12);
+    }
+
+    .mm-sr-doclabel {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+    }
+
+    .mm-sr-docvalue {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .mm-sr-body {
+      padding: 28px 34px 34px;
+      display: grid;
+      gap: 22px;
+    }
+
+    .mm-sr-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .mm-sr-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .mm-sr-section-title {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .mm-sr-strong {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .mm-sr-meta {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .mm-sr-table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.84);
+    }
+
+    .mm-sr-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .mm-sr-table th {
+      background: rgba(15, 118, 110, 0.08);
+      color: var(--ink);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 800;
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mm-sr-table td {
+      padding: 16px;
+      border-top: 1px solid rgba(20, 33, 61, 0.08);
+      vertical-align: top;
+    }
+
+    .mm-sr-table td.text-end,
+    .mm-sr-table th.text-end {
+      text-align: right;
+    }
+
+    .mm-sr-note {
+      border: 1px dashed rgba(176, 137, 104, 0.5);
+      background: rgba(176, 137, 104, 0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+    }
+
+    .mm-sr-note-title {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .mm-sr-footer {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 26px;
+      padding-top: 10px;
+    }
+
+    .mm-sr-sign {
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+
+    .mm-sr-sign-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      margin-bottom: 26px;
+    }
+
+    .mm-sr-sign-line {
+      border-bottom: 1px solid rgba(20, 33, 61, 0.34);
+      height: 1px;
+    }
+
+    .mm-sr-stamp {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .mm-sr-total-emphasis {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(20, 33, 61, 0.06);
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--ink);
+    }
+
+    @media print {
+      .navbar, .btn, .mm-sr-toolbar {
+        display: none !important;
+      }
+
+      .mm-sr-shell {
+        max-width: none;
+        padding: 0;
+      }
+
+      .mm-sr-paper {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mm-sr-header,
+      .mm-sr-grid,
+      .mm-sr-footer {
+        grid-template-columns: 1fr;
+      }
+
+      .mm-sr-header,
+      .mm-sr-body {
+        padding: 22px;
+      }
+    }
+  </style>
+
+  <div class="mm-sr-shell">
+    <div class="mm-sr-toolbar">
+      <div>
+        <div class="small text-muted">{{ t('where_to_find_it') }}</div>
+        <div class="mm-sr-toolbar-note">
+          Supplier page: recent receipts → `View receipt`
+          <br>
+          Supplier statement: receipt history → `View`
+        </div>
+      </div>
+      <div class="mm-sr-actions">
+        <a class="btn btn-outline-primary btn-sm" href="{{ url_for('fabrics.supplier_receipt_pdf', receipt_id=receipt.id) }}">{{ t('download_pdf') }}</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('fabrics.supplier_detail', supplier_name=receipt.supplier_name) }}">{{ t('back_to_supplier') }}</a>
+        <button class="btn btn-dark btn-sm" onclick="window.print()">{{ t('print_label') }}</button>
+      </div>
+    </div>
+
+    <div class="mm-sr-paper">
+      <section class="mm-sr-header">
+        <div>
+          <div class="mm-sr-brand-line">
+            <div class="mm-sr-brand-mark">A</div>
+            <div class="mm-sr-brand-name">
+              <strong>ADRAS</strong>
+              <span>Supply Desk</span>
+            </div>
+          </div>
+          <div class="mm-sr-brand-kicker">{{ t('supplier_receipt_document') }}</div>
+          <div class="mm-sr-title">{{ t('supplier_receipt_doc_title') }}</div>
+          <p class="mm-sr-subtitle">
+            {{ t('supplier_receipt_doc_subtitle') }}
+          </p>
+        </div>
+
+        <div class="mm-sr-docbox">
+          <div class="mm-sr-docrow">
+            <span class="mm-sr-doclabel">{{ t('receipt_id_label') }}</span>
+            <div class="mm-sr-docvalue">#{{ receipt.id }}</div>
+          </div>
+          <div class="mm-sr-docrow">
+            <span class="mm-sr-doclabel">{{ t('received_date_label') }}</span>
+            <div class="mm-sr-docvalue">{{ receipt.received_at.strftime('%Y-%m-%d') if receipt.received_at else '-' }}</div>
+          </div>
+          <div class="mm-sr-docrow">
+            <span class="mm-sr-doclabel">{{ t('payment_status_label') }}</span>
+            <div class="mm-sr-docvalue">{{ (receipt.payment_status or 'unpaid')|title }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mm-sr-body">
+        <div class="mm-sr-grid">
+          <div class="mm-sr-card">
+            <div class="mm-sr-section-title">{{ t('supplier_label') }}</div>
+            <div class="mm-sr-strong">{{ receipt.supplier_name or '-' }}</div>
+            <div class="mm-sr-meta">
+              {% if receipt.created_by %}
+                {{ t('recorded_by_label') }} {{ receipt.created_by.username or receipt.created_by.id }}
+              {% else %}
+                {{ t('received_via_supplier_flow') }}
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mm-sr-card">
+            <div class="mm-sr-section-title">{{ t('document_info_label') }}</div>
+            <div class="mm-sr-meta">
+              {{ t('invoice_label') }}: <strong>{{ receipt.invoice_number or '-' }}</strong><br>
+              {{ t('currency_short') }}: <strong>{{ receipt.currency or '-' }}</strong><br>
+              {{ t('type') }}:
+              <strong>
+                {% if receipt.fabric %}
+                  {{ (receipt.fabric.material_type or 'material')|replace('_', ' ')|title }}
+                {% else %}
+                  -
+                {% endif %}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="mm-sr-table-wrap">
+          <table class="mm-sr-table">
+            <thead>
+              <tr>
+                <th>{{ t('material_label') }}</th>
+                <th class="text-end">{{ t('qty_short') }}</th>
+                <th class="text-end">{{ t('unit_price') }}</th>
+                <th class="text-end">{{ t('line_total') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>{{ receipt.material_name or '-' }}</strong>
+                  {% if receipt.fabric and receipt.fabric.color %}
+                    <div class="small text-muted mt-1">{{ receipt.fabric.color }}</div>
+                  {% endif %}
+                </td>
+                <td class="text-end">{{ "%.2f"|format(receipt.quantity_received or 0) }} {{ receipt.unit or '' }}</td>
+                <td class="text-end">
+                  {% if receipt.unit_cost is not none %}
+                    {{ "%.2f"|format(receipt.unit_cost or 0) }} {{ receipt.currency or '' }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <strong>
+                    {% if receipt.line_total is not none %}
+                      {{ "%.2f"|format(receipt.line_total or 0) }} {{ receipt.currency or '' }}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {% if receipt.note %}
+          <div class="mm-sr-note">
+            <div class="mm-sr-note-title">{{ t('notes_and_context') }}</div>
+            <div>{{ receipt.note }}</div>
+          </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+          <div class="mm-sr-stamp">{{ t('supplier_receipt_print_note') }}</div>
+          <div class="mm-sr-total-emphasis">
+            {% if receipt.line_total is not none %}
+              {{ t('total_amount') }} {{ "%.2f"|format(receipt.line_total or 0) }} {{ receipt.currency or '' }}
+            {% else %}
+              {{ t('cost_label') }}: -
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="mm-sr-footer">
+          <div class="mm-sr-sign">
+            <div class="mm-sr-sign-label">{{ t('received_by') }}</div>
+            <div class="mm-sr-sign-line"></div>
+          </div>
+          <div class="mm-sr-sign">
+            <div class="mm-sr-sign-label">{{ t('supplier_signature_label') }}</div>
+            <div class="mm-sr-sign-line"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
+          <div>
+            <h2 class="h5 mb-1">{{ t('edit_receipt') }}</h2>
+            <div class="small text-muted">{{ t('edit_receipt_help') }}</div>
+          </div>
+          <span class="badge bg-light text-dark border">{{ t('auto_generated_invoice') }}</span>
+        </div>
+
+        <form method="post" action="{{ url_for('fabrics.supplier_receipt_edit', receipt_id=receipt.id) }}" class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label small mb-1">{{ t('quantity') }}</label>
+            <input type="number" step="0.01" min="0.01" name="quantity_received" class="form-control" value="{{ '%.2f'|format(receipt.quantity_received or 0) }}" required>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small mb-1">{{ t('received_date_label') }}</label>
+            <input type="date" name="received_at" class="form-control" value="{{ receipt.received_at.strftime('%Y-%m-%d') if receipt.received_at else '' }}">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small mb-1">{{ t('unit_price') }}</label>
+            <input type="number" step="0.01" min="0" name="unit_cost" class="form-control" value="{{ receipt.unit_cost if receipt.unit_cost is not none else '' }}">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small mb-1">{{ t('currency_short') }}</label>
+            <input type="text" name="currency" class="form-control" value="{{ receipt.currency or '' }}">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label small mb-1">{{ t('invoice_label') }}</label>
+            <input type="text" name="invoice_number" class="form-control" value="{{ receipt.invoice_number or '' }}" placeholder="{{ t('invoice_auto_placeholder') }}">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small mb-1">{{ t('payment_status_label') }}</label>
+            <select name="payment_status" class="form-select">
+              <option value="unpaid" {% if (receipt.payment_status or 'unpaid') == 'unpaid' %}selected{% endif %}>{{ t('payment_unpaid') }}</option>
+              <option value="paid" {% if (receipt.payment_status or 'unpaid') == 'paid' %}selected{% endif %}>{{ t('payment_paid') }}</option>
+            </select>
+          </div>
+
+          <div class="col-md-5">
+            <label class="form-label small mb-1">{{ t('note') }}</label>
+            <input type="text" name="note" class="form-control" value="{{ receipt.note or '' }}" placeholder="{{ t('correction_note_placeholder') }}">
+          </div>
+
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary">{{ t('save_receipt_changes') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

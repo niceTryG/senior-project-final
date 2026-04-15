@@ -78,3 +78,64 @@ def send_telegram_message(
             )
         except Exception:
             continue
+
+
+def send_telegram_document(
+    document_bytes: bytes,
+    filename: str,
+    *,
+    caption: str | None = None,
+    chat_ids: list[int] | None = None,
+    factory_id: int | None = None,
+    factory_ids: list[int] | None = None,
+    include_manager_chats: bool = True,
+) -> None:
+    """
+    Send a file to Telegram chats.
+    Errors are suppressed so Flask never breaks.
+    """
+
+    if not TELEGRAM_BOT_TOKEN or not document_bytes:
+        return
+
+    api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
+
+    if chat_ids is None:
+        resolved_chat_ids: list[int] = []
+
+        if include_manager_chats:
+            resolved_chat_ids.extend(MANAGER_CHAT_IDS)
+
+        combined_factory_ids = list(factory_ids or [])
+        if factory_id:
+            combined_factory_ids.append(factory_id)
+
+        resolved_chat_ids.extend(_linked_chat_ids_for_factories(combined_factory_ids))
+
+        seen: set[int] = set()
+        chat_ids = []
+        for chat_id in resolved_chat_ids:
+            if not chat_id or chat_id in seen:
+                continue
+            seen.add(chat_id)
+            chat_ids.append(chat_id)
+
+    for chat_id in chat_ids:
+        if not chat_id:
+            continue
+
+        try:
+            requests.post(
+                api_url,
+                data={
+                    "chat_id": chat_id,
+                    "caption": caption or "",
+                    "parse_mode": "HTML",
+                },
+                files={
+                    "document": (filename, document_bytes, "application/pdf"),
+                },
+                timeout=8,
+            )
+        except Exception:
+            continue

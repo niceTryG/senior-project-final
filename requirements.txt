@@ -11,6 +11,7 @@ xhtml2pdf
 requests 
 pandas
 openpyxl
+Pillow
 gunicorn
 psycopg2-binary
 Flask-WTF

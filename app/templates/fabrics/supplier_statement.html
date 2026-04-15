@@ -1,0 +1,233 @@
+{% extends "fabrics/base_fabrics.html" %}
+
+{% block fabrics_content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
+    <div>
+      <div class="small text-muted">{{ t('supplier_statement_title_short') }}</div>
+      <h1 class="h4 mb-1">{{ supplier_name }}</h1>
+      <div class="text-muted small">{{ t('supplier_statement_subtitle') }}</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-dark btn-sm" href="{{ url_for('fabrics.supplier_receipts') }}">{{ t('supplier_receipt_history') }}</a>
+      <form method="post" action="{{ url_for('fabrics.create_supplier_followup_task') }}">
+        <input type="hidden" name="supplier_name" value="{{ supplier_name }}">
+        <button type="submit" class="btn btn-outline-primary btn-sm">{{ t('create_follow_up_task') }}</button>
+      </form>
+      <a class="btn btn-outline-success btn-sm" href="{{ url_for('fabrics.export_supplier_statement', supplier_name=supplier_name) }}">{{ t('btn_export_csv') }}</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('fabrics.supplier_detail', supplier_name=supplier_name) }}">{{ t('back_to_supplier') }}</a>
+    </div>
+  </div>
+
+  <div class="row row-cols-2 row-cols-lg-4 g-2 mb-3">
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('supplier_receipt_history') }}</div>
+          <div class="fw-bold">{{ statement.receipts|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('payment_paid') }}</div>
+          <div class="fw-bold">{{ statement.receipt_count_by_status.paid }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('payment_unpaid') }}</div>
+          <div class="fw-bold">{{ statement.receipt_count_by_status.unpaid }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">{{ t('supplier_low_stock_items') }}</div>
+          <div class="fw-bold">{{ statement.snapshot.low_stock_items|length }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('supplier_contact_title') }}</h2>
+          {% if statement.snapshot.profile %}
+            <div class="d-flex flex-column gap-2">
+              <div class="d-flex justify-content-between border rounded px-3 py-2">
+                <span class="text-muted">{{ t('contact_person_label') }}</span>
+                <strong>{{ statement.snapshot.profile.contact_person or '-' }}</strong>
+              </div>
+              <div class="d-flex justify-content-between border rounded px-3 py-2">
+                <span class="text-muted">{{ t('phone') }}</span>
+                <strong>{{ statement.snapshot.profile.phone or '-' }}</strong>
+              </div>
+              <div class="d-flex justify-content-between border rounded px-3 py-2">
+                <span class="text-muted">{{ t('telegram_label') }}</span>
+                <strong>{{ statement.snapshot.profile.telegram_handle or '-' }}</strong>
+              </div>
+              <div class="border rounded px-3 py-2">
+                <div class="small text-muted">{{ t('note') }}</div>
+                <div>{{ statement.snapshot.profile.note or '-' }}</div>
+              </div>
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('no_supplier_contact_saved') }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('paid_totals') }}</h2>
+          {% if statement.paid_by_currency %}
+            <div class="d-flex flex-column gap-2">
+              {% for currency, total in statement.paid_by_currency.items() %}
+                <div class="d-flex justify-content-between border rounded px-3 py-2">
+                  <span class="text-muted">{{ currency }}</span>
+                  <strong>{{ "%.2f"|format(total) }}</strong>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('no_paid_receipts_with_price') }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('open_payable') }}</h2>
+          {% if statement.unpaid_by_currency %}
+            <div class="d-flex flex-column gap-2">
+              {% for currency, total in statement.unpaid_by_currency.items() %}
+                <div class="d-flex justify-content-between border rounded px-3 py-2">
+                  <span class="text-muted">{{ currency }}</span>
+                  <strong>{{ "%.2f"|format(total) }}</strong>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('no_unpaid_receipts_with_price') }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('supplier_receipt_history') }}</h2>
+          {% if statement.receipts %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>{{ t('table_date') }}</th>
+                    <th>{{ t('material_label') }}</th>
+                    <th>{{ t('invoice_label') }}</th>
+                    <th>{{ t('status') }}</th>
+                    <th class="text-end">{{ t('quantity') }}</th>
+                    <th class="text-end">{{ t('total_amount') }}</th>
+                    <th>{{ t('table_actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for receipt in statement.receipts %}
+                    <tr>
+                      <td>{{ receipt.received_at }}</td>
+                      <td>
+                        <div class="fw-semibold">{{ receipt.material_name }}</div>
+                        {% if receipt.note %}
+                          <div class="small text-muted">{{ receipt.note }}</div>
+                        {% endif %}
+                      </td>
+                      <td>{{ receipt.invoice_number or "-" }}</td>
+                      <td>
+                        <span class="badge {% if (receipt.payment_status or 'unpaid') == 'paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                          {{ (receipt.payment_status or 'unpaid')|title }}
+                        </span>
+                      </td>
+                      <td class="text-end">{{ "%.2f"|format(receipt.quantity_received or 0) }} {{ receipt.unit }}</td>
+                      <td class="text-end">
+                        {% if receipt.line_total %}
+                          {{ "%.2f"|format(receipt.line_total) }} {{ receipt.currency or '' }}
+                        {% else %}
+                          -
+                        {% endif %}
+                      </td>
+                      <td>
+                        <div class="d-flex gap-2 flex-wrap">
+                          <a href="{{ url_for('fabrics.supplier_receipt_detail', receipt_id=receipt.id) }}" class="btn btn-outline-primary btn-sm">{{ t('view') if t('view') != 'view' else 'View' }}</a>
+                          <a href="{{ url_for('fabrics.supplier_receipt_pdf', receipt_id=receipt.id) }}" class="btn btn-outline-success btn-sm">PDF</a>
+                          <form method="post" action="{{ url_for('fabrics.supplier_receipt_send_telegram', receipt_id=receipt.id) }}">
+                            <button type="submit" class="btn btn-outline-dark btn-sm">{{ t('telegram_label') }}</button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('no_supplier_receipts_recorded') }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('reorder_watch') }}</h2>
+          {% if statement.snapshot.low_stock_items %}
+            <div class="d-flex flex-column gap-2">
+              {% for material in statement.snapshot.low_stock_items %}
+                <div class="border rounded px-3 py-2">
+                  <div class="fw-semibold">{{ material.name }}</div>
+                  <div class="small text-muted">
+                    {{ "%.2f"|format(material.quantity or 0) }} {{ material.unit }}
+                    / min {{ "%.2f"|format(material.min_stock_quantity or LOW_STOCK_THRESHOLD) }}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('nothing_below_min_stock') }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h2 class="h6 mb-3">{{ t('current_stock_by_unit') }}</h2>
+          {% if statement.snapshot.totals_by_unit %}
+            <div class="d-flex flex-column gap-2">
+              {% for unit, total in statement.snapshot.totals_by_unit.items() %}
+                <div class="d-flex justify-content-between border rounded px-3 py-2">
+                  <span class="text-muted">{{ unit }}</span>
+                  <strong>{{ "%.2f"|format(total) }}</strong>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-muted small">{{ t('no_stock_totals_available') }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

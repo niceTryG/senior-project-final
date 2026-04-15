@@ -1,0 +1,445 @@
+{% extends "products/base_products.html" %}
+
+{% block title %}Product details — {{ product.name }}{% endblock %}
+
+{% block content %}
+{% set image_url = product_image_url(product.website_image or product.image_path) %}
+{% set annotated_image_url = product_image_url(garment_analysis.annotated_image) if garment_analysis else None %}
+{% set annotation_version = product.garment_analysis_updated_at.isoformat() if product.garment_analysis_updated_at else '' %}
+
+<div class="container-fluid py-4">
+  <div class="mb-4">
+    <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+    <h4 class="mt-2 fw-bold">{{ product.name }}</h4>
+  </div>
+
+  <div class="rounded-4 p-4 bg-white border shadow-sm mb-4">
+    <div class="row g-4 align-items-center">
+      <div class="col-md-3">
+        <div class="rounded-3 overflow-hidden border bg-light" style="aspect-ratio: 1; min-height: 220px;">
+          {% if annotated_image_url %}
+          <img src="{{ annotated_image_url }}{% if annotation_version %}?v={{ annotation_version|urlencode }}{% endif %}" alt="{{ product.name }} garment map" class="w-100 h-100 object-cover" />
+          {% elif image_url %}
+          <img src="{{ image_url }}" alt="{{ product.name }}" class="w-100 h-100 object-cover" />
+          {% else %}
+          <div class="d-flex align-items-center justify-content-center text-muted h-100">
+            <i class="bi bi-image fs-3"></i>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-9">
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="small text-muted">Category</div>
+            <div class="fw-bold">{{ product.category or 'Uncategorized' }}</div>
+          </div>
+          <div class="col-6">
+            <div class="small text-muted">Status</div>
+            <div><span class="badge {{ 'bg-success' if product.is_published else 'bg-secondary' }}">{{ 'Published' if product.is_published else 'Draft' }}</span></div>
+          </div>
+          <div class="col-6">
+            <div class="small text-muted">Cost</div>
+            <div class="fw-bold">{{ product.cost_price_per_item or 0 | round(2) }} {{ product.currency or 'UZS' }}</div>
+          </div>
+          <div class="col-6">
+            <div class="small text-muted">Sell Price</div>
+            <div class="fw-bold">{{ product.sell_price_per_item or 0 | round(2) }} {{ product.currency or 'UZS' }}</div>
+          </div>
+          <div class="col-6">
+            <div class="small text-muted">SKU</div>
+            <div class="fw-bold">MM-{{ "%05d"|format(product.id) }}</div>
+          </div>
+          <div class="col-6">
+            <div class="small text-muted">In Stock</div>
+            <div class="fw-bold">{{ product.quantity or 0 }} units</div>
+          </div>
+          <div class="col-12">
+            <div class="small text-muted">Garment detail map</div>
+            {% if garment_analysis.has_analysis %}
+            <div class="fw-semibold text-success">
+              {{ garment_mapping.mapped_count or 0 }}/{{ garment_analysis.detail_count }} zones linked to real system items
+              {% if garment_analysis.generated_at %}
+              <span class="text-muted fw-normal">• {{ garment_analysis.generated_at }}</span>
+              {% endif %}
+            </div>
+            {% elif garment_analysis.supported_category and garment_analysis.has_source_image %}
+            <div class="fw-semibold text-warning">Ready to generate</div>
+            {% elif not garment_analysis.supported_category %}
+            <div class="fw-semibold text-muted">Category template not available yet</div>
+            {% else %}
+            <div class="fw-semibold text-muted">Upload an image to enable mapping</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="garment-map-tab" data-bs-toggle="tab" data-bs-target="#garment-map" type="button" role="tab" aria-controls="garment-map" aria-selected="true">
+        <i class="bi bi-bounding-box-circles me-2"></i>Garment Map
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="composition-tab" data-bs-toggle="tab" data-bs-target="#composition" type="button" role="tab" aria-controls="composition" aria-selected="false">
+        <i class="bi bi-box-seam me-2"></i>Composition ({{ materials_count }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="false">
+        <i class="bi bi-file-text me-2"></i>Details
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab" aria-controls="actions" aria-selected="false">
+        <i class="bi bi-tools me-2"></i>Actions
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="garment-map" role="tabpanel" aria-labelledby="garment-map-tab">
+      <div class="bg-white rounded-4 border shadow-sm p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+          <div>
+            <div class="fw-bold">Garment image detail detection</div>
+            <div class="text-muted small">Local Pillow-based silhouette analysis with category-specific templates, plus editable mapping from each visual zone to real composition items and factory materials already stored in your system.</div>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <form method="post" action="{{ url_for('products.auto_map_garment_components', product_id=product.id) }}">
+              <button type="submit" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-stars me-1"></i>Auto-map zones
+              </button>
+            </form>
+            <form method="post" action="{{ url_for('products.analyze_garment_details', product_id=product.id) }}">
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-magic me-1"></i>{{ 'Rebuild map' if garment_analysis.has_analysis else 'Generate map' }}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {% if garment_analysis.has_analysis %}
+        <div class="row g-4">
+          <div class="col-lg-7">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="border rounded-4 overflow-hidden bg-light">
+                  {% if image_url %}
+                  <img src="{{ image_url }}" alt="{{ product.name }} source image" class="w-100 mm-garment-preview" />
+                  {% else %}
+                  <div class="d-flex align-items-center justify-content-center mm-garment-preview text-muted">No image</div>
+                  {% endif %}
+                </div>
+                <div class="small text-muted mt-2">Original image</div>
+              </div>
+              <div class="col-md-6">
+                <div class="border rounded-4 overflow-hidden bg-light">
+                  {% if annotated_image_url %}
+                  <img src="{{ annotated_image_url }}{% if annotation_version %}?v={{ annotation_version|urlencode }}{% endif %}" alt="{{ product.name }} annotated image" class="w-100 mm-garment-preview" />
+                  {% endif %}
+                </div>
+                <div class="small text-muted mt-2">Annotated preview</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="row g-3">
+              <div class="col-12">
+                <div class="border rounded-4 p-3 bg-light-subtle">
+                  <div class="small text-muted">Detector version</div>
+                  <div class="fw-semibold">{{ garment_analysis.detector_version or 'template-silhouette-v1' }}</div>
+                  <div class="small text-muted mt-2">Supported category</div>
+                  <div class="fw-semibold">{{ garment_analysis.category_key or product.category or 'N/A' }}</div>
+                  <div class="small text-muted mt-2">Mapped components</div>
+                  <div class="fw-semibold">{{ garment_mapping.components | selectattr('assignment') | list | length }}/{{ garment_mapping.components|length }}</div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="border rounded-4 p-3 h-100">
+                  <div class="fw-semibold mb-2">Visual BOM overview</div>
+                  <div class="small text-muted mb-3">Components: {{ garment_mapping.components|length }} • Product composition items: {{ garment_mapping.composition_count }}</div>
+                  <div class="d-grid gap-2">
+                    {% for component in garment_mapping.components %}
+                    <div class="border rounded-3 p-3">
+                      <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                          <div class="fw-semibold">{{ component.label }}</div>
+                          <div class="small text-muted">{{ component.description }}</div>
+                        </div>
+                        <span class="badge text-bg-light">{{ (component.confidence * 100)|round(0)|int }}%</span>
+                      </div>
+                      <div class="small text-muted mt-2">Areas: {{ component.zone_labels|join(', ') }}</div>
+                      {% if component.assignment and component.assignment.kind == 'mixed' %}
+                      <div class="small mt-2">
+                        <span class="badge text-bg-warning">Mixed</span>
+                        <span class="fw-semibold">Sub-zones currently use different assignments</span>
+                      </div>
+                      {% elif component.assignment and component.assignment.material_name %}
+                      <div class="small mt-2">
+                        <span class="badge text-bg-success">Mapped</span>
+                        <span class="fw-semibold">{{ component.assignment.material_name }}</span>
+                      </div>
+                      {% elif component.assignment and component.assignment.kind == 'custom' %}
+                      <div class="small mt-2">
+                        <span class="badge text-bg-warning">Custom</span>
+                        <span class="fw-semibold">{{ component.assignment.usage_label or 'Custom usage' }}</span>
+                      </div>
+                      {% else %}
+                      <div class="small mt-2 text-muted">No linked system item yet</div>
+                      {% endif %}
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+            <div>
+              <div class="fw-semibold">Visual BOM intelligence</div>
+              <div class="small text-muted">Map business components like sleeves, neck label, closure, pocket, or hem finish to the real item used in the product. The geometry stays detailed underneath, but managers work with normalized garment components.</div>
+            </div>
+            {% if not composition_items %}
+            <a href="{{ url_for('main.composition', product_id=product.id) }}" class="btn btn-outline-primary btn-sm">Add product composition</a>
+            {% endif %}
+          </div>
+          <div class="d-grid gap-3">
+            {% for component in garment_mapping.components %}
+            <form method="post" action="{{ url_for('products.save_garment_component_mapping', product_id=product.id) }}" class="border rounded-4 p-3">
+              <input type="hidden" name="component_key" value="{{ component.key }}">
+
+              <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                <div>
+                  <div class="fw-semibold">{{ component.label }}</div>
+                  <div class="small text-muted">{{ component.usage_label }} • {{ component.symmetry_mode|title }} • {{ (component.confidence * 100)|round(0)|int }}%</div>
+                  <div class="small text-muted mt-1">{{ component.zone_labels|join(', ') }}</div>
+                </div>
+                {% if component.assignment and component.assignment.kind != 'unassigned' %}
+                <span class="badge text-bg-success">{{ component.assignment.kind|replace('_', ' ')|title }}</span>
+                {% else %}
+                <span class="badge text-bg-secondary">Unassigned</span>
+                {% endif %}
+              </div>
+
+              <div class="row g-3">
+                <div class="col-lg-6">
+                  <label class="form-label small mb-1">Linked system item</label>
+                  <select name="assignment_selection" class="form-select form-select-sm">
+                    <option value="" {% if not component.assignment or not component.assignment.selection_value %}selected{% endif %}>Not linked yet</option>
+                    {% for group in component.candidate_groups %}
+                    <optgroup label="{{ group.label }}">
+                      {% for option in group.options %}
+                      <option value="{{ option.value }}" {% if component.assignment and component.assignment.selection_value == option.value %}selected{% endif %}>
+                        {{ option.label }} {% if option.badge %}({{ option.badge }}){% endif %}
+                      </option>
+                      {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                    <option value="custom" {% if component.assignment and component.assignment.selection_value == 'custom' %}selected{% endif %}>Custom usage only</option>
+                  </select>
+                </div>
+                <div class="col-lg-3">
+                  <label class="form-label small mb-1">Usage / role</label>
+                  <input type="text" name="usage_label" class="form-control form-control-sm" value="{{ component.assignment.usage_label if component.assignment else component.usage_label }}" list="usage-options-{{ component.key }}" placeholder="{{ component.usage_label }}">
+                  <datalist id="usage-options-{{ component.key }}">
+                    {% for option in component.usage_options %}
+                    <option value="{{ option }}"></option>
+                    {% endfor %}
+                  </datalist>
+                </div>
+                <div class="col-lg-3">
+                  <label class="form-label small mb-1">Note</label>
+                  <input type="text" name="assignment_note" class="form-control form-control-sm" value="{{ component.assignment.note if component.assignment else '' }}" placeholder="Optional note">
+                </div>
+              </div>
+
+              {% if component.candidate_groups and component.candidate_groups[0].options %}
+              <div class="small text-muted mt-2">
+                Top suggestion: {{ component.candidate_groups[0].options[0].label }}
+              </div>
+              {% endif %}
+
+              {% if component.assignment and component.assignment.material_name %}
+              <div class="small mt-2">
+                Current link: <span class="fw-semibold">{{ component.assignment.material_name }}</span>
+              </div>
+              {% endif %}
+              {% if component.assignment and component.assignment.overlay_text %}
+              <div class="small mt-1 text-muted">
+                Image tag: <span class="fw-semibold">{{ component.assignment.overlay_text }}</span>
+              </div>
+              {% endif %}
+
+              <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-sm btn-success">Save mapping</button>
+              </div>
+            </form>
+            {% endfor %}
+          </div>
+        </div>
+        {% elif garment_analysis.supported_category and garment_analysis.has_source_image %}
+        <div class="border rounded-4 p-4 bg-light text-center">
+          <i class="bi bi-bounding-box fs-2 d-block mb-2 text-primary"></i>
+          <div class="fw-semibold mb-2">This product is ready for garment mapping.</div>
+          <div class="text-muted small">Use the button above to generate an annotated preview and structured detail JSON for this image.</div>
+        </div>
+        {% elif not garment_analysis.supported_category %}
+        <div class="border rounded-4 p-4 bg-light text-center">
+          <i class="bi bi-tags fs-2 d-block mb-2 text-muted"></i>
+          <div class="fw-semibold mb-2">No category template for this item yet.</div>
+          <div class="text-muted small">Current MVP supports `t_shirt`, `shirt`, `hoodie`, and `pants` category families.</div>
+        </div>
+        {% else %}
+        <div class="border rounded-4 p-4 bg-light text-center">
+          <i class="bi bi-image fs-2 d-block mb-2 text-muted"></i>
+          <div class="fw-semibold mb-2">No source image available.</div>
+          <div class="text-muted small">Upload a product image through the existing product update flow, then rebuild the map.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="composition" role="tabpanel" aria-labelledby="composition-tab">
+      <div class="bg-white rounded-4 border shadow-sm p-4">
+        {% if composition_items %}
+        <div class="mb-3">
+          <div class="text-muted small">{{ type_summary or 'Product composition details' }}</div>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+          {% for item in composition_items %}
+          <div class="col">
+            <div class="border rounded-3 p-3 h-100 d-flex flex-column">
+              <div class="d-flex align-items-start gap-3 mb-3">
+                <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0" style="width: 40px; height: 40px; background-color: {{ item.badge_bg }}; color: white;">
+                  <i class="{{ item.icon }}"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                  <div class="fw-bold text-truncate">{{ item.name }}</div>
+                  <div class="small text-muted">{{ item.type_label }}</div>
+                </div>
+              </div>
+              <div class="mt-auto">
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                  <span class="text-muted small">Quantity</span>
+                  <span class="fw-bold">{{ item.qty_label }}</span>
+                </div>
+                {% if item.note %}
+                <div class="mt-2 text-muted small" style="font-style: italic;">{{ item.note }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+          <div class="mb-3">No composition configured yet</div>
+          <a href="{{ url_for('main.composition', product_id=product.id) }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus me-1"></i>Add composition
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="details" role="tabpanel" aria-labelledby="details-tab">
+      <div class="bg-white rounded-4 border shadow-sm p-4">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="mb-4">
+              <div class="fw-bold mb-2">Fabric / Material Notes</div>
+              <div class="text-muted">{{ product.fabric_used or 'Not specified' }}</div>
+            </div>
+            <div>
+              <div class="fw-bold mb-2">Manager Notes</div>
+              <div class="text-muted">{{ product.notes or 'No additional notes' }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="bg-light rounded-3 p-3">
+              <div class="fw-bold mb-3">Quick Stats</div>
+              <div class="row g-2">
+                <div class="col-6">
+                  <div class="text-muted small">Total Components</div>
+                  <div class="h5 fw-bold mb-0">{{ materials_count }}</div>
+                </div>
+                <div class="col-6">
+                  <div class="text-muted small">Detected Areas</div>
+                  <div class="h5 fw-bold mb-0">{{ garment_analysis.detail_count or 0 }}</div>
+                </div>
+                <div class="col-6">
+                  <div class="text-muted small">Status</div>
+                  <div class="h5 fw-bold mb-0"><span class="badge {{ 'bg-success' if product.is_published else 'bg-secondary' }} fs-6">{{ 'Published' if product.is_published else 'Draft' }}</span></div>
+                </div>
+                <div class="col-6">
+                  <div class="text-muted small">Category support</div>
+                  <div class="h5 fw-bold mb-0">{{ 'Ready' if garment_analysis.supported_category else 'Not yet' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="actions" role="tabpanel" aria-labelledby="actions-tab">
+      <div class="bg-white rounded-4 border shadow-sm p-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="d-flex align-items-start gap-3 pb-3 border-bottom">
+              <i class="bi bi-pencil-square text-primary fs-5 mt-1"></i>
+              <div>
+                <div class="fw-bold mb-1">Edit Composition</div>
+                <div class="text-muted small mb-3">Add, remove, or update materials and accessories for this product.</div>
+                <a href="{{ url_for('main.composition', product_id=product.id) }}" class="btn btn-sm btn-primary">
+                  Open Editor
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="d-flex align-items-start gap-3 pb-3 border-bottom">
+              <i class="bi bi-calculator text-warning fs-5 mt-1"></i>
+              <div>
+                <div class="fw-bold mb-1">Cost Calculations</div>
+                <div class="text-muted small mb-3">Review detailed cost breakdown based on composition materials.</div>
+                <a href="{{ url_for('products.product_cost', product_id=product.id) }}" class="btn btn-sm btn-warning">
+                  Review Costs
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="d-flex align-items-start gap-3 pt-2">
+              <i class="bi bi-bounding-box-circles text-success fs-5 mt-1"></i>
+              <div>
+                <div class="fw-bold mb-1">Garment Detail Detection</div>
+                <div class="text-muted small mb-3">Regenerate the annotated preview and stored JSON detections using the current image and category template.</div>
+                <form method="post" action="{{ url_for('products.analyze_garment_details', product_id=product.id) }}">
+                  <button type="submit" class="btn btn-sm btn-success">Rebuild Detection Map</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.nav-tabs .nav-link { color: #6c757d; border-bottom: 2px solid transparent; }
+.nav-tabs .nav-link:hover { border-bottom-color: #dee2e6; color: #495057; }
+.nav-tabs .nav-link.active { color: #0d6efd; border-bottom-color: #0d6efd; background: none; }
+.object-cover { object-fit: cover; }
+.mm-garment-preview { object-fit: contain; aspect-ratio: 4 / 4; background: linear-gradient(180deg, #f8f9fa 0%, #eef2f7 100%); }
+</style>
+{% endblock %}

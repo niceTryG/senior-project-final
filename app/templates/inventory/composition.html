@@ -1,0 +1,336 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ t('composition_title') }}{% endblock %}
+{% block topbar_title %}{{ t('composition_title') }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="adras-dashboard">
+  <section class="adras-hero-card">
+    <div class="adras-hero-left">
+      <h1 class="adras-hero-title">{{ t('composition_title') }}</h1>
+      <p class="dashboard-subtitle">{{ t('composition_subtitle') }}</p>
+    </div>
+  </section>
+
+  <section class="adras-kpi-grid">
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">Products</div>
+        <div class="adras-kpi-number">{{ products|length }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">Materials</div>
+        <div class="adras-kpi-number">{{ fabrics|length }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('links_label') }}</div>
+        <div class="adras-kpi-number">{{ composition_items|length }}</div>
+      </div>
+    </article>
+
+    <article class="adras-kpi-card adras-kpi-card-dark">
+      <div class="adras-kpi-top">
+        <div class="adras-kpi-title">{{ t('inventory_mode') }}</div>
+        <div class="adras-kpi-number">{{ t('editing_mode') if edit_item else t('live_mode') }}</div>
+      </div>
+    </article>
+  </section>
+
+  <section class="adras-main-grid">
+    <div class="adras-main-left">
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('edit_composition_item') if edit_item else t('add_update_composition_item') }}</div>
+
+        <form method="post" class="d-grid" style="gap:12px;">
+          {% if edit_item %}
+            <input type="hidden" name="composition_id" value="{{ edit_item.id }}">
+          {% endif %}
+
+          <div>
+            <label class="form-label">{{ t('products') }}</label>
+            <select name="product_id" class="form-control-auth" required>
+              <option value="">{{ t('select_product') }}</option>
+              {% for product in products %}
+                <option value="{{ product.id }}" {% if edit_item and edit_item.product_id == product.id %}selected{% endif %}>
+                  {{ product.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label">{{ t('material_label') }}</label>
+            <select name="fabric_id" id="compositionMaterialSelect" class="form-control-auth" required>
+              <option value="">{{ t('choose_material') }}</option>
+              {% for fabric in fabrics %}
+                {% set material_type = (fabric.material_type or 'fabric')|replace('_', ' ')|title %}
+                <option
+                  value="{{ fabric.id }}"
+                  data-unit="{{ fabric.unit or '' }}"
+                  data-qty="{{ '%.2f'|format(fabric.quantity or 0) }}"
+                  data-min-stock="{{ '%.2f'|format(fabric.min_stock_quantity or 5) }}"
+                  data-type="{{ material_type }}"
+                  data-name="{{ fabric.name }}"
+                  {% if edit_item and edit_item.fabric_id == fabric.id %}selected{% endif %}
+                >
+                  {{ material_type }} · {{ fabric.name }}{% if fabric.color %} · {{ fabric.color }}{% endif %}{% if fabric.category %} · {{ fabric.category }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="adras-focus-box" id="compositionMaterialMeta" style="display:none;">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span id="compositionMaterialSummary">{{ t('choose_material') }}.</span>
+            </div>
+          </div>
+
+          <div class="sales-two-col">
+            <div>
+              <label class="form-label">{{ t('required_quantity') }}</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="quantity_required"
+                id="compositionRequiredQty"
+                class="form-control-auth"
+                value="{{ '%.2f'|format(edit_item.quantity_required or 0) if edit_item else '' }}"
+                required
+              >
+            </div>
+
+            <div>
+              <label class="form-label">{{ t('table_unit') }}</label>
+              <select name="unit" id="compositionUnitSelect" class="form-control-auth" required>
+                {% set selected_unit = edit_item.unit if edit_item else 'm' %}
+                <option value="m" {% if selected_unit == 'm' %}selected{% endif %}>m</option>
+                <option value="kg" {% if selected_unit == 'kg' %}selected{% endif %}>kg</option>
+                <option value="pcs" {% if selected_unit == 'pcs' %}selected{% endif %}>pcs</option>
+                <option value="set" {% if selected_unit == 'set' %}selected{% endif %}>set</option>
+                <option value="roll" {% if selected_unit == 'roll' %}selected{% endif %}>roll</option>
+                <option value="box" {% if selected_unit == 'box' %}selected{% endif %}>box</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">{{ t('note') }}</label>
+            <input type="text" name="note" class="form-control-auth" value="{{ edit_item.note if edit_item else '' }}" placeholder="{{ t('optional_note') }}">
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="auth-btn">{{ t('update_composition_item') if edit_item else t('save_composition_item') }}</button>
+            {% if edit_item %}
+              <a href="{{ url_for('main.composition', product_id=selected_product_id, material_type=selected_material_type, q=q) }}" class="btn btn-outline-secondary">{{ t('cancel_edit') }}</a>
+            {% endif %}
+          </div>
+        </form>
+      </article>
+
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('current_composition_by_product') }}</div>
+
+        <form method="get" class="d-grid" style="gap:12px; margin-bottom:14px;">
+          <div class="sales-two-col">
+            <div>
+              <label class="form-label">{{ t('product_filter') }}</label>
+              <select name="product_id" class="form-control-auth">
+                <option value="">{{ t('all_products') }}</option>
+                {% for product in products %}
+                  <option value="{{ product.id }}" {% if selected_product_id == product.id %}selected{% endif %}>{{ product.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="form-label">{{ t('material_type_label') }}</label>
+              <select name="material_type" class="form-control-auth">
+                <option value="">{{ t('all_types') }}</option>
+                {% for material_type in material_types %}
+                  <option value="{{ material_type }}" {% if selected_material_type == material_type %}selected{% endif %}>
+                    {{ material_type|replace('_', ' ')|title }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">{{ t('search_label') }}</label>
+            <input type="text" name="q" class="form-control-auth" value="{{ q }}" placeholder="{{ t('search_product_material_note') }}">
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-outline-light">{{ t('apply_filters') }}</button>
+            <a href="{{ url_for('main.composition') }}" class="btn btn-outline-secondary">{{ t('reset_filters') }}</a>
+          </div>
+        </form>
+
+        {% if grouped_items %}
+          <div class="adras-focus-box">
+            {% for group in grouped_items %}
+              <div class="adras-action-card">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                  <div class="adras-action-card-title">{{ group["product"].name }}</div>
+                  <div class="adras-action-card-sub">{{ group["items"]|length }} item{{ "" if group["items"]|length == 1 else "s" }}</div>
+                </div>
+
+                <div class="d-grid" style="gap:10px; margin-top:10px;">
+                  {% for item in group["items"] %}
+                    {% set available_qty = item.fabric.quantity or 0 %}
+                    {% set threshold = item.fabric.min_stock_quantity or 5 %}
+                    <div style="padding:10px 12px; border:1px solid rgba(255,255,255,.08); border-radius:14px;">
+                      <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                        <div>
+                          <div class="adras-action-card-sub" style="font-size:.95rem; color:#fff;">
+                            {{ (item.fabric.material_type or 'fabric')|replace('_', ' ')|title }} · {{ item.fabric.name }}
+                          </div>
+                          <div class="adras-action-card-sub">
+                            {{ "%.2f"|format(item.quantity_required or 0) }} {{ item.unit }}
+                            {% if item.note %} · {{ item.note }}{% endif %}
+                          </div>
+                          <div class="adras-action-card-sub">
+                            {{ t('available_now') }}: {{ "%.2f"|format(available_qty) }} {{ item.fabric.unit }}
+                            {% if available_qty <= 0 %}
+                              · {{ t('out_of_stock') }}
+                            {% elif available_qty < threshold %}
+                              · {{ t('below_min_stock_short') }}
+                            {% endif %}
+                          </div>
+                        </div>
+
+                        <div class="d-flex gap-2 flex-wrap ms-auto">
+                          <a
+                            href="{{ url_for('main.composition', edit=item.id, product_id=selected_product_id, material_type=selected_material_type, q=q) }}"
+                            class="btn btn-sm btn-outline-light"
+                          >
+                            {{ t('edit_button') if t('edit_button') != 'edit_button' else 'Edit' }}
+                          </a>
+                          <form method="post">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="composition_id" value="{{ item.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">{{ t('delete_label') }}</button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adras-focus-box">
+            <div class="adras-focus-item">
+              <span class="adras-focus-dot"></span>
+              <span>{{ t('no_composition_items_match') }}</span>
+            </div>
+          </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <div class="adras-main-right">
+      <article class="adras-panel">
+        <div class="adras-panel-title">{{ t('why_this_matters') }}</div>
+
+        <div class="adras-focus-box">
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>{{ t('composition_why_1') }}</span>
+          </div>
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>{{ t('composition_why_2') }}</span>
+          </div>
+          <div class="adras-focus-item">
+            <span class="adras-focus-dot"></span>
+            <span>{{ t('composition_why_3') }}</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="adras-panel adras-snapshot-dark">
+        <div class="adras-panel-title adras-panel-title-light">Founder questions</div>
+
+        <div class="adras-snapshot-dark-box">
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-yellow"></span>
+            <span>What is this product made of?</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-cyan"></span>
+            <span>How much material does one unit need?</span>
+          </div>
+          <div class="adras-snapshot-dark-row">
+            <span class="adras-snapshot-bullet bullet-blue"></span>
+            <span>Which input is already running low?</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const materialSelect = document.getElementById('compositionMaterialSelect');
+  const unitSelect = document.getElementById('compositionUnitSelect');
+  const requiredInput = document.getElementById('compositionRequiredQty');
+  const metaBox = document.getElementById('compositionMaterialMeta');
+  const metaSummary = document.getElementById('compositionMaterialSummary');
+
+  function renderMaterialMeta() {
+    if (!materialSelect || !unitSelect || !metaBox || !metaSummary) {
+      return;
+    }
+
+    const selected = materialSelect.options[materialSelect.selectedIndex];
+    if (!selected || !selected.value) {
+      metaBox.style.display = 'none';
+      return;
+    }
+
+    const materialUnit = selected.dataset.unit || '';
+    const availableQty = selected.dataset.qty || '0.00';
+    const minStock = selected.dataset.minStock || '0.00';
+    const materialType = selected.dataset.type || 'Material';
+    const materialName = selected.dataset.name || 'Material';
+    const requiredQty = requiredInput && requiredInput.value ? requiredInput.value : '';
+
+    if (materialUnit) {
+      unitSelect.value = materialUnit;
+    }
+
+    let copy = materialType + ' · ' + materialName + ' · available ' + availableQty + ' ' + materialUnit + ' · min stock ' + minStock + ' ' + materialUnit;
+    if (requiredQty) {
+      const available = parseFloat(availableQty || '0');
+      const required = parseFloat(requiredQty || '0');
+      if (!Number.isNaN(available) && !Number.isNaN(required) && required > 0) {
+        const possibleUnits = Math.floor(available / required);
+        copy += ' · current stock supports about ' + possibleUnits + ' product units';
+      }
+    }
+
+    metaSummary.textContent = copy;
+    metaBox.style.display = 'block';
+  }
+
+  if (materialSelect) {
+    materialSelect.addEventListener('change', renderMaterialMeta);
+  }
+  if (requiredInput) {
+    requiredInput.addEventListener('input', renderMaterialMeta);
+  }
+
+  renderMaterialMeta();
+});
+</script>
+{% endblock %}
